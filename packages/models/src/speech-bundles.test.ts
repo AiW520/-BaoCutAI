@@ -188,20 +188,22 @@ describe('本地语音合成模型包的登记', () => {
         ).notes;
       for (const id of CANDLE_IDS) {
         const note = of(id, on('cpu'));
-        expect(note).toMatch(/^在本机的 CPU 上合成，只用到一两个核，/);
-        expect(note).toContain('CUDA');
-        // 新模型尚未测出 CPU 耗时，使用通用说明。
-        if (!id.startsWith('fish-s2-pro@')) expect(note).not.toContain('一句要等几分钟；');
+        expect(note).toMatch(/^在本机的 CPU 上合成，只用到几个核，/);
+        expect(note).toContain('RTX 3060 上与实时相当');
+        expect(note).not.toContain('未实测');
         expect(of(id, on('cuda'))).toBeUndefined();
         // 状态没报设备时按登记的设备（cpu）算。
         expect(of(id, status)).toBe(note);
       }
-      expect(of('qwen3-tts-0.6b-base@candle', on('cpu'))).toContain('约 55 倍');
-      expect(of('index-tts2.5@candle', on('cpu'))).toContain('120–145 倍');
-      expect(of('omnivoice@candle', on('cpu'))).toContain('约 30 倍');
-      expect(of('gpt-sovits-v2@candle', on('cpu'))).toContain('约 6 倍');
-      for (const id of ['qwen3-tts-1.7b-base@candle', 'indextts2@candle', 'voxcpm2@candle']) {
+      expect(of('qwen3-tts-0.6b-base@candle', on('cpu'))).toContain('比实时慢约 7 倍');
+      expect(of('qwen3-tts-0.6b-customvoice@candle', on('cpu'))).toContain('比实时慢约 7 倍');
+      expect(of('indextts2@candle', on('cpu'))).toContain('比实时慢 30–60 倍');
+      for (const id of ['qwen3-tts-1.7b-base@candle', 'index-tts2.5@candle']) {
         expect(of(id, on('cpu'))).toContain('这只没有实测');
+      }
+      // 这台机器上没有实测、也没有同族实测可比的，只说没有实测。
+      for (const id of ['gpt-sovits-v2@candle', 'voxcpm2@candle', 'omnivoice@candle', 'fish-s2-pro@candle']) {
+        expect(of(id, on('cpu'))).toContain('耗时没有实测');
       }
       for (const id of MLX_IDS) expect(of(id, on('metal'))).toBeUndefined();
     });

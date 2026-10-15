@@ -83,9 +83,10 @@ function onCpu(def: BundleDefinition, status: ModelBundleStatus): boolean {
 }
 
 /**
- * candle 在 CPU 上合成有多慢，按模型（`bundleId` 的 `@` 前一段）。数字是本机（Apple M 系列、16 GiB，`--release`）的实测
- * （架构设计 §6.5）：Qwen3-TTS 0.6B 2.9 秒用 162 秒、5.0 秒用 268 秒；IndexTTS 2.5 每句 3.4–4.9 秒用 420–625 秒；
- * OmniVoice 22 秒用 646 秒；GPT-SoVITS 9 秒用 56 秒（含加载）。没有实测的照实写「这只没有实测」，不编数字。
+ * candle 在 CPU 上合成有多慢，按模型（`bundleId` 的 `@` 前一段）。数字是 Windows 11 + i7-12700F（12 核 20 线程、32 GB，
+ * `--release`，`BAOCUT_GPU=off`）的实测（架构设计 §6.5）：Qwen3-TTS 0.6B Base 与 CustomVoice 10–13 秒的中英文各用 72–80 秒；
+ * IndexTTS2 10–12 秒用 329–609 秒。1.7B 与 IndexTTS 2.5 没有实测，按同族实测的那只写预计；其余没有实测的走 `paceDefault`，
+ * 只说没有实测，不编数字。
  */
 const CPU_PACE: Record<string, () => Localized> = {
   'qwen3-tts-0.6b-base': M.paceQwen06,
@@ -95,14 +96,12 @@ const CPU_PACE: Record<string, () => Localized> = {
   'qwen3-tts-1.7b-voicedesign': M.paceQwen17,
   indextts2: M.paceIndexTts2,
   'index-tts2.5': M.paceIndexTts25,
-  'gpt-sovits-v2': M.paceGptSovits,
-  voxcpm2: M.paceVoxcpm2,
-  omnivoice: M.paceOmnivoice,
 };
 
 /**
- * 耗时的提示（与文生图的同一个 `notes`）：candle 合成在 CPU 上只用到一两个核（与旧版相同），比实时慢几倍到上百倍，照实说。
- * CUDA 没有实测；Worker 报告 CUDA 时不写这句，与 MLX 的同一只模型一样。
+ * 耗时的提示（与文生图的同一个 `notes`）：candle 合成在 CPU 上只用到几个核（实测 2–4 个），比实时慢几倍到几十倍，照实说。
+ * CUDA 上快得多：RTX 3060 上 Qwen3-TTS 0.6B 合成 9 秒用约 4.5 秒，IndexTTS2 13 秒用约 16 秒（§6.5）；Worker 报告 CUDA 时
+ * 不写这句，与 MLX 的同一只模型一样。
  */
 // `notes` 没有引用字段：按生成时的语言存文本。
 function cpuNote(def: BundleDefinition): string {
