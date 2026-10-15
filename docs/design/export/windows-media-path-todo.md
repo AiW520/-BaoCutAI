@@ -21,7 +21,7 @@
 | W4 | 在 Windows 上验证 EcoQoS 的关闭 | 不变 | 高 | 部分通过：原生 API 回读、24 忙进程交替对比通过；真实应用最小化 / 切后台待测 |
 | W5 | 解码走硬件（D3D11） | 会变 | 中 | 导出 Source Reader 路径待实现；播放的 DXGI 测试通过不等于此项完成 |
 | W6 | 编码的节流与低延迟开关 | 码流会变 | 中 | 待 A/B，未启用候选开关 |
-| W7 | 三家显卡的硬件编码器兼容 | — | 高 | 未通过：RTX 3060 主机导出成功、BT.709 / High 正确，但 GOP 为 1 秒而非 2 秒；实际 MFT、AMD / Intel 与回落待测 |
+| W7 | 三家显卡的硬件编码器兼容 | 码流会变 | 高 | NVIDIA 通过：RTX 3060 实测选中 `NVIDIA H.264 Encoder MFT`（硬件，`done.video.encoderDevice` 报出），GOP 经编码器参数改为 2 秒；软件编码器不再出 B 帧（修首帧晚一帧）；AMD / Intel 与回落待测 |
 | W8 | 修复原生媒体测试的实机失败 | 有标注的素材会变 | 高 | 已修复：5 项全部通过，阈值未动；三个根因见下文 |
 | W9 | 合成线程的整帧拷贝与分配 | 不变 | 高 | 已实现：Windows 全局分配器（空闲时 1080p 双语字幕 cover 118 → 138 fps、contain 112 → 130 fps）；解出的画面共享给帧光栅、内核画布跨帧复用（空闲时再快 1.08–1.09 倍）；满载都没有一致的方向。这之后分配器反而拖慢 2–5%，待拿掉。合成上 GPU 另有[方案稿](gpu-compositing.md) |
 
@@ -62,7 +62,9 @@
 
 ### W7 三家显卡的硬件编码器兼容
 
-- `MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = 1` 允许 Sink Writer 选择显卡驱动提供的 H.264 编码 MFT（NVIDIA NVENC、AMD AMF、Intel Quick Sync），没有时回落微软的软件编码器。RTX 3060 主机的 MF 导出与 ffprobe 已实测：High、BT.709、300 帧和 30 fps 正确，GOP 却为 30 帧而非要求的 60 帧；faststart 明确回落且 `moov` 在 `mdat` 后。当前报告未识别具体 MFT，不能据此认定选到了 NVENC，三家硬件兼容仍未完成。
+- `MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = 1` 允许 Sink Writer 选择显卡驱动提供的 H.264 编码 MFT（NVIDIA NVENC、AMD AMF、Intel Quick Sync），没有时回落微软的软件编码器。RTX 3060 主机的 MF 导出与 ffprobe 已实测：High、BT.709、300 帧和 30 fps 正确，GOP 却为 30 帧而非要求的 60 帧；faststart 明确回落且 `moov` 在 `mdat` 后。
+- 2026-10-15 补齐：写入器在 `BeginWriting` 之后用 `IMFSinkWriterEx::GetTransformForStream` 找到视频编码 MFT，读它的 `MFT_FRIENDLY_NAME_Attribute` 与 `MFT_ENUM_HARDWARE_URL_Attribute`，经 `Mp4Writer::encoder` 报进 `done.video.encoderDevice`（`{ name, hardware }`；微软的软件编码器没有友好名，按 CLSID 认作 `Microsoft H.264 Encoder MFT`）。RTX 3060 上 1080p、720p、360p 选中的都是 `NVIDIA H.264 Encoder MFT`（硬件）；64×36 这类 NVENC 不收的小画面落到微软的软件编码器。
+- GOP 的原因：NVIDIA 的 MFT 不看输出类型上的 `MF_MT_MAX_KEYFRAME_SPACING`，720p 及以上每 30 帧一个关键帧（360p 时恰好是 60），经 `SetInputMediaType` 的编码器参数给 `CODECAPI_AVEncMPVGOPSize` 后 1080p / 720p 都是每 60 帧。同一处给 `CODECAPI_AVEncMPVDefaultBPictureCount = 0`：微软的软件编码器缺省出 B 帧，MP4 Sink 写组合时间偏移却不写编辑表，画面整体晚一帧开始（`start_time` 0.0333 秒，声音从 0 开始）；关掉后 `start_time` 为 0。NVIDIA 的 MFT 本来不出 B 帧，码流不变；软件编码器的码流会变（没有 B 帧，同码率下压缩率略低）。
 - 每家各一台机器，导出同一个工程，用 `ffprobe -show_streams -show_frames` 核对：profile 为 High、关键帧间隔等于 `KEYFRAME_INTERVAL_SECONDS` 换算的帧数、BT.709 的 VUI、码率接近设定、faststart 探测的结果与 moov 位置。再核对回落时 `done.video` 报出的后端与原因。
 - 驱动缺失或编码 MFT 初始化失败时应能回落，不能让导出失败而不报原因。
 

@@ -148,10 +148,23 @@ pub(crate) struct WriterSetup {
     pub(crate) audio_bitrate: u32,
 }
 
+/// 平台写入器实际选中的视频编码器（导出的 `done.video.encoderDevice`）。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EncoderDevice {
+    /// 编码器自报的名字（Media Foundation 的 `MFT_FRIENDLY_NAME_Attribute`，如 `NVIDIA H.264 Encoder MFT`）。
+    pub name: String,
+    /// 显卡驱动提供的硬件编码器（MFT 带 `MFT_ENUM_HARDWARE_URL_Attribute`）。
+    pub hardware: bool,
+}
+
 /// 平台 MP4 写入器。两条平台实现的消费方式一样：按序喂帧、收尾。
 pub(crate) trait Mp4Sink {
     fn write_frame(&mut self, rgba: &[u8]) -> Result<()>;
     fn finish(self: Box<Self>) -> Result<()>;
+    /// 实际选中的视频编码器；平台答不出时 `None`。
+    fn encoder(&self) -> Option<&EncoderDevice> {
+        None
+    }
 }
 
 /// 原生 MP4 写入器句柄。
@@ -181,6 +194,11 @@ impl Mp4Writer {
     /// 实际在用的编码后端（§15.1 可观测条款）。
     pub fn backend(&self) -> &'static str {
         encode_backend()
+    }
+
+    /// 后端里实际选中的视频编码器（Windows：Sink Writer 挑的 H.264 MFT）；平台答不出时 `None`。
+    pub fn encoder(&self) -> Option<&EncoderDevice> {
+        self.sink.encoder()
     }
 }
 

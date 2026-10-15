@@ -6,13 +6,14 @@ use std::collections::HashSet;
 use std::io::{BufRead, Read};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use font_files::FontFace;
 use frame_render::{FrameRenderer, RenderError, RenderOptions, UnsupportedItem};
 use media_core::encode::{EncodeSettings, Encoder, QueuedEncoder};
+use media_native::EncoderDevice;
 use render_graph::plan_frame;
 use render_graph::video_plan::PictureRect;
 use serde_json::{Value, json};
@@ -104,7 +105,7 @@ pub fn run(path: &Path) -> Result<ExitCode, Failure> {
     }
     let mut sources = Sources::new(&input, tools.clone(), report.pictures.clone(), skip);
     // 写编码器在单独的线程：合成线程把帧交进队列就画下一帧（`progress` 的帧数是交进队列的帧数）。
-    let (mut encoder, encoder_backend, encoder_fallback) = start_encoder(&input, &tools, &settings, &report)?;
+    let (mut encoder, encoder_backend, encoder_device, encoder_fallback) = start_encoder(&input, &tools, &settings, &report)?;
     let view = input.document.view();
     let total = report.frames;
     let started = Instant::now();
@@ -160,6 +161,14 @@ pub fn run(path: &Path) -> Result<ExitCode, Failure> {
     let seconds = started.elapsed().as_secs_f64();
     let decode = sources.decode_report();
     let fallbacks: Vec<Fallback> = decode.fallbacks.into_iter().chain(encoder_fallback).collect();
+    let mut video = json!({
+        "decoder": decode.decoder,
+        "encoder": encoder_backend,
+        "fallbacks": fallbacks,
+    });
+    if let Some(device) = &encoder_device {
+        video["encoderDevice"] = json!({ "name": device.name, "hardware": device.hardware });
+    }
     emit(&json!({
         "event": "done",
         "frames": total,
@@ -168,23 +177,19 @@ pub fn run(path: &Path) -> Result<ExitCode, Failure> {
         "decoderRestarts": restarts,
         "captionRasters": renderer.caption_rasters(),
         "renderSeconds": (seconds * 1000.0).round() / 1000.0,
-        "video": {
-            "decoder": decode.decoder,
-            "encoder": encoder_backend,
-            "fallbacks": fallbacks,
-        },
+        "video": video,
     }));
     Ok(ExitCode::SUCCESS)
 }
 
 /// 起编码队列：按预检选的路走原生写入器，原生打不开时回落 ffmpeg（缺编码器时以 `EXPORT_TOOL_MISSING` 失败）。
-/// 返回队列、编码后端名与回落记录。
+/// 返回队列、编码后端名、原生写入器实际选中的编码器（ffmpeg 与平台答不出时 `None`）与回落记录。
 fn start_encoder(
     input: &Input,
     tools: &media_core::Tools,
     settings: &EncodeSettings,
     report: &preflight::Preflight,
-) -> Result<(QueuedEncoder, &'static str, Option<Fallback>), Failure> {
+) -> Result<(QueuedEncoder, &'static str, Option<EncoderDevice>, Option<Fallback>), Failure> {
     let media_failure = |e: media_core::MediaError| Failure::new(e.code, e.message);
     let path = input.output.path.clone();
     let fallback = match &report.encoder {
@@ -192,10 +197,20 @@ fn start_encoder(
             let options = options.clone();
             let frame_bytes = settings.width as usize * settings.height as usize * 4;
             let target = path.clone();
+            // 写入器在写线程里打开；打开成功之前 `spawn` 不返回，所以返回后槽里已经是结果。
+            let device = Arc::new(Mutex::new(None));
+            let slot = Arc::clone(&device);
             match QueuedEncoder::spawn(frame_bytes, ENCODE_QUEUE, Letterbox::BAR, move || {
-                native::open_sink(target, &options)
+                let (sink, encoder) = native::open_sink(target, &options)?;
+                if let Ok(mut slot) = slot.lock() {
+                    *slot = encoder;
+                }
+                Ok(sink)
             }) {
-                Ok(queued) => return Ok((queued, media_native::encode_backend(), None)),
+                Ok(queued) => {
+                    let device = device.lock().ok().and_then(|device| device.clone());
+                    return Ok((queued, media_native::encode_backend(), device, None));
+                }
                 Err(e) => {
                     let fallback = Fallback::encoder("open-failed", e.message);
                     if !report.ffmpeg_missing.is_empty() {
@@ -217,7 +232,12 @@ fn start_encoder(
         EncoderPlan::Ffmpeg(fallback) => fallback.clone(),
     };
     let encoder = Encoder::start(tools, settings, &path).map_err(media_failure)?;
-    Ok((QueuedEncoder::new(encoder, ENCODE_QUEUE, Letterbox::BAR), "ffmpeg", Some(fallback)))
+    Ok((
+        QueuedEncoder::new(encoder, ENCODE_QUEUE, Letterbox::BAR),
+        "ffmpeg",
+        None,
+        Some(fallback),
+    ))
 }
 
 /// 冻结的本机字体（架构设计 §9.11 的「字体」）：按冻结时记下的文件与文件里第几个，抽出那一个 face（与预览同一个抽法）。

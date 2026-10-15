@@ -38,7 +38,7 @@
 | `media-native` 单元测试 / DXGI frame server | 通过 | 分别 37 / 3 项；DXGI 用仓库真实视频夹具，实际发布可共享 GPU 帧并检查三槽池行为 |
 | 单帧抽取 / 顺序帧流 / MP4 写入 | 未通过 → 已修复（W8） | 首轮分别 3 过 2 败、4 过 2 败、4 过 1 败；同日修复后 5 / 6 / 5 项全部通过，阈值未动，详见 §3 |
 | 1080p 双语字幕成片导出 | 通过（冒烟） | cover / contain 均输出 300 帧，解码和编码均报告 `media-foundation`，无编解码回落；合成 4.068 / 4.314 秒，即 73.7 / 69.5 fps；contain / cover = 0.94。各跑一次，不能作为性能回归门槛 |
-| H.264 输出合同（W7） | 部分通过，GOP 不符 | High profile、1920×1080、30/1、300 帧，BT.709 primaries / transfer / matrix、limited range 正确；实测码率 9,632,737 bit/s。关键帧每 30 帧一次，而代码要求 60 帧。本机 faststart 不支持，stderr 明确回落，`mdat` 在 `moov` 前 |
+| H.264 输出合同（W7） | 部分通过，GOP 不符 → 同日修复后通过（NVIDIA） | 修复后重测（10 秒 contain 夹具）：High、BT.709 三项与 tv range、30/1、300 帧、`start_time` 0、关键帧在 0 / 60 / 120 / 180 / 240、无 B 帧、9,647,364 bit/s；`done.video.encoderDevice` 报 `NVIDIA H.264 Encoder MFT`（硬件）。首轮：High profile、1920×1080、30/1、300 帧，BT.709 primaries / transfer / matrix、limited range 正确；实测码率 9,632,737 bit/s。关键帧每 30 帧一次，而代码要求 60 帧。本机 faststart 不支持，stderr 明确回落，`mdat` 在 `moov` 前 |
 | Windows 路径、停止监督与凭据迁移 TS 回归 | 未全过 | 5 个文件共 53 项，52 过 1 败；包含 6 项 Windows v2 升级测试。唯一失败为 POSIX 文件权限位断言，详见 §3。路径测试没有实际打开 Explorer 或系统保存窗口 |
 
 ### EcoQoS 对比的解释
@@ -63,7 +63,7 @@
 | `frame_stream::the_stream_starts_on_the_frame_that_covers_the_requested_time` | 从 0.5 秒开始应剩 75 帧，实际 77 帧 | 已修复（W8）：同单帧边界，时间戳晚两帧；修后从 0、0.5、1.0167 秒起分别 90、75、60 帧，首帧时刻 0、0.5、1.0 |
 | `frame_stream::native_frames_match_the_ffmpeg_fallback_within_the_cross_backend_tolerance` | 第 15 帧降采样 SSIM 0.7909，低于 0.95；全分辨率 0.7958 | 已修复（W8）：同单帧的颜色矩阵；8 个探测帧降采样 SSIM 0.9699–0.9864，逐通道最大偏差 2–3 |
 | `mp4_writer::ntsc_frame_rates_survive_the_container_timebase` | 29.97 的读回值为 29.97049950832514，未满足现有断言 | 已修复（W8）：编码时序问题。时间戳按「单帧时长 × 帧号」截断累积；MP4 Sink 按 `round(1000 × 帧率)` 定时标（29970，容器存 2997/100）。改为逐帧按有理数取时刻（向下取整加 1 hns）、NTSC 系在媒体类型上声明整数帧率后读回 30000/1001；在 NVIDIA 的 H.264 MFT 上 23.976 / 29.97 / 59.94 / 30 fps 各 1–130 帧逐一读回正确 |
-| W7 的 GOP 合同 | `KEYFRAME_INTERVAL_SECONDS=2.0`，30 fps 应为 60 帧；ffprobe 读到 0、1、2…9 秒的 I 帧 | 核实当前实际选中的 MFT 是否接受 `MF_MT_MAX_KEYFRAME_SPACING`；解决前不能标记 NVIDIA 硬件编码兼容通过 |
+| W7 的 GOP 合同 | `KEYFRAME_INTERVAL_SECONDS=2.0`，30 fps 应为 60 帧；ffprobe 读到 0、1、2…9 秒的 I 帧 | 已修复：选中的是 `NVIDIA H.264 Encoder MFT`（硬件，现由 `done.video.encoderDevice` 报出），它不接受 `MF_MT_MAX_KEYFRAME_SPACING`（720p 起每 30 帧），改由 Sink Writer 的编码器参数给 `CODECAPI_AVEncMPVGOPSize` 后 720p / 1080p 都是每 60 帧；同时给 `CODECAPI_AVEncMPVDefaultBPictureCount=0`，微软软件编码器的 B 帧曾让画面晚一帧开始（`start_time` 0.0333 秒）。AMD / Intel 未测 |
 | `keychain-credential-store.test.ts` 的部分迁移测试 | 断言 `stat.mode & 0o777 == 0o600`，Windows 实际为 `0o666` | 这是 Windows 文件权限表达与 POSIX 断言的差异；迁移、保留失败项和真实 Credential Manager 存取分别已测。需要 Windows ACL 验证口径，不能据此宣称权限安全已验收 |
 
 faststart 的实测 MP4 顶层 box 顺序为 `ftyp → uuid → mdat → moov`，`mdat` 偏移 63、`moov` 偏移 12,040,961，与明确回落的日志相符；这项不是静默失败。
@@ -104,7 +104,7 @@ npx vitest run apps/desktop/src/main/runtime-supervisor.test.ts apps/desktop/src
 
 - W1–W3 缓冲与拷贝优化、W5 导出 Source Reader 的 D3D11 硬件解码尚未实现；DXGI 播放帧测试通过不等于 W5 完成。
 - W6 编码器节流与低延迟候选没有改动或 A/B；W4 尚未验证真实 Electron 应用最小化和切到后台。
-- 只有 RTX 3060 一台设备；`done.video` 仅报告 Media Foundation，未识别实际 MFT 名称，不能据此认定使用了 NVENC。AMD / Intel、无驱动与 MFT 初始化失败回落仍待验证。
+- 只有 RTX 3060 一台设备；`done.video.encoderDevice` 现在报出实际 MFT（本机为 `NVIDIA H.264 Encoder MFT`），只代表这台 NVIDIA 机器。AMD / Intel、无驱动与 MFT 初始化失败回落仍待验证。
 - 未重打 CPU / CUDA / Vulkan 安装包，未验证应用内更新、NSIS、打包字体、Whisper CUDA / Vulkan、真实模型推理和 AVX2 发布基线。既有 CI 打包结果与本次源码验证应分别判断。
 - 未实际操作 Explorer、系统保存窗口或 Electron UI；没有把路径单元测试记作这些系统交互已通过。
 - Model Worker 的整进程孤儿退出、活动任务的取消 / 停止屏障、Windows 内存压力信号与真实历史账户自动迁移仍待相应环境验证。

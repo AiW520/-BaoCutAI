@@ -15,7 +15,7 @@ use std::sync::Arc;
 use media_core::MediaError;
 use media_core::decode::{FeedOpener, FrameFeed, NativeDecode};
 use media_core::encode::{Container, EncodeSettings, FrameSink, Quality, VideoCodec};
-use media_native::{AudioInput, Mp4Options, Mp4Writer, PcmFormat, SequentialDecoder};
+use media_native::{AudioInput, EncoderDevice, Mp4Options, Mp4Writer, PcmFormat, SequentialDecoder};
 use serde::Serialize;
 
 /// 关掉原生编解码的环境变量（值为 `0` 时关）。
@@ -184,14 +184,16 @@ fn choose_encoder_with(
     })
 }
 
-/// 打开原生写入器（在编码队列的写线程里调用）。
-pub fn open_sink(path: PathBuf, options: &Mp4Options) -> Result<Box<dyn FrameSink>, MediaError> {
+/// 打开原生写入器（在编码队列的写线程里调用），连同平台实际选中的视频编码器（`done.video.encoderDevice`）。
+pub fn open_sink(path: PathBuf, options: &Mp4Options) -> Result<(Box<dyn FrameSink>, Option<EncoderDevice>), MediaError> {
     let writer = media_native::open_mp4_writer_with_options(&path, options)
         .map_err(|e| MediaError::new("EXPORT_ENCODE_FAILED", format!("{e:#}")))?;
-    Ok(Box::new(NativeSink {
+    let device = writer.encoder().cloned();
+    let sink = Box::new(NativeSink {
         writer: Some(writer),
         path,
-    }))
+    });
+    Ok((sink, device))
 }
 
 /// 原生写入器做成编码队列的输出：失败与放弃时不留文件。
@@ -349,12 +351,12 @@ mod tests {
             video_bitrate: None,
             audio: None,
         };
-        let mut sink = open_sink(path.clone(), &options).unwrap();
+        let (mut sink, _) = open_sink(path.clone(), &options).unwrap();
         sink.write(&[0, 0, 0, 255].repeat(64 * 36)).unwrap();
         sink.abort();
         assert!(!path.exists());
 
-        let mut sink = open_sink(path.clone(), &options).unwrap();
+        let (mut sink, _) = open_sink(path.clone(), &options).unwrap();
         for _ in 0..5 {
             sink.write(&[200, 60, 30, 255].repeat(64 * 36)).unwrap();
         }

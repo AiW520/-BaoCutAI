@@ -852,6 +852,9 @@ async function main(): Promise<void> {
                 : Number(done.captionRasters),
             video: done.video
               ? `${done.video.decoder ?? "-"}→${done.video.encoder}` +
+                (done.video.encoderDevice
+                  ? `（${done.video.encoderDevice.name}${done.video.encoderDevice.hardware ? "，硬件" : ""}）`
+                  : "") +
                 (done.video.fallbacks.length
                   ? `（回落 ${done.video.fallbacks.map((f: { scope: string; reason: string }) => `${f.scope}:${f.reason}`).join("、")}）`
                   : "")

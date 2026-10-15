@@ -180,6 +180,9 @@ export type WorkerEvent =
 export interface WorkerVideoBackends {
   decoder: string | null;
   encoder: string;
+  /** 原生写入器实际选中的视频编码器（Windows：Sink Writer 挑的 H.264 MFT，如 `NVIDIA H.264 Encoder MFT`）；ffmpeg 编码、
+   *  平台答不出或旧版 Worker 时没有。 */
+  encoderDevice?: { name: string; hardware: boolean };
   fallbacks: Array<{ scope: 'decoder' | 'encoder'; assetId?: string; reason: string; message: string }>;
 }
 

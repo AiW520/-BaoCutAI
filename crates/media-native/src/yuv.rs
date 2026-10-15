@@ -119,7 +119,7 @@ impl<'a> Nv12<'a> {
         plane_rows: usize,
         visible: Area,
     ) -> Option<Self> {
-        if visible.x % 2 != 0 || visible.y % 2 != 0 {
+        if !visible.x.is_multiple_of(2) || !visible.y.is_multiple_of(2) {
             return None;
         }
         let chroma_start = pitch.checked_mul(plane_rows)?;
