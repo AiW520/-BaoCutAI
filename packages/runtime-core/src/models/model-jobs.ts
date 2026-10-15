@@ -113,6 +113,11 @@ export interface ModelJobs {
   topic: TopicLog<JobsSnapshot, JobsEvent>;
   /** `models` 主题：快照是完整的能力视图与模型包状态；事件是新的能力视图，或一个模型包的新状态。 */
   modelsTopic: TopicLog<ModelsSnapshot, ModelsEvent>;
+  /**
+   * Runtime 的语言变了（`setLocale`）之后调用：快照里的厂商名、模型包名与许可说明是生成时的语言。这里重算能力视图，变了时发
+   * `capabilities.updated`；重读全部模型包的状态，各发一条 `bundle.updated`。
+   */
+  relocalize(): void;
   /** 本地模型包的安装、修复、删除与自检（§6.3）。 */
   installs: ModelInstallService;
   /** 模型目录：在哪里、改到哪里（§6.3）。 */
@@ -464,6 +469,17 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
       modelsTopic.publish({ type: 'bundle.updated', bundle: status });
     });
   });
+  // 语言变了：能力视图重算（变了才发）；模型包状态全部重读、逐个发出，与上面的变化串在同一条链上。不比较新旧：状态里的许可
+  // 是按引用给的定义（`summary` 是读取时取的 getter），新旧两份读出来都是新语言，比不出变化。
+  const relocalize = () => {
+    void services.refresh().catch(() => {});
+    bundleChain = bundleChain.then(async () => {
+      for (const status of await catalog.list().catch(() => [])) {
+        bundles.set(status.bundleId, status);
+        modelsTopic.publish({ type: 'bundle.updated', bundle: status });
+      }
+    });
+  };
   const installs = new ModelInstallService({
     catalog,
     provider,
@@ -507,7 +523,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     await usage.flush();
     await store.flush();
   };
-  return { catalog, provider, embedding, services, jobs, pipelines, topic, modelsTopic, installs, dir, grants, voiceCloner, flushUsage };
+  return { catalog, provider, embedding, services, jobs, pipelines, topic, modelsTopic, relocalize, installs, dir, grants, voiceCloner, flushUsage };
 }
 
 /**

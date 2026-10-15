@@ -9,18 +9,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaoCutClient } from '@baocut/client';
 import type { AgentDriver, AgentEvent, AgentSession, ApprovalResponse, CreateSessionOptions, TurnSettings } from '@baocut/harness';
 import { Harness } from '@baocut/harness';
-import { applySettingsEvent, applySpaceEvent, applyTasksEvent } from '@baocut/client';
+import { applyModelsEvent, applySettingsEvent, applySpaceEvent, applyTasksEvent } from '@baocut/client';
 import { JobManager } from '@baocut/jobs';
 import { NodeInitiator, NodeService } from '@baocut/nodes';
 import {
   RpcError,
   SETTING_DEFAULTS,
   newId,
+  setLocale,
   type AgentsEvent,
   type AgentsView,
   type ConversationSnapshot,
   type DriverProbe,
   type Id,
+  type ModelsSnapshot,
   type SettingsEvent,
   type SettingsSnapshot,
   type SpaceSnapshot,
@@ -1198,6 +1200,44 @@ describe('Runtime（假 Driver）', () => {
     client = await connect();
     const { settings } = await client.request('settings.get', { keys: ['updates.autoCheck', 'downloads.directory', 'offline.strict'] });
     expect(settings).toEqual({ 'updates.autoCheck': false, 'downloads.directory': '/tmp/baocut-downloads', 'offline.strict': false });
+  });
+
+  it('界面语言：改了 ui.language，不做别的操作，models 主题里的厂商名与模型包名就换成新语言', async () => {
+    // 测试进程钉在简体中文（BAOCUT_LOCALE）：清掉它，让 Runtime 按 ui.language 换语言。
+    vi.stubEnv('BAOCUT_LOCALE', '');
+    try {
+      let mirror: ModelsSnapshot | null = null;
+      client.subscribeModels({
+        snapshot: (snapshot) => {
+          mirror = snapshot;
+        },
+        event: (event) => {
+          if (mirror) mirror = applyModelsEvent(mirror, event);
+        },
+      });
+      const vendor = () =>
+        (mirror as ModelsSnapshot | null)?.capabilities.synthesizeSpeech.providers.find((p) => p.providerId === 'volcengine-speech')?.label;
+      const diarizer = () => (mirror as ModelsSnapshot | null)?.bundles.find((b) => b.capability === 'diarize')?.label;
+      // 名字不随语言变、只有许可说明随语言变的模型包也要送到。
+      const license = () => (mirror as ModelsSnapshot | null)?.bundles.find((b) => b.bundleId === 'qwen3-asr-1.7b@mlx-8bit')?.license?.summary;
+      await until(() => vendor() === '火山引擎（豆包语音）' && diarizer() === '说话人区分' && license()?.startsWith('上游 Qwen3-ASR'));
+
+      await client.request('settings.set', { values: { 'ui.language': 'en' } });
+      await until(
+        () => vendor() === 'Volcengine (Doubao Speech)' && diarizer() === 'Speaker diarization' && license()?.startsWith('The upstream Qwen3-ASR'),
+      );
+
+      // 刷新页面（重新订阅拿快照）也是新语言。
+      const fresh = await connect();
+      let snapshot: ModelsSnapshot | null = null;
+      fresh.subscribeModels({ snapshot: (s) => void (snapshot = s), event: () => {} });
+      const reread = await until<ModelsSnapshot>(() => (snapshot as ModelsSnapshot | null) ?? undefined);
+      expect(reread.capabilities.synthesizeSpeech.providers.find((p) => p.providerId === 'volcengine-speech')?.label).toBe('Volcengine (Doubao Speech)');
+      fresh.close();
+    } finally {
+      vi.unstubAllEnvs();
+      setLocale('zh-Hans');
+    }
   });
 
   it('存着旧访问模式的会话记录：重启后会话的模式与任务卡片上的模式换成新值', async () => {

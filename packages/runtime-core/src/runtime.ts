@@ -20,6 +20,7 @@ import {
   customAgentProviderView,
   newId,
   nowIso,
+  onLocaleChange,
   resolveCookieBrowsers,
   type CustomAgentProvider,
   type Id,
@@ -298,6 +299,7 @@ export class RuntimeAlreadyRunningError extends Error {
 const TRASH_SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 const STOP_ORDER = [
+  'locale',
   'activity',
   'legacy-upgrade',
   'storage-gc',
@@ -612,6 +614,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       ...(options.jobFaults ? { faults: options.jobFaults } : {}),
     });
     artifacts = models.jobs.artifacts;
+    // Runtime 的语言跟着 `ui.language`（settings-topic.ts）：语言变了，带 Runtime 文字的主题重发，界面不用等下一次配置变化。
+    stops.add('locale', onLocaleChange(() => models.relocalize()), null);
     library.attachVoiceClones(
       new VoiceCloneService({
         store: library.store,

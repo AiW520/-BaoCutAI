@@ -1094,6 +1094,8 @@ export interface ModelsSnapshot {
 /**
  * `capabilities.updated`：配置、默认值、模型包或节点变化时发一条，带完整的新视图。
  * `bundle.updated`：一个本地模型包的状态变了（下载进度、安装、删除、检查、Worker 的加载与卸载），带它的完整状态。
+ * Runtime 的语言（`ui.language`）变了时两种都会发：能力视图变了的发 `capabilities.updated`，全部模型包各发一条 `bundle.updated`，
+ * 厂商名、模型包名与许可说明换成新语言。
  */
 export type ModelsEvent =
   { type: 'capabilities.updated'; capabilities: ModelCapabilitiesView } | { type: 'bundle.updated'; bundle: ModelBundleStatus };
