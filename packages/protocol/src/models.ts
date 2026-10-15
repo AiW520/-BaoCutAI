@@ -803,6 +803,11 @@ export interface ProviderVendorInfo {
   regions?: string[];
   website?: string;
   icon?: string;
+  /**
+   * 目录声明了、Runtime 还没实现的能力（§6.4 标 P1 的）：只给界面在 API 提供方详情里列出并标「尚未接入」，
+   * 不出现在 `capabilities` 里，也不能成为默认值。
+   */
+  planned?: ModelServiceCapability[];
 }
 export type ProviderVendorKind = 'vendor' | 'relay' | 'custom' | 'agent';
 
@@ -888,6 +893,8 @@ export interface ProviderCapabilityView<M extends ModelInfoBase = ModelInfoBase>
   kind: ProviderKind;
   label: string;
   config: ProviderConfigView | null;
+  /** 服务商目录的条目（同 `ProviderDescriptor.vendor`）：设置界面据此画图标、分组（中转、自建）与列出尚未接入的能力。 */
+  vendor?: ProviderVendorInfo;
 }
 
 export interface ModelRef {

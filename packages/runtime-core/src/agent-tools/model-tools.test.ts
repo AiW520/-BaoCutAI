@@ -193,7 +193,7 @@ describe('模型工具：能力视图与提交时的拒绝（不需要 ffprobe�
     const speech = before.body.capabilities[1];
     expect(speech).toMatchObject({ default: null, effective: null, usableProviders: [] });
     // 本机列出没装的合成模型包；在线的没有配置。
-    expect(speech.providers.map((p: Loose) => p.providerId)).toEqual(['local', 'openai', 'elevenlabs']);
+    expect(speech.providers.map((p: Loose) => p.providerId)).toEqual(['local', 'openai', 'google', 'elevenlabs', 'volcengine-speech']);
     expect(speech.providers[0]).toMatchObject({ kind: 'local', available: false, unavailableReason: 'not-installed' });
     expect(speech.providers[1]).toMatchObject({ kind: 'online', available: false, unavailableReason: 'not-configured', enabled: false });
     expect(speech.next).toContain('设置');

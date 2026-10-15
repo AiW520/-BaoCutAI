@@ -658,6 +658,13 @@ describe('OnlineProviderSource 的生成能力', () => {
       expect(Object.keys(views.google!.capabilities).sort()).toEqual(['generateImage', 'generateText', 'synthesizeSpeech', 'transcribe']);
       expect(Object.keys(views['volcengine-speech']!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(Object.keys(views.volcengine!.capabilities)).toEqual(['generateText']);
+      // 目录标 P1 的能力只在 `vendor.planned` 里，不报告为能力（AT-34）。
+      for (const view of Object.values(views)) {
+        for (const planned of view.vendor?.planned ?? []) expect(view.capabilities[planned], `${view.providerId} ${planned}`).toBeUndefined();
+      }
+      expect(views.volcengine!.vendor?.planned).toEqual(['generateImage']);
+      expect(views.siliconflow!.vendor).toMatchObject({ kind: 'relay', planned: ['synthesizeSpeech', 'transcribe'] });
+      expect(views.openai!.vendor?.planned).toBeUndefined();
       expect(Object.keys(views.elevenlabs!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(views.elevenlabs!.capabilities.synthesizeSpeech!.available).toBe(true);
       // 能克隆的 Provider 在合成能力上带 voiceClone；ElevenLabs 不要求授权声明录音，没有克隆接口的不带。

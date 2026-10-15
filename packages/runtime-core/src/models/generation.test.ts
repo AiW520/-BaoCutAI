@@ -154,11 +154,13 @@ describe('生成能力：选择与提交时的检查（不需要 ffprobe）', ()
     side = await startSide({});
     const { capabilities } = await side.client.request('models.capabilities', {});
     expect(capabilities.synthesizeSpeech).toMatchObject({ default: null, effective: null });
-    // 本地 Provider 列出语音合成（模型包还没装，不可用），在线的两家也都不可用。
+    // 本地 Provider 列出语音合成（模型包还没装，不可用），在线的各家也都不可用。
     expect(capabilities.synthesizeSpeech.providers.map((p) => [p.providerId, p.available])).toEqual([
       ['local', false],
       ['openai', false],
+      ['google', false],
       ['elevenlabs', false],
+      ['volcengine-speech', false],
     ]);
     // 图片生成同样列出本地 Provider（文生图模型包还没装），按出厂顺序排在在线服务之前（§6.2）。
     expect(capabilities.generateImage.providers.map((p) => p.providerId)).toEqual(['local', 'openai', 'google']);

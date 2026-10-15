@@ -185,7 +185,9 @@ describe('模型服务（经网关，不需要引擎）', () => {
     expect(capabilities.synthesizeSpeech.providers.map((p) => [p.providerId, p.available])).toEqual([
       ['local', false],
       ['openai', false],
+      ['google', false],
       ['elevenlabs', false],
+      ['volcengine-speech', false],
     ]);
 
     const error = await side.client.request('models.transcribe', { videoId: 'mov_1', assetId: 'ast_1' }).catch((e: unknown) => e);
@@ -245,6 +247,8 @@ describe('模型服务（经网关，不需要引擎）', () => {
     const { capabilities } = await side.client.request('models.capabilities', {});
     expect(capabilities.transcribe.default).toEqual({ providerId: 'openai', modelId: 'whisper-1' });
     expect(capabilities.transcribe.effective).toEqual({ providerId: 'openai', modelId: 'whisper-1', source: 'user-default' });
+    // 能力视图的每个在线 Provider 带目录条目（设置界面画图标、分组用）。
+    expect(capabilities.transcribe.providers.find((p) => p.providerId === 'openai')?.vendor).toMatchObject({ kind: 'vendor', icon: 'openai' });
     await until(() => side!.models()?.capabilities.transcribe.effective?.providerId === 'openai');
 
     // 换一个会被拒绝的密钥并要求验证：不保存，原来的配置不变。

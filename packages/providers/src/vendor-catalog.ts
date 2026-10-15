@@ -3,7 +3,8 @@ import { ProvidersConfig as PC } from '@baocut/protocol/messages/providers';
 
 /**
  * 服务商目录里的 OpenAI 兼容文本服务商（架构设计 §6.4 的目录表）：显示名、`kind`、官网、图标、基址（有国际与中国两个基址的
- * 按账号的 `region` 取）与内置模型表。只列已经实现的能力（`generateText`）；目录里标 P1 的语音、转写与生图不在这里声明。
+ * 按账号的 `region` 取）与内置模型表。只实现了 `generateText`；目录里标 P1 的语音、转写与生图只写进 `vendor.planned`，
+ * 界面据此标「尚未接入」，不作为能力报告。
  *
  * 模型表取自各家 2026-10 的模型列表，每家 2–4 个当前主力模型，第一个是默认。未逐个核对的限制取保守值：上下文
  * 128K token、单次输出 8192 token；已核对的按模型覆盖。推理强度只声明已核对的档位，适配器按服务商换算；
@@ -84,7 +85,7 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
     get label() {
       return PC.vendorQwen().text;
     },
-    vendor: { kind: 'vendor', regions: GLOBAL_CN, website: 'https://bailian.console.aliyun.com', icon: 'qwen' },
+    vendor: { kind: 'vendor', regions: GLOBAL_CN, website: 'https://bailian.console.aliyun.com', icon: 'qwen', planned: ['synthesizeSpeech', 'transcribe'] },
     regions: {
       global: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
       cn: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
@@ -115,7 +116,7 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
   },
   minimax: {
     label: 'MiniMax',
-    vendor: { kind: 'vendor', regions: GLOBAL_CN, website: 'https://platform.minimax.io', icon: 'minimax' },
+    vendor: { kind: 'vendor', regions: GLOBAL_CN, website: 'https://platform.minimax.io', icon: 'minimax', planned: ['synthesizeSpeech'] },
     regions: { global: 'https://api.minimax.io/v1', cn: 'https://api.minimaxi.com/v1' },
     jsonMode: 'json_object',
     models: [text('MiniMax-M3', 'MiniMax M3', true), text('MiniMax-M2.7', 'MiniMax M2.7')],
@@ -124,7 +125,7 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
     get label() {
       return PC.vendorVolcengine().text;
     },
-    vendor: { kind: 'vendor', website: 'https://www.volcengine.com/product/ark', icon: 'volcengine' },
+    vendor: { kind: 'vendor', website: 'https://www.volcengine.com/product/ark', icon: 'volcengine', planned: ['generateImage'] },
     regions: { cn: 'https://ark.cn-beijing.volces.com/api/v3' },
     jsonMode: 'json_object',
     // Ark model ids include hyphenated versions and the release date.
@@ -135,7 +136,7 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
     get label() {
       return PC.vendorXai().text;
     },
-    vendor: { kind: 'vendor', website: 'https://console.x.ai', icon: 'xai' },
+    vendor: { kind: 'vendor', website: 'https://console.x.ai', icon: 'xai', planned: ['generateImage'] },
     regions: { global: 'https://api.x.ai/v1' },
     jsonMode: 'json_schema',
     models: [text('grok-4.7', 'Grok 4.7', true), text('grok-4.7-mini', 'Grok 4.7 Mini')],
@@ -153,7 +154,7 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
   },
   groq: {
     label: 'Groq',
-    vendor: { kind: 'vendor', website: 'https://console.groq.com', icon: 'groq' },
+    vendor: { kind: 'vendor', website: 'https://console.groq.com', icon: 'groq', planned: ['transcribe'] },
     regions: { global: 'https://api.groq.com/openai/v1' },
     jsonMode: 'json_schema',
     models: [text('openai/gpt-oss-120b', 'GPT-OSS 120B', true), text('llama-3.3-70b-versatile', 'Llama 3.3 70B')],
@@ -173,7 +174,7 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
     get label() {
       return PC.vendorSiliconflow().text;
     },
-    vendor: { kind: 'relay', website: 'https://cloud.siliconflow.cn', icon: 'siliconflow' },
+    vendor: { kind: 'relay', website: 'https://cloud.siliconflow.cn', icon: 'siliconflow', planned: ['synthesizeSpeech', 'transcribe'] },
     regions: { cn: 'https://api.siliconflow.cn/v1' },
     jsonMode: 'json_object',
     models: [text('zai-org/GLM-5.3', 'GLM-5.3', true), text('moonshotai/Kimi-K3', 'Kimi K3'), text('Qwen/Qwen3.7-Max', 'Qwen3.7 Max')],

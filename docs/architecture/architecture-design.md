@@ -1407,7 +1407,7 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 
 在线 Provider 全部用 TypeScript 实现，每家 API 提供方一组适配器（按能力各一个），处理参数、认证、提交、轮询、取消、结果下载和错误归一化。它们不经过 Model Worker，不占本地模型的队列；每个 Provider 有自己的并发上限。供应商的输入上限由适配器处理：超过单次请求上限的音频由适配器切片提交并把时间合并回素材时钟，切片边界落在静音处。
 
-**API 提供方目录**。在线 Provider 由下面这张目录定义。目录在 Runtime 里只有一份：Provider 注册表、设置界面与原型都读同一张表，`providerId` 不得另起别名（`gemini`、`dashscope`、`zai`、`volcano`、`volcano-ark` 这些旧名不再使用；火山的方舟是 `volcengine`，豆包语音是 `volcengine-speech`：两边的密钥各在各的控制台签发，方舟的密钥调不了语音，所以是两家提供方）。「目录声明」是这家提供方开放、界面可以展示的能力；「实现」是 Runtime 真正能调用的子集。Provider 描述（§6.1）只报告实现了的能力：标 P1 的能力在实现之前不得报告为可用，也不得成为默认值的可选项。每家的内置模型表（2–4 个当前主力模型，取自官方文档）随目录维护，本文不逐一列出；下面的适配器表只写有专门适配器的模型。
+**API 提供方目录**。在线 Provider 由下面这张目录定义。目录在 Runtime 里只有一份：Provider 注册表、设置界面与原型都读同一张表，`providerId` 不得另起别名（`gemini`、`dashscope`、`zai`、`volcano`、`volcano-ark` 这些旧名不再使用；火山的方舟是 `volcengine`，豆包语音是 `volcengine-speech`：两边的密钥各在各的控制台签发，方舟的密钥调不了语音，所以是两家提供方）。「目录声明」是这家提供方开放、界面可以展示的能力；「实现」是 Runtime 真正能调用的子集。Provider 描述（§6.1）只报告实现了的能力：标 P1 的能力在实现之前不得报告为可用，也不得成为默认值的可选项；它们只写在目录条目的 `vendor.planned` 里，界面据此在 API 提供方详情里列出并标「尚未接入」。每家的内置模型表（2–4 个当前主力模型，取自官方文档）随目录维护，本文不逐一列出；下面的适配器表只写有专门适配器的模型。
 
 | `providerId` | 显示名 | `kind` | 目录声明的能力 | 实现 | 基址（国际 / 中国） | 认证 | 图标 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1430,7 +1430,7 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 | `custom:<名字>` | 用户起的名字 | `custom` | 用户声明 | 用户声明的（兼容） | 用户填写 | Bearer，密钥可选 | 首字母头像 |
 | `agent:codex` | Codex | `agent` | `generateImage` | 全部（§6.9） | — | 没有密钥 | `codex-color` |
 
-- **`kind`** 是 `vendor`（模型厂商）、`relay`（中转平台）、`custom`（自建端点）或 `agent`（智能体，§6.9）。`agent` 的 Provider 没有账号，不在 API 提供方列表里，只出现在能力的模型选择里。
+- **`kind`** 是 `vendor`（模型厂商）、`relay`（中转平台）、`custom`（自建端点）或 `agent`（智能体，§6.9）。目录条目（`vendor`：`kind`、`regions`、`website`、`icon`、`planned`）随 Provider 描述给出，能力视图的每个 Provider 也带一份，设置界面不另查目录。`agent` 的 Provider 没有账号，不在 API 提供方列表里，只出现在能力的模型选择里。
 - **一家提供方一组适配器**。表里标「兼容」的文本提供方共用一个 OpenAI 兼容的 Chat Completions 适配器（与 `custom:<名字>` 同一份实现），彼此只差基址与内置模型表；Anthropic 用自己的 Messages 适配器。`custom:<名字>` 的机制不变：用户给出地址、密钥与模型名，接入其他供应商或自建服务，能力描述由用户声明，按 `declared` 层对待（§3.6）。音色克隆（§5.9）只接 ElevenLabs（Gemini 的复刻音色要另录一段授权声明，还没接）；`separateAudio` 没有在线适配器（§6.1）。
 - **基址**。有国际与中国两个基址的提供方按账号的 `region`（`global` 或 `cn`，§6.8）取用；提供方与账号都可以改写基址，账号的改写优先，其次是提供方的，最后是目录的预设。
 - **图标**取自 lobe-icons（MIT），按 `providerId` 重命名后随界面分发，许可与清单见仓库的 `THIRD_PARTY_NOTICES.md`；各厂商的标志只用于标识 API 提供方。缺图标的用首字母头像。

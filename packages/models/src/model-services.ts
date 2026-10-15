@@ -445,7 +445,14 @@ export class ModelServices {
       for (const p of providers) {
         const cap = p.capabilities[capability];
         if (!cap) continue;
-        entries.push({ providerId: p.providerId, kind: p.kind, label: p.label, config: p.config, ...structuredClone(cap) });
+        entries.push({
+          providerId: p.providerId,
+          kind: p.kind,
+          label: p.label,
+          config: p.config,
+          ...(p.vendor ? { vendor: structuredClone(p.vendor) } : {}),
+          ...structuredClone(cap),
+        });
       }
       // 生图按出厂默认的顺序列（§6.2，2026-10-12）：智能体、本机、在线，节点最后；同类保持原来的顺序。
       if (capability === 'generateImage') entries.sort((a, b) => IMAGE_KIND_ORDER.indexOf(a.kind) - IMAGE_KIND_ORDER.indexOf(b.kind));
