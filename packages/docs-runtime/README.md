@@ -66,7 +66,7 @@
 - 打进页面、lfile 运行时与编辑器附加脚本的 npm 包按实际打进的模块收集许可：Vite 的模块图加上资源插件记下的两处 esbuild 输入（`tools/asset-plugin.ts` 的 `editorAssets(root, bundledInputs)`），输出到产物的 `third-party-licenses.txt`（`apps/docs-editor/licenses.mjs`），见根目录 [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md)「协作文档编辑器」。
 - 图标字体（Anthropicons）不是仓库约定的 S2 图标（[仓库约定 §4](../../docs/repo-conventions.md#4-界面图标)），以后要换；它的分发许可也待确认。
 - 依赖版本跟原工程对齐（`package.json` 钉住原工程的版本；`@base-ui/react` 1.7.0、`@tanstack/*` 等装在本包的 `node_modules`），与原工程安装结果不同的（用的是根目录 `node_modules` 里已有的版本）：React / ReactDOM 19.3.0（原 19.2.5）、`@tiptap/starter-kit` 嵌套的 `@tiptap/core` 等与 `@tiptap/pm` 3.32.0（原 3.31.4）、`marked` 18.1.1（原 18.1.0）、`mdast-util-from-markdown` 2.0.3（原 2.1.0）、`mdast-util-to-markdown` 2.1.3（原 2.2.0）；`use-sync-external-store` 本包装的是原版的 1.6.0，根目录的 `wouter`、`zustand` 引用根目录的 1.7.0，两份都打了进去。
-- lfile 运行时照原工程的资源插件不压缩（`minify: false`），12.4 MB（12,433,053 字节；原版压缩过，4.9 MB）。
+- lfile 运行时与编辑器附加脚本都压缩（`tools/asset-plugin.ts` 的 `minify: true`，带 `BaoCut:` 注释）。原工程的资源插件不压缩，原版的产物是压缩过的（4.9 MB）。运行时从约 12.4 MB 降到约 5.2 MB（5,154,387 字节），附加脚本从约 2.3 MB 降到约 1.9 MB（大头是内嵌的 KaTeX 字体）；页面取运行时、转交给编辑器 iframe、iframe 解析它都快一些。
 
 ## 验证
 

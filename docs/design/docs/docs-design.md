@@ -48,6 +48,7 @@
 
 - `packages/docs-runtime/`：Claude Docs 前端的还原源码（D1），只做在 BaoCut 里跑起来必须的改动，每处 `// BaoCut:` 注释说明为什么，包的 README 列出全部。
 - `apps/docs-editor/`：Vite 构建，`npm run build:docs-editor` 输出到 `apps/docs-editor/dist/`（编辑器页面、`artifact-type/` 下的运行时与字体、`third-party-licenses.txt`）；输入没变时跳过，`--force` 重建。入口先导入 `@baocut/docs/editor/install` 装好宿主 shim（必须在编辑器的任何模块求值之前），再加载编辑器。
+- 首屏：lfile 运行时与编辑器附加脚本压缩后打包（运行时约 12.4 MB → 5.2 MB）；页面模板在 body 开头先挂一个隐藏的空沙箱 iframe，让浏览器提前起编辑器 iframe 要用的渲染进程（原版在 Frame 里提前建好编辑器 iframe，独立页面没有这一步），编辑器就绪（`lfile-prelude-ready`）或 20 秒后移除。本机实测从编辑器 iframe 建好到正文画出约 0.52 秒降到约 0.31 秒（各 3 次的平均）。
 - 构建产物的位置：`BAOCUT_DOCS_EDITOR_DIST`，打包后的应用里是 `<resources>/docs-editor`，开发时是仓库的 `apps/docs-editor/dist`；都没有时 `docs.open` 照常给地址、`editorAvailable` 为 false，界面显示不可用的说明。
 
 ## 4. 服务端：`packages/docs`
@@ -171,4 +172,4 @@
 - **运行时的维护**：还原的前端很大，出了问题要对照 `originals/` 里的原始 bundle 排查；BaoCut 的改动集中在 `BaoCut:` 注释处。
 - **协议漂移**：door 与连接器是按 Claude Docs 的行为重写的，不是原来的服务端代码；编辑器发出的新 op 或新字段要在 `packages/docs` 补上，否则编辑器里会报保存失败。
 - **图标与字体**：编辑器界面的图标与字体随包分发，不是仓库约定的 S2 图标（[仓库约定 §4](../../repo-conventions.md#4-界面图标)）。
-- **体积**：编辑器 bundle 只在打开文档标签时加载，不进主界面的包。
+- **体积**：编辑器 bundle 只在打开文档标签时加载，不进主界面的包。功能区隐藏的编辑器标签页保持挂载，重新加载页面时每个开着的文档标签都会完整启动一遍编辑器，开着的文档多时当前文档出来得慢。

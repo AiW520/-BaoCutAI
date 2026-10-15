@@ -15,6 +15,10 @@
       - 不带 README 注释与 meta（写给托管平台上的 Claude 看的）；标题是 Docs 不是 Claude Docs。
       - 原页面引用打好的分块（./artifact-type/index-*.js 等）与样式表 ./artifact-type/index-7E8lmnbp.css；这里是 Vite 的入口 src/main.ts
         与逐字节相同的 /assets/docs.css（来自 packages/docs-runtime/public/，构建后是相对地址）。
+      - body 开头多一段内联脚本，提前挂一个隐藏的空沙箱 iframe（sandbox="allow-scripts"，与编辑器 iframe 相同）。浏览器把沙箱 iframe
+        放进单独的渲染进程，第一次要新起进程（空闲时约 0.3 秒，加载中更久）；原版在 Frame 里提前建好编辑器 iframe 来藏这段时间，
+        独立页面没有这一步。提前挂上之后，应用建编辑器 iframe 时进程已经在了。编辑器发出 lfile-prelude-ready（进程已归它用）
+        或 20 秒后移除。
     -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Docs</title>
@@ -22,6 +26,26 @@
     <link rel="stylesheet" href="/assets/docs.css" />
   </head>
   <body>
+    <script>
+      // 提前起编辑器 iframe 要用的沙箱进程（见开头注释）。
+      (function () {
+        var warm = document.createElement('iframe');
+        warm.setAttribute('sandbox', 'allow-scripts');
+        warm.setAttribute('aria-hidden', 'true');
+        warm.tabIndex = -1;
+        warm.style.display = 'none';
+        warm.srcdoc = '';
+        document.body.appendChild(warm);
+        var timer = setTimeout(done, 20000);
+        addEventListener('message', done);
+        function done(event) {
+          if (event && !(event.data && event.data.type === 'lfile-prelude-ready')) return;
+          removeEventListener('message', done);
+          clearTimeout(timer);
+          warm.remove();
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -83,7 +83,9 @@ export function editorAssets(root: string, bundledInputs?: Set<string>): Plugin 
       platform: "browser",
       format: "esm",
       target: "es2022",
-      minify: false,
+      // BaoCut: 压缩（原工程的插件不压缩，原版的产物是压缩过的）：12.4 MB 降到约 5.2 MB，页面取它、转交给编辑器 iframe、
+      // iframe 解析它都快一些。
+      minify: true,
       // BaoCut: 见 nodeModulesFile；metafile 给 recordInputs。
       plugins: [esbuildNodeModulesPaths],
       metafile: true,
@@ -135,7 +137,8 @@ export function editorAssets(root: string, bundledInputs?: Set<string>): Plugin 
         write: false,
         platform: "browser",
         format: "iife",
-        minify: false,
+        // BaoCut: 压缩，理由同上（2.3 MB 降到约 1.9 MB，大头是内嵌的 KaTeX 字体）。
+        minify: true,
         target: "es2022",
         // BaoCut: metafile 给 recordInputs。
         metafile: true,
