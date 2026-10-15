@@ -554,7 +554,7 @@ export function initializeApplicationRootStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/lazy").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result._,
+              result.ironScopeModule,
           ),
         mapPreloadDependencies([10, 1, 2, 0, 3]),
         import.meta.url,
@@ -573,7 +573,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -591,7 +591,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -622,7 +622,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -640,7 +640,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -658,7 +658,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -676,7 +676,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -694,7 +694,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -712,7 +712,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -730,7 +730,7 @@ export function initializeApplicationRootStep1(): void {
           import("../../platform/lazy")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.y,
+                result.unavailablePagesModule,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -802,7 +802,7 @@ export function initializeApplicationRootStep1(): void {
     (..._extraArguments: unknown[]): Dynamic =>
       import("../../platform/index")
         .then(
-          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.og,
+          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthMUTATORS,
         )
         .then(
           (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -815,7 +815,7 @@ export function initializeApplicationRootStep1(): void {
     preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import("../../platform/lazy").then(
-          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result._,
+          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.ironScopeModule,
         ),
       mapPreloadDependencies([10, 1, 2, 0, 3]),
       import.meta.url,

@@ -4,8 +4,8 @@ import {
   React,
   create,
   jsxRuntime,
-  preloadTImport,
-  rolldownNImport,
+  preloadModule,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   collectObservabilityTelemetryValue,
@@ -724,7 +724,7 @@ function loadDataModelSchemasUseContainerStore(
   (async (..._extraArguments: unknown[]): Promise<undefined> => {
     try {
       let { useContainerStore: preloadTImport2 }: Dynamic =
-        await preloadTImport(
+        await preloadModule(
           async (..._extraArguments: unknown[]): Promise<Dynamic> => {
             let { useContainerStore: useContainerStore2 }: Dynamic =
               await Promise.resolve().then(
@@ -2337,7 +2337,7 @@ export function initializeDataModelSchemas2Step2(): void {
   if (typeof window !== "undefined") {
     (window as Dynamic).__workbookStore = useWorkbookStore;
   }
-  (DataModelSchemasParseLineParam = rolldownNImport({
+  (DataModelSchemasParseLineParam = createLiveModuleNamespace({
     parseLineParam: (..._extraArguments: unknown[]): Dynamic => parseLineParam,
     parseTarget: (..._extraArguments: unknown[]): Dynamic => parseTarget,
     useContainerStore: (..._extraArguments: unknown[]): Dynamic =>
@@ -2802,13 +2802,13 @@ export function initializeDataModelSchemas2Step2(): void {
         if (!(!options2 || options3 || options4) && options2.state === `live`) {
           {
             let { useLinesStore: preloadTImport2 }: Dynamic =
-              await preloadTImport(
+              await preloadModule(
                 async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                   let { useLinesStore: useLinesStore }: Dynamic = await import(
                     "../lazy"
                   ).then(
                     (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                      result.qt,
+                      result.linesStoreModule,
                   );
                   return {
                     useLinesStore: useLinesStore,
@@ -2828,13 +2828,13 @@ export function initializeDataModelSchemas2Step2(): void {
             ..._extraArguments: unknown[]
           ): Promise<undefined> => {
             let { useLinesStore: preloadTImport2 }: Dynamic =
-              await preloadTImport(
+              await preloadModule(
                 async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                   let { useLinesStore: useLinesStore }: Dynamic = await import(
                     "../lazy"
                   ).then(
                     (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                      result.qt,
+                      result.linesStoreModule,
                   );
                   return {
                     useLinesStore: useLinesStore,
@@ -2952,7 +2952,7 @@ export function initializeDataModelSchemas2Step2(): void {
       },
     );
   }
-  (DataModelSchemasBULKATTACHTHRESHOLD = rolldownNImport({
+  (DataModelSchemasBULKATTACHTHRESHOLD = createLiveModuleNamespace({
     BULK_ATTACH_THRESHOLD: (..._extraArguments: unknown[]) => 5,
     RASTER_IMAGE: (..._extraArguments: unknown[]): Dynamic => RASTER_IMAGE,
     ingestFiles: (..._extraArguments: unknown[]): Dynamic => ingestFiles,

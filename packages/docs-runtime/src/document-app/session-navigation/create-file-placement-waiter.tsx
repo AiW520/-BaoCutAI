@@ -1567,7 +1567,7 @@ export function initializeSessionNavigationCreateFilePlacementWaiterStep1(): voi
     preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import("../../platform/index").then(
-          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.zg,
+          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthCodeModal,
         ),
       mapPreloadDependencies([0, 1, 2, 3]),
       import.meta.url,
@@ -1586,7 +1586,7 @@ export function initializeSessionNavigationCreateFilePlacementWaiterStep1(): voi
     preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import("../../platform/index").then(
-          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.zg,
+          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthCodeModal,
         ),
       mapPreloadDependencies([0, 1, 2, 3]),
       import.meta.url,
@@ -1605,7 +1605,7 @@ export function initializeSessionNavigationCreateFilePlacementWaiterStep1(): voi
     preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import("../../platform/index").then(
-          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.zg,
+          (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthCodeModal,
         ),
       mapPreloadDependencies([0, 1, 2, 3]),
       import.meta.url,

@@ -1,26 +1,26 @@
 /** version-bar: restored from VersionBar-BaNSAcfT.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  HM as loadReact,
-  IE as resolveUiProviderAndLayersUseContext2,
-  Sc as resolvePlatformSyncAndRoutingShowChanges,
-  UE as loadJsxRuntime,
-  Vs as updatePlatformSyncAndRoutingRestoreAsk,
-  fc as PlatformSyncAndRoutingAssign2,
-  hC as Button,
-  i as updatePlatformLiveDocumentAndHistoryBars,
-  n as updatePlatformLiveDocumentAndHistoryCompareAsk,
-  s as resolvePlatformLiveDocumentAndHistoryPane,
-  tc as updatePlatformSyncAndRoutingShowChanges,
+  Button,
+  loadJsxRuntime,
+  loadReact,
+  PlatformSyncAndRoutingAssign2,
+  resolvePlatformLiveDocumentAndHistoryPane,
+  resolvePlatformSyncAndRoutingShowChanges,
+  resolveUiProviderAndLayersUseContext2,
+  updatePlatformLiveDocumentAndHistoryBars,
+  updatePlatformLiveDocumentAndHistoryCompareAsk,
+  updatePlatformSyncAndRoutingRestoreAsk,
+  updatePlatformSyncAndRoutingShowChanges,
 } from "../platform/index";
-import { j as Menu } from "../design-system/index";
+import { Menu } from "../design-system/index";
 import {
-  W as TabRailButton,
-  a as PagebarSeparator,
-  n as PagebarStrip,
-  r as PagebarMenuTrigger,
-  t as PagebarCommandItem,
+  PagebarCommandItem,
+  PagebarMenuTrigger,
+  PagebarSeparator,
+  PagebarStrip,
+  TabRailButton,
 } from "../document-app/index";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();

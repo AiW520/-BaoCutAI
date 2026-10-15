@@ -3,10 +3,10 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   create,
-  helloBImport,
-  helloYImport,
+  frameTimings,
+  subscribeFrameTimings,
   inFrame,
-  preloadTImport,
+  preloadModule,
 } from "../../platform/dependencies";
 import {
   collectObservabilityTelemetryValue,
@@ -867,7 +867,7 @@ function updateCommentsStoreBacking(
     updateCommentsStoreBacking3,
   );
   if (commentsStoreMap21Entry === undefined) {
-    let preloadTImport2: Dynamic = preloadTImport(
+    let preloadTImport2: Dynamic = preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import("../outbox-backing").then(
           (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -1918,7 +1918,7 @@ function resolveCommentsStorePaint(
                   );
                 }
               });
-            resolveCommentsStorePaintHandler = helloYImport(
+            resolveCommentsStorePaintHandler = subscribeFrameTimings(
               (
                 commentsStorePaint2?: Dynamic,
                 ..._extraArguments: unknown[]
@@ -3531,7 +3531,7 @@ export function initializeCommentsStore4Step9(): void {
       ),
   });
   (resolveCommentsStorePaint2 = (..._extraArguments: unknown[]) => {
-    let at2: Dynamic = helloBImport().at;
+    let at2: Dynamic = frameTimings().at;
     return at2.paint !== undefined || at2.pixels !== undefined;
   });
   (commentsStoreSet16 = new (Set as Dynamic)([

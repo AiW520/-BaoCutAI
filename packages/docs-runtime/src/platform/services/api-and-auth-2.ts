@@ -3,12 +3,12 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   create,
-  helloXImport,
+  FrameOfflineError,
   inFrame,
   literal,
   number,
-  preloadTImport,
-  rolldownNImport,
+  preloadModule,
+  createLiveModuleNamespace,
   strictObject,
   string,
 } from "../dependencies";
@@ -2036,7 +2036,7 @@ async function loadPlatformApiAndAuthRoomsEnabled(
   let {
     roomsEnabled: preloadTImport2,
     useWorkbookStore: preloadTImport3,
-  }: Dynamic = await preloadTImport(
+  }: Dynamic = await preloadModule(
     async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let {
         roomsEnabled: roomsEnabled,
@@ -2065,7 +2065,7 @@ async function loadPlatformApiAndAuthRoomsEnabled(
   let {
     readValidated: preloadTImport4,
     isTombstone: preloadTImport5,
-  }: Dynamic = await preloadTImport(
+  }: Dynamic = await preloadModule(
     async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let {
         readValidated: readValidated2,
@@ -2800,7 +2800,7 @@ export function initializePlatformApiAndAuth2Step1(): void {
       this.emit(`close`);
     }
   });
-  (PlatformApiAndAuthPAGEGONEDETAIL = rolldownNImport({
+  (PlatformApiAndAuthPAGEGONEDETAIL = createLiveModuleNamespace({
     PAGE_GONE_DETAIL: (..._extraArguments: unknown[]) => PAGE_GONE_DETAIL,
     ackOf: (..._extraArguments: unknown[]): Dynamic => ackOf,
     apiFetcher: (..._extraArguments: unknown[]): Dynamic => apiFetcher,
@@ -2862,7 +2862,7 @@ export function initializePlatformApiAndAuth2Step1(): void {
   ) =>
     inFrame()
       ? Promise.reject(
-          new (helloXImport as Dynamic)(
+          new (FrameOfflineError as Dynamic)(
             `${options?.method ?? `GET`} ${routePattern(apiFetcher2)}`,
           ),
         )

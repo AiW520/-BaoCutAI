@@ -7,7 +7,14 @@ import { RecoveryTextPanel } from "../document-recovery";
 
 /** BaoCut: room document frame effects; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Ed as resolveCommentsStoreValue30, No as DataOperationControlNodeGone2, Po as DataOperationControlPageGone, jM as resolvePlatformFeatureFlagsEnabled2, ng as DataModelSchemasDragging, ni as EditorSelectionAndTablesAsk } from "../../platform/index";
+import {
+  DataModelSchemasDragging,
+  DataOperationControlNodeGone2,
+  DataOperationControlPageGone,
+  EditorSelectionAndTablesAsk,
+  resolveCommentsStoreValue30,
+  resolvePlatformFeatureFlagsEnabled2,
+} from "../../platform/index";
 export function runRoomPage195Effect(roomPageContext: {
   documentCommandsSaidRef: Dynamic;
   enabledRef3: Dynamic;

@@ -3,10 +3,10 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   Namespace,
   React,
-  helloPImport,
+  frameHostEnvironment,
   inFrame,
   originalElementProps,
-  preloadTImport,
+  preloadModule,
 } from "../dependencies";
 import {
   collectObservabilityTelemetryValue,
@@ -227,7 +227,7 @@ function frameHotProvide(
 
 function installFrameHot(
   installFrameHot2: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
-    preloadTImport(
+    preloadModule(
       (..._extraArguments: unknown[]): Dynamic => import("../shell-hot"),
       [],
       import.meta.url,
@@ -485,7 +485,7 @@ function installFrameHostChromeWitness(
   ..._extraArguments: unknown[]
 ): undefined {
   if (observabilityBrowserAndOperationEventsState5 !== undefined) return;
-  let helloPImport2: Dynamic = inFrame() ? helloPImport() : null;
+  let helloPImport2: Dynamic = inFrame() ? frameHostEnvironment() : null;
   observabilityBrowserAndOperationEventsState5 =
     isEditorExtensionsNAe(helloPImport2);
   observabilityBrowserAndOperationEventsState6 =
@@ -508,7 +508,7 @@ var observabilityBrowserAndOperationEventsState7: Dynamic;
 function installFrameHostViewport(..._extraArguments: unknown[]): undefined {
   if (observabilityBrowserAndOperationEventsState7 === undefined) {
     observabilityBrowserAndOperationEventsState7 =
-      clearEditorExtensionsBottomInset(inFrame() ? helloPImport() : null, {
+      clearEditorExtensionsBottomInset(inFrame() ? frameHostEnvironment() : null, {
         ceiling: (..._extraArguments: unknown[]) =>
           typeof window === "undefined" ? 0 : window.innerHeight,
       });
@@ -529,7 +529,7 @@ var observabilityBrowserAndOperationEventsState8: Dynamic;
 
 function installFrameClaudeActivity(..._extraArguments: unknown[]): undefined {
   observabilityBrowserAndOperationEventsState8 ??= clearEditorExtensionsWAe(
-    inFrame() ? helloPImport() : null,
+    inFrame() ? frameHostEnvironment() : null,
   );
 }
 
@@ -600,7 +600,7 @@ function onFrameGotoAnchor(
         ((observabilityBrowserAndOperationEventsValue_16 = true),
         installEditorExtensionsHost(
           {
-            host: helloPImport(),
+            host: frameHostEnvironment(),
             log: resolveObservabilityBrowserAndOperationEventsWarn,
           },
           (
@@ -1186,7 +1186,7 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
     frameAskClaude2?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic =>
-    installPlatformSessionAndSourcesReason(helloPImport(), frameAskClaude2, {
+    installPlatformSessionAndSourcesReason(frameHostEnvironment(), frameAskClaude2, {
       schedule: (
         frameAskClaude3?: Dynamic,
         options?: Dynamic,
@@ -1265,7 +1265,7 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
     ..._extraArguments: unknown[]
   ): Dynamic =>
     (observabilityBrowserAndOperationEventsState10 ??=
-      updateEditorExtensionsActions(inFrame() ? helloPImport() : null, {
+      updateEditorExtensionsActions(inFrame() ? frameHostEnvironment() : null, {
         schedule: (
           observabilityBrowserAndOperationEventsSchedule?: Dynamic,
           options?: Dynamic,
@@ -1291,7 +1291,7 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
   ): Dynamic =>
     (observabilityBrowserAndOperationEventsState11 ??=
       resolveEditorAnchorsAndMentionsPost(
-        inFrame() ? helloPImport() : null,
+        inFrame() ? frameHostEnvironment() : null,
       )).post(frameMentioned2, options));
   (frameHostChromeActions = (
     frameHostChromeActions2?: Dynamic,
@@ -1346,7 +1346,7 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
   ): Dynamic =>
     (observabilityBrowserAndOperationEventsState12 ??=
       resolvePlatformSessionAndSourcesHost({
-        host: inFrame() ? helloPImport() : null,
+        host: inFrame() ? frameHostEnvironment() : null,
         schedule: (
           observabilityBrowserAndOperationEventsHost2?: Dynamic,
           options?: Dynamic,
@@ -1396,7 +1396,7 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
   ): Dynamic =>
     (observabilityBrowserAndOperationEventsState13 ??=
       isObservabilityBrowserAndOperationEventsJe(
-        inFrame() ? helloPImport() : null,
+        inFrame() ? frameHostEnvironment() : null,
         {
           schedule: (
             observabilityBrowserAndOperationEventsSchedule2?: Dynamic,
@@ -1727,11 +1727,11 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
     }));
   (ObservabilityBrowserAndOperationEventsThen = resolvePlatformLoadingAndStatusCatch(
       (..._extraArguments: unknown[]): Dynamic =>
-        preloadTImport(
+        preloadModule(
           (..._extraArguments: unknown[]): Dynamic =>
             import("../../document-app/uploads/file-selector").then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.t,
+                result.fileSelectorModule,
             ),
           collectObservabilityTelemetryValue([3, 1]),
           import.meta.url,

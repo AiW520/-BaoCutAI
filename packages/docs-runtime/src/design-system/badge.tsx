@@ -3,8 +3,8 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
   UiOverlaysAndIconsCustomIcon,
-  appKDImport,
-  appKEImport,
+  clsx,
+  mergeProps,
   originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
@@ -138,7 +138,7 @@ export function initializeBadgeStep1(): void {
           ? CommentsStyles10
           : `pb-[0.05em]`;
       let value7: Dynamic = input4 || value2;
-      let value8: Dynamic = appKDImport(
+      let value8: Dynamic = clsx(
         `cds-reset relative inline-flex shrink-0 items-center justify-center`,
         `before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']`,
         `before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]`,
@@ -204,7 +204,7 @@ export function initializeBadgeStep1(): void {
             )
           : (0, React.cloneElement)(
               input5,
-              appKEImport(
+              mergeProps(
                 {
                   className: resolveUiDesignSystemValue2(value8, value9),
                   "aria-label": value7,

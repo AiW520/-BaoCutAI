@@ -1,30 +1,33 @@
 /** doc-layout-control: restored from DocLayoutControl-B2yicOym.js. */
 import { originalJsxProps } from "../../react-runtime/jsx-runtime";
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../../boot/module-runtime";
+import { toModuleNamespace } from "../../boot/module-runtime";
 import {
-  BM as resolvePlatformFeatureFlagsHasFocus,
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  VM as usePlatformFeatureFlagsPress,
-  ls as resolveDataOperationControlValue3,
-  vx as toast,
+  loadJsxRuntime,
+  loadReact,
+  resolveDataOperationControlValue3,
+  resolvePlatformFeatureFlagsHasFocus,
+  toast,
+  usePlatformFeatureFlagsPress,
 } from "../../platform/index";
-import { A as Popover, h as SegmentedControl } from "../../design-system/index";
 import {
-  Ct as serializeDocumentLayout,
-  St as equalDocumentLayouts,
-  W as TabRailButton,
-  _t as getDocumentDisplayGeneration,
-  bt as pickDocumentLayout,
-  ht as PAGE_WIDTH_PROPERTY,
-  i as canClosePagebarOnFocusLeave,
-  vt as clearDocumentLayoutPickIfCurrent,
-  xt as applyDocumentLayoutIfCurrent,
-  yt as parseDocumentLayout,
+  Popover,
+  SegmentedControl,
+} from "../../design-system/index";
+import {
+  applyDocumentLayoutIfCurrent,
+  canClosePagebarOnFocusLeave,
+  clearDocumentLayoutPickIfCurrent,
+  equalDocumentLayouts,
+  getDocumentDisplayGeneration,
+  PAGE_WIDTH_PROPERTY,
+  parseDocumentLayout,
+  pickDocumentLayout,
+  serializeDocumentLayout,
+  TabRailButton,
 } from "../index";
-import { t as PropertyRow } from "../../design-system/property-row";
-import { t as enqueueStyleWrite } from "../../document/style-write-chain";
+import { PropertyRow } from "../../design-system/property-row";
+import { enqueueStyleWrite } from "../../document/style-write-chain";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();
 function readDocumentLayoutChoice(

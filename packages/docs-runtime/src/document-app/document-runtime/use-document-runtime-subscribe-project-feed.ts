@@ -529,7 +529,7 @@ function useNodeEngineNames(
           let { subscribeProjectFeed: subscribeProjectFeed2 }: Dynamic =
             await import("../../platform/index").then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.Fg,
+                result.PlatformApiAndAuthFEEDTOPIC,
             );
           return {
             subscribeProjectFeed: subscribeProjectFeed2,
@@ -725,7 +725,7 @@ function useDocumentRuntimeSubscribeProjectFeed(
           let { subscribeProjectFeed: subscribeProjectFeed2 }: Dynamic =
             await import("../../platform/index").then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.Fg,
+                result.PlatformApiAndAuthFEEDTOPIC,
             );
           return {
             subscribeProjectFeed: subscribeProjectFeed2,

@@ -3,7 +3,7 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   atom,
   createStore,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   dataEnumsAndValidationSuiteProjectValues,
@@ -567,7 +567,7 @@ export function initializeDataOperationEngine4Step1(): void {
     }
     return fromEntries;
   })();
-  (DataOperationEngineFOLDLAZYENGINES = rolldownNImport({
+  (DataOperationEngineFOLDLAZYENGINES = createLiveModuleNamespace({
     FOLD_LAZY_ENGINES: (..._extraArguments: unknown[]) => FOLD_LAZY_ENGINES,
     FOLD_MUX_V: (..._extraArguments: unknown[]) => 1,
     FOLD_REPLAY_SKIP_ENGINES: (..._extraArguments: unknown[]) =>

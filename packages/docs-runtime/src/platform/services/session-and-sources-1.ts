@@ -1,10 +1,10 @@
 /** BaoCut: platform session and sources from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloDImport,
-  helloLImport,
-  helloSImport,
-  rolldownNImport,
+  canContactShell,
+  knownShellOrigin,
+  waitForShellOrigin,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   observabilityTelemetrySignedOutReauthRefusedUnavailableValues,
@@ -905,7 +905,7 @@ function installPlatformSessionAndSourcesReason(
       ok: false,
       reason: `no_shell`,
     });
-  let targetOrigin: Dynamic = helloLImport(
+  let targetOrigin: Dynamic = knownShellOrigin(
     installPlatformSessionAndSourcesReason2,
   );
   if (targetOrigin === null)
@@ -929,7 +929,7 @@ function installPlatformSessionAndSourcesReason(
         installPlatformSessionAndSourcesReason3?: Dynamic,
         ..._extraArguments: unknown[]
       ) => {
-        let helloLImport2: Dynamic = helloLImport(
+        let helloLImport2: Dynamic = knownShellOrigin(
           installPlatformSessionAndSourcesReason2,
         );
         if (
@@ -2069,14 +2069,14 @@ function resolvePlatformSessionAndSourcesHost(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let { host: scheduler2 }: Dynamic = scheduler;
-  let helloDImport2: Dynamic = helloDImport(scheduler2);
+  let helloDImport2: Dynamic = canContactShell(scheduler2);
   let resolvePlatformSessionAndSourcesHostResult: Dynamic = null;
   let resolvePlatformSessionAndSourcesHostResult2: Dynamic = null;
   let resolvePlatformSessionAndSourcesHostResult3: Dynamic;
   let enabled = false;
   let postMessage = (..._extraArguments: unknown[]): undefined => {
     resolvePlatformSessionAndSourcesHostResult2 = null;
-    let helloLImport2: Dynamic = helloLImport(scheduler2);
+    let helloLImport2: Dynamic = knownShellOrigin(scheduler2);
     if (helloLImport2 === null && !enabled) return;
     let resolvePlatformSessionAndSourcesHostResult4: Dynamic =
       resolvePlatformSessionAndSourcesHostResult;
@@ -2099,7 +2099,7 @@ function resolvePlatformSessionAndSourcesHost(
       );
     }
   };
-  let helloSImport2: Dynamic = helloSImport(
+  let helloSImport2: Dynamic = waitForShellOrigin(
     scheduler2,
     (..._extraArguments: unknown[]): undefined => {
       if (!(enabled || resolvePlatformSessionAndSourcesHostResult === null)) {
@@ -2123,7 +2123,7 @@ function resolvePlatformSessionAndSourcesHost(
       resolvePlatformSessionAndSourcesHostResult = platformSessionAndSourcesTab;
       resolvePlatformSessionAndSourcesHostResult2?.();
       resolvePlatformSessionAndSourcesHostResult2 = null;
-      if (helloLImport(scheduler2) !== null) {
+      if (knownShellOrigin(scheduler2) !== null) {
         resolvePlatformSessionAndSourcesHostResult2 = scheduler.schedule(
           postMessage,
           250,
@@ -2968,7 +2968,7 @@ export function initializePlatformSessionAndSources1Step1(): void {
       tab: tab,
       heading: heading,
     }) !== null);
-  (PlatformSessionAndSourcesONESHOTBUSYCAPMS = rolldownNImport({
+  (PlatformSessionAndSourcesONESHOTBUSYCAPMS = createLiveModuleNamespace({
     ONE_SHOT_BUSY_CAP_MS: (..._extraArguments: unknown[]) => ONE_SHOT_BUSY_CAP_MS,
     ONE_SHOT_BUSY_FLOOR_MS: (..._extraArguments: unknown[]) =>
       ONE_SHOT_BUSY_FLOOR_MS,

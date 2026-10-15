@@ -501,7 +501,7 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/index").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.fl,
+              result.PlatformSyncAndRoutingChatRow,
           ),
         mapPreloadDependencies([0, 1, 2, 3]),
         import.meta.url,
@@ -515,7 +515,7 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/lazy").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.h,
+              result.spreadsheetPageModule,
           ),
         mapPreloadDependencies([10, 1, 2, 0, 3]),
         import.meta.url,
@@ -574,7 +574,7 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/lazy").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.g,
+              result.shareDialogModule,
           ),
         mapPreloadDependencies([10, 1, 2, 0, 3]),
         import.meta.url,
@@ -618,7 +618,7 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/index").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.zg,
+              result.PlatformApiAndAuthCodeModal,
           ),
         mapPreloadDependencies([0, 1, 2, 3]),
         import.meta.url,

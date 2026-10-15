@@ -1,11 +1,11 @@
 /** BaoCut: observability browser and operation events from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloLImport,
-  helloOImport,
-  helloPImport,
+  knownShellOrigin,
+  watchShellOrigin,
+  frameHostEnvironment,
   inFrame,
-  rolldownNImport,
+  createLiveModuleNamespace,
   standaloneCommentAnchors,
   standaloneDocsHost,
 } from "../dependencies";
@@ -1250,7 +1250,7 @@ function liveLaneDeps(..._extraArguments: unknown[]): Dynamic {
       (..._extraArguments: unknown[]): Dynamic => frameBootContainer()?.id,
     );
   }
-  let host: Dynamic = inFrame() ? helloPImport() : null;
+  let host: Dynamic = inFrame() ? frameHostEnvironment() : null;
   let record2: Dynamic =
     host === null
       ? null
@@ -1396,7 +1396,7 @@ function frameArtifactUrl(..._extraArguments: unknown[]) {
   return !inFrame() || typeof window === "undefined"
     ? null
     : resolvePlatformArtifactLinksShellOrigin({
-        shellOrigin: helloLImport(helloPImport()),
+        shellOrigin: knownShellOrigin(frameHostEnvironment()),
         hostname: window.location?.hostname,
         containerId: frameBootContainer()?.id,
       });
@@ -1409,7 +1409,7 @@ function frameArtifactUrlFor(
   return !inFrame() || typeof window === "undefined"
     ? null
     : resolvePlatformArtifactLinksValue2(
-        helloLImport(helloPImport()),
+        knownShellOrigin(frameHostEnvironment()),
         frameArtifactUrl2,
       );
 }
@@ -1418,7 +1418,7 @@ function frameSignInHref(..._extraArguments: unknown[]) {
   return !inFrame() || typeof window === "undefined"
     ? resolveObservabilityBrowserAndOperationEventsValue26(null, null)
     : resolveObservabilityBrowserAndOperationEventsValue26(
-        helloLImport(helloPImport()),
+        knownShellOrigin(frameHostEnvironment()),
         resolvePlatformArtifactLinksHostname({
           hostname: window.location?.hostname,
           containerId: frameBootContainer()?.id,
@@ -1449,8 +1449,8 @@ function subscribeFrameShellOriginChanged(
   ..._extraArguments: unknown[]
 ): Dynamic {
   try {
-    return helloOImport(
-      inFrame() ? helloPImport() : null,
+    return watchShellOrigin(
+      inFrame() ? frameHostEnvironment() : null,
       frameShellOriginChanged,
     );
   } catch {
@@ -2184,7 +2184,7 @@ export function initializeObservabilityBrowserAndOperationEvents3Step1(): void {
   (ObservabilityBrowserAndOperationEventsBongoSupportCode = `bongo.support-code`);
   (ObservabilityBrowserAndOperationEvents0123456789ABCDEFGHJKMNPQRSTVWXYZ = `0123456789ABCDEFGHJKMNPQRSTVWXYZ`);
   (observabilityBrowserAndOperationEventsPattern24 = /^PG(-[0-9A-HJKMNP-TV-Z]{4}){4}$/);
-  (ObservabilityBrowserAndOperationEventsFOREIGNCONTAINER = rolldownNImport({
+  (ObservabilityBrowserAndOperationEventsFOREIGNCONTAINER = createLiveModuleNamespace({
       FOREIGN_CONTAINER: (..._extraArguments: unknown[]) => FOREIGN_CONTAINER,
       HOT_EARLY_MAX_MS: (..._extraArguments: unknown[]) => HOT_EARLY_MAX_MS,
       INSTANCE_CHURN: (..._extraArguments: unknown[]) => INSTANCE_CHURN,

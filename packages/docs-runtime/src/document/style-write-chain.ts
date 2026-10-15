@@ -11,8 +11,8 @@ import type {
 } from "./style-contracts";
 import type { UnknownRecord } from "../serialization/value-contracts";
 import {
-  At as DISPLAY_PROPERTY,
-  jt as getDocumentFontGeneration,
+  DISPLAY_PROPERTY,
+  getDocumentFontGeneration,
 } from "../document-app/index";
 var stylePatchOps = (change: StyleChange): StylePatch[] =>
   Object.entries(change).map(([objectEntry, objectEntryEntry]) =>

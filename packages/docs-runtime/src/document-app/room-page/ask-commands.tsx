@@ -7,8 +7,15 @@ import { reportCommentSessionEvent } from "../comment-session/clear-comment-sess
 
 /** BaoCut: room document ask commands; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Id as resolveCommentsStoreLayer, Up as isDataModelSchemasKind3, av as frameFenceAuthor, jM as resolvePlatformFeatureFlagsEnabled2, jf as quietCarrierWritten, xy as observabilityBrowserAndOperationEventsPattern22 } from "../../platform/index";
-import { t as preloadModule } from "../../boot/preload";
+import {
+  frameFenceAuthor,
+  isDataModelSchemasKind3,
+  observabilityBrowserAndOperationEventsPattern22,
+  quietCarrierWritten,
+  resolveCommentsStoreLayer,
+  resolvePlatformFeatureFlagsEnabled2,
+} from "../../platform/index";
+import { preloadModule } from "../../boot/preload";
 export function runRoomPage50Effect(roomPageContext: {
   askCardDeskRef: Dynamic;
   elementRef7: Dynamic;
@@ -283,7 +290,7 @@ export function runRoomPage56Effect(roomPageContext: {
     preloadModule(async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let {
         subscribeProjectFeed: subscribeProjectFeed2
-      }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.Fg);
+      }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthFEEDTOPIC);
       return {
         subscribeProjectFeed: subscribeProjectFeed2
       };

@@ -4,7 +4,7 @@ import {
   BaseFieldControl,
   Button,
   React,
-  appLCImport2,
+  useLabelableContext,
   originalJsxProps,
   originalJsxsProps,
   resolveUiDesignSystemValue2,
@@ -30,7 +30,7 @@ function isFieldDisabled(..._extraArguments: unknown[]): Dynamic {
 }
 
 function fieldLabelId(..._extraArguments: unknown[]): Dynamic {
-  let { labelId: value, controlId: value2 }: Dynamic = appLCImport2();
+  let { labelId: value, controlId: value2 }: Dynamic = useLabelableContext();
   return value ?? (value2 ? `${value2}-label` : undefined);
 }
 

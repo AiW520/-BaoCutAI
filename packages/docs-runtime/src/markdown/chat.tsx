@@ -17,54 +17,33 @@ const defaultRemarkPlugins = (npmDependency0)
   .defaultRemarkPlugins;
 const __vite__mapDeps: Dynamic = (..._extraArguments: unknown[]): Dynamic => [];
 import {
-  n as createLiveModuleNamespace,
-  r as toModuleNamespace,
-  t as initializeCommonJS,
+  createLiveModuleNamespace,
+  toModuleNamespace,
 } from "../boot/module-runtime";
 import {
-  $h as resolveDataModelSchemasPath,
-  Bh as updateDataModelSchemasHerePath,
-  CD as resolveUiLinksAndFoundationItContainsAControlCharacter,
-  HM as loadReact,
-  OD as twMerge,
-  Qh as resolveDataModelSchemasIncludes,
-  Rg as resolvePlatformApiAndAuthValue28,
-  UE as loadJsxRuntime,
-  YM as emitTelemetryEvent,
-  aO as resolveEditorAnchorsAndMentionsRef,
-  bT as loadReactDom,
-  cO as resolveEditorAnchorsAndMentionsRef3,
-  dO as resolveEditorAnchorsAndMentionsPlatform,
-  iE as UiOverlaysAndIconsCustomIcon,
-  kD as clsx,
-  kj as resolvePlatformSessionAndSourcesValue,
-  oO as resolveEditorAnchorsAndMentionsValue10,
-  xC as Tooltip,
+  emitTelemetryEvent,
+  loadReact,
+  resolveDataModelSchemasIncludes,
+  resolveDataModelSchemasPath,
+  resolveEditorAnchorsAndMentionsPlatform,
+  resolveEditorAnchorsAndMentionsRef,
+  resolveEditorAnchorsAndMentionsRef3,
+  resolveEditorAnchorsAndMentionsValue10,
+  resolvePlatformApiAndAuthValue28,
+  resolvePlatformSessionAndSourcesValue,
+  resolveUiLinksAndFoundationItContainsAControlCharacter,
+  Tooltip,
+  UiOverlaysAndIconsCustomIcon,
+  updateDataModelSchemasHerePath,
 } from "../platform/index";
-import { t as preloadModule } from "../boot/preload";
-import { S as Link } from "../design-system/index";
+import { preloadModule } from "../boot/preload";
+import { Link } from "../design-system/index";
 import {
-  o as MentionName,
-  r as ArtifactReferenceChip,
-  t as MentionHoverAnchor,
+  ArtifactReferenceChip,
+  MentionHoverAnchor,
+  MentionName,
 } from "../document-app/references/chips";
-import {
-  a as countCharacters,
-  c as parseRawHtml,
-  d as nodePosition,
-  f as structuredClone,
-  g as convertNodeTest,
-  h as visitParents,
-  i as stringifyPosition,
-  l as pointEnd,
-  m as SKIP,
-  n as toJsxRuntime,
-  o as sanitizeHast,
-  p as visit,
-  r as VFileMessage,
-  s as defaultSanitizeSchema,
-  u as pointStart,
-} from "./hast";
+import { defaultSanitizeSchema } from "./hast";
 import "./assertions";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var loadedCodePlugin: Dynamic;
@@ -192,7 +171,7 @@ function loadCodePlugin(..._extraArguments: unknown[]): Dynamic {
           import("../syntax-highlighting/core")
             .then(
               (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                input.t,
+                input.codePluginModule,
             )
             .then(
               (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {

@@ -1,13 +1,13 @@
 /** BaoCut: observability boot from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloBImport,
-  helloGImport,
-  helloHImport,
-  helloImport,
-  helloYImport,
+  frameTimings,
+  FRAME_TIMING_PHASES,
+  FRAME_TIMING_DETAIL_KEYS,
+  recordFramePhase,
+  subscribeFrameTimings,
   inFrame,
-  preloadTImport,
+  preloadModule,
 } from "../dependencies";
 import {
   ObservabilityTelemetry259dc54003a391cffb50b52b94c913ed15d92d1c,
@@ -303,7 +303,7 @@ function isObservabilityBootEntry(
     Math.round(entry) < 3e3
   )
     return false;
-  let toSorted: Dynamic = helloGImport
+  let toSorted: Dynamic = FRAME_TIMING_PHASES
     .filter(
       (helloGImport2?: Dynamic, ..._extraArguments: unknown[]) =>
         !observabilityBootSet2.has(helloGImport2),
@@ -583,7 +583,7 @@ function resolveObservabilityBootComplete(
     record2.tEntry = Math.round(entry);
   }
   let entry2: Dynamic = entry ?? 0;
-  for (let resolveObservabilityBootCompleteResult of helloGImport as Dynamic) {
+  for (let resolveObservabilityBootCompleteResult of FRAME_TIMING_PHASES as Dynamic) {
     if (resolveObservabilityBootCompleteResult === `entry`) continue;
     let atItem: Dynamic = activity.at[resolveObservabilityBootCompleteResult];
     if (atItem !== undefined) {
@@ -606,7 +606,7 @@ function resolveObservabilityBootComplete(
         ] = count;
       }
     }
-  for (let resolveObservabilityBootCompleteResult of helloHImport as Dynamic) {
+  for (let resolveObservabilityBootCompleteResult of FRAME_TIMING_DETAIL_KEYS as Dynamic) {
     let detailItem: Dynamic =
       activity.detail[resolveObservabilityBootCompleteResult];
     if (detailItem !== undefined) {
@@ -960,7 +960,7 @@ function resolveObservabilityBootPaint(
   ..._extraArguments: unknown[]
 ): undefined {
   if (observabilityBootPaint.open) {
-    if (!helloImport(options)) {
+    if (!recordFramePhase(options)) {
       resolveObservabilityBootMark(`pages:${options}`);
     }
     if (options === `paint`) {
@@ -1032,7 +1032,7 @@ function resolveObservabilityBootComplete3(
   reportOperationEvent(`mount.paint`, record2);
   if (activity.open) {
     let observabilityBootComplete: Dynamic = resolveObservabilityBootComplete(
-      helloBImport(),
+      frameTimings(),
       {
         complete: true,
         host: `frame`,
@@ -1079,7 +1079,7 @@ function resolveObservabilityBootPixels(
       observabilityBootState4 === undefined
     )
   ) {
-    helloImport(
+    recordFramePhase(
       `pixels`,
       undefined,
       Math.max(observabilityBootState3, observabilityBootState4),
@@ -1340,7 +1340,7 @@ async function loadObservabilityBootRuntimeChars(
     throw Error(
       `lfile runtime is not in this build (Frame mode needs the prebuilt runtime)`,
     );
-  helloImport(`runtimeWarm`, {
+  recordFramePhase(`runtimeWarm`, {
     runtimeChars: result.length,
   });
   return result;
@@ -1536,8 +1536,8 @@ export function initializeObservabilityBootStep1(): void {
             }),
       }),
     viewerClass: frameViewerClassWord,
-    marks: helloBImport,
-    onMark: helloYImport,
+    marks: frameTimings,
+    onMark: subscribeFrameTimings,
     schemas: getLazySchemaStats,
     boot: resolveObservabilityTelemetryOrdinal2,
     onHide: (
@@ -1655,7 +1655,7 @@ export function initializeObservabilityBootStep1(): void {
   (ObservabilityBootState5 = null);
   (ObservabilityBootState6 = resolvePlatformChunkLoadingEnv(
     (..._extraArguments: unknown[]): Dynamic =>
-      preloadTImport(
+      preloadModule(
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../prose-editor/runtime-source"),
         [],

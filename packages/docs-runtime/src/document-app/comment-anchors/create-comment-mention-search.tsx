@@ -1632,7 +1632,7 @@ export function initializeCommentAnchorsCreateCommentMentionSearchStep1(): void 
               (..._extraArguments: unknown[]): Dynamic =>
                 import("../../markdown/chat").then(
                   (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    result.t,
+                    result.chatMarkdownModule,
                 ),
               mapPreloadDependencies([5, 1, 2, 6, 0, 3, 7, 8, 9]),
               import.meta.url,

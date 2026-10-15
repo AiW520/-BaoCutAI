@@ -1,17 +1,17 @@
 /** display-text-paths: restored from displayTextPaths-DINS3adY.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  gi as collectEditorSelectionAndTablesJoin,
-  hi as EditorSelectionAndTablesReason2,
+  collectEditorSelectionAndTablesJoin,
+  EditorSelectionAndTablesReason2,
 } from "../platform/index";
 import {
-  c as findUnsupportedVisualizeFeature,
-  d as reservedColumnNameMessage,
-  f as hasTimeFormatSpecifier,
-  l as truncateColumnName,
-  m as parseTimeFormat,
-  p as validateNumberFormat,
-  u as isReservedColumnName,
+  findUnsupportedVisualizeFeature,
+  hasTimeFormatSpecifier,
+  isReservedColumnName,
+  parseTimeFormat,
+  reservedColumnNameMessage,
+  truncateColumnName,
+  validateNumberFormat,
 } from "../platform/lazy";
 var sourceNamePattern: Dynamic = /^[A-Za-z_][A-Za-z0-9_]*$/;
 var sourceNameHint: string = `must be a source name — a plain identifier (letters, digits, underscore; not starting with a digit or __charts)`;

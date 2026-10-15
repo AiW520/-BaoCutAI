@@ -14,8 +14,41 @@ import { isDocumentSelectionReadOnly } from "../document-selection/create-headin
 
 /** BaoCut: room document frame messages; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Cg as PlatformApiAndAuthPriming, Cn as isPlatformLiveDocumentAndHistoryFragAtQueue, Dn as resolvePlatformLiveDocumentAndHistoryTest2, Gf as useCommentStore, Nr as resolveEditorSelectionAndTablesSpellWords, Nv as frameSearchPeople, Qm as resolveDataModelSchemasBid3, RM as resolvePlatformFeatureFlagsValue, Rl as resolveEditorHostValue23, Tk as resolveEditorExtensionsChart, Tn as resolvePlatformLiveDocumentAndHistoryEntries, Xm as dataModelSchemasPattern16, Xr as EditorSelectionAndTablesByKey, YM as emitTelemetryEvent, Yr as EditorSelectionAndTablesByFile, Zm as resolveDataModelSchemasTop, kj as resolvePlatformSessionAndSourcesValue, lh as coerceCellsMeta, lj as resolvePlatformSessionAndSourcesTest6, m_ as api, mv as frameKnownProfiles, ny as frameViewerWithFace, pv as frameInlineAvatar, qm as resolveDataModelSchemasEntries, qr as EditorSelectionAndTablesByFile2, sx as resolveEditorProofreadingIncludes, uh as coerceMediaMeta, uj as resolvePlatformSessionAndSourcesTest3, vg as PlatformApiAndAuthUser, wS as resolvePlatformKeyboardAndSaveStatusValue2, wn as resolvePlatformLiveDocumentAndHistoryNodeId2, xf as hiddenResolvedThread } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
+import {
+  api,
+  coerceCellsMeta,
+  coerceMediaMeta,
+  dataModelSchemasPattern16,
+  EditorSelectionAndTablesByFile,
+  EditorSelectionAndTablesByFile2,
+  EditorSelectionAndTablesByKey,
+  emitTelemetryEvent,
+  frameInlineAvatar,
+  frameKnownProfiles,
+  frameSearchPeople,
+  frameViewerWithFace,
+  hiddenResolvedThread,
+  isPlatformLiveDocumentAndHistoryFragAtQueue,
+  PlatformApiAndAuthPriming,
+  PlatformApiAndAuthUser,
+  resolveDataModelSchemasBid3,
+  resolveDataModelSchemasEntries,
+  resolveDataModelSchemasTop,
+  resolveEditorExtensionsChart,
+  resolveEditorHostValue23,
+  resolveEditorProofreadingIncludes,
+  resolveEditorSelectionAndTablesSpellWords,
+  resolvePlatformFeatureFlagsValue,
+  resolvePlatformKeyboardAndSaveStatusValue2,
+  resolvePlatformLiveDocumentAndHistoryEntries,
+  resolvePlatformLiveDocumentAndHistoryNodeId2,
+  resolvePlatformLiveDocumentAndHistoryTest2,
+  resolvePlatformSessionAndSourcesTest3,
+  resolvePlatformSessionAndSourcesTest6,
+  resolvePlatformSessionAndSourcesValue,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
 export function runRoomPage24DataVerbPerson(roomPageContext: {
   data: Dynamic;
   frameMessengerRef: Dynamic;

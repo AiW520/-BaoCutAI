@@ -3,7 +3,7 @@ import type { FontAsset } from "../../fonts/contracts";
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   loadKatexFontCss,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   PlatformSessionAndSourcesState3,
@@ -3066,7 +3066,7 @@ export function initializeDataModelSchemas3Step1(): void {
     Object.hasOwn(dataModelSchemasHasOwn2, options)
       ? dataModelSchemasHasOwn2[options]
       : undefined);
-  (DataModelSchemasANCHORLABELMAX = rolldownNImport({
+  (DataModelSchemasANCHORLABELMAX = createLiveModuleNamespace({
     ANCHOR_LABEL_MAX: (..._extraArguments: unknown[]) => 120,
     CELLS_IDS_MAX: (..._extraArguments: unknown[]) => 400,
     COMMENT_TOOL: (..._extraArguments: unknown[]): Dynamic => COMMENT_TOOL,

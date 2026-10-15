@@ -10,227 +10,172 @@ const createSingletonShorthands = (npmDependency0)
   .createSingletonShorthands;
 const guessEmbeddedLanguages = (npmDependency0)
   .guessEmbeddedLanguages;
-import { n as createLiveModuleNamespace } from "../boot/module-runtime";
-import { t as preloadModule } from "../boot/preload";
-import {
-  $ as cGrammars,
-  A as kotlinGrammars,
-  B as tsxGrammars,
-  C as markdownGrammars,
-  D as latexGrammars,
-  E as lessGrammars,
-  F as javaGrammars,
-  G as htmlGrammars,
-  H as typescriptGrammars,
-  I as iniGrammars,
-  J as diffGrammars,
-  K as javascriptGrammars,
-  L as hclGrammars,
-  M as jsoncGrammars,
-  N as json5Grammars,
-  O as texGrammars,
-  P as jsonGrammars,
-  Q as csharpGrammars,
-  R as haskellGrammars,
-  S as xmlGrammars,
-  T as luaGrammars,
-  U as goGrammars,
-  V as jsxGrammars,
-  W as elixirGrammars,
-  X as csvGrammars,
-  Y as dartGrammars,
-  Z as cssGrammars,
-  _ as powershellGrammars,
-  a as terraformGrammars,
-  b as perlGrammars,
-  c as shellsessionGrammars,
-  d as scalaGrammars,
-  et as batGrammars,
-  f as sassGrammars,
-  g as protoGrammars,
-  h as pythonGrammars,
-  i as tomlGrammars,
-  j as jsonlGrammars,
-  k as rGrammars,
-  l as shellscriptGrammars,
-  m as regexpGrammars,
-  n as vueGrammars,
-  o as swiftGrammars,
-  p as rustGrammars,
-  q as dockerGrammars,
-  r as tsvGrammars,
-  s as svelteGrammars,
-  t as yamlGrammars,
-  u as scssGrammars,
-  v as plsqlGrammars,
-  w as makeGrammars,
-  x as sqlGrammars,
-  y as phpGrammars,
-  z as graphqlGrammars,
-} from "./langs";
-import { n as vitesseDark, t as vitesseLight } from "./themes";
-import { t as toHtml } from "../markdown/hast";
+import { createLiveModuleNamespace } from "../boot/module-runtime";
+import { preloadModule } from "../boot/preload";
+import * as grammars from "./langs";
+import { vitesseDark, vitesseLight } from "./themes";
+import "../markdown/hast";
 var batGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => batGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.batGrammars,
 });
 var cGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => cGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.cGrammars,
 });
 var csharpGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => csharpGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.csharpGrammars,
 });
 var cssGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => cssGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.cssGrammars,
 });
 var csvGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => csvGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.csvGrammars,
 });
 var dartGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => dartGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.dartGrammars,
 });
 var diffGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => diffGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.diffGrammars,
 });
 var dockerGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => dockerGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.dockerGrammars,
 });
 var elixirGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => elixirGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.elixirGrammars,
 });
 var goGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => goGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.goGrammars,
 });
 var graphqlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => graphqlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.graphqlGrammars,
 });
 var haskellGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => haskellGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.haskellGrammars,
 });
 var hclGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => hclGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.hclGrammars,
 });
 var htmlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => htmlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.htmlGrammars,
 });
 var iniGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => iniGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.iniGrammars,
 });
 var javaGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => javaGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.javaGrammars,
 });
 var javascriptGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => javascriptGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.javascriptGrammars,
 });
 var jsonGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => jsonGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.jsonGrammars,
 });
 var json5GrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => json5Grammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.json5Grammars,
 });
 var jsoncGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => jsoncGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.jsoncGrammars,
 });
 var jsonlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => jsonlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.jsonlGrammars,
 });
 var jsxGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => jsxGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.jsxGrammars,
 });
 var kotlinGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => kotlinGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.kotlinGrammars,
 });
 var latexGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => latexGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.latexGrammars,
 });
 var lessGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => lessGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.lessGrammars,
 });
 var luaGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => luaGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.luaGrammars,
 });
 var makeGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => makeGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.makeGrammars,
 });
 var markdownGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => markdownGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.markdownGrammars,
 });
 var perlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => perlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.perlGrammars,
 });
 var phpGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => phpGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.phpGrammars,
 });
 var plsqlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => plsqlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.plsqlGrammars,
 });
 var powershellGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => powershellGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.powershellGrammars,
 });
 var protoGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => protoGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.protoGrammars,
 });
 var pythonGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => pythonGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.pythonGrammars,
 });
 var rGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => rGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.rGrammars,
 });
 var regexpGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => regexpGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.regexpGrammars,
 });
 var rustGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => rustGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.rustGrammars,
 });
 var sassGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => sassGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.sassGrammars,
 });
 var scalaGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => scalaGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.scalaGrammars,
 });
 var scssGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => scssGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.scssGrammars,
 });
 var shellscriptGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => shellscriptGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.shellscriptGrammars,
 });
 var shellsessionGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => shellsessionGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.shellsessionGrammars,
 });
 var sqlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => sqlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.sqlGrammars,
 });
 var svelteGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => svelteGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.svelteGrammars,
 });
 var swiftGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => swiftGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.swiftGrammars,
 });
 var terraformGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => terraformGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.terraformGrammars,
 });
 var texGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => texGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.texGrammars,
 });
 var tomlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => tomlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.tomlGrammars,
 });
 var tsvGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => tsvGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.tsvGrammars,
 });
 var tsxGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => tsxGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.tsxGrammars,
 });
 var typescriptGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => typescriptGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.typescriptGrammars,
 });
 var vueGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => vueGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.vueGrammars,
 });
 var xmlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => xmlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.xmlGrammars,
 });
 var yamlGrammarsModule: Dynamic = createLiveModuleNamespace({
-  default: (..._extraArguments: unknown[]): Dynamic => yamlGrammars,
+  default: (..._extraArguments: unknown[]): Dynamic => grammars.yamlGrammars,
 });
 var vitesseDarkModule: Dynamic = createLiveModuleNamespace({
   default: (..._extraArguments: unknown[]): Dynamic => vitesseDark,

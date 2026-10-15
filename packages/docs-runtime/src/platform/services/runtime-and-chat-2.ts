@@ -13,7 +13,7 @@ import {
   encodeStateVectorFromUpdate,
   length,
   peekVarUint,
-  preloadTImport,
+  preloadModule,
   readVarUint,
   readVarUint8Array,
   toUint8Array,
@@ -243,7 +243,7 @@ export function initializePlatformRuntimeAndChat2Step1(): void {
             ..._extraArguments: unknown[]
           ): undefined => {
             if (platformRuntimeAndChatByPath2.t === `comment-changed`) {
-              preloadTImport(
+              preloadModule(
                 (..._extraArguments: unknown[]): Dynamic =>
                   Promise.resolve()
                     .then(
@@ -267,7 +267,7 @@ export function initializePlatformRuntimeAndChat2Step1(): void {
               );
             } else {
               if (platformRuntimeAndChatByPath2.t === `comment-status`) {
-                preloadTImport(
+                preloadModule(
                   (..._extraArguments: unknown[]): Dynamic =>
                     Promise.resolve()
                       .then(

@@ -1,7 +1,7 @@
 /** BaoCut: comments store from app-core-BE6n4d7F.js. */
 import { createCommentStore } from "../actions/store";
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { create, inFrame, preloadTImport } from "../../platform/dependencies";
+import { create, inFrame, preloadModule } from "../../platform/dependencies";
 import { collectObservabilityTelemetryValue } from "../../platform/observability/telemetry-1";
 import { emitTelemetryEvent } from "../../platform/observability/telemetry-3";
 import { createPagesCommentWithdrawEvent } from "../../platform/observability/browser-and-operation-events-1";
@@ -130,7 +130,7 @@ function updateCommentsStoreOutbox(
     CommentsStoreState9 = null;
     if (!commentsStoreMap20.has(pid)) {
       let updateCommentsStoreOutboxResult2: Dynamic = null;
-      let preloadTImport2: Dynamic = preloadTImport(
+      let preloadTImport2: Dynamic = preloadModule(
         (..._extraArguments: unknown[]): Dynamic =>
           import("../outbox-backing").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>

@@ -1,40 +1,40 @@
 /** lfile-snapshot-view: restored from LFileSnapshotView-edTBLlnH.js. */
 import { originalJsxProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  Di as EditorSelectionAndTablesDataPagesPrintSurface,
-  HM as loadReact,
-  Kc as usePlatformSyncAndRoutingFramed,
-  Mn as loadPlatformLiveDocumentAndHistoryContainer,
-  Ol as EditorHostReplace3,
-  UE as loadJsxRuntime,
-  Wl as resolveEditorHostKind3,
-  Xh as loadDataModelSchemasCss,
-  Zc as resolvePlatformSyncAndRoutingValue16,
-  bv as frameProfiles,
-  jM as resolvePlatformFeatureFlagsEnabled2,
-  md as resolvePlatformRuntimeAndChatMermaidLibraryLoadFailed,
-  pd as loadPlatformRuntimeAndChatMsg,
-  ud as resolvePlatformRuntimeAndChatLfileExtrasAreNotInThisBuild,
-  wi as updateEditorSelectionAndTablesReport,
-  xv as frameProfilesSubscribe,
+  EditorHostReplace3,
+  EditorSelectionAndTablesDataPagesPrintSurface,
+  frameProfiles,
+  frameProfilesSubscribe,
+  loadDataModelSchemasCss,
+  loadJsxRuntime,
+  loadPlatformLiveDocumentAndHistoryContainer,
+  loadPlatformRuntimeAndChatMsg,
+  loadReact,
+  resolveEditorHostKind3,
+  resolvePlatformFeatureFlagsEnabled2,
+  resolvePlatformRuntimeAndChatLfileExtrasAreNotInThisBuild,
+  resolvePlatformRuntimeAndChatMermaidLibraryLoadFailed,
+  resolvePlatformSyncAndRoutingValue16,
+  updateEditorSelectionAndTablesReport,
+  usePlatformSyncAndRoutingFramed,
 } from "../platform/index";
-import { S as isFrameArtifact } from "../boot/environment";
+import { isFrameArtifact } from "../boot/environment";
 import {
-  u as resolveMentionNames,
-  w as resolveLocalReference,
+  resolveLocalReference,
+  resolveMentionNames,
 } from "../document-app/references/chips";
 import {
-  Et as documentLanguageAttributes,
-  It as documentFontsPostState,
-  gt as documentDisplayPostState,
+  documentDisplayPostState,
+  documentFontsPostState,
+  documentLanguageAttributes,
 } from "../document-app/index";
 import {
-  At as BLOB_SHA_PATTERN,
-  Mt as tryLoadManifestFilmBytes,
-  Nt as loadManifestWidgetFilm,
-  jt as loadManifestFilm,
+  BLOB_SHA_PATTERN,
+  loadManifestFilm,
+  loadManifestWidgetFilm,
+  tryLoadManifestFilmBytes,
 } from "../platform/lazy";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var widgetArtifactCacheByHash: Dynamic = new (Map as Dynamic)();

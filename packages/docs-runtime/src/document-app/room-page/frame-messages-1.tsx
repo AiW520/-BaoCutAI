@@ -6,9 +6,51 @@ import { DocumentRuntime_ThatTabHasBeenDeletedOrIsNoLongerAvailable } from "../d
 
 /** BaoCut: room document frame messages; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Ai as resolveEditorSelectionAndTablesValue2, Bh as updateDataModelSchemasHerePath, En as resolvePlatformLiveDocumentAndHistoryNodeId, Hj as filterDataContentAndReferencesFilter, In as PlatformLiveDocumentAndHistorySession, Kd as isCommentsStoreIsActive, Ma as resolveCommentsActionsAndSelectionNoun, Mn as loadPlatformLiveDocumentAndHistoryContainer, OO as resolveEditorAnchorsAndMentionsKind, Rg as resolvePlatformApiAndAuthValue28, SA as loadPlatformSessionAndSourcesAckOf, SO as isEditorAnchorsAndMentionsKind, Ss as updatePlatformSyncAndRoutingDirectory, W_ as frameBlobSource, eg as resolveDataModelSchemasEmptyRef, h_ as rawReq, hp as resolveDataOperationEngineMsg2, i_ as liveDoor, ig as useContainerStore, kO as resolveEditorAnchorsAndMentionsValue9, kn as PlatformLiveDocumentAndHistoryWidgetBundle, lj as resolvePlatformSessionAndSourcesTest6, m_ as api, no as CommentsActionsAndSelectionState3, qh as collectDataModelSchemasSplit, vx as toast, z_ as frameArtifactUrlFor } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
-import { C as referenceContainer, E as fileReferenceLabel, S as readEnumDefinition, T as projectName, _ as searchReferenceCandidates, b as readCrossFileReference, f as referenceReadRoute, g as isRestrictedResponse, h as crossProjectClaudeLink, m as reconcileEnumDefinition, p as safeReferenceUrl, w as resolveLocalReference, x as readTableReference } from "../references/chips";
+import {
+  api,
+  collectDataModelSchemasSplit,
+  CommentsActionsAndSelectionState3,
+  filterDataContentAndReferencesFilter,
+  frameArtifactUrlFor,
+  frameBlobSource,
+  isCommentsStoreIsActive,
+  isEditorAnchorsAndMentionsKind,
+  liveDoor,
+  loadPlatformLiveDocumentAndHistoryContainer,
+  loadPlatformSessionAndSourcesAckOf,
+  PlatformLiveDocumentAndHistorySession,
+  PlatformLiveDocumentAndHistoryWidgetBundle,
+  rawReq,
+  resolveCommentsActionsAndSelectionNoun,
+  resolveDataModelSchemasEmptyRef,
+  resolveDataOperationEngineMsg2,
+  resolveEditorAnchorsAndMentionsKind,
+  resolveEditorAnchorsAndMentionsValue9,
+  resolveEditorSelectionAndTablesValue2,
+  resolvePlatformApiAndAuthValue28,
+  resolvePlatformLiveDocumentAndHistoryNodeId,
+  resolvePlatformSessionAndSourcesTest6,
+  toast,
+  updateDataModelSchemasHerePath,
+  updatePlatformSyncAndRoutingDirectory,
+  useContainerStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
+import {
+  crossProjectClaudeLink,
+  fileReferenceLabel,
+  isRestrictedResponse,
+  projectName,
+  readCrossFileReference,
+  readEnumDefinition,
+  readTableReference,
+  reconcileEnumDefinition,
+  referenceContainer,
+  referenceReadRoute,
+  resolveLocalReference,
+  safeReferenceUrl,
+  searchReferenceCandidates,
+} from "../references/chips";
 export function runRoomPage10DataVerbReadDataVerbWatch(roomPageContext: {
   containerRef: Dynamic;
   data: Dynamic;

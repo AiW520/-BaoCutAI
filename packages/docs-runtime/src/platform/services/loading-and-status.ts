@@ -1,7 +1,7 @@
 /** BaoCut: platform loading and status from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  preloadTImport,
+  preloadModule,
 } from "../dependencies";
 
 var platformLoadingAndStatusSavedBarLinkUnsyncedValues: string[];
@@ -307,7 +307,7 @@ function resolvePlatformLoadingAndStatusCatch(
     platformLoadingAndStatusCatch2?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic =>
-    preloadTImport(
+    preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import(platformLoadingAndStatusCatch2),
       [],

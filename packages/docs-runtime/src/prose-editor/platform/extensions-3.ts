@@ -1,12 +1,12 @@
 /** BaoCut: editor extensions from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloAImport,
-  helloCImport2,
-  helloImport,
-  helloNImport,
-  helloRImport,
-  helloVImport,
+  FRAME_STORE,
+  createFrameMessagePort,
+  recordFramePhase,
+  adoptEarlyHello,
+  NO_SHELL_ORIGIN_REASON,
+  recordHostStart,
 } from "../../platform/dependencies";
 import {
   resolvePlatformFeatureFlagsEnabled2,
@@ -2137,7 +2137,7 @@ function resolveEditorExtensionsHello(
       editorExtensionsHello.helloAnswered || !editorExtensionsHello.port.hello()
     )
   ) {
-    helloImport(`hello`);
+    recordFramePhase(`hello`);
     resolveEditorExtensionsCancelHello(editorExtensionsHello, options);
   }
 }
@@ -2187,7 +2187,7 @@ function resolveEditorExtensionsState(
   editorExtensionsState3?: Dynamic,
   ..._extraArguments: unknown[]
 ): undefined {
-  helloImport(`state`);
+  recordFramePhase(`state`);
   editorExtensionsState3.helloAnswered = true;
   editorExtensionsState3.everHelloAnswered = true;
   editorExtensionsState3.helloTerminal = null;
@@ -2250,7 +2250,7 @@ function resolveEditorExtensionsCancelAsk(
     editorExtensionsCancelAsk.deps.onShellOriginUnanswered?.();
     for (let resolveEditorExtensionsCancelAskResult of editorExtensionsCancelAsk.byStream.values() as Dynamic)
       resolveEditorExtensionsCancelAskResult.onTerminal(
-        helloRImport.toUpperCase(),
+        NO_SHELL_ORIGIN_REASON.toUpperCase(),
       );
   }
 }
@@ -2297,14 +2297,14 @@ function resolveEditorExtensionsPort(
     ..._extraArguments: unknown[]
   ): Dynamic =>
     resolveEditorExtensionsPortHandler(`port:${editorExtensionsPort}`);
-  let helloNImport2: Dynamic = helloNImport(
+  let helloNImport2: Dynamic = adoptEarlyHello(
     deps.host,
     getEditorExtensionsState2,
     resolveEditorExtensionsPortHandler2,
   );
   record2.port =
     helloNImport2 === null
-      ? helloCImport2(
+      ? createFrameMessagePort(
           deps.host,
           getEditorExtensionsState2,
           resolveEditorExtensionsPortHandler2,
@@ -2384,7 +2384,7 @@ function getEditorExtensionsState(
         resolveEditorExtensionsState(editorExtensionsState3);
       }
       if (operation.hostStart !== undefined) {
-        helloVImport(operation.hostStart, operation.hostStartFrom);
+        recordHostStart(operation.hostStart, operation.hostStartFrom);
       }
       editorExtensionsState3.connected = operation.connected;
       if (operation.connected) {
@@ -2471,7 +2471,7 @@ function updateEditorExtensionsByKey(
     new (EditorExtensionsReadTimeouts as Dynamic)(
       editorExtensionsPort,
       updateEditorExtensionsByKey2,
-      `${helloAImport}.${editorExtensionsPort.nextIndex++}`,
+      `${FRAME_STORE}.${editorExtensionsPort.nextIndex++}`,
     );
   editorExtensionsPort.byKey.set(
     updateEditorExtensionsByKey2,

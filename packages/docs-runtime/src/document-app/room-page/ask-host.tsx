@@ -8,8 +8,14 @@ import { loadDocumentCommandsLook } from "../document-commands/create-selection-
 
 /** BaoCut: room document ask host; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Av as frameSamplePermission, Dj as resolvePlatformSessionAndSourcesCode, Id as resolveCommentsStoreLayer, jv as frameSampler, kp as resolvePlatformAnnouncementsValue } from "../../platform/index";
-import { t as preloadModule } from "../../boot/preload";
+import {
+  frameSamplePermission,
+  frameSampler,
+  resolveCommentsStoreLayer,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformSessionAndSourcesCode,
+} from "../../platform/index";
+import { preloadModule } from "../../boot/preload";
 export function runRoomPage40ResetAskStateRef(roomPageContext: {
   announcedAskCards: Dynamic;
   askCardDeskRef: Dynamic;

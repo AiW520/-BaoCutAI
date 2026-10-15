@@ -3,7 +3,7 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
   UiDesignSystemUseLayoutEffect,
-  appKDImport,
+  clsx,
   originalJsxProps,
   resolveUiDesignSystemValue2,
   useUiOverlaysAndIconsUseInsertionEffect2,
@@ -205,7 +205,7 @@ function ShimmerFaceKey(
       ref={value}
       data-morph-key={input}
       aria-hidden={input2 ? true : undefined}
-      className={appKDImport(
+      className={clsx(
         `col-start-1 row-start-1 flex min-w-0 max-w-full items-center group-data-[gliding]/morph:max-w-none`,
         value5 && value7 === 0 && ShimmerStyles7,
       )}

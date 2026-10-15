@@ -4,7 +4,7 @@ import {
   React,
   Tooltip,
   TooltipGroup,
-  appTImport2,
+  cva,
   loadReactDom,
   originalJsxProps,
   resolveUiDesignSystemValue2,
@@ -131,7 +131,7 @@ export function initializeAvatarsStep1(): void {
   };
   AvatarsColor.displayName = `StaticSpark`;
   AvatarsMemo = (0, React.memo)(AvatarsColor);
-  AvatarsVariants = appTImport2(
+  AvatarsVariants = cva(
     `inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-sans font-medium leading-none`,
     {
       variants: {

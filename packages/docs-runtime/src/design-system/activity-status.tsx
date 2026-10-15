@@ -3,7 +3,7 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
   UiDesignSystemUseLayoutEffect,
-  appKDImport,
+  clsx,
   resolveUiLinksAndFoundationUseContext3,
   useUiOverlaysAndIconsUseInsertionEffect2,
 } from "./dependencies";
@@ -385,13 +385,13 @@ function ShimmerMotion(
       ref={value5}
       aria-hidden={`true`}
       data-cds-row-mark={``}
-      className={appKDImport(
+      className={clsx(
         `relative flex h-[1lh] shrink-0 items-center justify-center`,
         ShimmerStyles6,
       )}
     >
       <span
-        className={appKDImport(
+        className={clsx(
           `absolute top-1/2 left-1/2 flex size-icon -translate-x-1/2 -translate-y-1/2 items-center justify-center motion-reduce:transition-none`,
           value
             ? `opacity-0 transition-opacity delay-150 duration-200 ease-out`
@@ -414,7 +414,7 @@ function ShimmerMotion(
       </span>
       {value && (
         <span
-          className={appKDImport(
+          className={clsx(
             `absolute inset-0 flex items-center justify-center [&>*]:max-h-full [&>*]:max-w-full`,
             value4 &&
               `transition-opacity delay-150 duration-200 ease-out motion-reduce:transition-none starting:opacity-0`,

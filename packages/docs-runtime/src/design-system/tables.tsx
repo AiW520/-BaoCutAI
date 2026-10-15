@@ -3,7 +3,7 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
   UiOverlaysAndIconsCustomIcon,
-  appKDImport,
+  clsx,
   isUiLinksAndFoundationToLowerCase,
   jsxRuntime,
   originalJsxProps,
@@ -457,7 +457,7 @@ export function initializeTablesStep1(): void {
                 onMouseLeave={(..._extraArguments: unknown[]): Dynamic =>
                   value2(false)
                 }
-                className={appKDImport(
+                className={clsx(
                   `cds-reset group/cdsth flex h-full w-full select-none items-center gap-1 rounded px-md outline-none focus-visible:outline-hidden hover:text-primary focus-visible:shadow-focus`,
                   input7 === `end` ? `justify-end text-right` : `text-left`,
                 )}
@@ -573,7 +573,7 @@ export function initializeTablesStep1(): void {
       }
       let value4: Dynamic = input2 ? (
         <span
-          className={appKDImport(
+          className={clsx(
             `relative inline-flex max-w-full align-middle`,
             value && TablesZ10,
           )}
@@ -642,7 +642,7 @@ export function initializeTablesStep1(): void {
             ...input3,
             children: (
               <span
-                className={appKDImport(
+                className={clsx(
                   `relative inline-flex max-w-full align-middle`,
                   value && TablesZ10,
                   TablesStyles6,

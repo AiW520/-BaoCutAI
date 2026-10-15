@@ -1,18 +1,18 @@
 /** version-copy: restored from versionCopy-BGTTG3cn.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  NA as pageBusyThrownOf,
-  Rc as PlatformSyncAndRoutingBirthRefused,
-  jA as PAGE_BUSY_TRY_AGAIN,
-  vx as toast,
+  PAGE_BUSY_TRY_AGAIN,
+  pageBusyThrownOf,
+  PlatformSyncAndRoutingBirthRefused,
+  toast,
 } from "../platform/index";
 import {
-  J as DuplicateUnsupported,
-  K as DuplicateStructureInvalid,
-  Y as duplicateVersionTab,
-  q as DuplicateTooLarge,
+  DuplicateStructureInvalid,
+  DuplicateTooLarge,
+  DuplicateUnsupported,
+  duplicateVersionTab,
 } from "../document-app/index";
-import { Xt as fetchVersionXml } from "../platform/lazy";
+import { fetchVersionXml } from "../platform/lazy";
 function formatCopiedVersionDate(
   at?: Dynamic,
   locale?: Dynamic,

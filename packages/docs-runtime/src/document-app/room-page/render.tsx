@@ -15,9 +15,33 @@ import { SelectionActionsBar, TargetSourcePopover } from "../ask-cards/target-so
 /** BaoCut: room document render; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import { originalJsxProps, originalJsxsProps } from "../../react-runtime/jsx-runtime";
-import { Bg as PlatformApiAndAuthAssign, Di as EditorSelectionAndTablesDataPagesPrintSurface, Ed as resolveCommentsStoreValue30, Gd as CommentsStoreAllowScripts, Gf as useCommentStore, Ml as editorHostValue1700, Ox as resolvePlatformKeyboardAndSaveStatusSaved, Vr as updateEditorSelectionAndTablesChat, YO as resolveEditorExtensionsRefusalClass, Zl as EditorHostLfileOrphanRemount, _y as liveSupportCode, ap as resolveCommentsStoreNode, au as EditorHostLayoutMax, cj as resolvePlatformSessionAndSourcesTest4, ep as resolveCommentsStoreKind3, fj as PlatformSessionAndSourcesMessage4, hC as Button, hj as resolvePlatformSessionAndSourcesPath, iE as UiOverlaysAndIconsCustomIcon, jl as editorHostValue1600, lj as resolvePlatformSessionAndSourcesTest6, qr as EditorSelectionAndTablesByFile2, vx as toast } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
-import { t as preloadModule } from "../../boot/preload";
+import {
+  Button,
+  CommentsStoreAllowScripts,
+  EditorHostLayoutMax,
+  EditorHostLfileOrphanRemount,
+  editorHostValue1600,
+  editorHostValue1700,
+  EditorSelectionAndTablesByFile2,
+  EditorSelectionAndTablesDataPagesPrintSurface,
+  liveSupportCode,
+  PlatformApiAndAuthAssign,
+  PlatformSessionAndSourcesMessage4,
+  resolveCommentsStoreKind3,
+  resolveCommentsStoreNode,
+  resolveCommentsStoreValue30,
+  resolveEditorExtensionsRefusalClass,
+  resolvePlatformKeyboardAndSaveStatusSaved,
+  resolvePlatformSessionAndSourcesPath,
+  resolvePlatformSessionAndSourcesTest4,
+  resolvePlatformSessionAndSourcesTest6,
+  toast,
+  UiOverlaysAndIconsCustomIcon,
+  updateEditorSelectionAndTablesChat,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
+import { preloadModule } from "../../boot/preload";
 export function runRoomPage203Render(roomPageContext: {
   activeDataTarget: Dynamic;
   addEventListener2: Dynamic;
@@ -694,7 +718,7 @@ export function runRoomPage203Render(roomPageContext: {
         preloadModule(async (..._extraArguments: unknown[]): Promise<Dynamic> => {
           let {
             revealChat: revealChat
-          }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.ed);
+          }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformRuntimeAndChatDISCONNECTTOASTID);
           return {
             revealChat: revealChat
           };

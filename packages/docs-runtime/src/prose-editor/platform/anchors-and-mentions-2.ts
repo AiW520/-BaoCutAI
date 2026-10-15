@@ -2,7 +2,7 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   PluginKey,
-  helloLImport,
+  knownShellOrigin,
 } from "../../platform/dependencies";
 import {
   resolveEditorExtensionsValue12,
@@ -1309,7 +1309,7 @@ function resolveEditorAnchorsAndMentionsPost(
       reason?: Dynamic,
       ..._extraArguments: unknown[]
     ): undefined {
-      let helloLImport2: Dynamic = helloLImport(editorAnchorsAndMentionsPost);
+      let helloLImport2: Dynamic = knownShellOrigin(editorAnchorsAndMentionsPost);
       if (editorAnchorsAndMentionsPost === null || helloLImport2 === null)
         return;
       let ids: Dynamic = resolveEditorAnchorsAndMentionsIncludes2(

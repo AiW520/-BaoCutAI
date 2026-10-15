@@ -1,18 +1,18 @@
 /** doc-language-dialog: restored from DocLanguageDialog-ibrGkBt8.js. */
 // i18n-ignore-file: 语言列表里每种语言用它自己的写法（localName），不翻译
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../../boot/module-runtime";
+import { toModuleNamespace } from "../../boot/module-runtime";
 import {
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  kS as UiDialogsRoot,
-  vx as toast,
+  loadJsxRuntime,
+  loadReact,
+  toast,
+  UiDialogsRoot,
 } from "../../platform/index";
-import { y as LanguagePicker } from "../../design-system/index";
+import { LanguagePicker } from "../../design-system/index";
 import {
-  Dt as useDocumentLanguage,
-  Ot as writeDocumentLanguage,
-  Tt as DOCUMENT_LANGUAGE_COPY,
+  DOCUMENT_LANGUAGE_COPY,
+  useDocumentLanguage,
+  writeDocumentLanguage,
 } from "../index";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var DOCUMENT_LANGUAGES: Dynamic = [

@@ -10,10 +10,10 @@ import {
   encodeStateVector,
   mergeUpdates,
   originalElementProps,
-  preloadTImport,
+  preloadModule,
   readVarUint,
   readVarUint8Array,
-  rolldownNImport,
+  createLiveModuleNamespace,
   writeVarUint,
   writeVarUint8Array,
 } from "../dependencies";
@@ -191,13 +191,13 @@ var platformRuntimeAndChatState3: Dynamic;
 function resolvePlatformRuntimeAndChatLfileExtrasAreNotInThisBuild(
   ..._extraArguments: unknown[]
 ): Dynamic {
-  return (platformRuntimeAndChatState3 ??= preloadTImport(
+  return (platformRuntimeAndChatState3 ??= preloadModule(
     (..._extraArguments: unknown[]): Dynamic =>
       import("../../prose-editor/extras-source").then(
         (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-          if (result.default.length === 0)
+          if (result.editorExtrasSource.length === 0)
             throw Error(`lfile extras are not in this build`);
-          return result.default;
+          return result.editorExtrasSource;
         },
       ),
     [],
@@ -218,17 +218,17 @@ function resolvePlatformRuntimeAndChatTheSpellingWordListsAreNotInThisBuild(
   return (platformRuntimeAndChatState4 ??= (
     resolveObservabilityBootValue8()
       ? resolveObservabilityBootCache2()
-      : preloadTImport(
+      : preloadModule(
           (..._extraArguments: unknown[]): Dynamic =>
             import("../../prose-editor/runtime-source").then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-                if (result.default.length === 0)
+                if (result.editorRuntimeSource.length === 0)
                   throw Error(`the spelling word lists are not in this build`);
-                if (resolveObservabilityBootTech(result.default) === null)
+                if (resolveObservabilityBootTech(result.editorRuntimeSource) === null)
                   throw Error(
                     `the spelling word lists' carrier is not a whole word file`,
                   );
-                return result.default;
+                return result.editorRuntimeSource;
               },
             ),
           [],
@@ -566,7 +566,7 @@ async function loadPlatformRuntimeAndChatDefault(
   return replace === `xlsx` || replace === `xls`
     ? loadPlatformRuntimeAndChatStartsWith(
         (
-          await preloadTImport(
+          await preloadModule(
             async (..._extraArguments: unknown[]): Promise<Dynamic> => {
               let { default: result }: Dynamic = await import(
                 "../../embedded-widgets/model-workbook"
@@ -583,7 +583,7 @@ async function loadPlatformRuntimeAndChatDefault(
     : replace === `pptx`
       ? loadPlatformRuntimeAndChatStartsWith(
           (
-            await preloadTImport(
+            await preloadModule(
               async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                 let { default: result }: Dynamic = await import(
                   "../../document/templates/blank-slides"
@@ -600,7 +600,7 @@ async function loadPlatformRuntimeAndChatDefault(
       : replace === `docx`
         ? loadPlatformRuntimeAndChatStartsWith(
             (
-              await preloadTImport(
+              await preloadModule(
                 async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                   let { default: result }: Dynamic = await import(
                     "../../document/templates/blank-document"
@@ -683,7 +683,7 @@ function handleCommentStatusLine(
     text: handleCommentStatusLine5,
   }: Dynamic = handleCommentStatusLine2 ?? {};
   return handleCommentStatusLine3
-    ? preloadTImport(
+    ? preloadModule(
         (..._extraArguments: unknown[]): Dynamic =>
           Promise.resolve()
             .then(
@@ -708,7 +708,7 @@ function handleCommentStatusLine(
 }
 
 function clearCommentWorking(..._extraArguments: unknown[]): Dynamic {
-  return preloadTImport(
+  return preloadModule(
     (..._extraArguments: unknown[]) =>
       Promise.resolve()
         .then(
@@ -754,7 +754,7 @@ async function loadPlatformRuntimeAndChatEnsureSettled(
   ..._extraArguments: unknown[]
 ): Promise<Dynamic> {
   await (
-    await preloadTImport(
+    await preloadModule(
       async (..._extraArguments: unknown[]): Promise<Dynamic> => {
         let { ensureSettled: ensureSettled2 }: Dynamic =
           await Promise.resolve().then(
@@ -1432,14 +1432,14 @@ async function loadPlatformRuntimeAndChatEnsureSettled(
     let {
       runWorkflowClient: preloadTImport2,
       propagateWorkflowClient: preloadTImport3,
-    }: Dynamic = await preloadTImport(
+    }: Dynamic = await preloadModule(
       async (..._extraArguments: unknown[]): Promise<Dynamic> => {
         let {
           runWorkflowClient: runWorkflowClient,
           propagateWorkflowClient: propagateWorkflowClient,
         }: Dynamic = await import("../lazy").then(
           (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            result2.t,
+            result2.workflowClientModule,
         );
         return {
           runWorkflowClient: runWorkflowClient,
@@ -2109,11 +2109,11 @@ export function initializePlatformRuntimeAndChat1Step1(): void {
   (resolvePlatformRuntimeAndChatThen = (
     ..._extraArguments: unknown[]
   ): Dynamic =>
-    preloadTImport(
+    preloadModule(
       (..._extraArguments: unknown[]): Dynamic =>
         import("../../prose-editor/runtime-source").then(
           (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            result.default,
+            result.editorRuntimeSource,
         ),
       [],
       import.meta.url,
@@ -2439,7 +2439,7 @@ export function initializePlatformRuntimeAndChat1Step1(): void {
         ),
     },
   ));
-  (PlatformRuntimeAndChatDISCONNECTTOASTID = rolldownNImport({
+  (PlatformRuntimeAndChatDISCONNECTTOASTID = createLiveModuleNamespace({
     DISCONNECT_TOAST_ID: (..._extraArguments: unknown[]) => DISCONNECT_TOAST_ID,
     buildReloadDraftStash: (..._extraArguments: unknown[]): Dynamic =>
       buildReloadDraftStash,
@@ -2601,7 +2601,7 @@ export function initializePlatformRuntimeAndChat1Step1(): void {
         let {
           RASTER_IMAGE: preloadTImport2,
           BULK_ATTACH_THRESHOLD: preloadTImport3,
-        }: Dynamic = await preloadTImport(
+        }: Dynamic = await preloadModule(
           async (..._extraArguments: unknown[]): Promise<Dynamic> => {
             let {
               RASTER_IMAGE: RASTERIMAGE,
@@ -3097,7 +3097,7 @@ export function initializePlatformRuntimeAndChat1Step1(): void {
                   if (operation.kind === `comment-change` && operation.args) {
                     let args: Dynamic = operation.args;
                     if (args.container) {
-                      preloadTImport(
+                      preloadModule(
                         (..._extraArguments: unknown[]): Dynamic =>
                           Promise.resolve()
                             .then(

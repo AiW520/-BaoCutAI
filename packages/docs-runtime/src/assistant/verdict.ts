@@ -9,11 +9,11 @@ import type {
 } from "./writing-contracts";
 import type { UnknownRecord } from "../serialization/value-contracts";
 import {
-  By as resolveObservabilityBrowserAndOperationEventsFeature,
-  Hy as resolveObservabilityBrowserAndOperationEventsFeature3,
-  Vy as resolveObservabilityBrowserAndOperationEventsFeature2,
+  resolveObservabilityBrowserAndOperationEventsFeature,
+  resolveObservabilityBrowserAndOperationEventsFeature2,
+  resolveObservabilityBrowserAndOperationEventsFeature3,
 } from "../platform/index";
-import { v as normalizeClaudeRequestText } from "../document-app/index";
+import { normalizeClaudeRequestText } from "../document-app/index";
 var VERDICT_FEATURE = {
   feature: `write_decide`,
   trigger: `command`,

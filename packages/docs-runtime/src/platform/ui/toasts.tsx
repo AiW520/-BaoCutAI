@@ -3,7 +3,7 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   jsxRuntime,
   originalJsxProps,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   emitTelemetryEvent,
@@ -466,7 +466,7 @@ var UiToastsNow: Dynamic;
 
 // BaoCut: called by platform-core-initialize in the recovered source order.
 export function initializeUiToastsStep1(): void {
-  (UiToastsTOASTHARDMAXMS = rolldownNImport({
+  (UiToastsTOASTHARDMAXMS = createLiveModuleNamespace({
     TOAST_HARD_MAX_MS: (..._extraArguments: unknown[]) => TOAST_HARD_MAX_MS,
     TOAST_HELD_MAX_MS: (..._extraArguments: unknown[]) => TOAST_HELD_MAX_MS,
     _onToastBridgeReady: (..._extraArguments: unknown[]): Dynamic =>

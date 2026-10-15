@@ -14,7 +14,21 @@ import { DocumentFrameFrag } from "../document-frame-use-document-frame-key";
 
 /** BaoCut: room document comment geometry; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Cf as isSelbarDraft, En as resolvePlatformLiveDocumentAndHistoryNodeId, Gf as useCommentStore, HA as resolvePlatformSessionAndSourcesToLowerCase, Hl as collectEditorHostJoin2, Wm as DataModelSchemasFreeze, eN as isObservabilityTelemetryValue3, mN as resolveObservabilityTelemetryReady3, mn as updatePlatformLiveDocumentAndHistoryCommentRail, ui as updateEditorSelectionAndTablesResolved, vx as toast, wf as isTmpId, wi as updateEditorSelectionAndTablesReport } from "../../platform/index";
+import {
+  collectEditorHostJoin2,
+  DataModelSchemasFreeze,
+  isObservabilityTelemetryValue3,
+  isSelbarDraft,
+  isTmpId,
+  resolveObservabilityTelemetryReady3,
+  resolvePlatformLiveDocumentAndHistoryNodeId,
+  resolvePlatformSessionAndSourcesToLowerCase,
+  toast,
+  updateEditorSelectionAndTablesReport,
+  updateEditorSelectionAndTablesResolved,
+  updatePlatformLiveDocumentAndHistoryCommentRail,
+  useCommentStore,
+} from "../../platform/index";
 export function runRoomPage150Send6(roomPageContext: {
   frameMessengerRef: Dynamic;
   maxStateRef: Dynamic;

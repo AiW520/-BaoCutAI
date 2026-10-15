@@ -6,8 +6,31 @@ import { documentRuntimeLimit10000, documentRuntimeLimit2000, documentRuntimeLim
 
 /** BaoCut: room document frame state; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Av as frameSamplePermission, Br as EditorSelectionAndTablesPrefs, Fr as EditorSelectionAndTablesRoads, Ir as EditorSelectionAndTablesState8, Mr as filterEditorSelectionAndTablesText, Nr as resolveEditorSelectionAndTablesSpellWords, Oi as resolveEditorSelectionAndTablesHasOwn, Ov as frameSampleAvailable, Pr as EditorSelectionAndTablesState7, Rr as EditorSelectionAndTablesState6, Ry as clearObservabilityBrowserAndOperationEventsDelete, Sn as PlatformLiveDocumentAndHistoryDocReady, Tv as frameProofreadRound, Wl as resolveEditorHostKind3, di as isEditorSelectionAndTablesRowIndex, jr as filterEditorSelectionAndTablesValue, ki as resolveEditorSelectionAndTablesCreate, li as resolveEditorSelectionAndTablesNull, mh as isDatumPinThread, wh as widgetAnchorOfThread, wv as frameProofreadEnabled, zr as isEditorSelectionAndTablesSpelling } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
+import {
+  clearObservabilityBrowserAndOperationEventsDelete,
+  EditorSelectionAndTablesPrefs,
+  EditorSelectionAndTablesRoads,
+  EditorSelectionAndTablesState6,
+  EditorSelectionAndTablesState7,
+  EditorSelectionAndTablesState8,
+  filterEditorSelectionAndTablesText,
+  filterEditorSelectionAndTablesValue,
+  frameProofreadEnabled,
+  frameProofreadRound,
+  frameSampleAvailable,
+  frameSamplePermission,
+  isDatumPinThread,
+  isEditorSelectionAndTablesRowIndex,
+  isEditorSelectionAndTablesSpelling,
+  PlatformLiveDocumentAndHistoryDocReady,
+  resolveEditorHostKind3,
+  resolveEditorSelectionAndTablesCreate,
+  resolveEditorSelectionAndTablesHasOwn,
+  resolveEditorSelectionAndTablesNull,
+  resolveEditorSelectionAndTablesSpellWords,
+  widgetAnchorOfThread,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
 export function runRoomPage130Effect(roomPageContext: {
   enabledState5: Dynamic;
   setEnabledState4: Dynamic;

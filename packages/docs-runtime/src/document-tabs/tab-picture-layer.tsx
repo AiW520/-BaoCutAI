@@ -4,30 +4,30 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 const mapPreloadDependencies: Dynamic = (
   ..._extraArguments: unknown[]
 ): Dynamic => [];
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  DE as resolveUiProviderAndLayersUseContext11,
-  Ei as EditorSelectionAndTablesDataPagesPrintSkip,
-  HM as loadReact,
-  Ol as EditorHostReplace3,
-  UE as loadJsxRuntime,
-  pn as resolvePlatformLiveDocumentAndHistoryUpdate,
-  un as getPlatformLiveDocumentAndHistoryValues,
+  EditorHostReplace3,
+  EditorSelectionAndTablesDataPagesPrintSkip,
+  getPlatformLiveDocumentAndHistoryValues,
+  loadJsxRuntime,
+  loadReact,
+  resolvePlatformLiveDocumentAndHistoryUpdate,
+  resolveUiProviderAndLayersUseContext11,
 } from "../platform/index";
-import { S as isFrameArtifact } from "../boot/environment";
-import { t as preloadModule } from "../boot/preload";
-import { D as watchReferenceChanges } from "../document-app/references/chips";
+import { isFrameArtifact } from "../boot/environment";
+import { preloadModule } from "../boot/preload";
+import { watchReferenceChanges } from "../document-app/references/chips";
 import {
-  Lt as useDocumentFonts,
-  h as documentFrameStyleAttributes,
-  s as DOCUMENT_PREVIEW_POPOVER_CLASS,
-  wt as useDocumentDisplay,
+  DOCUMENT_PREVIEW_POPOVER_CLASS,
+  documentFrameStyleAttributes,
+  useDocumentDisplay,
+  useDocumentFonts,
 } from "../document-app/index";
 import {
-  Ct as versionBlobReader,
-  yt as fetchProjectEnums,
+  fetchProjectEnums,
+  versionBlobReader,
 } from "../platform/lazy";
-import { t as LFileSnapshotView } from "../document-history/snapshot-view";
+import { LFileSnapshotView } from "../document-history/snapshot-view";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();
 function pictureOffsetFromFrame(
@@ -158,7 +158,7 @@ function TabPictureLayer(
             "../platform/index"
           ).then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.Fg,
+              result.PlatformApiAndAuthFEEDTOPIC,
           );
           return {
             subscribeProjectFeed: then,

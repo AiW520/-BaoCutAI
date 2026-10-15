@@ -2,7 +2,7 @@
 import type { Dynamic } from "../interop/legacy-dynamic";
 import * as npmDependency0 from "katex";
 const renderToString = (npmDependency0).renderToString;
-import { Lu as resolveEditorHostReplace } from "../platform/index";
+import { resolveEditorHostReplace } from "../platform/index";
 var allowedMathClassPattern: Dynamic = /^bongo-(hl|eq)-[a-z0-9-]+$/;
 var allowedEquationIdPattern: Dynamic = /^bongo-eq-[a-z0-9-]+$/;
 function isTrustedMathHtmlCommand(

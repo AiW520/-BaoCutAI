@@ -6,7 +6,7 @@ import {
   BaseCollapsibleTrigger,
   React,
   UiOverlaysAndIconsCustomIcon,
-  appKDImport,
+  clsx,
   originalJsxProps,
   originalJsxsProps,
   resolveUiDesignSystemValue2,
@@ -69,7 +69,7 @@ export function initializeCollapsibleStep1(): void {
         <UiOverlaysAndIconsCustomIcon
           name={`CaretRight`}
           size={`sm`}
-          className={appKDImport(
+          className={clsx(
             CollapsibleStyles2,
             input3 === `end` && `ms-auto`,
           )}

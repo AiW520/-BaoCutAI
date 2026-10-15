@@ -13,16 +13,16 @@ import type {
 import type { UnknownRecord } from "../serialization/value-contracts";
 import type { EditorNodeJSON } from "../document/contracts";
 import {
-  i_ as liveDoor,
-  ln as resolvePlatformLiveDocumentAndHistoryNode2,
+  liveDoor,
+  resolvePlatformLiveDocumentAndHistoryNode2,
 } from "../platform/index";
 import {
-  R as prefetchDocumentViewWithComments,
-  c as documentPreviewKey,
+  documentPreviewKey,
+  prefetchDocumentViewWithComments,
 } from "../document-app/index";
 import {
-  gt as parseVersionPreviewFace,
-  pt as collectEmbedReferences,
+  collectEmbedReferences,
+  parseVersionPreviewFace,
 } from "../platform/lazy";
 function viewOfReply(response: SnapshotHttpReply): SnapshotView | null {
   if (response.status < 200 || response.status >= 300) return null;

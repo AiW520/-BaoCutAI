@@ -11,7 +11,7 @@ import {
   Slice,
   inFrame,
   mergeAttributes,
-  preloadTImport,
+  preloadModule,
   useAtomValue,
 } from "../../platform/dependencies";
 import {
@@ -1801,7 +1801,7 @@ function useCommentsEditorThen2(
         resolveCommentsEditorPid(commentsEditorThen2);
       let useCommentsEditorThen2Result: Dynamic;
       let enabled = true;
-      preloadTImport(
+      preloadModule(
         (..._extraArguments: unknown[]) =>
           Promise.resolve()
             .then(

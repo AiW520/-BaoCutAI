@@ -9,10 +9,47 @@ import { resolveDocumentCommandsLoad, resolveDocumentCommandsResolve, resolveDoc
 
 /** BaoCut: room document frame initialization; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { $m as resolveDataModelSchemasBid2, Ap as resolvePlatformAnnouncementsValue2, Bg as PlatformApiAndAuthAssign, Gf as useCommentStore, Hh as resolveDataModelSchemasPathname, Id as resolveCommentsStoreLayer, NM as resolvePlatformFeatureFlagsValue5, Vr as updateEditorSelectionAndTablesChat, Wr as isEditorSelectionAndTablesIsActive, Xy as resolveObservabilityBrowserAndOperationEventsValue16, Yy as resolveObservabilityBrowserAndOperationEventsSpotUnk, _O as editorAnchorsAndMentionsPattern2, _i as resolveEditorSelectionAndTablesComponent2, cj as resolvePlatformSessionAndSourcesTest4, da as resolveCommentsEditorIncludes, dj as PlatformSessionAndSourcesAddedToYourMessageToClaude, ej as resolvePlatformSessionAndSourcesOpen, fj as PlatformSessionAndSourcesMessage4, hj as resolvePlatformSessionAndSourcesPath, jM as resolvePlatformFeatureFlagsEnabled2, kp as resolvePlatformAnnouncementsValue, lj as resolvePlatformSessionAndSourcesTest6, mp as dataOperationEnginePattern5, nm as resolveDataModelSchemasLabel2, oi as resolveEditorSelectionAndTablesText3, op as resolveCommentsStoreKind, pp as dataOperationEngineCodeSchema3, sf as admitReanchor, sj as resolvePlatformSessionAndSourcesTest5, sp as resolveCommentsStoreLabel, tj as platformSessionAndSourcesPattern12, tm as resolveDataModelSchemasValue32, up as resolveCommentsStoreValue, vO as editorAnchorsAndMentionsPattern3, vx as toast, xy as observabilityBrowserAndOperationEventsPattern22 } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
+import {
+  admitReanchor,
+  dataOperationEngineCodeSchema3,
+  dataOperationEnginePattern5,
+  editorAnchorsAndMentionsPattern2,
+  editorAnchorsAndMentionsPattern3,
+  isEditorSelectionAndTablesIsActive,
+  observabilityBrowserAndOperationEventsPattern22,
+  PlatformApiAndAuthAssign,
+  PlatformSessionAndSourcesAddedToYourMessageToClaude,
+  PlatformSessionAndSourcesMessage4,
+  platformSessionAndSourcesPattern12,
+  resolveCommentsEditorIncludes,
+  resolveCommentsStoreKind,
+  resolveCommentsStoreLabel,
+  resolveCommentsStoreLayer,
+  resolveCommentsStoreValue,
+  resolveDataModelSchemasBid2,
+  resolveDataModelSchemasLabel2,
+  resolveDataModelSchemasPathname,
+  resolveDataModelSchemasValue32,
+  resolveEditorSelectionAndTablesComponent2,
+  resolveEditorSelectionAndTablesText3,
+  resolveObservabilityBrowserAndOperationEventsSpotUnk,
+  resolveObservabilityBrowserAndOperationEventsValue16,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformAnnouncementsValue2,
+  resolvePlatformFeatureFlagsEnabled2,
+  resolvePlatformFeatureFlagsValue5,
+  resolvePlatformSessionAndSourcesOpen,
+  resolvePlatformSessionAndSourcesPath,
+  resolvePlatformSessionAndSourcesTest4,
+  resolvePlatformSessionAndSourcesTest5,
+  resolvePlatformSessionAndSourcesTest6,
+  toast,
+  updateEditorSelectionAndTablesChat,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
 import { commentSummonHost } from "../../host/docs-host";
-import { t as preloadModule } from "../../boot/preload";
+import { preloadModule } from "../../boot/preload";
 export function runRoomPage1DataTypeAskClaude(roomPageContext: {
   callback: Dynamic;
   commentsReadOnlyRef: Dynamic;
@@ -119,7 +156,7 @@ export function runRoomPage1DataTypeAskClaude(roomPageContext: {
   preloadModule(async (..._extraArguments: unknown[]): Promise<Dynamic> => {
     let {
       revealChat: revealChat
-    }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.ed);
+    }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformRuntimeAndChatDISCONNECTTOASTID);
     return {
       revealChat: revealChat
     };

@@ -20,7 +20,7 @@ import {
   resolveCommentsStoreValue7,
   CommentQueuedError,
 } from "../store/store-4";
-import { preloadTImport } from "../../platform/dependencies";
+import { preloadModule } from "../../platform/dependencies";
 import { DataModelSchemasANCHORLABELMAX } from "../../platform/data/model-schemas-3";
 import {
   resolveDataModelSchemasValue28,
@@ -138,7 +138,7 @@ export function createCommentReplyActions(
           let argument3: Dynamic =
             argument ??
             (
-              await preloadTImport(
+              await preloadModule(
                 async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                   let { extractMentions: extractMentions2 }: Dynamic =
                     await Promise.resolve().then(

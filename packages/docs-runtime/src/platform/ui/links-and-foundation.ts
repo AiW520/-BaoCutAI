@@ -2,7 +2,7 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
-  preloadTImport,
+  preloadModule,
 } from "../dependencies";
 import {
   collectObservabilityTelemetryValue,
@@ -1315,11 +1315,11 @@ function resolveUiLinksAndFoundationCdsMobileSheets(
   UiLinksAndFoundationState3 ??= resolvePlatformLoadingAndStatusResolve(
     `cds_mobile_sheets`,
     (..._extraArguments: unknown[]): Dynamic =>
-      preloadTImport(
+      preloadModule(
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../design-system/index").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.t,
+              result.sheetPopupModule,
           ),
         collectObservabilityTelemetryValue([0, 1, 2]),
         import.meta.url,

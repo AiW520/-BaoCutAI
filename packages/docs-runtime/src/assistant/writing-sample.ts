@@ -1,9 +1,9 @@
 /** claude-writing-sample: restored from claudeWritingSample-DhkHl_Df.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  By as resolveObservabilityBrowserAndOperationEventsFeature,
-  Hy as resolveObservabilityBrowserAndOperationEventsFeature3,
-  Vy as resolveObservabilityBrowserAndOperationEventsFeature2,
+  resolveObservabilityBrowserAndOperationEventsFeature,
+  resolveObservabilityBrowserAndOperationEventsFeature2,
+  resolveObservabilityBrowserAndOperationEventsFeature3,
 } from "../platform/index";
 var MAX_SAMPLE_BLOCKS: number = 40;
 var MAX_SAMPLE_CHARACTERS: number = 2e4;

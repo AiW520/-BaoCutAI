@@ -1,7 +1,7 @@
 /** BaoCut: platform api and auth from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   PlatformApiAndAuthState2,
@@ -1063,7 +1063,7 @@ export function initializePlatformApiAndAuth3Step1(): void {
     function (platformApiAndAuthWhat?: unknown, ..._extraArguments: unknown[]) {
       return <LiteUnavailable what={what} />;
     });
-  (PlatformApiAndAuthWorkbook = rolldownNImport({
+  (PlatformApiAndAuthWorkbook = createLiveModuleNamespace({
     Workbook: (..._extraArguments: unknown[]): Dynamic =>
       PlatformApiAndAuthSpreadsheetEngine,
     compactOps: (..._extraArguments: unknown[]): Dynamic => compactOps,

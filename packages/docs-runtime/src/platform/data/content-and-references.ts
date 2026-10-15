@@ -8,7 +8,7 @@ import {
   discriminatedUnion,
   literal,
   preprocess,
-  rolldownTImport,
+  initializeCommonJS,
   strictObject,
   string,
   value_enum,
@@ -1499,7 +1499,7 @@ export function initializeDataContentAndReferencesStep1(): void {
       : null);
   (dataContentAndReferencesSet3 = new (Set as Dynamic)([`member`]));
   (DataContentAndReferencesPublic = `public`);
-  rolldownTImport(
+  initializeCommonJS(
     (callback?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       var callback2: Dynamic =
         (callback && callback.__spreadArray) ||

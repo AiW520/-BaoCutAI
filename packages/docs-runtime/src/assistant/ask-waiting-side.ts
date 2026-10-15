@@ -4,30 +4,30 @@ const mapPreloadDependencies: Dynamic = (
   ..._extraArguments: unknown[]
 ): Dynamic => [];
 import {
-  Gf as useCommentStore,
-  Up as isDataModelSchemasKind3,
-  Xm as dataModelSchemasPattern16,
-  av as frameFenceAuthor,
-  bf as heldThreads,
-  df as carrierSettled,
-  jM as resolvePlatformFeatureFlagsEnabled2,
-  jf as quietCarrierWritten,
-  kp as resolvePlatformAnnouncementsValue,
-  lf as carrierBaselineOf,
-  rm as resolveDataModelSchemasAgentRows,
-  vm as resolveDataModelSchemasSent,
-  vx as toast,
-  xy as observabilityBrowserAndOperationEventsPattern22,
+  carrierBaselineOf,
+  carrierSettled,
+  dataModelSchemasPattern16,
+  frameFenceAuthor,
+  heldThreads,
+  isDataModelSchemasKind3,
+  observabilityBrowserAndOperationEventsPattern22,
+  quietCarrierWritten,
+  resolveDataModelSchemasAgentRows,
+  resolveDataModelSchemasSent,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformFeatureFlagsEnabled2,
+  toast,
+  useCommentStore,
 } from "../platform/index";
-import { t as preloadModule } from "../boot/preload";
+import { preloadModule } from "../boot/preload";
 import {
-  A as notifyClaudeReplied,
-  D as registerCommentSessionHost,
-  I as CLAUDE_WRITING_OUTCOME_MESSAGES,
-  N as CLAUDE_COMMENT_WAITING_MESSAGES,
-  O as commentSessionIdentity,
-  T as reportCommentSessionEnd,
-  j as hasMintedContent,
+  CLAUDE_COMMENT_WAITING_MESSAGES,
+  CLAUDE_WRITING_OUTCOME_MESSAGES,
+  commentSessionIdentity,
+  hasMintedContent,
+  notifyClaudeReplied,
+  registerCommentSessionHost,
+  reportCommentSessionEnd,
 } from "../document-app/index";
 import { easeOutKeyboardAt, easeOutTakesKeyboard } from "./ask-card";
 import {
@@ -1262,7 +1262,7 @@ function createWaitingSide(
               "../platform/index"
             ).then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.Fg,
+                result.PlatformApiAndAuthFEEDTOPIC,
             );
             return {
               subscribeProjectFeed: then,

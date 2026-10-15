@@ -1,12 +1,12 @@
 /** comment-outbox-backing: restored from commentOutboxBacking-pPMYRE75.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  Hv as frameViewer,
-  by as resolveObservabilityBrowserAndOperationEventsIsFinite2,
-  vg as PlatformApiAndAuthUser,
-  yy as resolveObservabilityBrowserAndOperationEventsIndexedDB,
+  frameViewer,
+  PlatformApiAndAuthUser,
+  resolveObservabilityBrowserAndOperationEventsIndexedDB,
+  resolveObservabilityBrowserAndOperationEventsIsFinite2,
 } from "../platform/index";
-import { S as isFrameArtifact } from "../boot/environment";
+import { isFrameArtifact } from "../boot/environment";
 var OUTBOX_SCOPE_TIMEOUT_MS: number = 3e3;
 function resolveOutboxScope(
   pid?: Dynamic,

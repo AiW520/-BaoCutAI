@@ -818,7 +818,7 @@ async function duplicateDocumentTab(
         let { validateStructuralPM: validateStructuralPM }: Dynamic =
           await import("../../prose-editor/schema").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.n,
+              result.structuralPMValidationModule,
           );
         return {
           validateStructuralPM: validateStructuralPM,

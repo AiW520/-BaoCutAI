@@ -3,9 +3,9 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   create,
-  helloMImport,
+  isTrustedClaudeOrigin,
   inFrame,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   ObservabilityTelemetry259dc54003a391cffb50b52b94c913ed15d92d1c,
@@ -2371,7 +2371,7 @@ function resolvePlatformSyncAndRoutingValue14(
 ): Dynamic {
   return (
     platformSyncAndRoutingValue14 === options ||
-    helloMImport(platformSyncAndRoutingValue14)
+    isTrustedClaudeOrigin(platformSyncAndRoutingValue14)
   );
 }
 
@@ -3078,7 +3078,7 @@ export function initializePlatformSyncAndRouting1Step1(): void {
   (resolvePlatformSyncAndRoutingValue10 = (
     ..._extraArguments: unknown[]
   ): Dynamic => usePlatformSyncAndRoutingUseSyncExternalStore(EditorHostStyles12));
-  (PlatformSyncAndRoutingChatRow = rolldownNImport({
+  (PlatformSyncAndRoutingChatRow = createLiveModuleNamespace({
     ChatRow: (..._extraArguments: unknown[]): Dynamic => ChatRow,
     DebugOverlay: (..._extraArguments: unknown[]): Dynamic => DebugOverlay,
     HiddenScreenshotter: (..._extraArguments: unknown[]): Dynamic =>
@@ -3330,7 +3330,7 @@ export function initializePlatformSyncAndRouting1Step1(): void {
       ..._extraArguments: unknown[]
     ): undefined => void setTimeout(platformSyncAndRoutingEmit, options),
   });
-  (PlatformSyncAndRoutingActionsPage = rolldownNImport({
+  (PlatformSyncAndRoutingActionsPage = createLiveModuleNamespace({
     ActionsPage: (..._extraArguments: unknown[]): Dynamic => ActionsPage,
     Debug: (..._extraArguments: unknown[]): Dynamic => Debug,
     FilmedMountDebug: (..._extraArguments: unknown[]): Dynamic =>

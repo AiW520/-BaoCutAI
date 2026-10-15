@@ -1,20 +1,20 @@
 /** projects-route-gate: restored from ProjectsRouteGate-B778uiNW.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../../boot/module-runtime";
+import { toModuleNamespace } from "../../boot/module-runtime";
 import {
-  A_ as resolveObservabilityBrowserAndOperationEventsUseContext2,
-  Gj as resolveDataContentAndReferencesKind,
-  HM as loadReact,
-  S_ as resolvePlatformApiAndAuthStartsWith,
-  UE as loadJsxRuntime,
-  Wj as resolveDataContentAndReferencesKind2,
-  iE as UiOverlaysAndIconsCustomIcon,
-  ig as useContainerStore,
-  kA as resolvePlatformSessionAndSourcesValue19,
-  k_ as resolveObservabilityBrowserAndOperationEventsValue48,
-  x_ as resolvePlatformApiAndAuthValue,
+  loadJsxRuntime,
+  loadReact,
+  resolveDataContentAndReferencesKind,
+  resolveDataContentAndReferencesKind2,
+  resolveObservabilityBrowserAndOperationEventsUseContext2,
+  resolveObservabilityBrowserAndOperationEventsValue48,
+  resolvePlatformApiAndAuthStartsWith,
+  resolvePlatformApiAndAuthValue,
+  resolvePlatformSessionAndSourcesValue19,
+  UiOverlaysAndIconsCustomIcon,
+  useContainerStore,
 } from "../../platform/index";
-import { v as Workspace } from "../../platform/lazy";
+import { Workspace } from "../../platform/lazy";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();
 var FULL_UUID_PATTERN: Dynamic =

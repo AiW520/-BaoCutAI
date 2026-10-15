@@ -1,7 +1,10 @@
 /** stamped-addresses-host: restored from stampedAddressesHost-csrBySP9.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { cj as resolvePlatformSessionAndSourcesTest4 } from "../platform/index";
-import { b as parseCensusReport, w as useCensusStore } from "../platform/lazy";
+import { resolvePlatformSessionAndSourcesTest4 } from "../platform/index";
+import {
+  parseCensusReport,
+  useCensusStore,
+} from "../platform/lazy";
 function takeStampedAddresses(
   fileId?: Dynamic,
   snapshot?: Dynamic,

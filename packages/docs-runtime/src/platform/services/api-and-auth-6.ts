@@ -3,7 +3,7 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   create,
   inFrame,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   setDdUser,
@@ -2508,7 +2508,7 @@ export function initializePlatformApiAndAuth6Step1(): void {
         ),
     }),
   ));
-  (PlatformApiAndAuthMUTATORS = rolldownNImport({
+  (PlatformApiAndAuthMUTATORS = createLiveModuleNamespace({
     MUTATORS: (..._extraArguments: unknown[]) => MUTATORS,
     OT_ACK_TIMEOUT_MS: (..._extraArguments: unknown[]) => OT_ACK_TIMEOUT_MS,
     OpCutoverError: (..._extraArguments: unknown[]): Dynamic => OpCutoverError,

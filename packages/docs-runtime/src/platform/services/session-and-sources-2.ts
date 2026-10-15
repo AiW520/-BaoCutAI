@@ -2,7 +2,7 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   inFrame,
-  preloadTImport,
+  preloadModule,
 } from "../dependencies";
 import {
   lazyZod,
@@ -133,7 +133,7 @@ async function loadPlatformSessionAndSourcesAckOf(
 ): Promise<Dynamic> {
   if (items.length === 0) throw Error(`postIntent: empty project id`);
   let { ackOf: preloadTImport2, liveDoor: preloadTImport3 }: Dynamic =
-    await preloadTImport(
+    await preloadModule(
       async (..._extraArguments: unknown[]): Promise<Dynamic> => {
         let { ackOf: ackOf2, liveDoor: liveDoor2 }: Dynamic =
           await Promise.resolve().then(
@@ -148,7 +148,7 @@ async function loadPlatformSessionAndSourcesAckOf(
       undefined,
       import.meta.url,
     );
-  let { withBusyRetry: preloadTImport4 }: Dynamic = await preloadTImport(
+  let { withBusyRetry: preloadTImport4 }: Dynamic = await preloadModule(
     async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let { withBusyRetry: withBusyRetry2 }: Dynamic =
         await Promise.resolve().then(
@@ -182,7 +182,7 @@ async function loadPlatformSessionAndSourcesAckOf2(
 ): Promise<Dynamic> {
   if (items.length === 0) throw Error(`postConfig: empty project id`);
   let { ackOf: preloadTImport2, liveDoor: preloadTImport3 }: Dynamic =
-    await preloadTImport(
+    await preloadModule(
       async (..._extraArguments: unknown[]): Promise<Dynamic> => {
         let { ackOf: ackOf2, liveDoor: liveDoor2 }: Dynamic =
           await Promise.resolve().then(
@@ -213,7 +213,7 @@ async function loadPlatformSessionAndSourcesFrameVersionTable(
 ): Promise<Dynamic> {
   if (inFrame())
     return (
-      await preloadTImport(
+      await preloadModule(
         async (..._extraArguments: unknown[]): Promise<Dynamic> => {
           let { frameVersionTable: frameVersionTable2 }: Dynamic =
             await Promise.resolve().then(

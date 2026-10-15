@@ -1,7 +1,7 @@
 /** BaoCut: platform api and auth from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   resolveObservabilityBrowserAndOperationEventsIndexedDB,
@@ -2791,7 +2791,7 @@ export function initializePlatformApiAndAuth4Step1(): void {
               ),
           ),
   });
-  (PlatformApiAndAuthTOMBSTONE = rolldownNImport({
+  (PlatformApiAndAuthTOMBSTONE = createLiveModuleNamespace({
     TOMBSTONE: (..._extraArguments: unknown[]) => TOMBSTONE,
     _wireRevBump: (..._extraArguments: unknown[]): Dynamic => _wireRevBump,
     ackFlushed: (..._extraArguments: unknown[]): Dynamic => ackFlushed,

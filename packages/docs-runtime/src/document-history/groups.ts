@@ -1,14 +1,14 @@
 /** history-groups: restored from historyGroups-CUQo9J_g.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  $a as resolveCommentsActionsAndSelectionName,
-  Fj as resolvePlatformSessionAndSourcesValue3,
-  Oj as resolvePlatformSessionAndSourcesRound,
-  ic as resolvePlatformSyncAndRoutingIsFinite3,
-  kj as resolvePlatformSessionAndSourcesValue,
-  mO as resolveEditorAnchorsAndMentionsEmail,
-  pO as resolveEditorAnchorsAndMentionsOther,
-  z as resolvePlatformLiveDocumentAndHistoryParams,
+  resolveCommentsActionsAndSelectionName,
+  resolveEditorAnchorsAndMentionsEmail,
+  resolveEditorAnchorsAndMentionsOther,
+  resolvePlatformLiveDocumentAndHistoryParams,
+  resolvePlatformSessionAndSourcesRound,
+  resolvePlatformSessionAndSourcesValue,
+  resolvePlatformSessionAndSourcesValue3,
+  resolvePlatformSyncAndRoutingIsFinite3,
 } from "../platform/index";
 var SYSTEM_ACTORS: Dynamic = new (Set as Dynamic)([
   `ldoc-peer`,

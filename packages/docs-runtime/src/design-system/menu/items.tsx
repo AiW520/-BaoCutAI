@@ -14,7 +14,7 @@ import {
   UiOverlaysAndIconsIcon,
   UiShortcutsAndSizingReason,
   UiTooltipsAndControlsChecked,
-  appKDImport,
+  clsx,
   collectUiShortcutsAndSizingModifiers2,
   isUiShortcutsAndSizingValue,
   jsxRuntime,
@@ -335,7 +335,7 @@ export function initializeMenuItemsStep1(): void {
       );
       let value16: Dynamic = value2 !== undefined && (
         <span
-          className={appKDImport(
+          className={clsx(
             `flex size-icon shrink-0 items-center justify-center`,
             value4 === `trailing` && !input8 && !input3 && `-mr-1`,
             !!(value4 === `trailing` && input3 && !input8) &&
@@ -398,7 +398,7 @@ export function initializeMenuItemsStep1(): void {
             input3
           ) && (
             <span
-              className={appKDImport(
+              className={clsx(
                 `ml-md flex shrink-0 items-center gap-xs`,
                 !!(
                   input3 &&

@@ -10,9 +10,57 @@ import { runRoomPage10DataVerbReadDataVerbWatch, runRoomPage11DataVerbWidgetInvo
 import { runRoomPage24DataVerbPerson, runRoomPage25DataVerbPeople, runRoomPage26DataTypeWidgetVsSave, runRoomPage27DataTypeCommentClick, runRoomPage28DataTypeCommentRects, runRoomPage29DataTypeProofreadReq, runRoomPage30DataTypeCaretPrimed } from "./frame-messages-2";
 /** BaoCut: room document frame messages; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Ar as updateEditorSelectionAndTablesSpellWords, Cg as PlatformApiAndAuthPriming, Cl as resolvePlatformSyncAndRoutingSource, FA as resolvePlatformSessionAndSourcesTab4, Gf as useCommentStore, IA as resolvePlatformSessionAndSourcesTab3, In as PlatformLiveDocumentAndHistorySession, Jb as createPagesWidgetRelayDroppedEvent, Ld as resolveCommentsStoreValue27, RM as resolvePlatformFeatureFlagsValue, Sd as ObservabilityBootOptraceSink, Ss as updatePlatformSyncAndRoutingDirectory, Ur as EditorSelectionAndTablesSelection, Wl as resolveEditorHostKind3, X_ as frameCurrentAnchor, Xh as loadDataModelSchemasCss, YM as emitTelemetryEvent, bv as frameProfiles, fN as installObservabilityTelemetryPagehide, fd as resolvePlatformRuntimeAndChatTheSpellingWordListsAreNotInThisBuild, fv as frameHotTouched, gd as resolveObservabilityBootOpen, gg as PlatformApiAndAuthParticipants, h_ as rawReq, ja as resolveCommentsActionsAndSelectionFrame, kr as resolveEditorSelectionAndTablesValue13, mN as resolveObservabilityTelemetryReady3, m_ as api, md as resolvePlatformRuntimeAndChatMermaidLibraryLoadFailed, nv as frameEnumRows, pN as resolveObservabilityTelemetryFailed, pd as loadPlatformRuntimeAndChatMsg, qg as loadPlatformApiAndAuthValue, ud as resolvePlatformRuntimeAndChatLfileExtrasAreNotInThisBuild, vd as resolveObservabilityBootMark, vx as toast, wS as resolvePlatformKeyboardAndSaveStatusValue2, xf as hiddenResolvedThread, xv as frameProfilesSubscribe } from "../../platform/index";
-import { C as isFrameOfflineError, S as isFrameArtifact, _ as recordFramePhase } from "../../boot/environment";
-import { S as readEnumDefinition, u as resolveMentionNames, y as searchTabs } from "../references/chips";
+import {
+  api,
+  createPagesWidgetRelayDroppedEvent,
+  EditorSelectionAndTablesSelection,
+  emitTelemetryEvent,
+  frameCurrentAnchor,
+  frameEnumRows,
+  frameHotTouched,
+  frameProfiles,
+  frameProfilesSubscribe,
+  hiddenResolvedThread,
+  installObservabilityTelemetryPagehide,
+  loadDataModelSchemasCss,
+  loadPlatformApiAndAuthValue,
+  loadPlatformRuntimeAndChatMsg,
+  ObservabilityBootOptraceSink,
+  PlatformApiAndAuthParticipants,
+  PlatformApiAndAuthPriming,
+  PlatformLiveDocumentAndHistorySession,
+  rawReq,
+  resolveCommentsActionsAndSelectionFrame,
+  resolveCommentsStoreValue27,
+  resolveEditorHostKind3,
+  resolveEditorSelectionAndTablesValue13,
+  resolveObservabilityBootMark,
+  resolveObservabilityBootOpen,
+  resolveObservabilityTelemetryFailed,
+  resolveObservabilityTelemetryReady3,
+  resolvePlatformFeatureFlagsValue,
+  resolvePlatformKeyboardAndSaveStatusValue2,
+  resolvePlatformRuntimeAndChatLfileExtrasAreNotInThisBuild,
+  resolvePlatformRuntimeAndChatMermaidLibraryLoadFailed,
+  resolvePlatformRuntimeAndChatTheSpellingWordListsAreNotInThisBuild,
+  resolvePlatformSessionAndSourcesTab3,
+  resolvePlatformSessionAndSourcesTab4,
+  resolvePlatformSyncAndRoutingSource,
+  toast,
+  updateEditorSelectionAndTablesSpellWords,
+  updatePlatformSyncAndRoutingDirectory,
+  useCommentStore,
+} from "../../platform/index";
+import {
+  isFrameArtifact,
+  isFrameOfflineError,
+  recordFramePhase,
+} from "../../boot/environment";
+import {
+  readEnumDefinition,
+  resolveMentionNames,
+  searchTabs,
+} from "../references/chips";
 export function runRoomPage189Effect(roomPageContext: {
   askCardDeskRef: Dynamic;
   AskCardFaceRef: Dynamic;

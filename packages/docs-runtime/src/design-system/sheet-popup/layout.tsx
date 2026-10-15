@@ -2,7 +2,7 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
-  appKDImport,
+  clsx,
   originalJsxProps,
   originalJsxsProps,
   resolveUiDesignSystemValue2,
@@ -28,7 +28,7 @@ function SheetPopupDrawPill(
         className: `flex min-h-8 shrink-0 touch-none items-center justify-center select-none`,
         children: (
           <div
-            className={appKDImport(
+            className={clsx(
               `h-1 w-9 rounded-full bg-border`,
               !input && `opacity-0`,
             )}
@@ -55,7 +55,7 @@ function SheetPopupLeading(
           value2 && <span className={`-me-2.5 shrink-0`}>{input}</span>,
           <span
             aria-hidden={true}
-            className={appKDImport(
+            className={clsx(
               `min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary`,
               !value2 && `ps-2.5`,
             )}

@@ -3,7 +3,7 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   create,
-  helloCImport,
+  isFrameOfflineError,
   inFrame,
 } from "../dependencies";
 import {
@@ -1030,7 +1030,7 @@ export function initializePlatformLiveDocumentAndHistory4Step1(): void {
       error.reason === `unavailable`) ||
     (error instanceof (EditorExtensionsFrameSendError as Dynamic) &&
       error.code === `NO_RESULT_RELAY`) ||
-    helloCImport(error));
+    isFrameOfflineError(error));
   (resolvePlatformLiveDocumentAndHistoryValue35 = (
     platformLiveDocumentAndHistoryValue35?: unknown,
     ..._extraArguments: unknown[]

@@ -2,8 +2,8 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   inFrame,
-  preloadTImport,
-  rolldownNImport,
+  preloadModule,
+  createLiveModuleNamespace,
 } from "../dependencies";
 import {
   dataEnumsAndValidationAllowDenyValues,
@@ -1763,7 +1763,7 @@ var PlatformApiAndAuthState9: Dynamic;
 function resolvePlatformApiAndAuthThen2(
   ..._extraArguments: unknown[]
 ): Dynamic {
-  PlatformApiAndAuthState9 ??= preloadTImport(
+  PlatformApiAndAuthState9 ??= preloadModule(
     (..._extraArguments: unknown[]): Dynamic =>
       import("../../assistant/refusal-shadow").then(
         (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -2576,7 +2576,7 @@ export function initializePlatformApiAndAuth5Step1(): void {
       ..._extraArguments: unknown[]
     ) => setTimeout(callback, options),
   }));
-  (PlatformApiAndAuthCodeModal = rolldownNImport({
+  (PlatformApiAndAuthCodeModal = createLiveModuleNamespace({
     CodeModal: (..._extraArguments: unknown[]): Dynamic => CodeModal,
     CodeViewer: (..._extraArguments: unknown[]): Dynamic => CodeViewer,
     DiffView: (..._extraArguments: unknown[]): Dynamic => DiffView,
@@ -2676,7 +2676,7 @@ export function initializePlatformApiAndAuth5Step1(): void {
           self: self,
           external: (..._extraArguments: unknown[]) => null,
         });
-  (PlatformApiAndAuthFEEDTOPIC = rolldownNImport({
+  (PlatformApiAndAuthFEEDTOPIC = createLiveModuleNamespace({
     FEED_TOPIC: (..._extraArguments: unknown[]): Dynamic => FEED_TOPIC,
     presenceOnFile: (..._extraArguments: unknown[]): Dynamic => presenceOnFile,
     reportPresence: (..._extraArguments: unknown[]): Dynamic => reportPresence,

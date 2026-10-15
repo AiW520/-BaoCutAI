@@ -6,10 +6,39 @@ import { resolveDocumentCommandsCurrent } from "../document-commands/create-ask-
 
 /** BaoCut: room document selection; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { B_ as frameAskClaude, Bl as resolveEditorHostValue22, Ci as resolveEditorSelectionAndTablesQuote, Dx as resolvePlatformKeyboardAndSaveStatusSaving, Gf as useCommentStore, Lj as resolveDataContentAndReferencesValue3, Ll as resolveEditorHostValue24, Mn as loadPlatformLiveDocumentAndHistoryContainer, TO as resolveEditorAnchorsAndMentionsValue7, Vr as updateEditorSelectionAndTablesChat, Xs as updatePlatformSyncAndRoutingHeadEmbedNodes, ap as resolveCommentsStoreNode, bf as heldThreads, cj as resolvePlatformSessionAndSourcesTest4, dj as PlatformSessionAndSourcesAddedToYourMessageToClaude, fj as PlatformSessionAndSourcesMessage4, hj as resolvePlatformSessionAndSourcesPath, kp as resolvePlatformAnnouncementsValue, lg as isPlatformApiAndAuthAnon, m_ as api, mg as resolvePlatformApiAndAuthCharCodeAt, np as resolveCommentsStoreKind2, qr as EditorSelectionAndTablesByFile2, sg as installPlatformApiAndAuthPagehide, vx as toast } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
-import { t as preloadModule } from "../../boot/preload";
-import { D as watchReferenceChanges, w as resolveLocalReference } from "../references/chips";
+import {
+  api,
+  EditorSelectionAndTablesByFile2,
+  frameAskClaude,
+  heldThreads,
+  installPlatformApiAndAuthPagehide,
+  isPlatformApiAndAuthAnon,
+  loadPlatformLiveDocumentAndHistoryContainer,
+  PlatformSessionAndSourcesAddedToYourMessageToClaude,
+  PlatformSessionAndSourcesMessage4,
+  resolveCommentsStoreKind2,
+  resolveCommentsStoreNode,
+  resolveDataContentAndReferencesValue3,
+  resolveEditorAnchorsAndMentionsValue7,
+  resolveEditorHostValue22,
+  resolveEditorHostValue24,
+  resolveEditorSelectionAndTablesQuote,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformApiAndAuthCharCodeAt,
+  resolvePlatformKeyboardAndSaveStatusSaving,
+  resolvePlatformSessionAndSourcesPath,
+  resolvePlatformSessionAndSourcesTest4,
+  toast,
+  updateEditorSelectionAndTablesChat,
+  updatePlatformSyncAndRoutingHeadEmbedNodes,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
+import { preloadModule } from "../../boot/preload";
+import {
+  resolveLocalReference,
+  watchReferenceChanges,
+} from "../references/chips";
 export function runRoomPage93Effect(roomPageContext: {
   room: Dynamic;
   roomPageModuleUrl: Dynamic;
@@ -22,7 +51,7 @@ export function runRoomPage93Effect(roomPageContext: {
     preloadModule(async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let {
         subscribeProjectFeed: subscribeProjectFeed2
-      }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.Fg);
+      }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthFEEDTOPIC);
       return {
         subscribeProjectFeed: subscribeProjectFeed2
       };

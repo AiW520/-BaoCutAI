@@ -3,7 +3,7 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   UiOverlaysAndIconsDataCdsOverlay,
-  appKDImport,
+  clsx,
   originalJsxProps,
   resolveUiDesignSystemValue2,
 } from "../dependencies";
@@ -177,7 +177,7 @@ function MenuInteractionsHeader(
       : `calc(${input4} * ${MenuInteractionsMessage} + 0.5rem)`;
   return input || input3 ? (
     <div
-      className={appKDImport(
+      className={clsx(
         `flex min-h-0 flex-col overflow-hidden rounded-[inherit]`,
         input6 && `flex-1`,
       )}
@@ -212,7 +212,7 @@ function MenuInteractionsHeader(
         style: {
           maxHeight: value,
         },
-        className: appKDImport(MenuInteractionsStyles2, input6 && `flex-1`),
+        className: clsx(MenuInteractionsStyles2, input6 && `flex-1`),
         [SheetsDataCdsSheetScroll]: ``,
         children: input5,
       })}

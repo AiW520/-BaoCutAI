@@ -1,8 +1,8 @@
 /** claude-ask-card: restored from claudeAskCard-DidJwdgU.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  Bt as isDocumentFocusedElsewhere,
-  P as CLAUDE_WRITE_UNAVAILABLE_MESSAGE,
+  CLAUDE_WRITE_UNAVAILABLE_MESSAGE,
+  isDocumentFocusedElsewhere,
 } from "../document-app/index";
 var CARD_SEND_WINDOW_MS: number = 5e3;
 var CARD_WRITE_ANSWER_MAX_MS: number = 4e3;

@@ -3,13 +3,13 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   createStore2,
-  helloCImport,
-  helloXImport,
+  isFrameOfflineError,
+  FrameOfflineError,
   inFrame,
   number,
   object,
-  preloadTImport,
-  rolldownNImport,
+  preloadModule,
+  createLiveModuleNamespace,
   string,
   useStore2,
 } from "../dependencies";
@@ -75,7 +75,7 @@ function logError(error?: Dynamic, ..._extraArguments: unknown[]): undefined {
   )
     return;
   let url = location.pathname + location.search + location.hash;
-  preloadTImport(
+  preloadModule(
     async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let { activeDebugId: activeDebugId2 }: Dynamic =
         await Promise.resolve().then(
@@ -160,7 +160,7 @@ function rawReq(
   let routePattern2: Dynamic = routePattern(options);
   return inFrame()
     ? Promise.reject(
-        new (helloXImport as Dynamic)(`${method} ${routePattern2}`),
+        new (FrameOfflineError as Dynamic)(`${method} ${routePattern2}`),
       )
     : withWebSpan(
         `http.client`,
@@ -241,7 +241,7 @@ async function requestApi(
   try {
     response = await rawReq(requestApi2, path, context);
   } catch (requestApiResult: Dynamic) {
-    throw helloCImport(requestApiResult)
+    throw isFrameOfflineError(requestApiResult)
       ? requestApiResult
       : (logError({
           source: `api`,
@@ -739,11 +739,11 @@ export function initializePlatformApiAndAuth1Step1(): void {
     let location2 = typeof location !== "undefined" ? location : undefined;
     return `${location2?.protocol === `https:` ? `wss` : `ws`}://${location2?.host ?? `localhost`}${PlatformApiAndAuthBONGOWSBASE}${platformApiAndAuthLocalhost}`;
   });
-  (PlatformApiAndAuthLogError = rolldownNImport({
+  (PlatformApiAndAuthLogError = createLiveModuleNamespace({
     logError: (..._extraArguments: unknown[]): Dynamic => logError,
   }));
   (platformApiAndAuthMap = new (Map as Dynamic)());
-  (PlatformApiAndAuthFORCEDRELOADSIDKEY = rolldownNImport({
+  (PlatformApiAndAuthFORCEDRELOADSIDKEY = createLiveModuleNamespace({
     FORCED_RELOAD_SID_KEY: (..._extraArguments: unknown[]) =>
       FORCED_RELOAD_SID_KEY,
     activeDebugId: (..._extraArguments: unknown[]): Dynamic => activeDebugId,
@@ -2304,12 +2304,12 @@ export function initializePlatformApiAndAuth1Step1(): void {
         ..._extraArguments: unknown[]
       ): Promise<Dynamic> =>
         (
-          await preloadTImport(
+          await preloadModule(
             async (..._extraArguments: unknown[]): Promise<Dynamic> => {
               let { listCommentsUnder: listCommentsUnder }: Dynamic =
                 await import("../lazy").then(
                   (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    result.n,
+                    result.doorCommentsModule,
                 );
               return {
                 listCommentsUnder: listCommentsUnder,
@@ -3123,7 +3123,7 @@ export function initializePlatformApiAndAuth1Step1(): void {
     let queryText = query.toString();
     return pathOverride + (queryText ? `?${queryText}` : ``) + location.hash;
   });
-  (PlatformApiAndAuthEmitAction = rolldownNImport({
+  (PlatformApiAndAuthEmitAction = createLiveModuleNamespace({
     emitAction: (..._extraArguments: unknown[]): Dynamic => emitAction,
     emitDebounced: (..._extraArguments: unknown[]): Dynamic => emitDebounced,
     recordActivity: (..._extraArguments: unknown[]): Dynamic => recordActivity,

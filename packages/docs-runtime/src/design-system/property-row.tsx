@@ -1,6 +1,6 @@
 /** property-row: restored from PropertyRow-B1BaUMKB.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { UE as loadJsxRuntime } from "../platform/index";
+import { loadJsxRuntime } from "../platform/index";
 var jsxRuntime: Dynamic = loadJsxRuntime();
 var PROPERTY_ROW_HEIGHT_CLASS: string = `min-h-8 pointer-coarse:min-h-10`;
 function PropertyRow(

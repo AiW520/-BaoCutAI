@@ -9,8 +9,30 @@ import { DocumentRuntime_Styles5 } from "../document-runtime/widget-provenance-g
 
 /** BaoCut: room document session routing; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Af as quietCarrierThreads, Ap as resolvePlatformAnnouncementsValue2, Cm as DataModelSchemasPending, Di as EditorSelectionAndTablesDataPagesPrintSurface, En as resolvePlatformLiveDocumentAndHistoryNodeId, Gf as useCommentStore, Hm as resolveDataModelSchemasTarget, Id as resolveCommentsStoreLayer, Rl as resolveEditorHostValue23, Tf as landedSummon, bf as heldThreads, df as carrierSettled, gj as PlatformSessionAndSourcesClaudeRepliedInTheComments, jf as quietCarrierWritten, kp as resolvePlatformAnnouncementsValue, lf as carrierBaselineOf, rm as resolveDataModelSchemasAgentRows, sm as filterDataModelSchemasFilter3, uf as carrierBooked, vm as resolveDataModelSchemasSent, yj as PlatformSessionAndSourcesSent } from "../../platform/index";
-import { _ as recordFramePhase } from "../../boot/environment";
+import {
+  carrierBaselineOf,
+  carrierBooked,
+  carrierSettled,
+  DataModelSchemasPending,
+  EditorSelectionAndTablesDataPagesPrintSurface,
+  filterDataModelSchemasFilter3,
+  heldThreads,
+  landedSummon,
+  PlatformSessionAndSourcesClaudeRepliedInTheComments,
+  PlatformSessionAndSourcesSent,
+  quietCarrierThreads,
+  quietCarrierWritten,
+  resolveCommentsStoreLayer,
+  resolveDataModelSchemasAgentRows,
+  resolveDataModelSchemasSent,
+  resolveDataModelSchemasTarget,
+  resolveEditorHostValue23,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformAnnouncementsValue2,
+  resolvePlatformLiveDocumentAndHistoryNodeId,
+  useCommentStore,
+} from "../../platform/index";
+import { recordFramePhase } from "../../boot/environment";
 export function runRoomPage57RoomDocumentPageHandler(roomPageContext: {}): Dynamic {
   return {
     ["roomDocumentPageHandler"]: (roomDocumentPage?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {

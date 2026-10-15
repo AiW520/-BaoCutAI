@@ -1,7 +1,7 @@
 
 /** BaoCut: room document frame messages; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { _ as recordFramePhase } from "../../boot/environment";
+import { recordFramePhase } from "../../boot/environment";
 export function runRoomPage193OnLoad(roomPageContext: {
   elementRef23: Dynamic;
   elementRef27: Dynamic;

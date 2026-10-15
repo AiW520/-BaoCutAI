@@ -963,7 +963,7 @@ export function initializeConnectionAndErrorsConnectorPermissionDialogStep1(): v
             "../../platform/index"
           ).then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.v_,
+              result.PlatformApiAndAuthLogError,
           );
           return {
             logError: logError2,
@@ -995,7 +995,7 @@ export function initializeConnectionAndErrorsConnectorPermissionDialogStep1(): v
           let { reportBoundaryError: reportBoundaryError }: Dynamic =
             await import("../../platform/index").then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result._N,
+                result.ObservabilityTelemetrySENTRYDSNSERVER,
             );
           return {
             reportBoundaryError: reportBoundaryError,

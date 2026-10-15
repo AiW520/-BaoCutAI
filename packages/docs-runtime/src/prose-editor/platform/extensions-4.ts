@@ -1,11 +1,11 @@
 /** BaoCut: editor extensions from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloDImport,
-  helloFImport,
-  helloImport,
-  helloLImport,
-  helloRImport,
+  canContactShell,
+  isSafeFrameToken,
+  recordFramePhase,
+  knownShellOrigin,
+  NO_SHELL_ORIGIN_REASON,
 } from "../../platform/dependencies";
 import {
   platformSessionAndSourcesPattern22,
@@ -483,14 +483,14 @@ function installEditorExtensionsHost(
     installEditorExtensionsHost2;
   if (
     installEditorExtensionsHost3 === null ||
-    !helloDImport(installEditorExtensionsHost3)
+    !canContactShell(installEditorExtensionsHost3)
   )
     return (..._extraArguments: unknown[]): undefined => {};
   let options2 = (
     installEditorExtensionsHost4?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    let helloLImport2: Dynamic = helloLImport(installEditorExtensionsHost3);
+    let helloLImport2: Dynamic = knownShellOrigin(installEditorExtensionsHost3);
     if (
       helloLImport2 === null ||
       installEditorExtensionsHost4.source !==
@@ -979,7 +979,7 @@ export function initializeEditorExtensions4Step1(): void {
     }
     begin(..._extraArguments: unknown[]): undefined {
       if (this.s.port.shellOrigin === null && !this.s.port.pending) {
-        this.die(helloRImport.toUpperCase());
+        this.die(NO_SHELL_ORIGIN_REASON.toUpperCase());
         return;
       }
       if (this.s.helloTerminal !== null) {
@@ -1077,7 +1077,7 @@ export function initializeEditorExtensions4Step1(): void {
         return;
       }
       this.park(`open_unanswered`);
-      helloImport(`open`);
+      recordFramePhase(`open`);
     }
     scheduleRegrant(
       editorExtensionsReadTimeouts?: Dynamic,
@@ -1254,7 +1254,7 @@ export function initializeEditorExtensions4Step1(): void {
         }
     }
     onOpened(..._extraArguments: unknown[]): undefined {
-      helloImport(`opened`);
+      recordFramePhase(`opened`);
       let editorExtensionsReadTimeouts = this.state === `opening`;
       this.state = `snapshot`;
       this.everOpened = true;
@@ -1654,7 +1654,7 @@ export function initializeEditorExtensions4Step1(): void {
       switch (editorExtensionsReadTimeouts.phase) {
         case `snapshot`: {
           this.chunks++;
-          helloImport(`snap0`);
+          recordFramePhase(`snap0`);
           if (!this.cycleSawSnapshot) {
             this.cycleSawSnapshot = true;
             if (this.cycleSince === null && this.refill === null) {
@@ -1751,7 +1751,7 @@ export function initializeEditorExtensions4Step1(): void {
               this.streamBack(`recovered`);
             }
           } else {
-            helloImport(`fence`, {
+            recordFramePhase(`fence`, {
               snapChunks: this.chunks,
               snapRefs: this.index.size,
               snapValues: this.cache.size,
@@ -1947,7 +1947,7 @@ export function initializeEditorExtensions4Step1(): void {
       ..._extraArguments: unknown[]
     ): undefined {
       if (this.refill === null) {
-        if (!helloFImport(editorExtensionsReadTimeouts)) {
+        if (!isSafeFrameToken(editorExtensionsReadTimeouts)) {
           this.log(`since:refused`);
           return;
         }

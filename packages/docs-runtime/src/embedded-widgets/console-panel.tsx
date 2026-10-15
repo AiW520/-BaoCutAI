@@ -1,27 +1,27 @@
 /** widget-console-panel: restored from WidgetConsolePanel-C_yYMqA_.js. */
 import { originalJsxProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  HM as loadReact,
-  Ja as resolveCommentsActionsAndSelectionValue5,
-  Mn as loadPlatformLiveDocumentAndHistoryContainer,
-  UE as loadJsxRuntime,
-  go as useDataOperationControlRawStart,
-  hC as Button,
-  ho as PaneResizeHandle,
-  iE as UiOverlaysAndIconsCustomIcon,
-  kS as UiDialogsRoot,
-  pl as resolvePlatformSyncAndRoutingCompact,
-  qa as resolveCommentsActionsAndSelectionValue4,
-  xC as Tooltip,
+  Button,
+  loadJsxRuntime,
+  loadPlatformLiveDocumentAndHistoryContainer,
+  loadReact,
+  PaneResizeHandle,
+  resolveCommentsActionsAndSelectionValue4,
+  resolveCommentsActionsAndSelectionValue5,
+  resolvePlatformSyncAndRoutingCompact,
+  Tooltip,
+  UiDialogsRoot,
+  UiOverlaysAndIconsCustomIcon,
+  useDataOperationControlRawStart,
 } from "../platform/index";
-import { E as Badge } from "../design-system/index";
+import { Badge } from "../design-system/index";
 import {
-  A as extractNamedReadSources,
-  M as mergePreviewSources,
-  j as previewSourcesEmptyMessage,
-  k as extractVisualizeSources,
+  extractNamedReadSources,
+  extractVisualizeSources,
+  mergePreviewSources,
+  previewSourcesEmptyMessage,
 } from "../platform/lazy";
 import { CodeTab, RoomLogTab, consoleReads } from "./panel";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);

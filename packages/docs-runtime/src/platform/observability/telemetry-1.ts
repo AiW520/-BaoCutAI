@@ -6,11 +6,11 @@ import type {
 } from "../../interop/recovered-contracts";
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloImport,
-  helloTImport,
-  helloWImport,
+  recordFramePhase,
+  takePrewarmWorker,
+  disposePrewarmWorker,
   inFrame,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../dependencies";
 
 const collectObservabilityTelemetryValue: Dynamic = (
@@ -1184,7 +1184,7 @@ function resolveObservabilityTelemetryCache(
     let ObservabilityTelemetryArtifactTypeLfileRuntime35524228Js2 =
       ObservabilityTelemetryArtifactTypeLfileRuntime35524228Js;
     resolveObservabilityTelemetryMark();
-    let helloTImport2: Dynamic = helloTImport();
+    let helloTImport2: Dynamic = takePrewarmWorker();
     observabilityTelemetryState = (
       helloTImport2 === null
         ? loadObservabilityTelemetryStatus(
@@ -1211,7 +1211,7 @@ function resolveObservabilityTelemetryCache(
       )
       .then(
         (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          helloImport(`runtimeWarm`, {
+          recordFramePhase(`runtimeWarm`, {
             runtimeChars: result.byteLength,
           }),
           result
@@ -1231,7 +1231,7 @@ function isObservabilityTelemetryCatch(..._extraArguments: unknown[]) {
           (..._extraArguments: unknown[]): undefined => {},
         ),
         true)
-      : (helloWImport(), false);
+      : (disposePrewarmWorker(), false);
   } catch {
     return false;
   }
@@ -2978,7 +2978,7 @@ export function initializeObservabilityTelemetry1Step1(): void {
     errorCode: `error.code`,
     errorSyscall: `error.syscall`,
   });
-  (ObservabilityTelemetrySENTRYDSNSERVER = rolldownNImport({
+  (ObservabilityTelemetrySENTRYDSNSERVER = createLiveModuleNamespace({
     SENTRY_DSN_SERVER: (..._extraArguments: unknown[]) => ``,
     SENTRY_DSN_WEB: (..._extraArguments: unknown[]) => ``,
     ddLog: (..._extraArguments: unknown[]): Dynamic => ddLog,

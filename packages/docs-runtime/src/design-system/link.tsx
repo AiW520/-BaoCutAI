@@ -5,8 +5,8 @@ import {
   React,
   UiOverlaysAndIconsCreateContext6,
   UiOverlaysAndIconsCustomIcon,
-  appKDImport,
-  appWEImport,
+  clsx,
+  useRender,
   isUiLinksAndFoundationToLowerCase,
   jsxRuntime,
   originalJsxProps,
@@ -57,7 +57,7 @@ function BadgeAndLinkStamp(
     ...resolveUiLinksAndFoundationValue3(input9),
     href: value ? undefined : input3.href,
   });
-  let value3: Dynamic = appWEImport({
+  let value3: Dynamic = useRender({
     enabled: value,
     render: input4,
     ref: input2,
@@ -229,12 +229,12 @@ export function initializeLinkStep1(): void {
       let value9: Dynamic =
         input3 || (value4 === `with-icon` ? `ArrowUpRight` : undefined);
       let value10: boolean = !!value9;
-      let value11: string = `${resolveUiDesignSystemValue2(value10 ? appKDImport(BadgeAndLinkState2, input3 ? `gap-[0.25em]` : `gap-0`) : BadgeAndLinkState, value3 && BadgeAndLinkStyles)}`;
+      let value11: string = `${resolveUiDesignSystemValue2(value10 ? clsx(BadgeAndLinkState2, input3 ? `gap-[0.25em]` : `gap-0`) : BadgeAndLinkState, value3 && BadgeAndLinkStyles)}`;
       let value12: Dynamic = value10 ? (
         <jsxRuntime.Fragment>
         {input8 === `start` && BadgeAndLinkFontSize(value9)}
         <span
-            className={appKDImport(
+            className={clsx(
               BadgeAndLinkState3,
               value3 && BadgeAndLinkStyles2,
             )}

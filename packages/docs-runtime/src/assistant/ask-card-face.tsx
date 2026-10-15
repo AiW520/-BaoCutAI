@@ -1,20 +1,20 @@
 /** claude-ask-card-face: restored from ClaudeAskCardFace-DS3zK7tX.js. */
 import { originalJsxProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  hC as Button,
-  pl as resolvePlatformSyncAndRoutingCompact,
+  Button,
+  loadJsxRuntime,
+  loadReact,
+  resolvePlatformSyncAndRoutingCompact,
 } from "../platform/index";
 import {
-  C as CommentReplyComposer,
-  M as INLINE_ASK_TOAST_ID,
-  S as COMMENT_PROSE_CLASS,
-  b as InlineAskNotice,
-  w as ClaudeTypingIndicator,
-  x as INLINE_ASK_COMPOSER_LAYOUT,
+  ClaudeTypingIndicator,
+  COMMENT_PROSE_CLASS,
+  CommentReplyComposer,
+  INLINE_ASK_COMPOSER_LAYOUT,
+  INLINE_ASK_TOAST_ID,
+  InlineAskNotice,
 } from "../document-app/index";
 import {
   ASK_WHY_CHIPS,

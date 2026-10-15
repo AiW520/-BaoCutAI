@@ -8,9 +8,22 @@ import { resolveFrameGesturesHasFocus, resolveFrameGesturesKeyboard2, resolveFra
 
 /** BaoCut: room document ask lifecycle; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Av as frameSamplePermission, Bd as resolveCommentsStoreValue24, ES as resolvePlatformKeyboardAndSaveStatusValue3, Id as resolveCommentsStoreLayer, MM as resolvePlatformFeatureFlagsEnabled, NM as resolvePlatformFeatureFlagsValue5, Ov as frameSampleAvailable, UD as isPlatformFrameAndCapabilitiesWindow, Yv as frameViewerOutside, jp as updatePlatformAnnouncementsTimers, kp as resolvePlatformAnnouncementsValue, zd as resolveCommentsStoreValue23 } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
-import { t as preloadModule } from "../../boot/preload";
+import {
+  frameSampleAvailable,
+  frameSamplePermission,
+  frameViewerOutside,
+  isPlatformFrameAndCapabilitiesWindow,
+  resolveCommentsStoreLayer,
+  resolveCommentsStoreValue23,
+  resolveCommentsStoreValue24,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformFeatureFlagsEnabled,
+  resolvePlatformFeatureFlagsValue5,
+  resolvePlatformKeyboardAndSaveStatusValue3,
+  updatePlatformAnnouncementsTimers,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
+import { preloadModule } from "../../boot/preload";
 export function runRoomPage31RoutePageRef(roomPageContext: {}): Dynamic {
   return (0, React.useRef)({
     tab: undefined,

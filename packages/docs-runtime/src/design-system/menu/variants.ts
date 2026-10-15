@@ -1,6 +1,6 @@
 /** BaoCut: menu variants from cds-CIGM-LUe.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { appTImport2 } from "../dependencies";
+import { cva } from "../dependencies";
 
 var menuItemVariants: Dynamic;
 
@@ -8,7 +8,7 @@ var TextInputStyles4: Dynamic;
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeMenuVariantsStep1(): void {
-  menuItemVariants = appTImport2(
+  menuItemVariants = cva(
     `cds-reset flex w-full items-center gap-xs compact:px-2 comfortable:px-2.5 py-[calc((var(--cds-h-control)-var(--cds-leading-body))/2)] rounded text-body font-normal [--cds-shortcut-cap-ink:var(--cds-text-muted)] select-none outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled data-[disabled]:pointer-events-none`,
     {
       variants: {

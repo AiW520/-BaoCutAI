@@ -1,21 +1,21 @@
 /** bottom-sheet.impl: restored from BottomSheet.impl-CAaQPhpT.js. */
 import { originalJsxProps, originalJsxsProps } from "../../react-runtime/jsx-runtime";
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../../boot/module-runtime";
+import { toModuleNamespace } from "../../boot/module-runtime";
 import {
-  DD as resolveUiDesignSystemValue2,
-  DS as UiDialogsRoot2,
-  HM as loadReact,
-  OS as UiDialogsOpen,
-  UE as loadJsxRuntime,
-  hC as Button,
-  hl as resolvePlatformSyncAndRoutingValue10,
-  kS as UiDialogsRoot,
+  Button,
+  loadJsxRuntime,
+  loadReact,
+  resolvePlatformSyncAndRoutingValue10,
+  resolveUiDesignSystemValue2,
+  UiDialogsOpen,
+  UiDialogsRoot,
+  UiDialogsRoot2,
 } from "../../platform/index";
 import {
-  Ht as BOTTOM_SHEET_CLEAR_PROPERTY,
-  Ut as BOTTOM_SHEET_SCRIM_CLASS,
-  Wt as SHEET_CONTROL_CLASS,
+  BOTTOM_SHEET_CLEAR_PROPERTY,
+  BOTTOM_SHEET_SCRIM_CLASS,
+  PHONE_TOUCH_TARGET_CLASS as SHEET_CONTROL_CLASS,
 } from "../../document-app/index";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();

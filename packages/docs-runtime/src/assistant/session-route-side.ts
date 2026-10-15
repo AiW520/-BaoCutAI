@@ -1,27 +1,27 @@
 /** session-route-side: restored from sessionRouteSide-BNkod0w8.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
-  Af as quietCarrierThreads,
-  Gf as useCommentStore,
-  Gv as frameViewerDirtyNow,
-  Id as resolveCommentsStoreLayer,
-  dv as frameHotProvide,
-  kp as resolvePlatformAnnouncementsValue,
-  nm as resolveDataModelSchemasLabel2,
-  wj as resolvePlatformSessionAndSourcesFailed,
-  xy as observabilityBrowserAndOperationEventsPattern22,
+  frameHotProvide,
+  frameViewerDirtyNow,
+  observabilityBrowserAndOperationEventsPattern22,
+  quietCarrierThreads,
+  resolveCommentsStoreLayer,
+  resolveDataModelSchemasLabel2,
+  resolvePlatformAnnouncementsValue,
+  resolvePlatformSessionAndSourcesFailed,
+  useCommentStore,
 } from "../platform/index";
-import { S as isFrameArtifact } from "../boot/environment";
+import { isFrameArtifact } from "../boot/environment";
 import {
-  E as reportCommentSessionEvent,
-  F as CLAUDE_ASKED_WAITING_MESSAGE,
-  M as INLINE_ASK_TOAST_ID,
-  y as claudeAskRoute,
+  CLAUDE_ASKED_WAITING_MESSAGE,
+  claudeAskRoute,
+  INLINE_ASK_TOAST_ID,
+  reportCommentSessionEvent,
 } from "../document-app/index";
 import {
-  C as createOwedSummons,
-  S as createClaudeSessionSender,
-  x as buildClaudeRequest,
+  buildClaudeRequest,
+  createClaudeSessionSender,
+  createCommentAnchorRetryQueue as createOwedSummons,
 } from "../platform/lazy";
 var INTERACTIVE_OVERLAY_SELECTOR: string = `[role="dialog"],[role="alertdialog"],[role="menu"],[role="listbox"],[role="tooltip"],[role="combobox"],[popover],dialog[open],[aria-modal="true"],[data-radix-popper-content-wrapper],[data-state="open"],[data-comment-stop][data-expanded],[data-testid="ldoc-comment-draft"],[data-testid="ldoc-comments"]`;
 var TEXT_ENTRY_SELECTOR: string = `input,textarea,select,[contenteditable=""],[contenteditable="true"],[contenteditable="plaintext-only"],[role="textbox"],[role="searchbox"],[role="spinbutton"]`;

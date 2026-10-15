@@ -15,8 +15,8 @@ import {
   jsxRuntime,
   originalJsxProps,
   originalJsxsProps,
-  preloadTImport,
-  rolldownNImport,
+  preloadModule,
+  createLiveModuleNamespace,
   useRender,
 } from "../dependencies";
 import {
@@ -870,7 +870,7 @@ function clearUiTooltipsAndControlsDelete(
 function resolveUiTooltipsAndControlsThen(
   ..._extraArguments: unknown[]
 ): Dynamic {
-  UiTooltipsAndControlsState8 ??= preloadTImport(
+  UiTooltipsAndControlsState8 ??= preloadModule(
     (..._extraArguments: unknown[]): Dynamic =>
       Promise.resolve()
         .then(
@@ -2377,7 +2377,7 @@ function resolveUiTooltipsAndControlsOverflowY(
 
 // BaoCut: called by platform-core-initialize in the recovered source order.
 export function initializeUiTooltipsAndControlsStep1(): void {
-  (UiTooltipsAndControlsDisabledReasonTooltip = rolldownNImport({
+  (UiTooltipsAndControlsDisabledReasonTooltip = createLiveModuleNamespace({
     DisabledReasonTooltip: (..._extraArguments: unknown[]): Dynamic =>
       DisabledReasonTooltip,
     OverflowTooltip: (..._extraArguments: unknown[]): Dynamic => OverflowTooltip,

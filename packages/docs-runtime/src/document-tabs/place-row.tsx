@@ -1,14 +1,17 @@
 /** tabs-place-row: restored from TabsPlaceRow-DNisWUl6.js. */
 import { originalJsxProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  kp as resolvePlatformAnnouncementsValue,
+  loadJsxRuntime,
+  loadReact,
+  resolvePlatformAnnouncementsValue,
 } from "../platform/index";
-import { _ as Switch } from "../design-system/index";
-import { ft as getTabsPlacement, mt as parseTabsPlacement } from "../document-app/index";
+import { Switch } from "../design-system/index";
+import {
+  getTabsPlacement,
+  parseTabsPlacement,
+} from "../document-app/index";
 import {
   TABS_PLACE_FAILURE_COPY,
   tabsPlaceRowOnScreen,

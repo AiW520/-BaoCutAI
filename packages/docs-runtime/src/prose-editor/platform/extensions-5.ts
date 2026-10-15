@@ -6,11 +6,11 @@ import {
   Plugin,
   PluginKey,
   escapeForRegEx,
-  helloDImport,
-  helloLImport,
-  helloMImport,
-  helloSImport,
-  helloUImport,
+  canContactShell,
+  knownShellOrigin,
+  isTrustedClaudeOrigin,
+  waitForShellOrigin,
+  shellOriginFromWindow,
   inFrame,
 } from "../../platform/dependencies";
 
@@ -35,7 +35,7 @@ function isEditorExtensionsLocation(
       return false;
     let ancestorOriginItem: Dynamic = ancestorOrigins[1];
     return (
-      typeof ancestorOriginItem == `string` && helloMImport(ancestorOriginItem)
+      typeof ancestorOriginItem == `string` && isTrustedClaudeOrigin(ancestorOriginItem)
     );
   } catch {
     return false;
@@ -75,10 +75,10 @@ function isEditorExtensionsLocation2(
       : undefined;
   return typeof ancestorOriginItem == `string` &&
     ancestorOriginItem !== EditorExtensionsNull
-    ? helloMImport(ancestorOriginItem)
+    ? isTrustedClaudeOrigin(ancestorOriginItem)
     : options === undefined
       ? editorExtensionsLocation2 === undefined &&
-        helloUImport(window2) !== null
+        shellOriginFromWindow(window2) !== null
       : options() !== null;
 }
 
@@ -238,7 +238,7 @@ function updateEditorExtensionsActions(
   scheduler?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let helloDImport2: Dynamic = helloDImport(updateEditorExtensionsActions2);
+  let helloDImport2: Dynamic = canContactShell(updateEditorExtensionsActions2);
   let updateEditorExtensionsActionsResult: Dynamic = null;
   let updateEditorExtensionsActionsResult2: Dynamic;
   let amount: number = -1 / 0;
@@ -270,7 +270,7 @@ function updateEditorExtensionsActions(
   let postMessage = (..._extraArguments: unknown[]): undefined => {
     updateEditorExtensionsActionsResult4 = null;
     if (updateEditorExtensionsActionsResult3 === null) return;
-    let helloLImport2: Dynamic = helloLImport(updateEditorExtensionsActions2);
+    let helloLImport2: Dynamic = knownShellOrigin(updateEditorExtensionsActions2);
     if (helloLImport2 === null) return;
     let updateEditorExtensionsActionsResult9: Dynamic =
       updateEditorExtensionsActionsResult3;
@@ -345,7 +345,7 @@ function updateEditorExtensionsActions(
     options: Dynamic = false,
     ..._extraArguments: unknown[]
   ): undefined => {
-    let helloLImport2: Dynamic = helloLImport(updateEditorExtensionsActions2);
+    let helloLImport2: Dynamic = knownShellOrigin(updateEditorExtensionsActions2);
     if (
       enabled ||
       updateEditorExtensionsActions2 === null ||
@@ -447,7 +447,7 @@ function updateEditorExtensionsActions(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (enabled || updateEditorExtensionsActions2 === null) return;
-    let helloLImport2: Dynamic = helloLImport(updateEditorExtensionsActions2);
+    let helloLImport2: Dynamic = knownShellOrigin(updateEditorExtensionsActions2);
     if (
       helloLImport2 === null ||
       updateEditorExtensionsActions3.source !==
@@ -486,7 +486,7 @@ function updateEditorExtensionsActions(
       postMessage3,
     );
   }
-  let helloSImport2: Dynamic = helloSImport(
+  let helloSImport2: Dynamic = waitForShellOrigin(
     updateEditorExtensionsActions2,
     (..._extraArguments: unknown[]): undefined => {
       if (!(enabled || updateEditorExtensionsActionsResult3 === null)) {
@@ -653,7 +653,7 @@ function isEditorExtensionsNAe(
   editorExtensionsNAe?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let helloDImport2: Dynamic = helloDImport(editorExtensionsNAe);
+  let helloDImport2: Dynamic = canContactShell(editorExtensionsNAe);
   let enabled = false;
   let enabled2 = false;
   let enabled3 = false;
@@ -663,7 +663,7 @@ function isEditorExtensionsNAe(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (enabled || editorExtensionsNAe === null) return;
-    let helloLImport2: Dynamic = helloLImport(editorExtensionsNAe);
+    let helloLImport2: Dynamic = knownShellOrigin(editorExtensionsNAe);
     if (
       helloLImport2 === null ||
       editorExtensionsNAe2.source !== editorExtensionsNAe.parent ||
@@ -694,7 +694,7 @@ function isEditorExtensionsNAe(
   let hello: Dynamic = (..._extraArguments: unknown[]) => {
     if (enabled2 || enabled || editorExtensionsNAe === null || !helloDImport2)
       return false;
-    let helloLImport2: Dynamic = helloLImport(editorExtensionsNAe);
+    let helloLImport2: Dynamic = knownShellOrigin(editorExtensionsNAe);
     return helloLImport2 === null
       ? ((enabled3 = true), false)
       : ((enabled2 = true),
@@ -706,7 +706,7 @@ function isEditorExtensionsNAe(
         ),
         true);
   };
-  let helloSImport2: Dynamic = helloSImport(
+  let helloSImport2: Dynamic = waitForShellOrigin(
     editorExtensionsNAe,
     (..._extraArguments: unknown[]): undefined => {
       if (enabled3) {
@@ -776,7 +776,7 @@ function clearEditorExtensionsWords(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (clearEditorExtensionsWords2 === null) return;
-    let helloLImport2: Dynamic = helloLImport(clearEditorExtensionsWords2);
+    let helloLImport2: Dynamic = knownShellOrigin(clearEditorExtensionsWords2);
     if (
       helloLImport2 === null ||
       clearEditorExtensionsWords4.source !==
@@ -806,7 +806,7 @@ function clearEditorExtensionsWords(
   };
   let matchesClearEditorExtensionsWords: Dynamic =
     clearEditorExtensionsWords2 !== null &&
-    helloDImport(clearEditorExtensionsWords2);
+    canContactShell(clearEditorExtensionsWords2);
   if (matchesClearEditorExtensionsWords) {
     clearEditorExtensionsWords2.self.addEventListener(
       `message`,
@@ -866,7 +866,7 @@ function clearEditorExtensionsBottomInset(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let helloDImport2: Dynamic = helloDImport(clearEditorExtensionsBottomInset2);
+  let helloDImport2: Dynamic = canContactShell(clearEditorExtensionsBottomInset2);
   let count = 0;
   let uniqueItems: Dynamic = new (Set as Dynamic)();
   let ceil = (
@@ -874,7 +874,7 @@ function clearEditorExtensionsBottomInset(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (clearEditorExtensionsBottomInset2 === null) return;
-    let helloLImport2: Dynamic = helloLImport(
+    let helloLImport2: Dynamic = knownShellOrigin(
       clearEditorExtensionsBottomInset2,
     );
     if (
@@ -938,7 +938,7 @@ function clearEditorExtensionsWAe(
   clearEditorExtensionsWAe2?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let helloDImport2: Dynamic = helloDImport(clearEditorExtensionsWAe2);
+  let helloDImport2: Dynamic = canContactShell(clearEditorExtensionsWAe2);
   let clearEditorExtensionsWAeResult: Dynamic = null;
   let uniqueItems: Dynamic = new (Set as Dynamic)();
   let clearEditorExtensionsWAe3 = (
@@ -946,7 +946,7 @@ function clearEditorExtensionsWAe(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (clearEditorExtensionsWAe2 === null) return;
-    let helloLImport2: Dynamic = helloLImport(clearEditorExtensionsWAe2);
+    let helloLImport2: Dynamic = knownShellOrigin(clearEditorExtensionsWAe2);
     if (
       helloLImport2 === null ||
       clearEditorExtensionsWAe4.source !== clearEditorExtensionsWAe2.parent ||
@@ -974,7 +974,7 @@ function clearEditorExtensionsWAe(
     let helloLImport2: Dynamic =
       clearEditorExtensionsWAe2 === null
         ? null
-        : helloLImport(clearEditorExtensionsWAe2);
+        : knownShellOrigin(clearEditorExtensionsWAe2);
     if (clearEditorExtensionsWAe2 !== null && helloLImport2 !== null) {
       clearEditorExtensionsWAe2.parent.postMessage(
         {
@@ -991,7 +991,7 @@ function clearEditorExtensionsWAe(
     );
   }
   postMessage();
-  let helloSImport2: Dynamic = helloSImport(
+  let helloSImport2: Dynamic = waitForShellOrigin(
     clearEditorExtensionsWAe2,
     postMessage,
   );

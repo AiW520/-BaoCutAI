@@ -1529,7 +1529,7 @@ export function initializeAskCardsTargetSourcePopoverStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/lazy").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.h,
+              result.spreadsheetPageModule,
           ),
         mapPreloadDependencies([10, 1, 2, 0, 3]),
         import.meta.url,

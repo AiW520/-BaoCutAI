@@ -30,11 +30,7 @@ const visitParents = (npmDependency1).visitParents;
 const SKIP = (npmDependency1).SKIP;
 import * as npmDependency0 from "unist-util-is";
 const convertNodeTest = (npmDependency0).convert;
-import {
-  n as createLiveModuleNamespace,
-  r as toModuleNamespace,
-  t as initializeCommonJS,
-} from "../boot/module-runtime";
+import "../boot/module-runtime";
 import "./assertions";
 export {
   countCharacters as a,

@@ -1,9 +1,9 @@
 /** BaoCut: observability browser and operation events from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloDImport,
-  helloLImport,
-  helloSImport,
+  canContactShell,
+  knownShellOrigin,
+  waitForShellOrigin,
 } from "../dependencies";
 import {
   observabilityTelemetryHostLocalBothFreshValues,
@@ -2308,7 +2308,7 @@ function isObservabilityBrowserAndOperationEventsJe(
   scheduler?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let helloDImport2: Dynamic = helloDImport(
+  let helloDImport2: Dynamic = canContactShell(
     observabilityBrowserAndOperationEventsJe,
   );
   let isObservabilityBrowserAndOperationEventsJeResult: Dynamic = null;
@@ -2419,7 +2419,7 @@ function isObservabilityBrowserAndOperationEventsJe(
     let page2: Dynamic = page;
     page = null;
     if (page2 === null || enabled2) return;
-    let helloLImport2: Dynamic = helloLImport(
+    let helloLImport2: Dynamic = knownShellOrigin(
       observabilityBrowserAndOperationEventsJe,
     );
     if (helloLImport2 === null) return;
@@ -2444,7 +2444,7 @@ function isObservabilityBrowserAndOperationEventsJe(
         !resolveObservabilityBrowserAndOperationEventsValue282(options.title)
       )
         return `skipped`;
-      let helloLImport2: Dynamic = helloLImport(
+      let helloLImport2: Dynamic = knownShellOrigin(
         observabilityBrowserAndOperationEventsJe,
       );
       if (helloLImport2 === null) {
@@ -2507,7 +2507,7 @@ function isObservabilityBrowserAndOperationEventsJe(
         isObservabilityBrowserAndOperationEventsJeResult !== null
       )
         return `skipped`;
-      let helloLImport2: Dynamic = helloLImport(
+      let helloLImport2: Dynamic = knownShellOrigin(
         observabilityBrowserAndOperationEventsJe,
       );
       return helloLImport2 === null ||
@@ -2528,7 +2528,7 @@ function isObservabilityBrowserAndOperationEventsJe(
       isObservabilityBrowserAndOperationEventsJeResult3();
     },
   };
-  let helloSImport2: Dynamic = helloSImport(
+  let helloSImport2: Dynamic = waitForShellOrigin(
     observabilityBrowserAndOperationEventsJe,
     (..._extraArguments: unknown[]): undefined => {
       let isObservabilityBrowserAndOperationEventsJeResult4: Dynamic =

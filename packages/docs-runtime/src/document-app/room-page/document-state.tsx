@@ -7,9 +7,21 @@ import { rememberAgentWriteCursor } from "../comment-notifications/create-commen
 
 /** BaoCut: room document document state; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { C_ as resolvePlatformApiAndAuthLocalhost, Eu as EditorHostTell, Gf as useCommentStore, Hg as isPlatformApiAndAuthHandoff, Ih as collectDataModelSchemasValue, Up as isDataModelSchemasKind3, Wm as DataModelSchemasFreeze, fc as PlatformSyncAndRoutingAssign2, kx as resolvePlatformKeyboardAndSaveStatusOpening, m_ as api, ng as DataModelSchemasDragging } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
-import { t as preloadModule } from "../../boot/preload";
+import {
+  api,
+  collectDataModelSchemasValue,
+  DataModelSchemasDragging,
+  DataModelSchemasFreeze,
+  EditorHostTell,
+  isDataModelSchemasKind3,
+  isPlatformApiAndAuthHandoff,
+  PlatformSyncAndRoutingAssign2,
+  resolvePlatformApiAndAuthLocalhost,
+  resolvePlatformKeyboardAndSaveStatusOpening,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
+import { preloadModule } from "../../boot/preload";
 export function runRoomPage73Element(roomPageContext: {
   containerRef: Dynamic;
   projectContainerRef: Dynamic;
@@ -555,7 +567,7 @@ export function runRoomPage92Effect(roomPageContext: {
     preloadModule(async (..._extraArguments: unknown[]): Promise<Dynamic> => {
       let {
         subscribeProjectFeed: subscribeProjectFeed2
-      }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.Fg);
+      }: Dynamic = await import("../../platform/index").then((result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => result.PlatformApiAndAuthFEEDTOPIC);
       return {
         subscribeProjectFeed: subscribeProjectFeed2
       };

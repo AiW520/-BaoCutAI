@@ -25,81 +25,81 @@ const StateEffect = (npmDependency0).StateEffect;
 const Transaction = (npmDependency0).Transaction;
 const EditorState = (npmDependency0).EditorState;
 const __vite__mapDeps: Dynamic = (..._extraArguments: unknown[]): Dynamic => [];
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  Aj as resolvePlatformSessionAndSourcesWeekday,
-  CO as resolveEditorAnchorsAndMentionsRoutines,
-  Ch as threadRefOf,
-  Ct as resolvePlatformLiveDocumentAndHistoryWidgetRunMessage,
-  DO as resolveEditorAnchorsAndMentionsReads,
-  EO as resolveEditorAnchorsAndMentionsSplit,
-  Fc as resolvePlatformSyncAndRoutingScheduled3,
-  Fn as PlatformLiveDocumentAndHistoryCreate,
-  Gf as useCommentStore,
-  Gr as resolveEditorSelectionAndTablesValue12,
-  HM as loadReact,
-  IM as usePlatformFeatureFlagsUseSyncExternalStore,
-  Jr as EditorSelectionAndTablesByKey2,
-  Kr as updateEditorSelectionAndTablesPublished,
-  Mn as loadPlatformLiveDocumentAndHistoryContainer,
-  Nn as loadPlatformLiveDocumentAndHistoryStatus2,
-  Qg as resolvePlatformApiAndAuthUseContext2,
-  Qr as resolveEditorSelectionAndTablesValue11,
-  St as resolvePlatformLiveDocumentAndHistoryWidgetNodeState,
-  TO as resolveEditorAnchorsAndMentionsValue7,
-  Tm as updateDataModelSchemasValue,
-  UE as loadJsxRuntime,
-  Xr as EditorSelectionAndTablesByKey,
-  Zr as EditorSelectionAndTablesState3,
-  _O as editorAnchorsAndMentionsPattern2,
-  _h as isRunProgress,
-  ai as resolveEditorSelectionAndTablesPref,
-  bO as resolveEditorAnchorsAndMentionsIncludes,
-  bT as loadReactDom,
-  bt as resolvePlatformLiveDocumentAndHistoryWidgetBundle,
-  cO as resolveEditorAnchorsAndMentionsRef3,
-  fA as baseKeyNames,
-  hC as Button,
-  hh as isNodeThread,
-  iE as UiOverlaysAndIconsCustomIcon,
-  i_ as liveDoor,
-  ii as resolveEditorSelectionAndTablesPref2,
-  jn as loadPlatformLiveDocumentAndHistoryCode,
-  mA as shiftedKeyNames,
-  m_ as api,
-  pA as keyName,
-  ph as isBuildConversation,
-  pl as resolvePlatformSyncAndRoutingCompact,
-  qf as useThreads,
-  t_ as apiFetcher,
-  wh as widgetAnchorOfThread,
-  wt as resolvePlatformLiveDocumentAndHistoryWidgetSession,
-  xC as Tooltip,
-  xO as resolveEditorAnchorsAndMentionsMetadata,
-  xt as resolvePlatformLiveDocumentAndHistoryWidgetNodeLog,
-  yC as DisabledReasonTooltip,
-  yO as resolveEditorAnchorsAndMentionsNames,
+  api,
+  apiFetcher,
+  Button,
+  DisabledReasonTooltip,
+  editorAnchorsAndMentionsPattern2,
+  EditorSelectionAndTablesByKey,
+  EditorSelectionAndTablesByKey2,
+  EditorSelectionAndTablesState3,
+  isBuildConversation,
+  isNodeThread,
+  isRunProgress,
+  liveDoor,
+  loadJsxRuntime,
+  loadPlatformLiveDocumentAndHistoryCode,
+  loadPlatformLiveDocumentAndHistoryContainer,
+  loadPlatformLiveDocumentAndHistoryStatus2,
+  loadReact,
+  loadReactDom,
+  PlatformLiveDocumentAndHistoryCreate,
+  resolveEditorAnchorsAndMentionsIncludes,
+  resolveEditorAnchorsAndMentionsMetadata,
+  resolveEditorAnchorsAndMentionsNames,
+  resolveEditorAnchorsAndMentionsReads,
+  resolveEditorAnchorsAndMentionsRef3,
+  resolveEditorAnchorsAndMentionsRoutines,
+  resolveEditorAnchorsAndMentionsSplit,
+  resolveEditorAnchorsAndMentionsValue7,
+  resolveEditorSelectionAndTablesPref,
+  resolveEditorSelectionAndTablesPref2,
+  resolveEditorSelectionAndTablesValue11,
+  resolveEditorSelectionAndTablesValue12,
+  resolvePlatformApiAndAuthUseContext2,
+  resolvePlatformLiveDocumentAndHistoryWidgetBundle,
+  resolvePlatformLiveDocumentAndHistoryWidgetNodeLog,
+  resolvePlatformLiveDocumentAndHistoryWidgetNodeState,
+  resolvePlatformLiveDocumentAndHistoryWidgetRunMessage,
+  resolvePlatformLiveDocumentAndHistoryWidgetSession,
+  resolvePlatformSessionAndSourcesWeekday,
+  resolvePlatformSyncAndRoutingCompact,
+  resolvePlatformSyncAndRoutingScheduled3,
+  threadRefOf,
+  Tooltip,
+  UiOverlaysAndIconsCustomIcon,
+  updateDataModelSchemasValue,
+  updateEditorSelectionAndTablesPublished,
+  useCommentStore,
+  usePlatformFeatureFlagsUseSyncExternalStore,
+  useThreads,
+  widgetAnchorOfThread,
 } from "../platform/index";
-import { t as preloadModule } from "../boot/preload";
-import { B as Collapsible, O as TextArea } from "../design-system/index";
+import { preloadModule } from "../boot/preload";
 import {
-  a as UserReferenceChip,
-  n as DrillReferenceChip,
-  r as ArtifactReferenceChip,
+  Collapsible,
+  TextArea,
+} from "../design-system/index";
+import {
+  ArtifactReferenceChip,
+  DrillReferenceChip,
+  UserReferenceChip,
 } from "../document-app/references/chips";
 import {
-  d as useProvenanceTimeFormat,
-  f as isWidgetBuildRunning,
-  l as WidgetProvenanceTrigger,
-  p as useNodeEngineNames,
-  u as widgetProvenanceAuthors,
+  isWidgetBuildRunning,
+  useNodeEngineNames,
+  useProvenanceTimeFormat,
+  widgetProvenanceAuthors,
+  WidgetProvenanceTrigger,
 } from "../document-app/index";
 import {
-  D as EMPTY_PREVIEW_COMMENTS,
-  E as censusTotal,
-  O as usePreviewCommentsStore,
-  T as censusWarnings,
-  w as useCensusStore,
+  censusTotal,
+  censusWarnings,
+  EMPTY_PREVIEW_COMMENTS,
+  useCensusStore,
+  usePreviewCommentsStore,
 } from "../platform/lazy";
 var ReactDOM: Dynamic = toModuleNamespace(loadReactDom(), 1);
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
@@ -330,7 +330,7 @@ function useRoomLogRows(
             "../platform/index"
           ).then(
             (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              input2.Fg,
+              input2.PlatformApiAndAuthFEEDTOPIC,
           );
           return {
             subscribeProjectFeed: value10,
@@ -446,7 +446,7 @@ function useWidgetObject(
             "../platform/index"
           ).then(
             (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              input2.Fg,
+              input2.PlatformApiAndAuthFEEDTOPIC,
           );
           return {
             subscribeProjectFeed: value10,

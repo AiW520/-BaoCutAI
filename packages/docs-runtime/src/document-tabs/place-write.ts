@@ -7,19 +7,19 @@ import type {
 } from "../document/style-contracts";
 import type { Dispose } from "../boot/lifecycle-contracts";
 import {
-  ls as resolveDataOperationControlValue3,
-  ss as resolveDataOperationControlValue4,
-  vx as toast,
+  resolveDataOperationControlValue3,
+  resolveDataOperationControlValue4,
+  toast,
 } from "../platform/index";
 import {
-  dt as pickTabsPlacement,
-  jt as getDocumentFontGeneration,
-  lt as releaseTabsPlacementPick,
-  mt as parseTabsPlacement,
-  pt as serializeTabsPlacement,
-  ut as commitTabsPlacementPick,
+  commitTabsPlacementPick,
+  getDocumentFontGeneration,
+  parseTabsPlacement,
+  pickTabsPlacement,
+  releaseTabsPlacementPick,
+  serializeTabsPlacement,
 } from "../document-app/index";
-import { t as enqueueStyleWrite } from "../document/style-write-chain";
+import { enqueueStyleWrite } from "../document/style-write-chain";
 var TABS_PLACE_FAILURE_MESSAGE = `Couldn’t save where tabs show. Tabs are back to the saved setting.`;
 var TABS_PLACE_FAILURE_COPY = {
   refused: TABS_PLACE_FAILURE_MESSAGE,

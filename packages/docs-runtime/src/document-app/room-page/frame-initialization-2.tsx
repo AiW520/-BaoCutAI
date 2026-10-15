@@ -18,8 +18,46 @@ import { clearPendingTabRename } from "../document-context-actions/duplicate-doc
 import { runRoomPage1DataTypeAskClaude, runRoomPage2DataTypeLinkHit, runRoomPage3DataTypeWidgetDefinitionTextEdit, runRoomPage4DataTypeWidgetDatumComment, runRoomPage5DataTypeWidgetSegmentComment, runRoomPage6DataTypeCommentAdd, runRoomPage7DataTypeInlineAskGoneDataTypeInlineAskFailed, runRoomPage8DataTypeInlineAskWritingDataTypeInlineAskUnsent, runRoomPage9DataTypeInlineAskOpen } from "./frame-initialization-1";
 /** BaoCut: room document frame initialization; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { Cy as resolveObservabilityBrowserAndOperationEventsTest9, Gf as useCommentStore, Ho as isDataOperationControlLabel, Kj as resolveDataContentAndReferencesError2, NM as resolvePlatformFeatureFlagsValue5, Nf as settleClickAway, On as PlatformLiveDocumentAndHistoryMessage, RM as resolvePlatformFeatureFlagsValue, UD as isPlatformFrameAndCapabilitiesWindow, U_ as frameBlobBytesResult, Ur as EditorSelectionAndTablesSelection, Wr as isEditorSelectionAndTablesIsActive, X_ as frameCurrentAnchor, YM as emitTelemetryEvent, _O as editorAnchorsAndMentionsPattern2, _v as frameMentioned, ab as createPagesEditorRemountEvent3, ao as resolveCommentsActionsAndSelectionUrl, cj as resolvePlatformSessionAndSourcesTest4, cl as loadPlatformSyncAndRoutingClipboard, co as resolveCommentsActionsAndSelectionContainer, jM as resolvePlatformFeatureFlagsEnabled2, lj as resolvePlatformSessionAndSourcesTest6, ll as isPlatformSyncAndRoutingTextarea, lp as resolveCommentsStoreChart, m_ as api, mi as resolveEditorSelectionAndTablesFind, ng as DataModelSchemasDragging, oo as resolveCommentsActionsAndSelectionLocalhost, pf as clickAwayDraftVerdict, uj as resolvePlatformSessionAndSourcesTest3, uo as CopyLinkFallbackUrl, vi as resolveEditorSelectionAndTablesSlice, vu as editorHostPattern3, vx as toast, wS as resolvePlatformKeyboardAndSaveStatusValue2, zA as resolvePlatformSessionAndSourcesTest13 } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
+import {
+  api,
+  clickAwayDraftVerdict,
+  CopyLinkFallbackUrl,
+  createPagesEditorRemountEvent as createPagesEditorRemountEvent3,
+  DataModelSchemasDragging,
+  editorAnchorsAndMentionsPattern2,
+  editorHostPattern3,
+  EditorSelectionAndTablesSelection,
+  emitTelemetryEvent,
+  frameBlobBytesResult,
+  frameCurrentAnchor,
+  frameMentioned,
+  isDataOperationControlLabel,
+  isEditorSelectionAndTablesIsActive,
+  isPlatformFrameAndCapabilitiesWindow,
+  isPlatformSyncAndRoutingTextarea,
+  loadPlatformSyncAndRoutingClipboard,
+  PlatformLiveDocumentAndHistoryMessage,
+  resolveCommentsActionsAndSelectionContainer,
+  resolveCommentsActionsAndSelectionLocalhost,
+  resolveCommentsActionsAndSelectionUrl,
+  resolveCommentsStoreChart,
+  resolveDataContentAndReferencesError2,
+  resolveEditorSelectionAndTablesFind,
+  resolveEditorSelectionAndTablesSlice,
+  resolveObservabilityBrowserAndOperationEventsTest9,
+  resolvePlatformFeatureFlagsEnabled2,
+  resolvePlatformFeatureFlagsValue,
+  resolvePlatformFeatureFlagsValue5,
+  resolvePlatformKeyboardAndSaveStatusValue2,
+  resolvePlatformSessionAndSourcesTest13,
+  resolvePlatformSessionAndSourcesTest3,
+  resolvePlatformSessionAndSourcesTest4,
+  resolvePlatformSessionAndSourcesTest6,
+  settleClickAway,
+  toast,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
 export function runRoomPage194Effect(roomPageContext: {
   amountRef: Dynamic;
   announcedAskCards: Dynamic;

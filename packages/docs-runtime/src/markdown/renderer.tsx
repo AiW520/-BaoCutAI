@@ -1,23 +1,23 @@
 /** markdown-renderer: restored from MarkdownRenderer-B5dkWytq.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  Bg as PlatformApiAndAuthAssign,
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  iE as UiOverlaysAndIconsCustomIcon,
-  vx as toast,
-  xC as Tooltip,
+  loadJsxRuntime,
+  loadReact,
+  PlatformApiAndAuthAssign,
+  toast,
+  Tooltip,
+  UiOverlaysAndIconsCustomIcon,
 } from "../platform/index";
 import {
-  i as Streamdown,
-  n as chatRehypePlugins,
-  r as useMarkdownCodePlugins,
+  chatRehypePlugins,
+  Streamdown,
+  useMarkdownCodePlugins,
 } from "./chat";
 import {
-  Gt as stripMarkdownFrontmatter,
-  Jt as useFileSnapshot,
-  Kt as saveTextFilesAndUploadOtherFiles,
+  saveTextFilesAndUploadOtherFiles,
+  stripMarkdownFrontmatter,
+  useFileSnapshot,
 } from "../platform/lazy";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();

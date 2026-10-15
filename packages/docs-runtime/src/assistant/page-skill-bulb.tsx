@@ -1,28 +1,31 @@
 /** page-skill-bulb: restored from PageSkillBulb-Cd0qoRd6.js. */
 import { originalJsxProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  _A as resolvePlatformSessionAndSourcesUnavailable,
-  hC as Button,
-  iE as UiOverlaysAndIconsCustomIcon,
-  pl as resolvePlatformSyncAndRoutingCompact,
-  tu as EditorHostGlyph,
-  xC as Tooltip,
+  Button,
+  EditorHostGlyph,
+  loadJsxRuntime,
+  loadReact,
+  resolvePlatformSessionAndSourcesUnavailable,
+  resolvePlatformSyncAndRoutingCompact,
+  Tooltip,
+  UiOverlaysAndIconsCustomIcon,
 } from "../platform/index";
 import {
-  A as Popover,
-  O as TextArea,
-  S as Link,
-  _ as Switch,
-  a as FieldLabel,
-  g as InfoTip,
-  i as FieldError,
-  o as Field,
+  Field,
+  FieldError,
+  FieldLabel,
+  InfoTip,
+  Link,
+  Popover,
+  Switch,
+  TextArea,
 } from "../design-system/index";
-import { kt as SKILL_PROPERTY, zt as IconButton } from "../document-app/index";
+import {
+  IconButton,
+  SKILL_PROPERTY,
+} from "../document-app/index";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var SKILL_TRIGGER_KEY: string = `trigger`;
 var SKILL_DISABLED_KEY: string = `disabled`;

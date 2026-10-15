@@ -4,7 +4,7 @@ import {
   React,
   UiDesignSystemUseLayoutEffect,
   UiOverlaysAndIconsSurface,
-  appKDImport,
+  clsx,
   originalJsxProps,
   resolveUiLinksAndFoundationValue17,
   resolveUiLinksAndFoundationValue18,
@@ -496,7 +496,7 @@ function SheetsKind(
                 {...originalJsxProps({
                   role: `presentation`,
                   [SheetsDataCdsSheetPending]: ``,
-                  className: appKDImport(SheetsState7, !value4 && `opacity-0`),
+                  className: clsx(SheetsState7, !value4 && `opacity-0`),
                   style: value3.style,
                   onPointerDown: (
                     input2?: Dynamic,

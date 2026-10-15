@@ -1,27 +1,30 @@
 /** doc-font-control: restored from DocFontControl-YP-wmLFC.js. */
 import { originalJsxProps } from "../../react-runtime/jsx-runtime";
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../../boot/module-runtime";
+import { toModuleNamespace } from "../../boot/module-runtime";
 import {
-  BM as resolvePlatformFeatureFlagsHasFocus,
-  HM as loadReact,
-  UE as loadJsxRuntime,
-  VM as usePlatformFeatureFlagsPress,
-  ls as resolveDataOperationControlValue3,
-  vx as toast,
+  loadJsxRuntime,
+  loadReact,
+  resolveDataOperationControlValue3,
+  resolvePlatformFeatureFlagsHasFocus,
+  toast,
+  usePlatformFeatureFlagsPress,
 } from "../../platform/index";
-import { A as Popover, h as SegmentedControl } from "../../design-system/index";
 import {
-  Ft as serializeDocumentFonts,
-  Mt as setDocumentFonts,
-  Nt as applyDocumentFontsIfCurrent,
-  Pt as equalDocumentFonts,
-  W as TabRailButton,
-  i as canClosePagebarOnFocusLeave,
-  jt as getDocumentFontGeneration,
+  Popover,
+  SegmentedControl,
+} from "../../design-system/index";
+import {
+  applyDocumentFontsIfCurrent,
+  canClosePagebarOnFocusLeave,
+  equalDocumentFonts,
+  getDocumentFontGeneration,
+  serializeDocumentFonts,
+  setDocumentFonts,
+  TabRailButton,
 } from "../index";
-import { t as PropertyRow } from "../../design-system/property-row";
-import { t as enqueueStyleWrite } from "../../document/style-write-chain";
+import { PropertyRow } from "../../design-system/property-row";
+import { enqueueStyleWrite } from "../../document/style-write-chain";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();
 function readDocumentFontChoice(

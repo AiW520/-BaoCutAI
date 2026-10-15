@@ -6,8 +6,29 @@ import { resolveWidgetBridgeValue4 } from "../widget-bridge/widget-sample-card";
 
 /** BaoCut: room document comments; live accessors preserve closure state. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { An as loadPlatformLiveDocumentAndHistoryNodeId, DO as resolveEditorAnchorsAndMentionsReads, Fn as PlatformLiveDocumentAndHistoryCreate, Gf as useCommentStore, In as PlatformLiveDocumentAndHistorySession, Oo as loadDataOperationControlKind, Ov as frameSampleAvailable, Pn as resolvePlatformLiveDocumentAndHistoryTest, Xr as EditorSelectionAndTablesByKey, aj as platformSessionAndSourcesPattern9, cj as resolvePlatformSessionAndSourcesTest4, da as resolveCommentsEditorIncludes, jv as frameSampler, kn as PlatformLiveDocumentAndHistoryWidgetBundle, m_ as api, qr as EditorSelectionAndTablesByFile2, rp as resolveCommentsStoreSource3, sj as resolvePlatformSessionAndSourcesTest5, uj as resolvePlatformSessionAndSourcesTest3, vx as toast } from "../../platform/index";
-import { S as isFrameArtifact } from "../../boot/environment";
+import {
+  api,
+  EditorSelectionAndTablesByFile2,
+  EditorSelectionAndTablesByKey,
+  frameSampleAvailable,
+  frameSampler,
+  loadDataOperationControlKind,
+  loadPlatformLiveDocumentAndHistoryNodeId,
+  PlatformLiveDocumentAndHistoryCreate,
+  PlatformLiveDocumentAndHistorySession,
+  PlatformLiveDocumentAndHistoryWidgetBundle,
+  platformSessionAndSourcesPattern9,
+  resolveCommentsEditorIncludes,
+  resolveCommentsStoreSource3,
+  resolveEditorAnchorsAndMentionsReads,
+  resolvePlatformLiveDocumentAndHistoryTest,
+  resolvePlatformSessionAndSourcesTest3,
+  resolvePlatformSessionAndSourcesTest4,
+  resolvePlatformSessionAndSourcesTest5,
+  toast,
+  useCommentStore,
+} from "../../platform/index";
+import { isFrameArtifact } from "../../boot/environment";
 export function runRoomPage113Memoized4(roomPageContext: {
   lastDataTarget: Dynamic;
   loadHandlers: Dynamic;

@@ -1,17 +1,17 @@
 /** code-viewer: restored from CodeViewer-CSHj0FLC.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import { r as toModuleNamespace } from "../boot/module-runtime";
+import { toModuleNamespace } from "../boot/module-runtime";
 import {
-  Ay as isObservabilityBrowserAndOperationEventsImage,
-  HM as loadReact,
-  Oy as resolveObservabilityBrowserAndOperationEventsXlsx,
-  UE as loadJsxRuntime,
-  jy as resolveObservabilityBrowserAndOperationEventsImagePng,
-  ky as resolveObservabilityBrowserAndOperationEventsToFixed,
-  ld as PlatformRuntimeAndChatXlsx,
-  qg as loadPlatformApiAndAuthValue,
+  isObservabilityBrowserAndOperationEventsImage,
+  loadJsxRuntime,
+  loadPlatformApiAndAuthValue,
+  loadReact,
+  PlatformRuntimeAndChatXlsx,
+  resolveObservabilityBrowserAndOperationEventsImagePng,
+  resolveObservabilityBrowserAndOperationEventsToFixed,
+  resolveObservabilityBrowserAndOperationEventsXlsx,
 } from "../platform/index";
-import { n as codeToHtml } from "../syntax-highlighting/core";
+import { codeToHtml } from "../syntax-highlighting/core";
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var languageByExtension: Dynamic = {
   py: `python`,

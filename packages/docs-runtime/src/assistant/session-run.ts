@@ -12,7 +12,10 @@ import type {
   SessionRuns,
 } from "./session-contracts";
 import type { UnknownRecord } from "../serialization/value-contracts";
-import { _ as askIsEmpty, j as envelopeWritesNothing } from "../document-app/index";
+import {
+  hasMintedContent as envelopeWritesNothing,
+  isEmptyClaudeRequest as askIsEmpty,
+} from "../document-app/index";
 var SESSION_RUN_MAX_MS = 6e5;
 var SESSION_REPLY_GRACE_MS = 5e3;
 var SESSION_OTHERS_GRACE_MS = 8e3;

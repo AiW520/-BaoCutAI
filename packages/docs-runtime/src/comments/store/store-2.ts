@@ -3,7 +3,7 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   applyUpdate,
   atom,
-  rolldownNImport,
+  createLiveModuleNamespace,
 } from "../../platform/dependencies";
 import {
   resolvePlatformSessionAndSourcesValue8,
@@ -1708,7 +1708,7 @@ export function initializeCommentsStore2Step1(): void {
       );
     },
   ));
-  (CommentsStoreANCHORGONECARDWORDS = rolldownNImport({
+  (CommentsStoreANCHORGONECARDWORDS = createLiveModuleNamespace({
     ANCHOR_GONE_CARD_WORDS: (..._extraArguments: unknown[]): Dynamic =>
       ANCHOR_GONE_CARD_WORDS,
     ANCHOR_GONE_WORDS: (..._extraArguments: unknown[]): Dynamic =>

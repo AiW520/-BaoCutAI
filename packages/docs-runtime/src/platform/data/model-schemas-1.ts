@@ -2,7 +2,7 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   create,
-  preloadTImport,
+  preloadModule,
 } from "../dependencies";
 import {
   resolveDataContentAndReferencesError2,
@@ -497,7 +497,7 @@ export function initializeDataModelSchemas1Step2(): void {
                 context?: Dynamic,
                 ..._extraArguments: unknown[]
               ): undefined =>
-                void preloadTImport(
+                void preloadModule(
                   (..._extraArguments: unknown[]): Dynamic =>
                     Promise.resolve()
                       .then(
@@ -526,7 +526,7 @@ export function initializeDataModelSchemas1Step2(): void {
                 ).catch((..._extraArguments: unknown[]): undefined => {}),
             });
             let useContainerStoreState: Dynamic = (
-              await preloadTImport(
+              await preloadModule(
                 async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                   let { useContainerStore: useContainerStore2 }: Dynamic =
                     await Promise.resolve().then(
@@ -612,7 +612,7 @@ export function initializeDataModelSchemas1Step2(): void {
             );
             if (uniqueItems.size) {
               let { useContainerStore: preloadTImport2 }: Dynamic =
-                await preloadTImport(
+                await preloadModule(
                   async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                     let { useContainerStore: useContainerStore2 }: Dynamic =
                       await Promise.resolve().then(
@@ -1091,7 +1091,7 @@ export function initializeDataModelSchemas1Step2(): void {
         },
         saveAll: async (..._extraArguments: unknown[]): Promise<undefined> => {
           let { useContainerStore: preloadTImport2 }: Dynamic =
-            await preloadTImport(
+            await preloadModule(
               async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                 let { useContainerStore: useContainerStore2 }: Dynamic =
                   await Promise.resolve().then(
@@ -1113,7 +1113,7 @@ export function initializeDataModelSchemas1Step2(): void {
             preloadTImportState.project?.state === `live` &&
             !preloadTImportState.version
           ) {
-            let { toast: preloadTImport3 }: Dynamic = await preloadTImport(
+            let { toast: preloadTImport3 }: Dynamic = await preloadModule(
               async (..._extraArguments: unknown[]): Promise<Dynamic> => {
                 let { toast: toast2 }: Dynamic = await Promise.resolve().then(
                   (..._extraArguments: unknown[]): Dynamic =>

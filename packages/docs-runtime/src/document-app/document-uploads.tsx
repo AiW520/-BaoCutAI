@@ -882,7 +882,7 @@ export function initializeDocumentUploadsStep1(): void {
         import("../platform/index")
           .then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.rg,
+              result.DataModelSchemasBULKATTACHTHRESHOLD,
           )
           .then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>

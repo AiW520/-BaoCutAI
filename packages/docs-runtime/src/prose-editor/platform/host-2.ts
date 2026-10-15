@@ -1,7 +1,7 @@
 /** BaoCut: editor host from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloImport,
+  recordFramePhase,
   inFrame,
 } from "../../platform/dependencies";
 import {
@@ -462,7 +462,7 @@ function isEditorHostPid(pid?: Dynamic, ..._extraArguments: unknown[]) {
       .then((..._extraArguments: unknown[]): Dynamic => fonts(`rest`));
   };
   let runtime = (..._extraArguments: unknown[]): undefined => {
-    helloImport(`editorFrameLoaded`);
+    recordFramePhase(`editorFrameLoaded`);
     if (record2.pid === null) {
       record2.fontsDue = afterPaint;
     } else {
@@ -476,7 +476,7 @@ function isEditorHostPid(pid?: Dynamic, ..._extraArguments: unknown[]) {
         ): undefined => {
           let sealed2: Dynamic = sealed();
           if (sealed2) {
-            if (!helloImport(`runtimePost`)) {
+            if (!recordFramePhase(`runtimePost`)) {
               resolveObservabilityBootMark(`pages:runtimePost`);
             }
             sealed2.postMessage(msg, `*`, transfer);
@@ -517,7 +517,7 @@ function isEditorHostPid(pid?: Dynamic, ..._extraArguments: unknown[]) {
     } else {
       if (type === `lfile-ready`) {
         record2.ready = true;
-        helloImport(`runtimeReady`);
+        recordFramePhase(`runtimeReady`);
       } else {
         if (
           type === `lfile-error` ||
@@ -532,7 +532,7 @@ function isEditorHostPid(pid?: Dynamic, ..._extraArguments: unknown[]) {
   let load: Dynamic = (..._extraArguments: unknown[]) => {
     let load2: Dynamic = record2.latch.load();
     if (load2 === `navigated`) return resolvePlatformSyncAndRoutingTaken2();
-    helloImport(`iframeLoad`);
+    recordFramePhase(`iframeLoad`);
     if (load2 === `boot`) {
       runtime();
     }
@@ -553,7 +553,7 @@ function isEditorHostPid(pid?: Dynamic, ..._extraArguments: unknown[]) {
   EditorHostState60 = record2;
   holder.appendChild(element);
   document.body.appendChild(holder);
-  helloImport(`editorFrameCreated`);
+  recordFramePhase(`editorFrameCreated`);
   record2.timer = EditorHostEnabled.setTimer(
     (..._extraArguments: unknown[]): undefined => {
       if (EditorHostState60 === record2 && !record2.taken) {

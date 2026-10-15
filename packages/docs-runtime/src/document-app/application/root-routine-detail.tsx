@@ -1556,7 +1556,7 @@ export function initializeApplicationRootRoutineDetailStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/index").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.Hc,
+              result.PlatformSyncAndRoutingActionsPage,
           ),
         mapPreloadDependencies([0, 1, 2, 3]),
         import.meta.url,
@@ -1568,7 +1568,7 @@ export function initializeApplicationRootRoutineDetailStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/index").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.Hc,
+              result.PlatformSyncAndRoutingActionsPage,
           ),
         mapPreloadDependencies([0, 1, 2, 3]),
         import.meta.url,
@@ -1581,7 +1581,7 @@ export function initializeApplicationRootRoutineDetailStep1(): void {
           import("../../platform/index")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.Hc,
+                result.PlatformSyncAndRoutingActionsPage,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
@@ -1598,7 +1598,7 @@ export function initializeApplicationRootRoutineDetailStep1(): void {
         (..._extraArguments: unknown[]): Dynamic =>
           import("../../platform/index").then(
             (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              result.Hc,
+              result.PlatformSyncAndRoutingActionsPage,
           ),
         mapPreloadDependencies([0, 1, 2, 3]),
         import.meta.url,
@@ -1611,7 +1611,7 @@ export function initializeApplicationRootRoutineDetailStep1(): void {
           import("../../platform/index")
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.Hc,
+                result.PlatformSyncAndRoutingActionsPage,
             )
             .then(
               (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({

@@ -1,7 +1,7 @@
 /** BaoCut: operation controller node read. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import type { OperationControllerScope } from "./controller-contracts";
-import { helloImport } from "../dependencies";
+import { recordFramePhase } from "../dependencies";
 import {
   reportOperationEvent,
   resolveObservabilityBootNode,
@@ -948,7 +948,7 @@ export function createOperationNodeRead(
       }
       if (
         !partial &&
-        helloImport(`picture`, {
+        recordFramePhase(`picture`, {
           blocks: onFaces2?.blocks.length ?? 0,
           ...(typeof docJson == `string`
             ? {

@@ -1,7 +1,7 @@
 /** BaoCut: platform artifact links from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
-  helloIImport,
+  DEFAULT_SHELL_ORIGINS,
 } from "../dependencies";
 
 var platformArtifactLinksPattern: RegExp;
@@ -117,7 +117,7 @@ function resolvePlatformArtifactLinksIncludes2(
   ..._extraArguments: unknown[]
 ): Dynamic {
   return typeof platformArtifactLinksIncludes2 != `string` ||
-    !helloIImport.includes(platformArtifactLinksIncludes2)
+    !DEFAULT_SHELL_ORIGINS.includes(platformArtifactLinksIncludes2)
     ? null
     : (PlatformArtifactLinksHttpsPreviewClaudeAi[
         platformArtifactLinksIncludes2
