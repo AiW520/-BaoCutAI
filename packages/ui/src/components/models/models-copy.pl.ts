@@ -21,7 +21,7 @@ export const pl: ModelsMessages = {
     separateDefaultDesc: "Używane do oddzielania audio tła tłumaczonego lektora bez wskazanego modelu oraz do lektora z wiersza poleceń.",
     auto: "Automatycznie",
     autoUses: (id: string) => `Wybór automatyczny używa teraz ${id}.`,
-    otherDefault: (name: string) => `Domyślnie teraz ${name} (ustawione w modelach chmurowych); wybór lokalnego modelu zastąpi to ustawienie.`,
+    otherDefault: (name: string) => `Domyślnie teraz ${name}; wybór lokalnego modelu zastąpi to ustawienie.`,
     defaultSet: "Ustawiono model domyślny",
     defaultFailed: (message: string) => `Nie udało się ustawić modelu domyślnego: ${message}`,
     installed: "Zainstalowany",
@@ -36,9 +36,6 @@ export const pl: ModelsMessages = {
     emptyBody: "Folder modeli na tym komputerze przechowuje tylko pakiety rozpoznawania i syntezy mowy, generowania obrazów oraz separacji źródeł. Lokalne modele tej kategorii nie są jeszcze obsługiwane.",
   },
   imageLocal: {
-    defaultDesc: "Wstępnie wybrane dla nowych zadań obrazów. Bez modelu domyślnego wybierasz za każdym razem; ręczny wybór ma pierwszeństwo.",
-    cloudDefault: (name: string) => `Domyślny jest model w chmurze (${name}); zmień w Ustawienia › Modele w chmurze. Wybranie lokalnego przełącza na niego.`,
-    noInstalled: "Nie zainstalowano jeszcze modelu obrazów. Najpierw pobierz go poniżej.",
     licenseUse: "Wygenerowane obrazy można używać tylko niekomercyjnie; do komercyjnych wideo wybierz inny model obrazów.",
 
     tryButton: "Wypróbuj",
