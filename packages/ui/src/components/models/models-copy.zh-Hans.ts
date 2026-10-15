@@ -178,8 +178,8 @@ export const zhHans: ModelsMessages = {
     unset: '未设置',
     unsetDesc: '每次自己选',
     localGroup: '这台电脑',
-    localWhy: (why: string) => `${why} · 在「本地模型」里下载`,
-    cloudWhy: (why: string) => `${why} · 在「云端模型」里连接`,
+    localWhy: (why: string) => `${why} · 在下面的「本机模型」里下载`,
+    cloudWhy: (why: string) => `${why} · 在「API 提供方」里添加账号`,
     unavailable: (label: string) => `${label}（不可用）`,
   },
   codexCard: {

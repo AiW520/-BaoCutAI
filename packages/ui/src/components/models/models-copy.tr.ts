@@ -178,8 +178,8 @@ export const tr: ModelsMessages = {
     unset: 'Ayarlanmadı',
     unsetDesc: 'Her seferinde model seç',
     localGroup: 'Bu bilgisayar',
-    localWhy: (why: string) => `${why} · Yerel modeller bölümünden indirin`,
-    cloudWhy: (why: string) => `${why} · Bulut modelleri bölümünden bağlayın`,
+    localWhy: (why: string) => `${why} · aşağıdaki Yerel modeller bölümünden indirin`,
+    cloudWhy: (why: string) => `${why} · API sağlayıcıları bölümünden bir hesap ekleyin`,
     unavailable: (label: string) => `${label} (kullanılamıyor)`,
   },
   codexCard: {

@@ -194,8 +194,8 @@ export const ja: ModelsMessages = {
     unset: '未設定',
     unsetDesc: '毎回選ぶ',
     localGroup: 'このコンピュータ',
-    localWhy: (why: string) => `${why} · 「ローカルモデル」でダウンロード`,
-    cloudWhy: (why: string) => `${why} · 「クラウドモデル」で接続`,
+    localWhy: (why: string) => `${why} · 下の「ローカルモデル」でダウンロード`,
+    cloudWhy: (why: string) => `${why} · 「API プロバイダ」でアカウントを追加`,
     unavailable: (label: string) => `${label}（使用不可）`,
   },
   codexCard: {

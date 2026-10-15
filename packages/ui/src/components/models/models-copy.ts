@@ -228,8 +228,8 @@ const en = {
     unset: 'Not set',
     unsetDesc: 'Pick a model each time',
     localGroup: 'This computer',
-    localWhy: (why: string) => `${why} · download it under Local models`,
-    cloudWhy: (why: string) => `${why} · connect it under Cloud models`,
+    localWhy: (why: string) => `${why} · download it under Local models below`,
+    cloudWhy: (why: string) => `${why} · add an account under API providers`,
     unavailable: (label: string) => `${label} (unavailable)`,
   },
   codexCard: {

@@ -196,8 +196,8 @@ export const ko: ModelsMessages = {
     unset: '설정 안 함',
     unsetDesc: '매번 직접 선택',
     localGroup: '이 컴퓨터',
-    localWhy: (why: string) => `${why} · 로컬 모델에서 다운로드`,
-    cloudWhy: (why: string) => `${why} · 클라우드 모델에서 연결`,
+    localWhy: (why: string) => `${why} · 아래 로컬 모델에서 다운로드`,
+    cloudWhy: (why: string) => `${why} · API 공급자에서 계정 추가`,
     unavailable: (label: string) => `${label} (사용 불가)`,
   },
   codexCard: {

@@ -179,8 +179,8 @@ export const pl: ModelsMessages = {
     unset: 'Nie ustawiono',
     unsetDesc: 'Wybieraj model za każdym razem',
     localGroup: 'Ten komputer',
-    localWhy: (why: string) => `${why} · pobierz w Modelach lokalnych`,
-    cloudWhy: (why: string) => `${why} · połącz w Modelach w chmurze`,
+    localWhy: (why: string) => `${why} · pobierz poniżej, w sekcji „Modele lokalne”`,
+    cloudWhy: (why: string) => `${why} · dodaj konto w sekcji „Dostawcy API”`,
     unavailable: (label: string) => `${label} (niedostępny)`,
   },
   codexCard: {

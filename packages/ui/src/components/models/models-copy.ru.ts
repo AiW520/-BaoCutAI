@@ -179,8 +179,8 @@ export const ru: ModelsMessages = {
     unset: 'Не задано',
     unsetDesc: 'Выбирать модель каждый раз',
     localGroup: 'Этот компьютер',
-    localWhy: (why: string) => `${why} · скачайте в разделе «Локальные модели»`,
-    cloudWhy: (why: string) => `${why} · подключите в разделе «Облачные модели»`,
+    localWhy: (why: string) => `${why} · скачайте ниже, в разделе «Локальные модели»`,
+    cloudWhy: (why: string) => `${why} · добавьте аккаунт в разделе «Поставщики API»`,
     unavailable: (label: string) => `${label} (недоступно)`,
   },
   codexCard: {

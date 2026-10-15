@@ -189,8 +189,8 @@ export const zhHant: ModelsMessages = {
     unset: '未設定',
     unsetDesc: '每次自己選',
     localGroup: '這台電腦',
-    localWhy: (why: string) => `${why} · 在「本機模型」中下載`,
-    cloudWhy: (why: string) => `${why} · 在「雲端模型」中連接`,
+    localWhy: (why: string) => `${why} · 在下方的「本機模型」中下載`,
+    cloudWhy: (why: string) => `${why} · 在「API 供應商」中新增帳號`,
     unavailable: (label: string) => `${label}（無法使用）`,
   },
   codexCard: {

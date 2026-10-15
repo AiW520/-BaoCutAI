@@ -178,8 +178,8 @@ export const vi: ModelsMessages = {
     unset: 'Chưa đặt',
     unsetDesc: 'Mỗi lần tự chọn mô hình',
     localGroup: 'Máy này',
-    localWhy: (why: string) => `${why} · tải trong Mô hình trên máy`,
-    cloudWhy: (why: string) => `${why} · kết nối trong Mô hình đám mây`,
+    localWhy: (why: string) => `${why} · tải trong Mô hình cục bộ bên dưới`,
+    cloudWhy: (why: string) => `${why} · thêm tài khoản trong Nhà cung cấp API`,
     unavailable: (label: string) => `${label} (không dùng được)`,
   },
   codexCard: {

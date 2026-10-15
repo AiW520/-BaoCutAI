@@ -207,8 +207,8 @@ export const ptBR: ModelsMessages = {
     unset: 'Não definido',
     unsetDesc: 'Escolher um modelo a cada vez',
     localGroup: 'Este computador',
-    localWhy: (why: string) => `${why} · baixe em Modelos locais`,
-    cloudWhy: (why: string) => `${why} · conecte em Modelos na nuvem`,
+    localWhy: (why: string) => `${why} · baixe em Modelos locais, abaixo`,
+    cloudWhy: (why: string) => `${why} · adicione uma conta em Provedores de API`,
     unavailable: (label: string) => `${label} (indisponível)`,
   },
   codexCard: {
