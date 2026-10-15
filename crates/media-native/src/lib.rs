@@ -75,8 +75,8 @@ pub use encode::{
     open_mp4_writer_with_options, read_wav_layout, video_bitrate,
 };
 pub use frames::{
-    DecodedFrameInfo, FrameStream, SequentialDecoder, open_frame_stream, open_sequential_decoder,
-    prewarm_frame_stream,
+    DecodedFrameInfo, DecoderDevice, FrameStream, HARDWARE_DECODE_ENV, SequentialDecoder,
+    open_frame_stream, open_sequential_decoder, prewarm_frame_stream,
 };
 #[cfg(target_os = "windows")]
 pub use playback_windows::{

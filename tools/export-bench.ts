@@ -851,7 +851,11 @@ async function main(): Promise<void> {
                 ? null
                 : Number(done.captionRasters),
             video: done.video
-              ? `${done.video.decoder ?? "-"}→${done.video.encoder}` +
+              ? `${done.video.decoder ?? "-"}` +
+                (done.video.decoderDevices?.length
+                  ? `（${done.video.decoderDevices.map((d: { name: string; hardware: boolean }) => `${d.name}${d.hardware ? "，硬件" : ""}`).join("、")}）`
+                  : "") +
+                `→${done.video.encoder}` +
                 (done.video.encoderDevice
                   ? `（${done.video.encoderDevice.name}${done.video.encoderDevice.hardware ? "，硬件" : ""}）`
                   : "") +

@@ -783,6 +783,13 @@ export class ExportService {
               ? {
                   videoDecoder: result.video.decoder,
                   videoEncoder: result.video.encoder,
+                  ...(result.video.decoderDevices?.length
+                    ? {
+                        videoDecoderDevices: result.video.decoderDevices.map(
+                          (d) => `${d.name}${d.hardware ? ' (hardware)' : ''}${d.fallback ? ` [fallback: ${d.fallback}]` : ''}`,
+                        ),
+                      }
+                    : {}),
                   ...(result.video.encoderDevice
                     ? {
                         videoEncoderDevice: `${result.video.encoderDevice.name}${result.video.encoderDevice.hardware ? ' (hardware)' : ''}`,

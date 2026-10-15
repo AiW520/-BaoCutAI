@@ -102,7 +102,7 @@ npx vitest run apps/desktop/src/main/runtime-supervisor.test.ts apps/desktop/src
 
 ## 5. 未覆盖范围
 
-- W1–W3 已在同日实现（见待办）：W8、W7、W1–W3 合起来对照 `87cb9738`（`export-bench --seconds 20 --runs 5`，1080p 夹具、两个构建交替各 5 次）cover 147.1 → 185.8 fps（1.26）、contain 132.0 → 170.0 fps（1.29），10 对全快，每次导出的解码重开 1 → 0。W5 导出 Source Reader 的 D3D11 硬件解码只有原型（`windows-media-w5` 分支），未合入；DXGI 播放帧测试通过不等于 W5 完成。
+- W1–W3 已在同日实现（见待办）：W8、W7、W1–W3 合起来对照 `87cb9738`（`export-bench --seconds 20 --runs 5`，1080p 夹具、两个构建交替各 5 次）cover 147.1 → 185.8 fps（1.26）、contain 132.0 → 170.0 fps（1.29），10 对全快，每次导出的解码重开 1 → 0。W5 导出 Source Reader 的 D3D11 硬件解码同日实现、经用户确认缺省开启（实测与软件解码逐字节相同，见待办 W5）；AMD / Intel 显卡上的硬件解码与回落未测。
 - W6 编码器节流与低延迟候选没有改动或 A/B；W4 尚未验证真实 Electron 应用最小化和切到后台。
 - 只有 RTX 3060 一台设备；`done.video.encoderDevice` 现在报出实际 MFT（本机为 `NVIDIA H.264 Encoder MFT`），只代表这台 NVIDIA 机器。AMD / Intel、无驱动与 MFT 初始化失败回落仍待验证。
 - 未重打 CPU / CUDA / Vulkan 安装包，未验证应用内更新、NSIS、打包字体、Whisper CUDA / Vulkan、真实模型推理和 AVX2 发布基线。既有 CI 打包结果与本次源码验证应分别判断。

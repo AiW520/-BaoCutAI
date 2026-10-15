@@ -82,6 +82,11 @@ pub(crate) trait FrameSource {
         let _ = time_seconds;
         Ok(None)
     }
+    /// 实际在用的解码器与它是不是走显卡（导出的 `done.video.decoderDevices`）；平台答不出时 `None`。
+    /// 硬件路径要等第一帧解出来才确定，之前也是 `None`。
+    fn decoder_device(&self) -> Option<DecoderDevice> {
+        None
+    }
     /// 同 [`next_decoded`](Self::next_decoded)，像素写进调用方给的缓冲（长度按帧改），返回时间与实际尺寸。
     ///
     /// 给 [`SequentialDecoder`] 用：成片导出逐帧取，缓冲在调用方与读帧线程之间轮换，不逐帧分配。缺省实现
@@ -102,6 +107,17 @@ pub(crate) trait FrameSource {
             }
         }))
     }
+}
+
+/// 顺序解码实际用的解码器（[`SequentialDecoder::decoder_device`]）。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DecoderDevice {
+    /// 解码器自报的名字（Media Foundation 的解码 MFT，如 `Microsoft H264 Video Decoder MFT`）。
+    pub name: String,
+    /// 解码在显卡上（Windows：D3D11 / DXVA，解出的帧在显存里，再读回 CPU）。
+    pub hardware: bool,
+    /// 想走硬件却没走成的原因（英文代码加说明）；没请求硬件或走成了时为 `None`。
+    pub fallback: Option<String>,
 }
 
 /// [`FrameSource::next_decoded_into`] 写进缓冲的那一帧的时间与尺寸。
@@ -156,28 +172,45 @@ pub fn open_frame_stream(path: &Path, from_seconds: f64, fps: f64) -> Result<Fra
     } else {
         bail!("from_seconds 必须是有限值，实得 {from_seconds}");
     };
-    let source = open_source(path, from, None)?;
+    let source = open_source(path, from, None, false)?;
     Ok(FrameStream::new(source, from, fps))
 }
 
 /// 平台顺序解码器。`size` 是想要的交付尺寸（摆正后的显示方向）：平台能在解码链路上缩放的就让它直接交付这个尺寸
-/// （macOS），不能的交原尺寸，由调用方补一次 CPU 重采样。
-fn open_source(path: &Path, from: f64, size: Option<(u32, u32)>) -> Result<Box<dyn FrameSource>> {
+/// （macOS），不能的交原尺寸，由调用方补一次 CPU 重采样。`try_hardware`：Windows 上先试 D3D11 解码（W5），不成回落
+/// 软件解码；macOS 的 AVFoundation 自己决定，不看它。
+fn open_source(
+    path: &Path,
+    from: f64,
+    size: Option<(u32, u32)>,
+    try_hardware: bool,
+) -> Result<Box<dyn FrameSource>> {
     #[cfg(target_os = "macos")]
-    let source = crate::macos::open_frame_source(path, from, size)?;
+    let source = {
+        let _ = try_hardware;
+        crate::macos::open_frame_source(path, from, size)?
+    };
     #[cfg(target_os = "windows")]
     let source = {
         // Media Foundation 的 source reader 这里不请求缩放（v2 的导出后端也没有）：交原尺寸，
         // `SequentialDecoder` 在 CPU 上补重采样。
         let _ = size;
-        crate::windows::open_frame_source(path, from)?
+        crate::windows::open_frame_source(path, from, try_hardware)?
     };
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     let source: Box<dyn FrameSource> = {
-        let _ = (path, from, size);
+        let _ = (path, from, size, try_hardware);
         bail!("unsupported: 当前平台没有原生顺序帧流后端（请安装 ffmpeg 走兜底路径）")
     };
     Ok(source)
+}
+
+/// 关掉顺序解码的显卡解码的环境变量（值为 `0` 时关；A/B 与排查用）。
+pub const HARDWARE_DECODE_ENV: &str = "BAOCUT_MEDIA_HW_DECODE";
+
+/// 顺序解码要不要先试显卡解码：缺省试，`BAOCUT_MEDIA_HW_DECODE=0` 时不试。
+fn hardware_decode_requested() -> bool {
+    std::env::var(HARDWARE_DECODE_ENV).map_or(true, |value| value.trim() != "0")
 }
 
 /// 按时间戳顺序交帧的原生解码器：不做帧率重采样，每次交出解码顺序上的下一帧与它的呈现时刻。
@@ -228,7 +261,12 @@ pub fn open_sequential_decoder(
     {
         bail!("交付尺寸必须为正，实得 {width}x{height}");
     }
-    let source = open_source(path, from_seconds.max(0.0), size)?;
+    let source = open_source(
+        path,
+        from_seconds.max(0.0),
+        size,
+        hardware_decode_requested(),
+    )?;
     Ok(SequentialDecoder::new(source, size))
 }
 
@@ -244,6 +282,11 @@ impl SequentialDecoder {
     /// 交付尺寸（显示方向）：打开时给了就是它，否则是平台报的源尺寸。
     pub fn size(&self) -> (u32, u32) {
         self.size.unwrap_or_else(|| self.source.size())
+    }
+
+    /// 实际在用的解码器与它在不在显卡上；平台答不出、或硬件路径还没解出第一帧时 `None`。
+    pub fn decoder_device(&self) -> Option<DecoderDevice> {
+        self.source.decoder_device()
     }
 
     /// 解码顺序上的下一帧写进 `data`（长度改成一帧）；`None` = 片源解完。

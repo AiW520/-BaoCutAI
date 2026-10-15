@@ -19,7 +19,7 @@
 | W2 | `copy_rows` 去掉逐像素的旋转分支 | 不变 | 高 | 已实现（落在 W8 的 NV12 换算上）：逐行换算 + AVX2 运行时选用，1080p 一帧 7.85 → 1.03 ms，与逐像素实现逐字节相同 |
 | W3 | 编码输入直接写进 Media Foundation 的缓冲 | 不变 | 中 | 已实现：换算直接写进 MF 缓冲，省掉每帧一次暂存与整帧拷贝；换算挪进 `yuv.rs`，补随机图像对拍 |
 | W4 | 在 Windows 上验证 EcoQoS 的关闭 | 不变 | 高 | 部分通过：原生 API 回读、24 忙进程交替对比通过；真实应用最小化 / 切后台待测 |
-| W5 | 解码走硬件（D3D11） | 会变 | 中 | 导出 Source Reader 路径待实现；播放的 DXGI 测试通过不等于此项完成 |
+| W5 | 解码走硬件（D3D11） | 实测不变 | 中 | 已实现，用户 2026-10-15 确认缺省开启（`BAOCUT_MEDIA_HW_DECODE=0` 关掉）：H.264 / HEVC 8 位 / 10 位与软件解码逐字节相同，解码的 CPU 时间约降九成；4K 源受 CPU 缩放所限 |
 | W6 | 编码的节流与低延迟开关 | 码流会变 | 中 | 待 A/B，未启用候选开关 |
 | W7 | 三家显卡的硬件编码器兼容 | 码流会变 | 高 | NVIDIA 通过：RTX 3060 实测选中 `NVIDIA H.264 Encoder MFT`（硬件，`done.video.encoderDevice` 报出），GOP 经编码器参数改为 2 秒；软件编码器不再出 B 帧（修首帧晚一帧）；AMD / Intel 与回落待测 |
 | W8 | 修复原生媒体测试的实机失败 | 有标注的素材会变 | 高 | 已修复：5 项全部通过，阈值未动；三个根因见下文 |
@@ -56,6 +56,12 @@
 - 问题：Source Reader 只设了 `MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING`，没有给 `MF_SOURCE_READER_D3D_MANAGER`（`IMFDXGIDeviceManager`），也没设 `MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS`。按 Media Foundation 的文档，这样解码与 YUV→RGB32 转换都在 CPU 上做；在真机上还没确认。
 - 做法：建 D3D11 设备与 DXGI 设备管理器交给 Reader，打开硬件转换。输出仍要 CPU 可读：要么让视频处理器输出 RGB32 系统内存样本，要么取 NV12 后自己转 RGBA。建设备或协商格式失败时回落现在的软件路径，并在 `done.video` 里报出后端与回落原因（架构设计 §9.6：硬件路径必须协商并报告）。
 - 像素会变（解码器与颜色转换换了实现），合入前要用户确认。跨后端只承诺容差（`frames.rs` 文件头：灰度 SSIM ≥ 0.95），不能用逐字节比对验收。
+- 2026-10-15 实现，用户确认后合入、缺省开启：
+  - 做法：`open_sequential_decoder` 缺省先试显卡（环境变量 `BAOCUT_MEDIA_HW_DECODE=0` 关掉，A/B 与排查用）；单帧抽取与 `FrameStream` 不试。建只要真显卡的 D3D11 设备（带视频支持、多线程保护）与 DXGI 设备管理器，交给 Reader（`MF_SOURCE_READER_D3D_MANAGER`）并打开 `MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS`，仍请求 NV12。显存里的 NV12 样本自己读回：拷进常驻的暂存纹理、`Map` 后用 W8 的同一个换算函数换成 RGBA；不是 NV12 的纹理（P010）退回 Media Foundation 的 `Lock2DSize`。Media Foundation 自己的 `Lock2DSize` 在显存样本上每帧另建暂存，1080p 顺序解码被压在约 100 fps，所以不用它。建设备、交管理器或协商 NV12 失败就回落软件 Reader；第一帧解出来时按样本在不在显存里判定实际走了哪条路，报进 `done.video.decoderDevices`（`[{ name, hardware, fallback? }]`，每种一条）。
+  - 像素：W8 之后两条路径都是「解码器交 NV12 → 本 crate 换 RGBA」，H.264 与 HEVC 的解码按标准逐位确定，所以不变。实测 1080p H.264、4K H.264（250 Mb/s）、4K HEVC Main 与 Main10 各 300 帧，显卡与软件解码交出的 RGBA 逐帧逐字节相同（SSIM 无从算起，差为 0）；`windows.rs` 的单元测试在 640×360 的 B 帧 H.264 上从 0.5 秒起逐帧比对。原 TODO 预计「像素会变」是按让视频处理器换 RGB32 的做法估的。
+  - 解码本身（`SequentialDecoder` 一路读到底、含读回与换算，单线程，进程总 CPU 时间）：1080p H.264 软件 244 fps / 10.9 CPU 秒、显卡 255 fps / 1.45 CPU 秒；4K H.264 250 Mb/s 软件 50 fps / 44 CPU 秒、显卡 80 fps / 4.2 CPU 秒；4K HEVC Main 软件 95 fps / 24.8 CPU 秒、显卡 135 fps / 2.35 CPU 秒；4K HEVC Main10 软件约 80 fps / 30 CPU 秒、显卡约 65 fps / 31 CPU 秒（P010 纹理退回 `Lock2DSize`，没有收益）。
+  - 导出（`export-bench`，对照 W3 的软件解码 Worker）：1080p 夹具空闲时 cover 155.7 → 162.4 fps（1.04）、contain 170.3 → 186.2 fps（1.09），10 对全快；24 个忙进程时逐次 19–54 fps，中位数 cover 0.98、contain 1.16，没有一致结论。4K 源导出成 1080p：H.264 250 Mb/s 27.8 → 30.3 fps（1.09），HEVC Main 31.7 → 31.2 fps（0.99）。4K 源卡在解码线程上 CPU 的 4K → 1080p 盒式缩放（`scale::resize_rgba`，一帧约 19 ms）：Windows 的 Reader 不在解码链路里缩放，macOS 的 AVFoundation 会。
+  - 余下：P010（10 位 HEVC）自己读回换算；4K 源的缩放挪到显卡（D3D11 视频处理器在读回前缩到交付尺寸，读回量也少四倍）或给 2:1 的盒式缩放写快路径；AMD / Intel 显卡与无 D3D11 视频支持时的回落待测。
 
 ### W6 编码的节流与低延迟开关
 

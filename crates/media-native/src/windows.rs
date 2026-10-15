@@ -39,6 +39,15 @@ use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 
 use anyhow::{Context, Result, anyhow, bail};
+use windows::Win32::Foundation::HMODULE;
+use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_HARDWARE;
+use windows::Win32::Graphics::Direct3D10::ID3D10Multithread;
+use windows::Win32::Graphics::Direct3D11::{
+    D3D11_CPU_ACCESS_READ, D3D11_CREATE_DEVICE_VIDEO_SUPPORT, D3D11_MAP_READ,
+    D3D11_MAPPED_SUBRESOURCE, D3D11_SDK_VERSION, D3D11_TEXTURE2D_DESC, D3D11_USAGE_STAGING,
+    D3D11CreateDevice, ID3D11Device, ID3D11DeviceContext, ID3D11Texture2D,
+};
+use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_NV12, DXGI_SAMPLE_DESC};
 use windows::Win32::Media::MediaFoundation::*;
 use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
 use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize};
@@ -131,7 +140,8 @@ pub(crate) fn extract_frame_rgba(
 }
 
 unsafe fn extract_inner(path: &Path, time_seconds: f64, target_width: u32) -> Result<RgbaFrame> {
-    let mut video = unsafe { VideoReader::open(path)? };
+    // 缩略图一次只解一帧：建 D3D11 设备的价不值得，走软件解码。
+    let mut video = unsafe { VideoReader::open(path, false)? };
     let target_hns = (time_seconds * HNS_PER_SECOND) as i64;
     unsafe { video.seek(target_hns, time_seconds)? };
 
@@ -186,9 +196,163 @@ struct Nv12Layout {
     convert: YuvToRgb,
 }
 
+/// 显卡解码用的 D3D11 设备与交给 Source Reader 的 DXGI 设备管理器（W5）。
+///
+/// Reader 拿到设备管理器后，解码 MFT 走 DXVA（NVIDIA 上即 NVDEC），交出的样本是显存里的 NV12 纹理；
+/// `IMF2DBuffer2::Lock2DSize` 时 Media Foundation 把它拷到暂存纹理里读回。NV12 之后的换算与软件路径是同一个函数。
+struct HardwareDecode {
+    manager: IMFDXGIDeviceManager,
+    context: ID3D11DeviceContext,
+    /// 读回用的暂存纹理，按解码纹理的尺寸与格式建一次，尺寸变了再重建。
+    staging: std::cell::RefCell<Option<(ID3D11Texture2D, D3D11_TEXTURE2D_DESC)>>,
+    device: ID3D11Device,
+}
+
+impl HardwareDecode {
+    /// 与解码纹理同尺寸、同格式的 CPU 可读暂存纹理（单层、无 mip）。
+    unsafe fn staging_for(&self, source: &D3D11_TEXTURE2D_DESC) -> Result<ID3D11Texture2D> {
+        let mut cached = self.staging.borrow_mut();
+        if let Some((texture, desc)) = cached.as_ref()
+            && (desc.Width, desc.Height, desc.Format)
+                == (source.Width, source.Height, source.Format)
+        {
+            return Ok(texture.clone());
+        }
+        let desc = D3D11_TEXTURE2D_DESC {
+            Width: source.Width,
+            Height: source.Height,
+            MipLevels: 1,
+            ArraySize: 1,
+            Format: source.Format,
+            SampleDesc: DXGI_SAMPLE_DESC {
+                Count: 1,
+                Quality: 0,
+            },
+            Usage: D3D11_USAGE_STAGING,
+            BindFlags: 0,
+            CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
+            MiscFlags: 0,
+        };
+        let mut texture = None;
+        unsafe {
+            self.device
+                .CreateTexture2D(&desc, None, Some(&mut texture))?
+        };
+        let texture = texture.context("D3D11 返回空暂存纹理")?;
+        *cached = Some((texture.clone(), desc));
+        Ok(texture)
+    }
+}
+
+/// 建显卡解码设备。只要真显卡（不退 WARP：软件光栅器上没有 DXVA，不如直接走软件解码）。
+unsafe fn hardware_decode() -> Result<HardwareDecode> {
+    let mut device = None;
+    unsafe {
+        D3D11CreateDevice(
+            None,
+            D3D_DRIVER_TYPE_HARDWARE,
+            HMODULE::default(),
+            D3D11_CREATE_DEVICE_VIDEO_SUPPORT,
+            None,
+            D3D11_SDK_VERSION,
+            Some(&mut device),
+            None,
+            None,
+        )
+    }
+    .map_err(|error| anyhow!("d3d11-device: 建不了支持视频的 D3D11 设备（{error}）"))?;
+    let device: ID3D11Device = device.context("d3d11-device: D3D11 返回空设备")?;
+    // Media Foundation 的解码线程与读回会从别的线程用同一个设备。
+    let multithread: ID3D10Multithread = device
+        .cast()
+        .context("d3d11-device: D3D11 设备不支持多线程保护")?;
+    let _ = unsafe { multithread.SetMultithreadProtected(true) };
+    let mut reset_token = 0_u32;
+    let mut manager = None;
+    unsafe { MFCreateDXGIDeviceManager(&mut reset_token, &mut manager) }
+        .map_err(|error| anyhow!("dxgi-manager: 建不了 DXGI 设备管理器（{error}）"))?;
+    let manager: IMFDXGIDeviceManager =
+        manager.context("dxgi-manager: Media Foundation 返回空 DXGI 设备管理器")?;
+    unsafe { manager.ResetDevice(&device, reset_token) }
+        .map_err(|error| anyhow!("dxgi-manager: 绑定 D3D11 设备失败（{error}）"))?;
+    let context = unsafe { device.GetImmediateContext()? };
+    Ok(HardwareDecode {
+        manager,
+        context,
+        staging: std::cell::RefCell::new(None),
+        device,
+    })
+}
+
+/// Source Reader 链上的视频解码 MFT 的名字。硬件 MFT 有友好名；微软的解码器不带友好名，有 CLSID 时按 CLSID 认，
+/// 都没有时按编码报（`Media Foundation H264 decoder`）。
+unsafe fn video_decoder_name(reader: &IMFSourceReader, codec: &str) -> String {
+    let fallback = || format!("Media Foundation {codec} decoder");
+    let Ok(reader) = reader.cast::<IMFSourceReaderEx>() else {
+        return fallback();
+    };
+    for index in 0..8 {
+        let mut category = GUID::zeroed();
+        let mut transform = None;
+        if unsafe {
+            reader.GetTransformForStream(VIDEO_STREAM, index, Some(&mut category), &mut transform)
+        }
+        .is_err()
+        {
+            break;
+        }
+        if category != MFT_CATEGORY_VIDEO_DECODER {
+            continue;
+        }
+        let Some(attributes) =
+            transform.and_then(|transform| unsafe { transform.GetAttributes() }.ok())
+        else {
+            break;
+        };
+        if let Ok(length) = unsafe { attributes.GetStringLength(&MFT_FRIENDLY_NAME_Attribute) } {
+            let mut buffer = vec![0_u16; length as usize + 1];
+            if unsafe { attributes.GetString(&MFT_FRIENDLY_NAME_Attribute, &mut buffer, None) }
+                .is_ok()
+            {
+                buffer.truncate(length as usize);
+                return String::from_utf16_lossy(&buffer);
+            }
+        }
+        match unsafe { attributes.GetGUID(&MFT_TRANSFORM_CLSID_Attribute) } {
+            Ok(clsid) if clsid == CLSID_MSH264DecoderMFT => {
+                return "Microsoft H264 Video Decoder MFT".to_string();
+            }
+            Ok(clsid) if clsid == CLSID_MSH265DecoderMFT => {
+                return "Microsoft HEVC Video Decoder MFT".to_string();
+            }
+            Ok(clsid) => return format!("{clsid:?}"),
+            Err(_) => break,
+        }
+    }
+    fallback()
+}
+
+/// 媒体子类型的 FourCC（`H264`、`HEVC`、`AV01`…）；不是 FourCC 形式的 GUID 时 `video`。
+fn subtype_fourcc(subtype: &GUID) -> String {
+    let bytes = subtype.data1.to_le_bytes();
+    if bytes.iter().all(|byte| byte.is_ascii_alphanumeric()) {
+        String::from_utf8_lossy(&bytes).into_owned()
+    } else {
+        "video".to_string()
+    }
+}
+
 /// 只读视频轨、输出 NV12 的 source reader，连同时间戳与像素的换算。
 struct VideoReader {
     reader: IMFSourceReader,
+    /// 显卡解码的设备（没请求或没建成时 `None`）。写在 `reader` 后面：先放掉 reader 再放设备。
+    hardware: Option<HardwareDecode>,
+    /// 实际在用的解码器；硬件路径在第一帧解出来之后才定（`hardware` 字段为真表示样本确实在显存里）。
+    device: Option<crate::frames::DecoderDevice>,
+    /// 请求了显卡解码却没走成的原因。
+    hardware_fallback: Option<String>,
+    /// 源的视频编码（原生媒体类型子类型的 FourCC），解码器报不出名字时用它描述。
+    codec: String,
     /// 源的显示尺寸（摆正前）。
     encoded_width: u32,
     encoded_height: u32,
@@ -202,14 +366,36 @@ struct VideoReader {
 }
 
 impl VideoReader {
-    unsafe fn open(path: &Path) -> Result<Self> {
+    /// `try_hardware`：先试显卡解码（W5），建设备、交管理器或协商 NV12 不成就回落软件解码，原因记进
+    /// `hardware_fallback`。
+    unsafe fn open(path: &Path, try_hardware: bool) -> Result<Self> {
+        if !try_hardware {
+            return unsafe { Self::open_with(path, None) };
+        }
+        let fallback = match unsafe { hardware_decode() } {
+            Ok(hardware) => match unsafe { Self::open_with(path, Some(hardware)) } {
+                Ok(reader) => return Ok(reader),
+                Err(error) => format!("{error:#}"),
+            },
+            Err(error) => format!("{error:#}"),
+        };
+        let mut reader = unsafe { Self::open_with(path, None)? };
+        reader.hardware_fallback = Some(fallback);
+        Ok(reader)
+    }
+
+    unsafe fn open_with(path: &Path, hardware: Option<HardwareDecode>) -> Result<Self> {
         let attributes = unsafe {
             let mut value = None;
-            MFCreateAttributes(&mut value, 2)
+            MFCreateAttributes(&mut value, 3)
                 .map_err(|error| media_feature_error("创建 Media Foundation 属性", error))?;
             let value = value.context("Media Foundation 返回空属性对象")?;
             // 解码器原生交 NV12 时不插任何转换；P010（10 位 HEVC）、YUY2 之类由视频处理器换成 NV12。
             value.SetUINT32(&MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING, 1)?;
+            if let Some(hardware) = &hardware {
+                value.SetUnknown(&MF_SOURCE_READER_D3D_MANAGER, &hardware.manager)?;
+                value.SetUINT32(&MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 1)?;
+            }
             value
         };
         let wide = wide_path(path);
@@ -224,6 +410,9 @@ impl VideoReader {
         if encoded_width == 0 || encoded_height == 0 {
             bail!("unsupported: 源媒体没有有效的视频尺寸");
         }
+        let codec = unsafe { native.GetGUID(&MF_MT_SUBTYPE) }
+            .map(|subtype| subtype_fourcc(&subtype))
+            .unwrap_or_else(|_| "video".to_string());
         let rotation = unsafe { native.GetUINT32(&MF_MT_VIDEO_ROTATION) }
             .unwrap_or(0)
             .rem_euclid(360) as u16;
@@ -256,6 +445,10 @@ impl VideoReader {
             .unwrap_or(0);
         Ok(Self {
             reader,
+            hardware,
+            device: None,
+            hardware_fallback: None,
+            codec,
             encoded_width,
             encoded_height,
             rotation,
@@ -302,6 +495,9 @@ impl VideoReader {
             let Some(sample) = sample else {
                 continue;
             };
+            if self.device.is_none() {
+                self.device = Some(unsafe { self.describe_decoder(&sample) });
+            }
             let duration = unsafe { sample.GetSampleDuration() }
                 .ok()
                 .filter(|value| *value > 0);
@@ -310,6 +506,23 @@ impl VideoReader {
                 duration,
                 sample,
             }));
+        }
+    }
+
+    /// 按第一个样本判定解码实际走了哪条路：样本在显存里（`IMFDXGIBuffer`）就是显卡解码。
+    unsafe fn describe_decoder(&self, sample: &IMFSample) -> crate::frames::DecoderDevice {
+        let in_video_memory = unsafe { sample.GetBufferByIndex(0) }
+            .ok()
+            .is_some_and(|buffer| buffer.cast::<IMFDXGIBuffer>().is_ok());
+        let fallback = self.hardware_fallback.clone().or_else(|| {
+            (self.hardware.is_some() && !in_video_memory).then(|| {
+                "decoder-in-system-memory: 解码器拿到了 D3D11 设备却交出内存里的帧".to_string()
+            })
+        });
+        crate::frames::DecoderDevice {
+            name: unsafe { video_decoder_name(&self.reader, &self.codec) },
+            hardware: in_video_memory,
+            fallback,
         }
     }
 
@@ -326,6 +539,11 @@ impl VideoReader {
     ///
     /// `IMF2DBuffer2::Lock2DSize` 是行距与缓冲长度的权威；拿不到 2D 缓冲才退回连续缓冲，按媒体类型的缺省行距读。
     unsafe fn sample_to_rgba(&self, sample: &IMFSample, out: &mut Vec<u8>) -> Result<(u32, u32)> {
+        if let Some(hardware) = &self.hardware
+            && let Some(size) = unsafe { self.read_back(hardware, sample, out)? }
+        {
+            return Ok(size);
+        }
         let two_dimensional = unsafe { sample.GetBufferByIndex(0) }
             .ok()
             .and_then(|buffer| buffer.cast::<IMF2DBuffer2>().ok());
@@ -372,6 +590,57 @@ impl VideoReader {
         let size = outcome?;
         unlocked?;
         Ok(size)
+    }
+
+    /// 显存里的 NV12 样本自己读回：拷进常驻的暂存纹理、`Map` 后直接换算。`Ok(None)` = 样本不在显存里或不是
+    /// NV12（如 P010），调用方改走 `Lock2DSize`。
+    ///
+    /// 不用 Media Foundation 的 `Lock2DSize`：它在 DXGI 缓冲上每帧另建暂存再拷一遍，1080p 的顺序解码被压在约
+    /// 100 fps（软件解码约 270 fps）。
+    unsafe fn read_back(
+        &self,
+        hardware: &HardwareDecode,
+        sample: &IMFSample,
+        out: &mut Vec<u8>,
+    ) -> Result<Option<(u32, u32)>> {
+        let Ok(buffer) = (unsafe { sample.GetBufferByIndex(0) }) else {
+            return Ok(None);
+        };
+        let Ok(dxgi) = buffer.cast::<IMFDXGIBuffer>() else {
+            return Ok(None);
+        };
+        let mut texture: Option<ID3D11Texture2D> = None;
+        unsafe {
+            dxgi.GetResource(
+                &ID3D11Texture2D::IID,
+                (&mut texture as *mut Option<ID3D11Texture2D>).cast(),
+            )?
+        };
+        let texture = texture.context("DXGI 缓冲没有纹理")?;
+        let subresource = unsafe { dxgi.GetSubresourceIndex()? };
+        let mut desc = D3D11_TEXTURE2D_DESC::default();
+        unsafe { texture.GetDesc(&mut desc) };
+        if desc.Format != DXGI_FORMAT_NV12 {
+            return Ok(None);
+        }
+        let staging = unsafe { hardware.staging_for(&desc)? };
+        let context = &hardware.context;
+        unsafe {
+            context.CopySubresourceRegion(&staging, 0, 0, 0, 0, &texture, subresource, None);
+        }
+        let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+        unsafe { context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))? };
+        // Map 与 Unmap 之间不用 `?`：结果先落进 `outcome`，解锁无条件执行。
+        let pitch = mapped.RowPitch as usize;
+        let outcome = if mapped.pData.is_null() || pitch == 0 {
+            Err(anyhow!("D3D11 暂存纹理映射出空指针"))
+        } else {
+            let length = pitch * desc.Height as usize * 3 / 2;
+            let bytes = unsafe { std::slice::from_raw_parts(mapped.pData.cast::<u8>(), length) };
+            self.convert(bytes, pitch, out)
+        };
+        unsafe { context.Unmap(&staging, 0) };
+        outcome.map(Some)
     }
 
     /// 一块 NV12 缓冲（从第一行起）按当前布局换成 RGBA。
@@ -476,20 +745,22 @@ unsafe fn display_aperture(media_type: &IMFMediaType) -> Option<Area> {
 pub(crate) fn open_frame_source(
     path: &Path,
     from_seconds: f64,
+    try_hardware: bool,
 ) -> Result<Box<dyn crate::frames::FrameSource>> {
     if !path.is_file() {
         bail!("媒体文件不存在：{}", path.display());
     }
     let runtime = Runtime::start()?;
-    unsafe { open_inner(runtime, path, from_seconds) }
+    unsafe { open_inner(runtime, path, from_seconds, try_hardware) }
 }
 
 unsafe fn open_inner(
     runtime: Runtime,
     path: &Path,
     from_seconds: f64,
+    try_hardware: bool,
 ) -> Result<Box<dyn crate::frames::FrameSource>> {
-    let video = unsafe { VideoReader::open(path)? };
+    let video = unsafe { VideoReader::open(path, try_hardware)? };
     let from_hns = (from_seconds * HNS_PER_SECOND) as i64;
     unsafe { video.seek(from_hns, from_seconds)? };
     Ok(Box::new(SourceReaderFrames {
@@ -519,6 +790,10 @@ struct SourceReaderFrames {
 impl crate::frames::FrameSource for SourceReaderFrames {
     fn size(&self) -> (u32, u32) {
         self.video.size()
+    }
+
+    fn decoder_device(&self) -> Option<crate::frames::DecoderDevice> {
+        self.video.device.clone()
     }
 
     fn next_decoded(&mut self) -> Result<Option<crate::frames::DecodedFrame>> {
@@ -613,5 +888,60 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// 显卡解码（W5）与软件解码交出的 RGBA 逐字节相同：H.264 解码按标准逐位确定，NV12 之后是同一个换算函数。
+    /// 本机没有能用的显卡解码时（建不了设备、协商不成）只核对回落记了原因、像素照样对得上。
+    #[test]
+    fn hardware_decoding_matches_software_decoding_byte_for_byte() {
+        let dir = std::env::temp_dir().join(format!("bcut-hw-decode-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("建临时目录");
+        let media = dir.join("hw.mp4");
+        // 带 B 帧（缺省两级）、640×360 不是 16 的倍数的高度（360 → 368 的对齐平面）、标注 BT.709。
+        let made = std::process::Command::new("ffmpeg")
+            .args(["-y", "-loglevel", "error", "-f", "lavfi", "-i"])
+            .arg("testsrc2=s=640x360:r=30:d=2")
+            .args([
+                "-pix_fmt",
+                "yuv420p",
+                "-c:v",
+                "libx264",
+                "-colorspace",
+                "bt709",
+            ])
+            .arg(&media)
+            .status()
+            .is_ok_and(|status| status.success());
+        if !made {
+            return;
+        }
+        let mut software = super::open_frame_source(&media, 0.5, false).expect("软件解码");
+        let mut hardware = super::open_frame_source(&media, 0.5, true).expect("显卡解码或回落");
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        let mut frames = 0;
+        loop {
+            let x = software.next_decoded_into(&mut a).expect("软件解码");
+            let y = hardware.next_decoded_into(&mut b).expect("显卡解码");
+            let (x, y) = match (x, y) {
+                (Some(x), Some(y)) => (x, y),
+                (None, None) => break,
+                _ => panic!("第 {frames} 帧起两边帧数不同"),
+            };
+            assert_eq!(
+                (x.pts_seconds, x.width, x.height),
+                (y.pts_seconds, y.width, y.height)
+            );
+            assert!(a == b, "第 {frames} 帧两条路径的像素不同");
+            frames += 1;
+        }
+        assert_eq!(frames, 45, "从 0.5 秒起 2 秒的片子剩 45 帧");
+        let software = software.decoder_device().expect("解出帧后报解码器");
+        assert!(!software.hardware && software.fallback.is_none());
+        let hardware = hardware.decoder_device().expect("解出帧后报解码器");
+        assert!(
+            hardware.hardware || hardware.fallback.is_some(),
+            "没走显卡就得说原因：{hardware:?}"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

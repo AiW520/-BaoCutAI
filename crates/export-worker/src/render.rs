@@ -169,6 +169,19 @@ pub fn run(path: &Path) -> Result<ExitCode, Failure> {
     if let Some(device) = &encoder_device {
         video["encoderDevice"] = json!({ "name": device.name, "hardware": device.hardware });
     }
+    let decoder_devices = native::decoder_devices();
+    if !decoder_devices.is_empty() {
+        video["decoderDevices"] = decoder_devices
+            .iter()
+            .map(|device| {
+                let mut entry = json!({ "name": device.name, "hardware": device.hardware });
+                if let Some(fallback) = &device.fallback {
+                    entry["fallback"] = json!(fallback);
+                }
+                entry
+            })
+            .collect();
+    }
     emit(&json!({
         "event": "done",
         "frames": total,

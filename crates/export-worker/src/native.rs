@@ -10,12 +10,12 @@
 //! RGBA 是导出循环里唯一的像素格式：BGRA↔RGBA 的换序留在 `media-native` 里。
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use media_core::MediaError;
 use media_core::decode::{FeedOpener, FrameFeed, NativeDecode};
 use media_core::encode::{Container, EncodeSettings, FrameSink, Quality, VideoCodec};
-use media_native::{AudioInput, EncoderDevice, Mp4Options, Mp4Writer, PcmFormat, SequentialDecoder};
+use media_native::{AudioInput, DecoderDevice, EncoderDevice, Mp4Options, Mp4Writer, PcmFormat, SequentialDecoder};
 use serde::Serialize;
 
 /// 关掉原生编解码的环境变量（值为 `0` 时关）。
@@ -80,7 +80,7 @@ pub fn decode() -> Option<NativeDecode> {
     }
     let open: FeedOpener = Arc::new(|path: &Path, from: f64, width: u32, height: u32| {
         media_native::open_sequential_decoder(path, from, Some((width, height)))
-            .map(|decoder| Box::new(Feed(decoder)) as Box<dyn FrameFeed>)
+            .map(|decoder| Box::new(Feed { decoder, recorded: false }) as Box<dyn FrameFeed>)
             .map_err(|e| format!("{e:#}"))
     });
     Some(NativeDecode {
@@ -89,14 +89,33 @@ pub fn decode() -> Option<NativeDecode> {
     })
 }
 
-struct Feed(SequentialDecoder);
+/// 原生顺序解码实际用过的解码器（`done.video.decoderDevices`），每种只记一次。Worker 一个进程只导出一次，记在进程里。
+static DECODER_DEVICES: Mutex<Vec<DecoderDevice>> = Mutex::new(Vec::new());
+
+/// 本次导出原生解码用过的解码器（名字、在不在显卡上、想走显卡却没走成的原因）。
+pub fn decoder_devices() -> Vec<DecoderDevice> {
+    DECODER_DEVICES.lock().map(|devices| devices.clone()).unwrap_or_default()
+}
+
+struct Feed {
+    decoder: SequentialDecoder,
+    /// 解码器已经记进 [`DECODER_DEVICES`]（第一帧解出来时才知道走没走显卡）。
+    recorded: bool,
+}
 
 impl FrameFeed for Feed {
     fn next_into(&mut self, data: &mut Vec<u8>) -> Result<Option<f64>, String> {
-        match self.0.next_into(data) {
-            Ok(frame) => Ok(frame.map(|info| info.pts_seconds)),
-            Err(e) => Err(format!("{e:#}")),
+        let frame = self.decoder.next_into(data).map_err(|e| format!("{e:#}"))?;
+        if !self.recorded && frame.is_some() {
+            self.recorded = true;
+            if let Some(device) = self.decoder.decoder_device()
+                && let Ok(mut devices) = DECODER_DEVICES.lock()
+                && !devices.contains(&device)
+            {
+                devices.push(device);
+            }
         }
+        Ok(frame.map(|info| info.pts_seconds))
     }
 }
 

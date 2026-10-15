@@ -182,6 +182,9 @@ export interface WorkerVideoBackends {
   encoder: string;
   /** 原生写入器实际选中的视频编码器（Windows：Sink Writer 挑的 H.264 MFT，如 `NVIDIA H.264 Encoder MFT`）；ffmpeg 编码、
    *  平台答不出或旧版 Worker 时没有。 */
+  /** 原生顺序解码实际用过的解码器（每种一条）：`hardware` 为真表示解码在显卡上（Windows：D3D11 / DXVA）；想走显卡却没走成时
+   *  `fallback` 写原因（英文代码加说明）。没有原生解码或旧版 Worker 时没有。 */
+  decoderDevices?: Array<{ name: string; hardware: boolean; fallback?: string }>;
   encoderDevice?: { name: string; hardware: boolean };
   fallbacks: Array<{ scope: 'decoder' | 'encoder'; assetId?: string; reason: string; message: string }>;
 }
