@@ -980,7 +980,7 @@ export function initializeEditorHost2Step1(): void {
          * already spelled the faces as data: rules — Frame's inherited
          * font-src admits data:, never blob: — inject the text as-is.
          * Else fontBlobs.ts blobFontFaceRule, embedded as source. */
-        /* BaoCut: 字体字节与父页面传来的 data: CSS 可以共存（包括独立的 KaTeX 字体）。 */
+        /* BaoCut: font bytes can coexist with the data: CSS sent by the parent page (including the separate KaTeX fonts). */
         s.textContent=(typeof d.css==="string"?d.css:"")+(d.fonts||[]).map(${resolveDataModelSchemasNormal2}).join("");
         (document.head||document.documentElement).appendChild(s);
       }catch(e){}
