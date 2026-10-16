@@ -42,6 +42,9 @@ export const SFX_RECIPES = [
   'glitch',
   'static',
   'click',
+  'keypress',
+  'pop',
+  'impact',
 ] as const;
 const SFX_SPACES = ['room', 'hall'] as const;
 
@@ -73,7 +76,7 @@ const schemas = {
     recipe: z
       .enum(SFX_RECIPES)
       .describe(
-        '配方：kick（底鼓，0.5 秒）、boom（低频轰鸣，2 秒）、crash（镲，2.5 秒）、riser（上扬，3 秒，末尾到顶，让末尾对准切点）、tick（滴答，0.08 秒）、blip（提示音，0.15 秒）、ping（叮，0.8 秒）、whoosh（呼的一下，0.9 秒）、stamp（盖章，0.35 秒）、glitch（故障，0.4 秒）、static（电流噪声，1 秒）、click（咔，0.03 秒）',
+        '配方。拟真（物理建模，像近距离录下来的）：click（鼠标 / 触控板点一下，按下与松开，0.15 秒）、keypress（机械键盘按一个键，0.32 秒）、pop（啵，元素弹出，0.25 秒）、impact（重物落地的低沉一击，2.2 秒）。风格化：kick（底鼓，0.5 秒）、boom（低频轰鸣，2 秒）、crash（镲，2.5 秒）、riser（上扬，3 秒，末尾到顶，让末尾对准切点）、tick（滴答，0.08 秒）、blip（提示音，0.15 秒）、ping（叮，0.8 秒）、whoosh（呼的一下，0.9 秒）、stamp（盖章，0.35 秒）、glitch（故障，0.4 秒）、static（电流噪声，1 秒）',
       ),
     seconds: z
       .number()
@@ -124,8 +127,8 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '合成音效',
     description: [
       '用内置配方合成一段音效，导入为素材。',
-      '配方是确定性的程序化合成（振荡、噪声与滤波按包络拼出来），不联网、不用模型，同样的参数与 seed 出逐位相同的声音；峰值归一到约 −1 dBFS，48 kHz 立体声 WAV，没有版权问题。',
-      '音效标的是画面上的事件：标题落版用 stamp 或 kick，转场与快速移动用 whoosh，切点前用 riser（放在切点前它的长度处，末尾对准切点），数字跳动与 UI 动作用 tick、blip、click，揭晓用 ping，故障风用 glitch、static，大场面用 boom、crash。一段视频里同一种事件用同一个配方，少而准，别每个动作都配。',
+      '配方是确定性的程序化合成，不联网、不用模型，同样的参数与 seed 出逐位相同的声音；峰值归一到约 −1 dBFS，48 kHz 立体声 WAV，没有版权问题。拟真配方（click、keypress、pop、impact）用接触激励一组模态、再过小房间与话筒（带一点底噪），听着像实录；其余是风格化的（振荡、噪声与滤波按包络拼出来），听得出是合成的。',
+      '音效标的是画面上的事件：屏幕录制里的点击、打字、元素弹出用拟真的 click、keypress、pop，重物落地、大标题砸下来用 impact；标题落版用 stamp 或 kick，转场与快速移动用 whoosh，切点前用 riser（放在切点前它的长度处，末尾对准切点），数字跳动用 tick、blip，揭晓用 ping，故障风用 glitch、static，大场面用 boom、crash。一段视频里同一种事件用同一个配方，少而准，别每个动作都配。',
       'bytes 收进视频（managed），编译成 importAsset（给了 place 时再加 addItem，放到音频轨上），一笔修改、可以撤销，会向用户确认。素材的 provenance 记下配方与参数（origin: procedural-sfx）。',
       '返回与 edits_apply 相同的回执，另有 assetId、itemId（没有放到时间线上时为 null）、recipe 与 durationSeconds。音量在时间线上调（edits_apply 的 setVolume），通常比旁白低 6–12 dB。',
     ].join('\n'),
