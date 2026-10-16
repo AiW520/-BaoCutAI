@@ -56,6 +56,12 @@ export const ru: MainMessages = {
   quitKeepRunning: 'Продолжить в фоне',
   quitStop: 'Остановить и выйти',
   cancel: 'Отмена',
+  remoteHeading: 'Эти вызовы уже отправлены. Остановка не отменит их у поставщика, и за них всё ещё может взиматься плата:',
+  remoteMore: (count: number) => `и ещё ${count}`,
+  callKind: { agent: 'Задача агента', task: 'Задача', transcribe: 'Расшифровать', synthesizeSpeech: 'Синтезировать речь', generateImage: 'Создать изображение', generateMusic: 'Создать музыку', generateText: 'Сгенерировать текст', modelTest: 'Проверить модель', voiceClone: 'Клонировать голос', agentTranslate: 'Перевести' },
+  updateBusyDetail: 'Если перезапустить сейчас, они будут прерваны. Можно установить обновление после их завершения — тогда BaoCut перезапустится сам.',
+  updateWait: 'Установить после завершения',
+  updateNow: 'Остановить и установить сейчас',
 
   webCreateNotWindow: "Только окна приложения могут создавать веб-вкладки",
   webTooManyTabs: "Открыто слишком много веб-вкладок",

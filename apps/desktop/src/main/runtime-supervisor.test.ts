@@ -152,13 +152,15 @@ it('does not start a Runtime after quitting even when it used someone else’s R
 
 it('asks its own Runtime about running work and leaves it running in the background on request', async () => {
   const home = resolveRuntimeHome({ BAOCUT_HOME: path.join(os.tmpdir(), 'desktop-quit-home') });
-  const runtime = fakeRuntime({ status: { type: 'status', jobs: 1, tasks: 2 }, detach: { type: 'detached' } });
+  const remote = [{ kind: 'transcribe', provider: 'OpenAI' }, { kind: null, provider: 'Codex', step: { label: 'Translate' } }];
+  const runtime = fakeRuntime({ status: { type: 'status', jobs: 1, tasks: 2, remote: [...remote, { kind: 3 }] }, detach: { type: 'detached' } });
   mocks.spawn.mockReturnValueOnce(runtime.child);
   mocks.readDiscovery.mockResolvedValueOnce(null).mockResolvedValue(DISCOVERY);
   const supervisor = supervisorFor(home);
   await supervisor.connection();
 
-  await expect(supervisor.activeWork()).resolves.toEqual({ jobs: 1, tasks: 2 });
+  // 认不得的远端调用丢掉。
+  await expect(supervisor.activeWork()).resolves.toEqual({ jobs: 1, tasks: 2, remote });
   await supervisor.detach();
   await supervisor.stop();
   // 放手之后不再请它停，也不再拉起新的。

@@ -55,6 +55,12 @@ export const zhHans: MainMessages = {
   quitKeepRunning: '继续在后台运行',
   quitStop: '停止并退出',
   cancel: '取消',
+  remoteHeading: '以下调用已经发出，停止不会在对方那边取消，仍可能计费：',
+  remoteMore: (count: number) => `还有 ${count} 项`,
+  callKind: { agent: 'Agent 任务', task: '任务', transcribe: '转录', synthesizeSpeech: '生成语音', generateImage: '生成图片', generateMusic: '生成音乐', generateText: '生成文本', modelTest: '检查模型', voiceClone: '克隆音色', agentTranslate: '翻译' },
+  updateBusyDetail: '现在重启会中断这些任务。也可以等它们完成后再安装更新，届时 BaoCut 会自动重启。',
+  updateWait: '等任务结束后安装',
+  updateNow: '现在停止并安装',
 
   webCreateNotWindow: '只能由应用窗口创建网页标签',
   webTooManyTabs: '网页标签太多了',

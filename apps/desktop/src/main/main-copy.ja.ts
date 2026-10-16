@@ -55,6 +55,12 @@ export const ja: MainMessages = {
   quitKeepRunning: 'バックグラウンドで実行を続ける',
   quitStop: '停止して終了',
   cancel: 'キャンセル',
+  remoteHeading: '次の呼び出しは送信済みです。停止しても送信先では取り消されず、料金が発生する場合があります：',
+  remoteMore: (count: number) => `ほか ${count} 件`,
+  callKind: { agent: 'Agent タスク', task: 'タスク', transcribe: '文字起こし', synthesizeSpeech: '音声を生成', generateImage: '画像を生成', generateMusic: '音楽を生成', generateText: 'テキストを生成', modelTest: 'モデルを確認', voiceClone: '声をクローン', agentTranslate: '翻訳' },
+  updateBusyDetail: '今再起動すると、これらのタスクは中断されます。完了してからアップデートをインストールすることもできます。その場合 BaoCut は自動的に再起動します。',
+  updateWait: 'タスク完了後にインストール',
+  updateNow: '今すぐ停止してインストール',
 
   webCreateNotWindow: 'Web タブを作成できるのはアプリのウインドウだけです',
   webTooManyTabs: '開いている Web タブが多すぎます',

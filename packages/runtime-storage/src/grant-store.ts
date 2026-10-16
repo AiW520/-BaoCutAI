@@ -320,6 +320,19 @@ export class GrantStore {
     return { ok: true };
   }
 
+  /**
+   * 已经开始、还没结算的调用：数据已经交出，停下 Runtime 也可能还在接收方那边执行或计费（架构设计 §2.2 退出）。
+   * 每笔预留一项：哪个任务（进程内的调用没有时 null）、交给谁。
+   */
+  inFlight(): Array<{ jobId: Id | null; recipient: string }> {
+    const out: Array<{ jobId: Id | null; recipient: string }> = [];
+    for (const reservation of this.#reservations.values()) {
+      const grant = reservation.started ? this.#grants.get(reservation.grantId) : undefined;
+      if (grant) out.push({ jobId: reservation.jobId, recipient: grant.recipient });
+    }
+    return out;
+  }
+
   /** 预留还在、已经记为开始执行。 */
   started(reservationId: Id): boolean {
     return this.#reservations.get(reservationId)?.started === true;

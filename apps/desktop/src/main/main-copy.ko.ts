@@ -55,6 +55,12 @@ export const ko: MainMessages = {
   quitKeepRunning: '백그라운드에서 계속 실행',
   quitStop: '중지하고 종료',
   cancel: '취소',
+  remoteHeading: '다음 호출은 이미 전송되었습니다. 중지해도 상대 쪽에서 취소되지 않으며 요금이 계속 부과될 수 있습니다:',
+  remoteMore: (count: number) => `외 ${count}개`,
+  callKind: { agent: 'Agent 작업', task: '작업', transcribe: '전사', synthesizeSpeech: '음성 생성', generateImage: '이미지 생성', generateMusic: '음악 생성', generateText: '텍스트 생성', modelTest: '모델 확인', voiceClone: '목소리 복제', agentTranslate: '번역' },
+  updateBusyDetail: '지금 다시 시작하면 이 작업이 중단됩니다. 작업이 끝난 뒤 업데이트를 설치할 수도 있으며, 그때 BaoCut이 자동으로 다시 시작됩니다.',
+  updateWait: '작업이 끝나면 설치',
+  updateNow: '지금 중지하고 설치',
 
   webCreateNotWindow: '앱 윈도우에서만 웹 탭을 만들 수 있습니다',
   webTooManyTabs: '열린 웹 탭이 너무 많습니다',

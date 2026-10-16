@@ -47,6 +47,7 @@ import {
   type RuntimeHome,
 } from '@baocut/runtime-storage';
 import { AgentSetup, type AgentSetupOptions } from './agent-setup.ts';
+import { remoteCalls, type ActiveWork } from './active-work.ts';
 import { AgentGrants } from './agent-tools/grants.ts';
 import { loadAgentGuidance } from './agent-tools/guidance.ts';
 import { TaskTools } from './agent-tools/task-tools.ts';
@@ -277,9 +278,10 @@ export interface RunningRuntime {
   fonts: FontService;
   log: Logger;
   /**
-   * 手上的活（§2.2，桌面端退出前问）：排队或运行中的 Job（含历史版本迁移），与还没结束的 Agent 任务。停下 Runtime 会中断它们。
+   * 手上的活（§2.2，桌面端退出与「重启并更新」前问）：排队或运行中的 Job（含历史版本迁移），还没结束的 Agent 任务，以及已经交给
+   * 在线或智能体 Provider、停下 Runtime 也可能还在那边执行或计费的调用。停下 Runtime 会中断前两种。
    */
-  activeWork(): { jobs: number; tasks: number };
+  activeWork(): ActiveWork;
   /**
    * 桌面端退出时选了在后台继续（§2.2）：开启空闲退出，手上的活做完、没有桌面端与 CLI 连着满 `runtime.idleExitMinutes` 时调用
    * `onIdle`（入口在那里停下 Runtime）。开着的对外服务与智能体连接不留住它：用户要的是把活做完，不是让服务一直开着。
@@ -1018,9 +1020,10 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           .finally(onIdle),
     });
     const activeJobs = () => models.jobs.list().filter((job) => !isTerminal(job.state)).length + Number(legacyUpgrade.active);
-    const activeWork = () => ({
+    const activeWork = (): ActiveWork => ({
       jobs: activeJobs(),
       tasks: harness.tasksSnapshot().tasks.filter((task) => task.status === 'running' || task.status === 'stopping').length,
+      remote: remoteCalls(models.grants.store.inFlight(), () => models.jobs.list(), () => models.services.view()),
     });
     // 有没有人在用（§2.2）：`runtime.status` 报告它，CLI 拉起的按它空闲退出。
     const activity = new RuntimeActivity(

@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import readline from 'node:readline';
-import type { RuntimeDiscovery } from '@baocut/protocol';
+import type { MessageRef, RuntimeDiscovery } from '@baocut/protocol';
 import { isDiscoveryLive, readDiscovery, type RuntimeHome } from '@baocut/runtime-storage';
 import { M } from './main-copy.ts';
 import { packagedResourceEnv, type PackagedResources } from './packaged-resources.ts';
@@ -49,10 +49,33 @@ const READY_TIMEOUT_MS = 20_000;
 /** 退出前问 Runtime 的期限：问不到（卡住、通道断了）就照常停，不让退出挂住。 */
 const ASK_TIMEOUT_MS = 2_000;
 
-/** 自己起的 Runtime 手上的活（架构设计 §2.2）：排队或运行中的 Job，与还没结束的 Agent 任务。 */
+/**
+ * 已经交给在线或智能体 Provider 的一次调用（同 Runtime 的 `RemoteCall`）：停下 Runtime 也可能还在那边执行或计费。`kind` 是
+ * 发起调用的任务种类（没有任务记录时 null），`step` 是固定流程的步骤名。
+ */
+export interface RemoteCall {
+  kind: string | null;
+  provider: string;
+  step?: { label: string; labelRef?: MessageRef };
+}
+
+/**
+ * 自己起的 Runtime 手上的活（架构设计 §2.2）：排队或运行中的 Job，还没结束的 Agent 任务，以及已经交给 Provider、停下也
+ * 可能还在那边执行或计费的调用。
+ */
 export interface ActiveWork {
   jobs: number;
   tasks: number;
+  remote: RemoteCall[];
+}
+
+function isRemoteCall(value: unknown): value is RemoteCall {
+  const call = value as Partial<RemoteCall> | null;
+  return (
+    typeof call?.provider === 'string' &&
+    (call.kind === null || typeof call.kind === 'string') &&
+    (call.step === undefined || typeof call.step?.label === 'string')
+  );
 }
 
 /**
@@ -159,13 +182,15 @@ export class RuntimeSupervisor {
   }
 
   /**
-   * 退出前问自己起的 Runtime 手上的活（经 IPC 通道发 `{ type: 'status' }`）。连上的是别人的 Runtime（退出不停它）、它已经
-   * 退出或问不到时 null。
+   * 退出与「重启并更新」前问自己起的 Runtime 手上的活（经 IPC 通道发 `{ type: 'status' }`）。连上的是别人的 Runtime
+   * （退出不停它）、它已经退出或问不到时 null。
    */
   async activeWork(timeoutMs = ASK_TIMEOUT_MS): Promise<ActiveWork | null> {
     const reply = await this.#ask({ type: 'status' }, 'status', timeoutMs);
     if (typeof reply?.jobs !== 'number' || typeof reply.tasks !== 'number') return null;
-    return { jobs: reply.jobs, tasks: reply.tasks };
+    // 旧版 Runtime 不报远端调用：按没有。
+    const remote = Array.isArray(reply.remote) ? reply.remote.filter(isRemoteCall) : [];
+    return { jobs: reply.jobs, tasks: reply.tasks, remote };
   }
 
   /**

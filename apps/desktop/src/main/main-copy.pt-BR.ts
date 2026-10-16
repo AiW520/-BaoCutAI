@@ -14,5 +14,11 @@ export const ptBR: MainMessages = {
   quitKeepRunning: 'Continuar em segundo plano',
   quitStop: 'Parar e sair',
   cancel: 'Cancelar',
+  remoteHeading: 'Estas chamadas já foram enviadas. Parar não as cancela no provedor, e elas ainda podem ser cobradas:',
+  remoteMore: (count: number) => `e mais ${count}`,
+  callKind: { agent: 'Tarefa do agente', task: 'Tarefa', transcribe: 'Transcrever', synthesizeSpeech: 'Gerar fala', generateImage: 'Gerar imagem', generateMusic: 'Gerar música', generateText: 'Gerar texto', modelTest: 'Verificar modelo', voiceClone: 'Clonar voz', agentTranslate: 'Traduzir' },
+  updateBusyDetail: 'Se você reiniciar agora, elas serão interrompidas. Você também pode instalar a atualização quando elas terminarem; o BaoCut reinicia sozinho nesse momento.',
+  updateWait: 'Instalar ao terminar',
+  updateNow: 'Parar e instalar agora',
   webCreateNotWindow: 'Somente janelas do aplicativo podem criar abas web', webTooManyTabs: 'Há abas web demais abertas', webTabMissing: 'Esta aba web não existe mais', webClearNotWindow: 'Somente janelas do aplicativo podem limpar dados web', webOpenNotWindow: 'Somente janelas do aplicativo podem abrir links externos', webOpenScheme: 'Somente URLs http e https podem ser abertas',
 };

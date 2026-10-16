@@ -56,6 +56,12 @@ export const pl: MainMessages = {
   quitKeepRunning: 'Kontynuuj w tle',
   quitStop: 'Zatrzymaj i zakończ',
   cancel: 'Anuluj',
+  remoteHeading: 'Te wywołania zostały już wysłane. Zatrzymanie nie anuluje ich u dostawcy i nadal mogą zostać naliczone opłaty:',
+  remoteMore: (count: number) => `i ${count} więcej`,
+  callKind: { agent: 'Zadanie agenta', task: 'Zadanie', transcribe: 'Transkrybuj', synthesizeSpeech: 'Wygeneruj mowę', generateImage: 'Wygeneruj obraz', generateMusic: 'Wygeneruj muzykę', generateText: 'Generuj tekst', modelTest: 'Sprawdź model', voiceClone: 'Sklonuj głos', agentTranslate: 'Przetłumacz' },
+  updateBusyDetail: 'Jeśli uruchomisz ponownie teraz, zostaną przerwane. Możesz też zainstalować aktualizację, gdy się zakończą — BaoCut uruchomi się wtedy ponownie sam.',
+  updateWait: 'Zainstaluj po zakończeniu',
+  updateNow: 'Zatrzymaj i zainstaluj teraz',
 
   webCreateNotWindow: "Tylko okna aplikacji mogą tworzyć karty internetowe",
   webTooManyTabs: "Otwarto zbyt wiele kart internetowych",

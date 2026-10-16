@@ -14,5 +14,11 @@ export const it: MainMessages = {
   quitKeepRunning: 'Continua in background',
   quitStop: 'Interrompi ed esci',
   cancel: 'Annulla',
+  remoteHeading: 'Queste chiamate sono già state inviate. Interromperle non le annulla presso il fornitore e potrebbero comunque essere addebitate:',
+  remoteMore: (count: number) => pluralForm('it', count, { one: `e un’altra`, other: `e altre ${count}` }),
+  callKind: { agent: 'Attività dell’agente', task: 'Attività', transcribe: 'Trascrivi', synthesizeSpeech: 'Genera voce', generateImage: 'Genera immagine', generateMusic: 'Genera musica', generateText: 'Genera testo', modelTest: 'Verifica modello', voiceClone: 'Clona voce', agentTranslate: 'Traduci' },
+  updateBusyDetail: 'Se riavvii ora, verranno interrotte. Puoi anche installare l’aggiornamento al loro termine; BaoCut si riavvierà da solo.',
+  updateWait: 'Installa al termine',
+  updateNow: 'Interrompi e installa ora',
   webCreateNotWindow: 'Solo le finestre dell’app possono creare schede web', webTooManyTabs: 'Troppe schede web aperte', webTabMissing: 'Questa scheda web non esiste più', webClearNotWindow: 'Solo le finestre dell’app possono cancellare dati web', webOpenNotWindow: 'Solo le finestre dell’app possono aprire link esterni', webOpenScheme: 'Si possono aprire solo URL http e https',
 };

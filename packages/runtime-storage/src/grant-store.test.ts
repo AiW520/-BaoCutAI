@@ -148,6 +148,20 @@ describe('GrantStore', () => {
   });
 
   describe('预留与结算', () => {
+    it('在途的调用：开始了、还没结算的预留，带任务与接收方', async () => {
+      const store = await open();
+      persistent(store);
+      persistent(store, { recipient: 'google' });
+      const queued = store.admit(call(), { jobId: 'job_queued' });
+      const running = store.admit(call({ recipient: 'google' }), { jobId: 'job_running' });
+      const done = store.admit(call(), { jobId: 'job_done' });
+      if (!queued.ok || !running.ok || !done.ok) throw new Error('admit failed');
+      await store.start(running.reservation.reservationId);
+      await store.start(done.reservation.reservationId);
+      store.settle(done.reservation.reservationId, { kind: 'completed' });
+      expect(store.inFlight()).toEqual([{ jobId: 'job_running', recipient: 'google' }]);
+    });
+
     it('次数上限计入预留中的调用', async () => {
       const store = await open();
       const grant = persistent(store, { maxCalls: 2 });
