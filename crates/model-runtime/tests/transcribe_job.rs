@@ -1015,6 +1015,63 @@ fn self_segmenting_models_skip_vad_and_keep_speakers_only_when_asked() {
     assert!(!staging.join(asr_result::RESULT_FILE).exists());
 }
 
+#[test]
+fn self_segmenting_rows_inside_an_earlier_row_go_to_its_tail() {
+    let fixture = Fixture::with_moss_helpers();
+    let wav = fixture.wav("twelve.wav", &[(12.0, 0.9)]);
+    // 多人会议：第一位说话时第二位插了一段（整个落在第一行里），第二位又在第一位说完前开口。三行都长于 5 秒，
+    // 在行窗口内对齐出词。原来只比相邻两行：插话被中点分倒挂、丢掉，第三行与第一行重叠，自检失败。
+    let rows = vec![
+        row(0.0, 11.5, "Hello world, the first speaker.", Some("S01")),
+        row(0.2, 5.4, "Hello world, an interruption.", Some("S02")),
+        row(5.5, 11.8, "Hello world, the second speaker goes on.", Some("S02")),
+    ];
+    let options = json!({ "language": { "mode": "assert", "tag": "en" }, "diarize": true, "timescale": 1_000 });
+    let mut model = SegmentingModel::new(rows);
+    model.aligner = Some(FakeAligner::hello_world());
+    let staging = fixture.staging("nested");
+    let result = transcribe::run(
+        &mut model,
+        &fixture.bundle,
+        &params(&wav, &staging, options, None),
+        &AtomicBool::new(false),
+        &mut Events::default(),
+    )
+    .unwrap();
+    let asr = read_result(&result);
+    asr_result::validate(&asr, Some("en")).unwrap();
+    let spans: Vec<(u64, u64, Option<&str>)> = asr
+        .segments
+        .iter()
+        .map(|segment| (segment.start, segment.end, segment.speaker_id.as_deref()))
+        .collect();
+    // 第一行与第三行照常在重叠区中点（8.5 秒）分开；插话从第一行剩下的尾巴上分出来，至多分走一半。
+    assert_eq!(
+        spans,
+        [
+            (0, 4_250, Some("spk-1")),
+            (4_250, 8_500, Some("spk-2")),
+            (8_500, 11_800, Some("spk-2"))
+        ]
+    );
+    // 插话的词跟着平移，仍是对齐出来的时间。
+    let words: Vec<_> = asr.segments[1]
+        .words
+        .iter()
+        .map(|word| (word.start, word.end, word.timing_quality))
+        .collect();
+    assert_eq!(
+        words,
+        [(4_250, 4_350, TimingQuality::Aligned), (4_370, 4_450, TimingQuality::Aligned)]
+    );
+    let warnings: Vec<_> = asr
+        .warnings
+        .iter()
+        .map(|warning| (warning.code, warning.segment_id.as_deref()))
+        .collect();
+    assert_eq!(warnings, [(WarningCode::TimingAdjusted, Some("seg-0002"))]);
+}
+
 /// 两块各一个说话人（块内标签都是 `S01`）：MOSS 的行与说话人区间。第一行长于 5 秒且没有词时间。
 fn two_chunk_rows() -> (Vec<RowIn>, Vec<SpeakerRange>) {
     let rows = vec![

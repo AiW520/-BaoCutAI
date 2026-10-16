@@ -118,19 +118,52 @@ pub fn padded(spans: &[SpeechSpan], duration: f64) -> Vec<SpeechSpan> {
         .collect()
 }
 
-/// 补边之后相邻段可能重叠（前一段的补边上限是后一段补边前的起点，反之亦然）。输出合同要求段不重叠：
-/// 在重叠区的中点把两段分开。中点落在两段补边前的静音之间，不会让任何一段变空。
-pub fn resolve_overlaps(spans: &mut [SpeechSpan]) {
-    for index in 1..spans.len() {
-        let (left, right) = spans.split_at_mut(index);
-        let previous = &mut left[index - 1];
-        let current = &mut right[0];
-        if current.start < previous.end {
-            let middle = (current.start + previous.end) / 2.0;
-            previous.end = middle;
-            current.start = middle;
+/// 输出合同要求段不重叠（`spans` 已按起点排好）。与前一段部分重叠的（补边之后的相邻段：前一段的补边上限是后一段
+/// 补边前的起点，反之亦然；MOSS 里抢话的下一位）在重叠区的中点分开，中点落在两段补边前的静音之间，不会让任何一段变空。
+///
+/// 整个落在前一段里的（MOSS 在多人同时说话时给出的插话）从中点分会倒挂：改为按原时长从包住它的那段的尾巴上分出来，
+/// 几段插话合起来至多分走那段的一半（超出时按比例缩短），时间上排在那段之后、下一段之前。其余段的分法与没有插话时
+/// 相同。返回这样挪过的段的下标。
+pub fn resolve_overlaps(spans: &mut [SpeechSpan]) -> Vec<usize> {
+    // (包住它的段, 插话)，按起点顺序。
+    let mut nested: Vec<(usize, usize)> = Vec::new();
+    let mut previous: Option<usize> = None;
+    for index in 0..spans.len() {
+        let Some(outer) = previous else {
+            previous = Some(index);
+            continue;
+        };
+        // 下一段到来之前，前一段的终点还是原来的终点。
+        if spans[index].end < spans[outer].end {
+            nested.push((outer, index));
+            continue;
+        }
+        if spans[index].start < spans[outer].end {
+            let middle = (spans[index].start + spans[outer].end) / 2.0;
+            spans[outer].end = middle;
+            spans[index].start = middle;
+        }
+        previous = Some(index);
+    }
+
+    for group in nested.chunk_by(|a, b| a.0 == b.0) {
+        let outer = group[0].0;
+        let slot = spans[outer];
+        let total: f64 = group.iter().map(|&(_, index)| spans[index].duration()).sum();
+        let room = total.min(slot.duration() / 2.0);
+        let scale = if total > 0.0 { room / total } else { 0.0 };
+        let mut cursor = slot.end - room;
+        spans[outer].end = cursor;
+        for (position, &(_, index)) in group.iter().enumerate() {
+            let end = match position + 1 == group.len() {
+                true => slot.end,
+                false => (cursor + spans[index].duration() * scale).min(slot.end),
+            };
+            spans[index] = SpeechSpan { start: cursor, end };
+            cursor = end;
         }
     }
+    nested.into_iter().map(|(_, index)| index).collect()
 }
 
 #[cfg(test)]
@@ -192,5 +225,48 @@ mod tests {
         assert!((padded[0].end - 1.05).abs() < 1e-9);
         assert_eq!(padded[1].end, 2.15);
         assert_eq!(padded[2].start, 2.85);
+    }
+
+    fn assert_disjoint(spans: &[SpeechSpan]) {
+        for (index, span) in spans.iter().enumerate() {
+            assert!(span.start < span.end, "第 {index} 段为空或倒挂：{spans:?}");
+        }
+        for pair in spans.windows(2) {
+            assert!(pair[0].end <= pair[1].start, "相邻段重叠：{spans:?}");
+        }
+    }
+
+    #[test]
+    fn rows_inside_an_earlier_row_go_to_its_tail() {
+        // 长的一段里插了两句话（多人会议）。原来只比相邻两段：插话被中点分倒挂、丢掉之后，第三段与第一段仍然重叠。
+        let mut spans = [span(100.0, 110.0), span(101.0, 102.0), span(103.0, 104.0)];
+        assert_eq!(resolve_overlaps(&mut spans), [1, 2]);
+        assert_eq!(spans, [span(100.0, 108.0), span(108.0, 109.0), span(109.0, 110.0)]);
+
+        // 下一位在长段结束前开口：长段与下一段照常在重叠区中点分开，插话从长段剩下的尾巴上分出来。
+        let mut spans = [span(0.0, 10.0), span(2.0, 3.0), span(9.5, 15.0)];
+        assert_eq!(resolve_overlaps(&mut spans), [1]);
+        assert_eq!(spans, [span(0.0, 8.75), span(8.75, 9.75), span(9.75, 15.0)]);
+        let mut spans = [span(0.0, 10.0), span(2.0, 3.0), span(5.0, 12.0)];
+        assert_eq!(resolve_overlaps(&mut spans), [1]);
+        assert_eq!(spans, [span(0.0, 6.5), span(6.5, 7.5), span(7.5, 12.0)]);
+
+        // 插话合起来比那段的一半长：按比例缩短，那段留一半。嵌套的插话都挂在最外面那段上。
+        let mut spans = [span(0.0, 20.0), span(1.0, 10.0), span(2.0, 3.0), span(4.0, 25.0)];
+        assert_eq!(resolve_overlaps(&mut spans), [1, 2]);
+        assert_disjoint(&spans);
+        assert_eq!((spans[0], spans[2].end, spans[3]), (span(0.0, 6.0), 12.0, span(12.0, 25.0)));
+        assert!((spans[1].duration() - 5.4).abs() < 1e-9 && (spans[2].duration() - 0.6).abs() < 1e-9);
+        let mut spans = [span(0.0, 4.0), span(0.5, 3.5)];
+        assert_eq!(resolve_overlaps(&mut spans), [1]);
+        assert_eq!(spans, [span(0.0, 2.0), span(2.0, 4.0)]);
+    }
+
+    #[test]
+    fn rows_ending_with_the_row_before_split_at_the_middle() {
+        // 起止完全相同的两行（分块边界上重复）不算插话：照常对半分开。
+        let mut spans = [span(100.0, 105.0), span(100.0, 105.0), span(106.0, 107.0)];
+        assert!(resolve_overlaps(&mut spans).is_empty());
+        assert_eq!(spans, [span(100.0, 102.5), span(102.5, 105.0), span(106.0, 107.0)]);
     }
 }

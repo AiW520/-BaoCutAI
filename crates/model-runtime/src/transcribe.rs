@@ -567,10 +567,10 @@ impl Runner<'_> {
         Diarization::Done
     }
 
-    /// 自己切段的模型（MOSS）：整段音频一次交给它，行 → 段（重叠处从中点分开）。`diarize` 时才带上说话人，并用模型包
-    /// 的说话人模型把各块的局部说话人合并成全局的（v2 同款）；模型包带了对齐器时，没有词时间、长于 5 秒的行在行窗口内
-    /// 强制对齐（词标 `aligned`），其余按字符数估计。没有 VAD 一步；只在断言时送语言；模型没有提示通道，带了 `hint`
-    /// 时报 `hint-ignored`。
+    /// 自己切段的模型（MOSS）：整段音频一次交给它，行 → 段（重叠处从中点分开，整个落在前一行里的插话挂到那行尾巴上）。
+    /// `diarize` 时才带上说话人，并用模型包的说话人模型把各块的局部说话人合并成全局的（v2 同款）；模型包带了对齐器时，
+    /// 没有词时间、长于 5 秒的行在行窗口内强制对齐（词标 `aligned`），其余按字符数估计。没有 VAD 一步；只在断言时送
+    /// 语言；模型没有提示通道，带了 `hint` 时报 `hint-ignored`。
     fn run_self_segmenting(
         &mut self,
         model: &mut dyn LoadedModel,
@@ -776,20 +776,35 @@ impl Runner<'_> {
             .collect();
         rows.sort_by(|a, b| a.0.start.total_cmp(&b.0.start));
         let mut spans: Vec<_> = rows.iter().map(|(span, _, _)| *span).collect();
-        segmenter::resolve_overlaps(&mut spans);
+        let moved: HashSet<usize> = segmenter::resolve_overlaps(&mut spans).into_iter().collect();
         self.stats.speech_seconds = spans.iter().map(|span| span.duration()).sum();
 
         let mut labels: Vec<String> = Vec::new();
         let mut segments = Vec::new();
-        for (span, (_, index, row)) in spans.into_iter().zip(rows) {
-            // 对齐出来的词收进写出的区间（去重叠可能把行收窄了）。
+        for (position, (span, (original, index, row))) in spans.into_iter().zip(rows).enumerate() {
+            let moved = moved.contains(&position);
+            // 对齐出来的词收进写出的区间（去重叠可能把行收窄了）；挪到前一行尾巴上的插话，词先跟着平移。
             let aligned = row.words.filter(|words| !words.is_empty()).map(|mut words| {
+                if moved {
+                    let delta = span.start - original.start;
+                    for word in &mut words {
+                        word.start += delta;
+                        word.end += delta;
+                    }
+                }
                 enforce_strict_word_times(&mut words, span.start, span.end);
                 words
             });
             let Some(mut segment) = self.build_segment(segments.len() + 1, row.text.trim(), span, asserted.as_deref(), aligned) else {
                 continue;
             };
+            if moved {
+                self.warn(
+                    Warning::new(WarningCode::TimingAdjusted)
+                        .segment(&segment.id)
+                        .detail("this row lies inside the row before it (overlapping speech); it was placed at that row's end"),
+                );
+            }
             if alignment_failures.contains(&index) {
                 self.warn(
                     Warning::new(WarningCode::AlignmentFailed)
