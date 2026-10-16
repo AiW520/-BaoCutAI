@@ -78,6 +78,7 @@ export interface RenderRoomViewEmbedPageViewContext {
   frameSignInHref: Dynamic;
   getDocumentScroll: Dynamic;
   gone: Dynamic;
+  homeOffered: Dynamic;
   hostCommentOffered: Dynamic;
   image: Dynamic;
   initialFocus: Dynamic;
@@ -472,11 +473,14 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                 tray={{
                   leading: (
                     <div className={`mr-1 flex shrink-0 items-center gap-1.5`}>
-                      <div
-                        className={`bg-fill-secondary flex items-center rounded-lg border`}
-                      >
-                        <embedPageLiveContext.HomeButton boxed={true} />
-                      </div>
+                      {/* BaoCut: 独立页面没有项目列表首页（docs-host.ts 的 homeOffered），不显示 Home 按钮。 */}
+                      {(0, embedPageLiveContext.homeOffered)() && (
+                        <div
+                          className={`bg-fill-secondary flex items-center rounded-lg border`}
+                        >
+                          <embedPageLiveContext.HomeButton boxed={true} />
+                        </div>
+                      )}
                       <div
                         className={`bg-fill-secondary flex items-center rounded-lg border`}
                       >

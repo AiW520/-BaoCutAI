@@ -69,6 +69,7 @@
 - 选中文字后工具栏的「Ask Agent」打开这处选区的批注框（开头带着提及智能体的 `@Agent`），之后同第 8 节的评论；批注发不出去（页面单独打开、只读）时提示。
 - 版本历史：编辑器的版本面板要文档服务提供版本列表与每一版渲染好的 HTML（`api/v3/project/<id>/file/<文件>/history`、`at/<rev>`、`restore/<rev>`），`packages/docs` 不提供，所以编辑器不显示顶栏的 History 按钮与版本面板（`packages/docs-runtime` README「版本历史」；原版在独立页面总是开着，点了只显示接口的 404）。正文最近若干个 rev 的快照仍存在 `tabs/<正文 id>.history.json`，给智能体的 `atRev` / `sinceRev` 读与 `restore` 用。
 - 数据源、复制项目与反馈：项目菜单的「Data sources」（定时任务与数据库）、「Duplicate」与「Send feedback」要原平台的项目服务与反馈频道。文档没有定时任务与数据库，文档是一个目录、grant 按目录发，复制出的副本没有地方放也打不开，`packages/docs` 也没有收反馈的 `api/feedback`，所以编辑器不列这三项（`packages/docs-runtime` README「项目菜单的「Data sources」「Duplicate」与「Send feedback」」；原版在独立页面列着，点了显示 `databases read failed (404)`、提示 `not_found`，或在反馈对话框里报 404）。「Copy support code」不调接口，照原样保留。
+- 首页：原版顶栏左上角的 Home 按钮回到 `/` 的项目列表。一个 grant 只对应一份文档，没有项目列表，点了落到 `/docs/<grant>/` 上应用认不出的首页，只显示「This page doesn't open here」，回不到文档，所以编辑器不显示这个按钮（`packages/docs-runtime` README「顶栏的 Home 按钮」）。不改成回到当前文档：已经在这份文档里，按了没有变化的按钮比不显示更让人困惑。
 - 与功能区的其他编辑器共用 `editor:ready`、`editor:flush` / `editor:flushed`、`editor:reveal`；文档自己有持久的评论，没有幻灯片那样的标注模式开关。
 - 界面里把助手叫「智能体」（Send to agent / Sent to agent / Ask Agent），不叫 Claude；评论里提及智能体写作 `@Agent`（原版是 `@Claude`）。以前的文档里的 `@Claude` 与手打的 `@claude` 照样算发给智能体：编辑器勾上「Send to agent」，没带 `to` 的评论 door 记作发给智能体，交给智能体前去掉开头的提及。智能体改文档时露出的名字（光标旗子、在线头像、播报、新加标签页与改写段落的提示、批注里的署名与等回复的提示）也叫 Agent / the agent；连不上与编辑器更新后的提示只说 Docs。BaoCut 用不到的部分（正文里的行内提问、skill、widget、图表、登录、分享）文案不改。
 

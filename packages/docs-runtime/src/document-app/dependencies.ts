@@ -1207,6 +1207,7 @@ export {
   commentSummonHost,
   dataSourcesOffered,
   feedbackOffered,
+  homeOffered,
   projectDuplicateOffered,
   standaloneDocsChat,
   standaloneDocsHost,

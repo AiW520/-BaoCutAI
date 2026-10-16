@@ -13,7 +13,8 @@
  * 空行上 @Agent 的行内提问不经这里：它要先让模型判断请求（sample）再决定由 Claude 直接写还是转成批注，独立页面不提供
  * （packages/docs-runtime/README.md「不提供」）。
  * 版本历史也不经 docsHost：它要的是文档服务的接口，BaoCut 不提供，独立页面不显示（versionHistoryOffered()）。项目菜单的
- * 「Data sources」「Duplicate」与「Send feedback」同理（dataSourcesOffered()、projectDuplicateOffered()、feedbackOffered()）。
+ * 「Data sources」「Duplicate」与「Send feedback」同理（dataSourcesOffered()、projectDuplicateOffered()、feedbackOffered()），
+ * 顶栏回首页的 Home 按钮也是（homeOffered()）。
  */
 import { isFrameArtifact } from "../boot/environment";
 
@@ -124,6 +125,17 @@ export function projectDuplicateOffered(): boolean {
  * 读取点：application/routes-routines-dialog.tsx 的 HeaderPath（带 BaoCut: 注释）。
  */
 export function feedbackOffered(): boolean {
+  return isFrameArtifact();
+}
+
+/**
+ * 顶栏左上角回首页的 Home 按钮只在 Frame 里照原样开，独立页面不开。原版点了在同一个页面跳到 `/`，那里是原平台的项目列表；
+ * BaoCut 的 grant 只对应一份文档，没有项目列表，`/docs/<grant>/` 落到应用路由表里的 Home（platform/lazy.tsx 的
+ * UnavailablePage），只显示「This page doesn't open here」，回不到文档。不改成「回到当前文档」：已经在这份文档里，按了
+ * 没有变化的按钮比不显示更让人困惑。按钮只出现在独立布局的标签托盘里（`?chrome=embed` 的顶栏与 Frame 本来就没有它），
+ * 这个开关与其他几个保持同一写法、可单独测试。读取点：embed/view.tsx 的 FileTabNavigation 的 tray.leading（带 BaoCut: 注释）。
+ */
+export function homeOffered(): boolean {
   return isFrameArtifact();
 }
 

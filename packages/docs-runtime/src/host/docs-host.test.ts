@@ -4,6 +4,7 @@ import {
   commentSummonHost,
   dataSourcesOffered,
   feedbackOffered,
+  homeOffered,
   projectDuplicateOffered,
   versionHistoryOffered,
 } from './docs-host';
@@ -62,5 +63,21 @@ describe('project menu platform gates', () => {
   it('keep Send feedback inside the Frame', () => {
     inFrame.mockReturnValue(true);
     expect(feedbackOffered()).toBe(true);
+  });
+});
+
+describe('home button gate', () => {
+  it('stays off on standalone pages, even with the BaoCut host installed', () => {
+    expect(homeOffered()).toBe(false);
+    vi.stubGlobal('docsHost', {
+      comments: { canSendToClaude: async () => 'available', sendToClaude: async () => ({ threadId: 't' }) },
+      chat: { focus() {} },
+    });
+    expect(homeOffered()).toBe(false);
+  });
+
+  it('keeps the original behaviour inside the Frame', () => {
+    inFrame.mockReturnValue(true);
+    expect(homeOffered()).toBe(true);
   });
 });

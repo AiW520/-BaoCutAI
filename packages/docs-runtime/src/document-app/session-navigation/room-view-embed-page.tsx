@@ -78,6 +78,7 @@ import {
   frameTitleFromContent,
   frameTitlePropose,
   getDataOperationControlKeys,
+  homeOffered,
   isDataContentAndReferencesVersion,
   isEditorExtensionsLocation,
   isEditorHostTaken,
@@ -692,6 +693,9 @@ export const RoomViewEmbedPage: ReactComponentTypes.FC<
     },
     get guardAsyncDocumentCall(): Dynamic {
       return guardAsyncDocumentCall;
+    },
+    get homeOffered(): Dynamic {
+      return homeOffered;
     },
     get hostCommentOffered(): Dynamic {
       return hostCommentOffered;
