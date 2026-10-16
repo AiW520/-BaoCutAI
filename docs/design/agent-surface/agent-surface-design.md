@@ -84,7 +84,7 @@ v3 已经有三个面向程序的入口，但只有两个共用实现：
 | 字段 | 用途 |
 | --- | --- |
 | `name` | `<名词>_<动词>` 或一级动词（§4.1）。对外合同，改名升接口版本 |
-| `title`、`description` | `description` 第一句是一行摘要（`--help` 与 MCP 列表只取它），后面才是细则 |
+| `title`、`description` | `description` 第一句是一行摘要（以 `。` 或 `.` 结束，中文至多 80 字符、英文至多 160；`--help` 与 MCP 列表只取它），后面才是细则；新写的说明用英文 |
 | `inputSchema` | zod → JSON Schema。每个字段有 `description`，枚举列全，CLI 旗标由它派生 |
 | `annotations` | MCP 标准的 `readOnlyHint`、`destructiveHint`、`idempotentHint` |
 | `risk` | `TOOL_RISK` 的等级（`read` / `command` / `high` …），三个主体各自据此决定要不要确认 |
