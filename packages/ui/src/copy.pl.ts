@@ -441,6 +441,8 @@ export const pl: CopyMessages = {
     voiceClone: "Sklonuj głos",
     agentTranslate: "Przetłumacz",
     legacyImport: "Zaimportuj wcześniejsze projekty",
+    agentInstall: "Zainstaluj agenta",
+    agentUpgrade: "Zaktualizuj agenta",
   },
   /** Job 的阶段（`JobPhase`）：列表与胶囊念「识别中 · 45%」。 */
   jobPhase: {

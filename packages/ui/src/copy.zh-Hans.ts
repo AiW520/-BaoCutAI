@@ -381,6 +381,8 @@ export const zhHans: CopyMessages = {
     voiceClone: '克隆音色',
     agentTranslate: '翻译',
     legacyImport: '导入旧版项目',
+    agentInstall: '安装 Agent',
+    agentUpgrade: '升级 Agent',
   },
   jobPhase: {
     queued: '排队中',

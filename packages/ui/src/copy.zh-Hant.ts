@@ -370,6 +370,8 @@ export const zhHant: CopyMessages = {
     voiceClone: '克隆音色',
     agentTranslate: '翻譯',
     legacyImport: '匯入舊版專案',
+    agentInstall: '安裝 Agent',
+    agentUpgrade: '升級 Agent',
   },
   jobPhase: {
     queued: '排隊中',

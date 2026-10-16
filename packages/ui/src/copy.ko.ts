@@ -384,6 +384,8 @@ export const ko: CopyMessages = {
     voiceClone: '목소리 복제',
     agentTranslate: '번역',
     legacyImport: '이전 프로젝트 가져오기',
+    agentInstall: 'Agent 설치',
+    agentUpgrade: 'Agent 업데이트',
   },
   jobPhase: {
     queued: '대기 중',

@@ -383,6 +383,8 @@ export const ja: CopyMessages = {
     voiceClone: '声をクローン',
     agentTranslate: '翻訳',
     legacyImport: '以前のプロジェクトの読み込み',
+    agentInstall: 'Agent をインストール',
+    agentUpgrade: 'Agent をアップデート',
   },
   jobPhase: {
     queued: '待機中',

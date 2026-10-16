@@ -421,6 +421,8 @@ export const fr: CopyMessages = {
     voiceClone: "Cloner la voix",
     agentTranslate: "Traduire",
     legacyImport: "Importer les anciens projets",
+    agentInstall: "Installer l’Agent",
+    agentUpgrade: "Mettre à jour l’Agent",
   },
 
   jobPhase: {

@@ -17,18 +17,19 @@ import { langName } from './tools-models.ts';
  * 任务的种类：Agent 任务，或 Job 的种类。导出也是一条 Job（`kind: 'export'`，架构设计 §9.11）：标题、位置与阶段读它的
  * `export` 信息；任务胶囊不列本视频的导出（顶栏的导出按钮已经在念它的进度）。
  * `legacyImport` 是启动时导入旧版项目的那一轮（`legacy-import` 主题，model/legacy-import-run.ts），不是 Job。
+ * `agentInstall`、`agentUpgrade` 是应用内运行的 Agent 安装、升级命令（`agent-setup` 主题，model/agent-setup-task.ts），也不是 Job。
  */
-export type TaskKind = 'agent' | JobKind | 'legacyImport';
+export type TaskKind = 'agent' | JobKind | 'legacyImport' | 'agentInstall' | 'agentUpgrade';
 
 /** 原型的色调：chip 与种类图标底色按它取（page-tasks.jsx `TaskCard`）。 */
 export type TaskTone = 'accent' | 'info' | 'notice' | 'neutral' | 'positive' | 'negative';
 
-export type TaskAction = { type: 'stop'; taskId: Id } | { type: 'cancel'; jobId: Id };
+export type TaskAction = { type: 'stop'; taskId: Id } | { type: 'cancel'; jobId: Id } | { type: 'cancelSetup'; runId: Id };
 
 export interface TaskRow {
   id: Id;
-  /** 来自哪：Agent 任务、Job，或这次启动导入旧版项目的那一轮。 */
-  origin: 'task' | 'job' | 'legacy-import';
+  /** 来自哪：Agent 任务、Job、这次启动导入旧版项目的那一轮，或一次 Agent 安装、升级。 */
+  origin: 'task' | 'job' | 'legacy-import' | 'agent-setup';
   kind: TaskKind;
   /** 念出来的种类：通常是 `kindLabel(kind)`；从链接导入的 `kind` 是通用的 `pipeline`，念「从链接导入」。 */
   kindText: string;

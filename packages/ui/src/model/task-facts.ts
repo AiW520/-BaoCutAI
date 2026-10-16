@@ -117,7 +117,8 @@ export function taskFacts(row: TaskRow, source: { job?: JobRecord; task?: TaskSu
   const job = source.job;
   const F = M.fact;
   add(F.kind, row.kindText);
-  add(F.submitter, job ? submitterLabel(job) : TASK_VIEW_COPY.byAgent);
+  // 导入旧版项目、Agent 安装不是谁提交的任务：不写提交者。
+  add(F.submitter, job ? submitterLabel(job) : row.origin === 'task' ? TASK_VIEW_COPY.byAgent : null);
   add(F.status, factStatus(row));
   add(F.startedAt, agoLabel(row.startedAt, now));
   if (job) {
