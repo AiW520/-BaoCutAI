@@ -13,6 +13,7 @@ import {
   INPUT_TOO_LONG,
   IMAGE_OUTPUT_FILE,
   IMAGE_PNG_CONTRACT,
+  OUTPUT_INVALID,
   OUTPUT_WRITE_FAILED,
   ProviderFailure,
   appFileMissing,
@@ -753,6 +754,13 @@ export class LocalTranscribeProvider implements TranscribeProvider {
       }
       if (error instanceof WorkerRequestError) {
         const details = { workerCode: error.code, workerMessage: error.body.message, workerVersion: hello.workerVersion };
+        // 结果没过 Worker 的自检：与 Runtime 校验不过同类，不重试、不计崩溃；问题清单在 `workerDetails.problems`。
+        if (error.code === OUTPUT_INVALID) {
+          throw new ProviderFailure('protocol', L.jobRunReturned({ code: error.code }), {
+            ...details,
+            ...(error.body.details !== undefined ? { workerDetails: error.body.details } : {}),
+          });
+        }
         if ((CRASH_CODES as readonly string[]).includes(error.code)) {
           this.#recordCrash(slot);
           throw new ProviderFailure('crashed', L.inferenceFailed({ code: error.code }), { ...details, stderrTail: worker.stderrTail() });

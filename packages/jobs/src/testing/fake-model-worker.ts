@@ -16,7 +16,8 @@
  * - 控制文件 `helloDelayMs`：延迟握手回应，模拟首次 GPU 内核编译；
  * - `invalid-output`：第二段的 start 早于第一段的 end（违反单调）；
  * - `load-fail:<code>`：`model.load` 返回这个错误码；
- * - `run-error:<code>`：`job.run` 返回这个错误码（`WORKER_PANIC` 之后进程退出，与规范一致）；
+ * - `run-error:<code>`：`job.run` 返回这个错误码（`WORKER_PANIC` 之后进程退出，与规范一致；识别的 `OUTPUT_INVALID`
+ *   像自检不过的 Worker 一样不可重试，带 `details.problems`）；
  * - `no-speech`：`outcome: 'no-speech'`，没有分段。
  *
  * 说话人区分（`options.diarize`）：模型包带 `segmentation` 与 `speaker` 组件（装了「说话人区分」模型包）时，识别之后进
@@ -291,6 +292,10 @@ async function run(id: number, params: Record<string, unknown>): Promise<void> {
   if (runError) {
     job = null;
     state = 'ready';
+    if (runError === 'OUTPUT_INVALID') {
+      fail(id, runError, 'the assembled result failed self-validation', false, { problems: ['模拟的自检问题'] });
+      return;
+    }
     fail(id, runError, '模拟的推理失败', true);
     if (runError === 'WORKER_PANIC') process.exit(101);
     return;

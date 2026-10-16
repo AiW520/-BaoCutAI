@@ -977,7 +977,7 @@ interface ErrorBody {
 | `OUTPUT_DESTINATION_UNAVAILABLE` | 保存位置（流程的 `outDir`、直接任务的 `saveDir`，不给时是设置 `downloads.directory` 或主机的下载文件夹）不能创建或写入（`details.dir`、`details.reason`）。提交时 `conflict`、不建任务；发布前才发现时是那一步的错误码 | 换一个目录，或检查设置 `downloads.directory`；修好之后用 `pipelines.retry` |
 | `MODEL_LOAD_FAILED` | 本地模型包无法加载：未安装、不支持或资源不足；智能体 Provider 在执行前已不可用（排队期间被停用、退出登录或卸载，`details.reason` 是不可用的原因） | 不重试；按原因安装、换模型或换后端 |
 | `MODEL_WORKER_CRASHED` | 本地推理进程在有界重试后仍然崩溃 | 保留诊断；停用该模型包，由用户重新启用或换模型 |
-| `MODEL_OUTPUT_INVALID` | 模型输出不满足 `outputContract`；翻译流程的一批在有界重发后仍不合约定（`details.reason: 'schema'`、`details.problem`）；生成任务的输出长度、摘要、媒体类型或文件头不符，或 ffprobe 解码不出有效的音频或图片（`details.problems`）；文本生成的结构化输出不是 JSON 或不符合 schema、到了输出上限被截断，或输出为空（`details.reason`：`schema`、`length`、`empty`） | 不重试同一输入；保留原始输出供上报 |
+| `MODEL_OUTPUT_INVALID` | 模型输出不满足 `outputContract`（Runtime 发布前校验不过，或本地 Worker 写出前自检不过；`details.problems`）；翻译流程的一批在有界重发后仍不合约定（`details.reason: 'schema'`、`details.problem`）；生成任务的输出长度、摘要、媒体类型或文件头不符，或 ffprobe 解码不出有效的音频或图片（`details.problems`）；文本生成的结构化输出不是 JSON 或不符合 schema、到了输出上限被截断，或输出为空（`details.reason`：`schema`、`length`、`empty`） | 不重试同一输入；保留原始输出供上报 |
 | `STAGING_WRITE_FAILED` | 本地 Model Worker 的输出写不进 staging（磁盘满或目录不可写，`details.file`）：配音的分离与合成、本地语音合成 | 腾出空间后重试；不算崩溃，不停用模型包 |
 | `VOICE_CONSENT_REQUIRED` | 音色没有本人声明（`consent.declared` 与 `declaredAt`），不能把参考录音交给在线 Provider，也不能使用它的克隆（`details.id` 是音色条目，另有 `details.providerId`） | 由用户在音色库里补上声明；不绕过 |
 | `VOICE_CLONE_REQUIRED` | `voice: 'library:<id>'` 在所选 Provider 上没有可用的克隆（`details.reason`：`missing` 没有建立过，`stale` 参考录音已更换或条目已删除；另有 `details.id`、`details.providerId`） | 先为这个 Provider 建立克隆（`library.createVoiceClone`），或换一个音色；不换成别的声音 |

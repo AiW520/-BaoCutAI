@@ -1153,10 +1153,8 @@ impl Runner<'_> {
         };
         if let Err(problem) = asr_result::validate(&result, asserted) {
             eprintln!("[model-worker] result failed self-validation: {problem}");
-            return Err(
-                ErrorBody::new(codes::INFERENCE_FAILED, "the assembled result failed self-validation")
-                    .with_details(json!({ "reason": "invalid-output" })),
-            );
+            return Err(ErrorBody::new(codes::OUTPUT_INVALID, "the assembled result failed self-validation")
+                .with_details(json!({ "problems": [problem] })));
         }
         let output = asr_result::write_result(self.job.staging, &result).map_err(|error| {
             eprintln!("[model-worker] cannot write result.json: {error}");

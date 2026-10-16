@@ -46,6 +46,7 @@ import { compileJsonSchema } from '@baocut/protocol/json-schema';
 import {
   ASR_RESULT_SCHEMA,
   DEFAULT_TIMESCALE,
+  OUTPUT_INVALID,
   ProviderFailure,
   builtinReferenceFile,
   bundleUsable,
@@ -1956,6 +1957,8 @@ export class JobManager {
       }
 
       const details = failure.details;
+      // Worker 写出前的自检不过：与 Runtime 校验不过一样处理（不重试；没有写出的结果可留，只留问题清单）。
+      if (failure.kind === 'protocol' && details.workerCode === OUTPUT_INVALID) return this.#rejectOutput(entry, null, workerProblems(failure));
       switch (failure.kind) {
         case 'crashed': {
           if (typeof details.workerVersion === 'string') entry.workerVersion ??= details.workerVersion;
@@ -2632,13 +2635,13 @@ export class JobManager {
 
   /**
    * 输出不合合同：不重试；原始文件移到诊断目录（§6.5）。远端任务的原始结果含有别人的转写文本，节点不留（§6.7），
-   * 只留任务记录与问题清单。
+   * 只留任务记录与问题清单。`file` 为 null：Worker 自检不过，没有写出结果。
    */
-  async #rejectOutput(entry: Entry, file: string, problems: string[]): Promise<void> {
+  async #rejectOutput(entry: Entry, file: string | null, problems: string[]): Promise<void> {
     const record = entry.record;
     const dir = path.join(this.#options.paths.diagnosticsDir, record.jobId);
     await fs.mkdir(dir, { recursive: true });
-    if (entry.target.kind === 'video') {
+    if (file !== null && entry.target.kind === 'video') {
       const kept = path.join(dir, 'result.json');
       await fs.rename(file, kept).catch(() => fs.copyFile(file, kept).catch(() => {}));
     }
@@ -2878,6 +2881,12 @@ function isTaskSpec(spec: StoredJob['spec']): spec is TaskInputSpec {
 
 function isHostedSpec(spec: StoredJob['spec']): spec is HostedJobSpec {
   return 'hosted' in spec;
+}
+
+/** Worker 自检不过时给出的问题清单（`workerDetails.problems`）；没给时用失败的说明。 */
+function workerProblems(failure: ProviderFailure): string[] {
+  const problems = (failure.details.workerDetails as { problems?: unknown } | null | undefined)?.problems;
+  return Array.isArray(problems) && problems.length > 0 && problems.every((p) => typeof p === 'string') ? problems : [failure.message];
 }
 
 /** Provider 失败 → 任务错误（§11.3）。崩溃的自动重试由转写路径自己处理。 */

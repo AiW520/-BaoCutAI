@@ -36,6 +36,8 @@ pub mod codes {
     pub const OUTPUT_WRITE_FAILED: &str = "OUTPUT_WRITE_FAILED";
     /// `embed.run` 的一条文本超过模型的最大输入长度（`details.index` 指出哪一条）。不可重试：同一条文本再跑还是超长。
     pub const INPUT_TOO_LONG: &str = "INPUT_TOO_LONG";
+    /// 组装好的结果没过写出前的自检（`details.problems`）。不可重试：同一输入再跑还是同样的结果；也不是崩溃。
+    pub const OUTPUT_INVALID: &str = "OUTPUT_INVALID";
     pub const WORKER_PANIC: &str = "WORKER_PANIC";
 }
 
@@ -1003,6 +1005,7 @@ mod tests {
         assert!(ErrorBody::new(codes::WORKER_PANIC, "x").retryable);
         assert!(!ErrorBody::new(codes::MODEL_NOT_INSTALLED, "x").retryable);
         assert!(!ErrorBody::new(codes::INVALID_PARAMS, "x").retryable);
+        assert!(!ErrorBody::new(codes::OUTPUT_INVALID, "x").retryable);
     }
 
     /// 与 TS 侧 `ImageRunParams`（packages/models/src/worker-contract.ts）逐字相同的一次请求。

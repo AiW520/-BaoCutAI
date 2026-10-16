@@ -43,6 +43,7 @@ const FAULTS = [
   '#slow-load',
   '#invalid-output',
   '#load-fail:MODEL_NOT_INSTALLED',
+  '#run-error:OUTPUT_INVALID',
   '#no-speech',
 ];
 /** 「说话人区分」模型包：装上之后假模型包的 Worker 带上它的组件，假 Worker 据此给段与词标说话人。 */
@@ -584,6 +585,29 @@ describe('JobManager（假 Model Worker）', () => {
     expect(JSON.parse(await fs.readFile(kept, 'utf8'))).toMatchObject({ schema: 'baocut.asr-result/v1' });
     expect(await exists(path.join(paths.diagnosticsDir, job.jobId, 'job.json'))).toBe(true);
     expect(await exists(stagingOf(job.jobId))).toBe(false);
+    expect(videos.applied).toEqual([]);
+  });
+
+  it('Worker 自检不过：MODEL_OUTPUT_INVALID，不重试、不计崩溃，问题清单留在诊断目录', async () => {
+    // 崩溃的上限是 3：同一模型包连着三个任务自检不过也不停用。
+    await start();
+    const bundle = 'fake@cpu#run-error:OUTPUT_INVALID';
+    for (let index = 0; index < 3; index++) {
+      events.length = 0;
+      const job = await run(bundle);
+      expect(job).toMatchObject({
+        state: 'failed',
+        attempt: 1,
+        error: { code: 'MODEL_OUTPUT_INVALID', details: { problems: ['模拟的自检问题'] } },
+        result: null,
+      });
+      expect(events.some((e) => e.state === 'interrupted')).toBe(false);
+      const kept = JSON.parse(await fs.readFile(path.join(paths.diagnosticsDir, job.jobId, 'job.json'), 'utf8'));
+      expect(kept.problems).toEqual(['模拟的自检问题']);
+      expect(await exists(path.join(paths.diagnosticsDir, job.jobId, 'result.json'))).toBe(false);
+    }
+    expect(catalog.blocked(bundle)).toBe(false);
+    expect(await catalog.status(bundle)).toMatchObject({ state: 'ready' });
     expect(videos.applied).toEqual([]);
   });
 

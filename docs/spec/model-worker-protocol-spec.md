@@ -607,7 +607,7 @@ interface Provenance {
 interface ModelRef { family: string; revision: string }
 ```
 
-校验规则（Runtime 在发布前执行，Worker 在写出前自检）：
+校验规则（Runtime 在发布前执行，Worker 在写出前自检；自检不过时不写 `result.json`，`job.run` 返回 `OUTPUT_INVALID`，`details.problems` 是问题清单）：
 
 - `segments` 按 `start` 递增且不重叠；每段 `0 ≤ start < end ≤ duration`；段内 `words` 单调且在段内；`word.text` 与 `segment.text` 非空（空白只允许在 `outcome !== 'transcribed'` 时整体为空）。
 - `timingQuality` 为 `aligned` 的词，`provenance.models.aligner` 或 ASR 自身的词级时间能力必须存在；云端 Provider 没有对齐器时只能是 `provider`、`estimated` 或 `missing`。
@@ -636,12 +636,13 @@ interface ErrorBody {
 | `MODEL_NOT_INSTALLED` / `MODEL_UNSUPPORTED` / `MODEL_RESOURCE` | 加载失败，见 §2.2 | false |
 | `INPUT_UNREADABLE` | 输入文件（识别的素材、合成的参考录音）不存在、不可解封装或解封装器不在白名单 | false |
 | `INPUT_TOO_LONG` | `embed.run` 的某条文本超过模型的输入上限（`details.index`，§2.5.6）；不算崩溃、不停用模型包 | false |
+| `OUTPUT_INVALID` | 组装好的结果没过写出前的自检（§6 的校验规则，`details.problems`）；同一输入再跑结果相同，不算崩溃、不停用模型包 | false |
 | `DECODE_FAILED` | 解码中途失败 | true |
 | `INFERENCE_FAILED` | 模型前向失败（非崩溃） | true |
 | `WORKER_PANIC` | Rust panic | true |
 | `OUTPUT_WRITE_FAILED` | 输出写不进 staging（磁盘满、目录不可写；`details.file`） | true |
 
-Runtime 把这些映射到命令与协议规范 §11.3 的 `MODEL_LOAD_FAILED` / `MODEL_WORKER_CRASHED` / `MODEL_OUTPUT_INVALID`；`OUTPUT_WRITE_FAILED` 是 `STAGING_WRITE_FAILED`，不算崩溃、不停用模型包（`DECODE_FAILED`、`INFERENCE_FAILED`、`WORKER_PANIC` 算）；`job.run` 返回的 `MODEL_UNSUPPORTED` 也是 `MODEL_LOAD_FAILED`（`details.reason: 'unsupported'`，Worker 的 `details` 原样放在 `details.workerDetails`），不停用模型包。合成的参考录音在执行前与提交时的摘要不符或读不出来时，Runtime 不发 `job.run`，任务以 `ASSET_MISSING` 失败。
+Runtime 把这些映射到命令与协议规范 §11.3 的 `MODEL_LOAD_FAILED` / `MODEL_WORKER_CRASHED` / `MODEL_OUTPUT_INVALID`；`OUTPUT_WRITE_FAILED` 是 `STAGING_WRITE_FAILED`，不算崩溃、不停用模型包（`DECODE_FAILED`、`INFERENCE_FAILED`、`WORKER_PANIC` 算）；`OUTPUT_INVALID` 与 Runtime 校验不过一样是 `MODEL_OUTPUT_INVALID`（`details.problems`），不重试、不算崩溃、不停用模型包；`job.run` 返回的 `MODEL_UNSUPPORTED` 也是 `MODEL_LOAD_FAILED`（`details.reason: 'unsupported'`，Worker 的 `details` 原样放在 `details.workerDetails`），不停用模型包。合成的参考录音在执行前与提交时的摘要不符或读不出来时，Runtime 不发 `job.run`，任务以 `ASSET_MISSING` 失败。
 
 ## 8. 待评审事项
 

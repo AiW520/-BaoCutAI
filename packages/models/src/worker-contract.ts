@@ -547,6 +547,8 @@ export interface EmbedRunResult {
 
 /** `embed.run` 的一条文本超过模型的最大输入长度：`details.index` 指出哪一条。不可重试。 */
 export const INPUT_TOO_LONG = 'INPUT_TOO_LONG';
+/** Worker 组装好的结果没过写出前的自检：`details.problems` 是问题清单。不可重试，不计崩溃（同 Runtime 校验不过）。 */
+export const OUTPUT_INVALID = 'OUTPUT_INVALID';
 
 /** `model.load` 只会返回这三种失败。 */
 export const LOAD_FAILURE_CODES = ['MODEL_NOT_INSTALLED', 'MODEL_UNSUPPORTED', 'MODEL_RESOURCE'] as const;

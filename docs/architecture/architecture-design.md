@@ -1541,7 +1541,7 @@ candle 读与 MLX 相同的量化权重，加载时反量化：CPU 上算 f32，
 | --- | --- | --- |
 | 加载失败 | `model.load` 返回错误 | 不重试。错误码 `MODEL_LOAD_FAILED`，按原因归类为 `not-installed`（校验不过）、`unsupported`（后端或设备不支持）或 `error`（资源不足）；Job 失败并给出可用的动作：安装、换模型、换后端 |
 | 运行时崩溃 | 进程异常退出、stdout 关闭、心跳超时 | 当前 Job 标为 `interrupted`，按 `模型包 + 输入 hash + Worker 版本` 自动重试一次；第二次仍崩溃则 Job 失败，错误码 `MODEL_WORKER_CRASHED`，附 stderr 尾部。同一模型包在 M 分钟内崩溃 N 次后，该能力标为不可用（原因 `resource` 或 `unsupported`），不再自动拉起，直到用户重新启用 |
-| 输出不合合同 | Runtime 校验 staging 结果失败 | 不重试；Job 失败，错误码 `MODEL_OUTPUT_INVALID`；原始文件移到诊断目录供上报 |
+| 输出不合合同 | Runtime 校验 staging 结果失败，或 Worker 写出前自检不过（`job.run` 返回 `OUTPUT_INVALID`） | 不重试、不计崩溃；Job 失败，错误码 `MODEL_OUTPUT_INVALID`；原始文件移到诊断目录供上报（自检不过时没有写出的结果，只留问题清单） |
 | 取消 | `jobs.cancel` 或停止屏障（§7.4） | 发 `job.cancel`，Worker 在分段边界停下并 ack，之后仍是 `ready`，权重不丢。超过 ack 期限（默认 5 秒）则 kill 进程，模型包回到 `installed`，下一个任务再按需启动 |
 
 **孤儿与自保**。Worker 在 stdin 关闭时退出，并周期性检查父进程仍然存在且与启动时相同，否则自行退出（Unix 比对 `getppid`；Windows 打开父进程的句柄等它结束，句柄钉住进程对象，PID 不会被复用，创建得比 Worker 晚的进程不当作父进程）。新的 Runtime 不认领上一代的 Worker，不凭 PID 复用（§7.7）。Runtime 正常停止时 Worker 属于 §2.4 中的「执行器」：先取消其任务，再关闭 stdin，超过宽限期 SIGKILL。
