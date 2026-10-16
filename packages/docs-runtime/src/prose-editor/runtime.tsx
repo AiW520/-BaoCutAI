@@ -126,6 +126,1385 @@ import highlightJsLibLanguagesBash from "highlight.js/lib/languages/bash";
 import { createLowlight } from "lowlight";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import * as highlightJsLibCoreModule from "highlight.js/lib/core";
+import type * as React from "react";
+
+export const GetVisualizationRuntimeCellComponent: React.FC<Dynamic> = ({
+  cell: cell,
+}) => {
+  let value: Dynamic = useSyncExternalStore(
+    useMemo(
+      (..._extraArguments: unknown[]): Dynamic => clearVisualizationRuntimeSubs(cell),
+      [cell],
+    ),
+    (..._extraArguments: unknown[]): Dynamic => cell.version,
+  );
+  let value2: string = useSyncExternalStore(
+    clearVisualizationRuntimeAttributes,
+    resolveVisualizationRuntimeDataMode,
+  );
+  let value3 = useRef(null);
+  let [value4, value5]: Dynamic = useState(0);
+  useLayoutEffect((..._extraArguments: unknown[]) => {
+    let current: Dynamic = value3.current;
+    if (!current) return;
+    let value18 = (..._extraArguments: unknown[]): undefined => {
+      let value20 = Math.round(current.getBoundingClientRect().width) || 640;
+      value5((input?: unknown, ..._extraArguments: unknown[]) =>
+        input === value20 ? input : value20,
+      );
+    };
+    value18();
+    if (typeof ResizeObserver === "undefined") return;
+    let value19: Dynamic = null;
+    let observer = new ResizeObserver((..._extraArguments: unknown[]): undefined => {
+      if (value19 !== null) return;
+      value19 = requestAnimationFrame((..._extraArguments: unknown[]): undefined => {
+        value19 = null;
+        value18();
+      });
+    });
+    observer.observe(current);
+    return (..._extraArguments: unknown[]): undefined => {
+      observer.disconnect();
+      if (value19 !== null) cancelAnimationFrame(value19);
+    };
+  }, []);
+  let value6: Dynamic = useMemo(
+    (..._extraArguments: unknown[]): Dynamic => getVisualizationRuntimeMessage(cell),
+    [cell, value],
+  );
+  let value7 = useRef(0);
+  let value8: number = useMemo(
+    (..._extraArguments: unknown[]): number => ++value7.current,
+    [value6, value4, value2],
+  );
+  let value9 = useRef(null);
+  let value10: Dynamic = useRef(null);
+  let [value11, value12]: Dynamic = useState(null);
+  useEffect(
+    (..._extraArguments: unknown[]) => {
+      let current: Dynamic = value9.current;
+      if (value6.kind !== "ready" || value4 <= 0 || !current) {
+        if (value10.current) {
+          value10.current.destroy();
+          value10.current = null;
+        }
+        return;
+      }
+      let current2: Dynamic = value7.current;
+      let value18 = Math.max(160, value4);
+      let value19: number = resolveVisualizationGrammarRound(value18);
+      current.style.height = `${value19}px`;
+      let state: Dynamic = {
+        ...value6.plotSpec,
+        width: value18,
+        height: value19,
+        animate: false,
+        data: value6.table,
+      };
+      let state2: Dynamic = {
+        theme: resolveVisualizationRuntimeDark(value2),
+        seriesEndLabels: true,
+        timeDomainFit: true,
+        locale: isVisualizationRuntimeGetCanonicalLocales(value6.plotSpec.locale)
+          ? undefined
+          : "en-US",
+        motion: false,
+        interactions: false,
+        idPrefix: `lfile-chart-${cell.uid}-${resolveVisualizationRuntimeChart(cell.id)}`,
+      };
+      try {
+        if (!value10.current) value10.current = mountCandelaChart(current, state, state2);
+        else value10.current.update(state, state2);
+      } catch {
+        value10.current?.destroy();
+        value10.current = null;
+        value12({
+          epoch: current2,
+          s: "error",
+          source: "throw",
+        });
+        return;
+      }
+      let current3: Dynamic = value10.current;
+      let value20 = (..._extraArguments: unknown[]): undefined => {
+        if (value7.current === current2)
+          value12(
+            (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              input?.epoch === current2 && input.s === "ok"
+                ? input
+                : {
+                    epoch: current2,
+                    s: "ok",
+                  },
+          );
+      };
+      if (current3.getScene() !== null) value20();
+      let value21: Dynamic = current3.onRender(value20);
+      let element: Dynamic = current.querySelector("[data-chart-error]");
+      let value22 = (..._extraArguments: unknown[]): undefined => {
+        if (
+          element &&
+          element.style.display !== "none" &&
+          (element.textContent ?? "").length > 0 &&
+          value7.current === current2
+        )
+          value12({
+            epoch: current2,
+            s: "error",
+            source: "native",
+          });
+      };
+      value22();
+      let value23: Dynamic = null;
+      if (element && typeof MutationObserver !== "undefined") {
+        value23 = new MutationObserver(value22);
+        value23.observe(element, {
+          attributes: true,
+          childList: true,
+          characterData: true,
+        });
+      }
+      return (..._extraArguments: unknown[]): undefined => {
+        value23?.disconnect();
+        value21();
+      };
+    },
+    [value6, value4, value2, value8, cell.id, cell.uid],
+  );
+  useEffect(
+    (..._extraArguments: unknown[]) =>
+      (..._extraArguments: unknown[]): undefined => {
+        value10.current?.destroy();
+        value10.current = null;
+      },
+    [],
+  );
+  let value13 = resolveVisualizationRuntimeTitle(visualizationRuntimeWeakMap2.get(cell));
+  let value14 = resolveVisualizationRuntimeNote(visualizationRuntimeWeakMap2.get(cell));
+  let value15: Dynamic = value11 !== null && value11.epoch === value8 ? value11 : null;
+  let value16: Dynamic;
+  if (value6.kind === "refused") value16 = "refused";
+  else if (value15) value16 = value15.s;
+  else value16 = "loading";
+  let value17: Dynamic;
+  if (value16 === "refused" && value6.kind === "refused")
+    value17 = resolveVisualizationRuntimePadding(value6.message, value6.raw);
+  else if (value15?.source === "throw")
+    value17 = resolveVisualizationRuntimePadding("This chart couldn't be drawn.");
+  else
+    value17 = (
+      <div
+        ref={value9}
+        data-lfile-chart-host={""}
+        style={{
+          minHeight: "40px",
+          position: "relative",
+          maxWidth: "100%",
+        }}
+      />
+    );
+  return (
+    <div
+      ref={value3}
+      data-lfile-chart-state={value16}
+      data-lfile-chart-id={cell.id}
+      {...(value16 === "loading"
+        ? {
+            "data-widget-shot-pending": "",
+            "data-widget-filmed-pending": "",
+          }
+        : {})}
+    >
+      {value13 ? (
+        <div
+          style={{
+            font: "600 13px/1.4 system-ui, sans-serif",
+            color: "var(--cds-text-primary, #0b0b0b)",
+            margin: "0 0 4px",
+          }}
+          data-lfile-chart-title={""}
+          onClick={(input?: Dynamic, ..._extraArguments: unknown[]) =>
+            resolveVisualizationRuntimeDataWidgetAuthoring(input, cell.id)
+          }
+        >
+          {value13}
+        </div>
+      ) : null}
+      {value17}
+      {value14 ? (
+        <div
+          style={{
+            font: "12px/1.45 system-ui, sans-serif",
+            color: "var(--cds-text-muted, #898781)",
+            margin: "4px 0 0",
+          }}
+          data-lfile-chart-note={""}
+        >
+          {value14}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+export const ResolveWidgetAndHostRuntimeRoleComponent: React.FC<Dynamic> = (input) => {
+  let value: Dynamic = useCallback(
+    (element?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (element !== null && element.firstChild === null)
+        element.append(
+          resolveProsePluginsGrid2(
+            element.ownerDocument,
+            DocumentInteractionsComment2,
+            16,
+          ),
+        );
+    },
+    [],
+  );
+  let { at: at }: Dynamic = input;
+  return (
+    <div
+      className={"wo-bar"}
+      role={"toolbar"}
+      aria-label={"Selection"}
+      style={
+        at !== undefined
+          ? {
+              position: "fixed",
+              left: at.x + at.w / 2,
+              top: at.y,
+            }
+          : {
+              position: "static",
+              transform: "none",
+            }
+      }
+    >
+      <button
+        ref={value}
+        type={"button"}
+        aria-label={"Comment"}
+        title={"Comment"}
+        onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+          event.preventDefault()
+        }
+        onClick={input.onComment}
+      />
+    </div>
+  );
+};
+
+export const IsWidgetAndHostRuntimeArgComponent: React.FC<Dynamic> = (input) => {
+  let { arg: arg, source: source, dock: dock }: Dynamic = input;
+  let value: Dynamic = WidgetAndHostRuntimeSql[arg.render];
+  let value2: Dynamic = useMemo(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (value === undefined || widgetAndHostRuntimeState4 === null) return arg.text;
+      if (arg.text.length > widgetAndHostRuntimeLimit8192) return arg.text;
+      try {
+        let children: Dynamic = widgetAndHostRuntimeState4(value, arg.text).children;
+        return children.length > 0 ? collectWidgetAndHostRuntimeKey(children) : arg.text;
+      } catch {
+        return arg.text;
+      }
+    },
+    [arg, value],
+  );
+  let value3 = useRef(null);
+  let [value4, value5]: Dynamic = useState(null);
+  let value6: Dynamic =
+    useSyncExternalStore(
+      clearWidgetAndHostRuntimeDelete,
+      (..._extraArguments: unknown[]): boolean => widgetAndHostRuntimeLimit1,
+      (..._extraArguments: unknown[]) => false,
+    ) &&
+    dock.mayComment &&
+    source.comment !== undefined &&
+    arg.stored;
+  useEffect(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let current: Dynamic = value3.current;
+      let value14: Dynamic = current?.ownerDocument;
+      if (!value6 || !current || !value14) return;
+      let value15 = (..._extraArguments: unknown[]): undefined => {
+        let value16: Dynamic = value14.getSelection();
+        let value17: Dynamic =
+          value16 !== null && !value16.isCollapsed && value16.rangeCount > 0
+            ? value16.getRangeAt(0)
+            : null;
+        let value18: Dynamic =
+          value17 &&
+          resolveWidgetAndHostRuntimeContains(
+            current,
+            value17.startContainer,
+            value17.startOffset,
+          );
+        let value19: Dynamic =
+          value17 &&
+          resolveWidgetAndHostRuntimeContains(
+            current,
+            value17.endContainer,
+            value17.endOffset,
+          );
+        let value20: Dynamic =
+          typeof value18 === "number" && typeof value19 === "number"
+            ? resolveSchemaAndRenderingText(arg, value18, value19)
+            : null;
+        let value21: Dynamic =
+          value20 === null
+            ? undefined
+            : resolveWidgetAndHostRuntimeGetBoundingClientRect(value17);
+        value5(
+          value20 === null
+            ? null
+            : {
+                cited: value20,
+                ...(value21 !== undefined
+                  ? {
+                      at: value21,
+                    }
+                  : {}),
+              },
+        );
+      };
+      value14.addEventListener("selectionchange", value15);
+      return (..._extraArguments: unknown[]): Dynamic =>
+        value14.removeEventListener("selectionchange", value15);
+    },
+    [value6, arg],
+  );
+  let value7 = (..._extraArguments: unknown[]): undefined => {
+    let current: Dynamic = value3.current;
+    if (!current || value4 === null || source.comment === undefined) return;
+    source.comment(value4.cited, {
+      y: value4.at?.y ?? current.getBoundingClientRect().top,
+      ...(value4.at !== undefined
+        ? {
+            rect: value4.at,
+          }
+        : {}),
+    });
+  };
+  let value8: Dynamic = useSyncExternalStore(
+    clearWidgetAndHostRuntimeDelete,
+    (..._extraArguments: unknown[]): Dynamic =>
+      dock.nodeId !== undefined && Object.hasOwn(WidgetAndHostRuntimeData2, dock.nodeId)
+        ? (WidgetAndHostRuntimeData2[dock.nodeId] ?? widgetAndHostRuntimeValues)
+        : widgetAndHostRuntimeValues,
+    (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeValues,
+  );
+  let value9: Dynamic = useMemo(
+    (..._extraArguments: unknown[]): Dynamic =>
+      value8.filter(
+        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+          input2.ref === source.key &&
+          input2.path === arg.path &&
+          arg.stored &&
+          resolveSchemaAndRenderingExact(arg.text, input2),
+      ),
+    [value8, source.key, arg],
+  );
+  let value10: Dynamic = useSyncExternalStore(
+    clearWidgetAndHostRuntimeDelete,
+    (..._extraArguments: unknown[]): Dynamic =>
+      widgetAndHostRuntimeWidgetAndHostRuntimeSet3Alias,
+    (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeSet3,
+  );
+  useEffect(
+    (..._extraArguments: unknown[]) => {
+      let current: Dynamic = value3.current;
+      if (!current || value9.length === 0) return;
+      let defaultView: Dynamic = current.ownerDocument.defaultView;
+      let value14: Dynamic = defaultView?.CSS?.highlights;
+      let value15 = (input2?: unknown, ..._extraArguments: unknown[]): Dynamic => {
+        if (!defaultView || defaultView.Highlight === undefined || value14 === undefined)
+          return;
+        let entry: Dynamic = value14.get(input2);
+        if (entry !== undefined) return entry;
+        let value16: Dynamic = new (defaultView.Highlight as Dynamic)();
+        value14.set(input2, value16);
+        return value16;
+      };
+      let mapped: Dynamic = value9.map(
+        (input2?: Dynamic, ..._extraArguments: unknown[]) => {
+          let value16: Dynamic = resolveWidgetAndHostRuntimeOwnerDocument(
+            current,
+            input2.range[0],
+            input2.range[1],
+          );
+          if (value16 === null) return (..._extraArguments: unknown[]): undefined => {};
+          let state2: Dynamic = {
+            range: value16,
+            box: current,
+            ids: input2.ids,
+          };
+          let value17: Dynamic = value15(
+            input2.ids.some(
+              (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+                value10.has(input3),
+            )
+              ? LfileOriginQuoteOnClass
+              : LfileOriginQuoteClass,
+          );
+          widgetAndHostRuntimeSet2.add(state2);
+          value17?.add(value16);
+          return (..._extraArguments: unknown[]): undefined => {
+            widgetAndHostRuntimeSet2.delete(state2);
+            value17?.delete(value16);
+          };
+        },
+      );
+      return (..._extraArguments: unknown[]): undefined => {
+        for (let value16 of mapped as Dynamic) value16();
+      };
+    },
+    [value9, value2, value10],
+  );
+  useEffect(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (value9.length === 0) return;
+      widgetAndHostRuntimeState?.();
+      return (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeState?.();
+    },
+    [value9, value2],
+  );
+  let value11: Dynamic = useSyncExternalStore(
+    clearWidgetAndHostRuntimeDelete,
+    (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeState2,
+    (..._extraArguments: unknown[]) => null,
+  );
+  useEffect(
+    (..._extraArguments: unknown[]): undefined => {
+      let current: Dynamic = value3.current;
+      let value14: Dynamic =
+        value11 === null
+          ? undefined
+          : value9.find(
+              (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                input2.ids.includes(value11.id),
+            );
+      let value15: Dynamic =
+        current && value14
+          ? resolveWidgetAndHostRuntimeOwnerDocument(
+              current,
+              value14.range[0],
+              value14.range[1],
+            )
+          : null;
+      let value16: Dynamic =
+        value15 === null ? undefined : resolveWidgetAndHostRuntimeGetClientRects(value15);
+      if (
+        !current ||
+        value11 === null ||
+        value16 === undefined ||
+        widgetAndHostRuntimeState2 !== value11
+      )
+        return;
+      widgetAndHostRuntimeState2 = null;
+      let bounds: Dynamic = current.getBoundingClientRect();
+      if (value16.top < bounds.top || value16.bottom > bounds.bottom)
+        current.scrollTop +=
+          value16.top - bounds.top - (bounds.height - value16.height) / 2;
+      if (value16.left < bounds.left || value16.right > bounds.right)
+        current.scrollLeft += value16.left - bounds.left;
+      if (value11.intoWindow)
+        current.scrollIntoView?.({
+          block: "nearest",
+          inline: "nearest",
+        });
+    },
+    [value11, value9, value2],
+  );
+  let value12 = (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (dock.nodeId !== undefined && input2.length > 0)
+      widgetAndHostRuntimeState3?.(dock.nodeId, input2);
+  };
+  let value13 = (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    let current: Dynamic = value3.current;
+    if (
+      !current ||
+      value9.length === 0 ||
+      current.ownerDocument.getSelection()?.isCollapsed === false
+    )
+      return;
+    let value14: Dynamic = resolveWidgetAndHostRuntimeOffsetNode(
+      current,
+      input2.clientX,
+      input2.clientY,
+    );
+    let value15: Dynamic =
+      value14 === null
+        ? undefined
+        : value9.find(
+            (input3?: Dynamic, ..._extraArguments: unknown[]): boolean =>
+              value14 >= input3.range[0] && value14 < input3.range[1],
+          );
+    if (value15 !== undefined) value12(value15.ids);
+  };
+  let state: Dynamic = {
+    ref: value3,
+    tabIndex: 0,
+    role: "group",
+    "aria-label": arg.path,
+    onClick: value13,
+    ...(value9.length > 0
+      ? {
+          onScroll: (..._extraArguments: unknown[]): Dynamic =>
+            widgetAndHostRuntimeState?.(),
+        }
+      : {}),
+  };
+  return createReactElement(
+    Fragment,
+    null,
+    <div className={"wo-path"} dir={"auto"}>
+      {arg.path}
+    </div>,
+    value6 && value4 !== null
+      ? createReactElement(ResolveWidgetAndHostRuntimeRoleComponent, {
+          at: value4.at,
+          onComment: value7,
+        })
+      : null,
+    value === undefined ? (
+      <div {...state} className={"wo-text"} dir={"auto"}>
+        {value2}
+      </div>
+    ) : (
+      <pre {...state} dir={"ltr"} spellCheck={false}>
+        {<code>{value2}</code>}
+      </pre>
+    ),
+    value9.length > 0 ? (
+      <div
+        className={
+          resolveWidgetAndHostRuntimeValue8(value3.current)
+            ? "wo-quotes wo-quiet"
+            : "wo-quotes"
+        }
+      >
+        {value9.map((input2?: Dynamic, ..._extraArguments: unknown[]) =>
+          createReactElement(
+            "button",
+            {
+              key: `${input2.range[0]}-${input2.range[1]}`,
+              type: "button",
+              className: "wo-quote",
+              "aria-label": `${input2.ids.length === 1 ? "1 comment" : `${input2.ids.length} comments`} on: ${input2.exact}`,
+              onClick: (..._extraArguments: unknown[]) => value12(input2.ids),
+            },
+            <span className={"wo-quote-n"} aria-hidden={true}>
+              {String(input2.ids.length)}
+            </span>,
+            <span className={"wo-quote-words"} dir={"auto"}>
+              {input2.exact}
+            </span>,
+          ),
+        )}
+      </div>
+    ) : null,
+  );
+};
+
+export const CollectWidgetAndHostRuntimeTableComponent: React.FC<Dynamic> = (input) => {
+  let { table: table, name: name, lit: lit2 }: Dynamic = input;
+  let length: Dynamic = table.rows.length;
+  let value: Dynamic = lit2 !== null && lit2.row < length ? lit2.row : null;
+  let value2 =
+    value !== null && value >= widgetAndHostRuntimeLimit200
+      ? value - widgetAndHostRuntimeLimit200 + 1
+      : 0;
+  let slice: Dynamic = table.rows.slice(value2, value2 + widgetAndHostRuntimeLimit200);
+  let value3: Dynamic = useRef(null);
+  useEffect(
+    (..._extraArguments: unknown[]): undefined => {
+      if (lit2 !== null)
+        value3.current?.scrollIntoView?.({
+          block: "nearest",
+          inline: "nearest",
+        });
+    },
+    [lit2],
+  );
+  return createReactElement(
+    Fragment,
+    null,
+    <div className={"wo-rows"} tabIndex={0} role={"group"} aria-label={`${name} rows`}>
+      <table>
+        {
+          <thead>
+            {
+              <tr>
+                {table.columns.map((input2?: Dynamic, ..._extraArguments: unknown[]) =>
+                  createReactElement(
+                    "th",
+                    {
+                      key: input2,
+                      scope: "col",
+                      dir: "auto",
+                    },
+                    input2,
+                  ),
+                )}
+              </tr>
+            }
+          </thead>
+        }
+        {
+          <tbody>
+            {slice.map(
+              (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) =>
+                createReactElement(
+                  "tr",
+                  value2 + options === value
+                    ? {
+                        key: value2 + options,
+                        ref: value3,
+                        "data-lit": "",
+                        "aria-selected": true,
+                      }
+                    : {
+                        key: value2 + options,
+                      },
+                  table.columns.map((input3?: Dynamic, ..._extraArguments: unknown[]) => {
+                    let value4: Dynamic = Object.hasOwn(input2, input3)
+                      ? input2[input3]
+                      : undefined;
+                    return createReactElement(
+                      "td",
+                      {
+                        key: input3,
+                        dir: "auto",
+                        "data-number": typeof value4 === "number" ? "" : undefined,
+                      },
+                      resolveWidgetAndHostRuntimeBigint(value4),
+                    );
+                  }),
+                ),
+            )}
+          </tbody>
+        }
+      </table>
+    </div>,
+    <div className={"wo-count"}>
+      {length > slice.length
+        ? value2 === 0
+          ? `Showing the first ${slice.length} of ${length} rows`
+          : `Showing rows ${value2 + 1} to ${value2 + slice.length} of ${length}`
+        : length === 1
+          ? "1 row"
+          : `${length} rows`}
+    </div>,
+  );
+};
+
+export const FilterWidgetAndHostRuntimeSourceComponent: React.FC<Dynamic> = (input) => {
+  let { source: source, dock: dock, lit: lit2 }: Dynamic = input;
+  let origin: Dynamic = source.origin;
+  return createReactElement(
+    Fragment,
+    null,
+    source.table !== undefined
+      ? createReactElement(CollectWidgetAndHostRuntimeTableComponent, {
+          name: source.name,
+          table: source.table,
+          lit: lit2,
+        })
+      : null,
+    origin !== undefined
+      ? createReactElement(
+          Fragment,
+          null,
+          <div className={"wo-name"} dir={"auto"}>
+            {[origin.connector, origin.tool]
+              .filter((input2?: Dynamic, ..._extraArguments: unknown[]) => input2 !== "")
+              .join(" · ")}
+          </div>,
+          origin.args.map((input2?: Dynamic, ..._extraArguments: unknown[]) =>
+            createReactElement(IsWidgetAndHostRuntimeArgComponent, {
+              key: input2.path,
+              arg: input2,
+              source: source,
+              dock: dock,
+            }),
+          ),
+        )
+      : null,
+  );
+};
+
+export const UpdateWidgetAndHostRuntimeDockComponent: React.FC<Dynamic> = (input) => {
+  let { dock: dock, panelId: panelId }: Dynamic = input;
+  let { sources: sources, open: open }: Dynamic = updateWidgetAndHostRuntimeSources(dock);
+  let value = useRef(null);
+  let value2 = sources.length > 0;
+  resolveWidgetAndHostRuntimeCurrent(value, value2);
+  useLayoutEffect(
+    (..._extraArguments: unknown[]) => (
+      widgetAndHostRuntimeMap.set(dock, (widgetAndHostRuntimeMap.get(dock) ?? 0) + 1),
+      (..._extraArguments: unknown[]): undefined => {
+        let value3 = (widgetAndHostRuntimeMap.get(dock) ?? 1) - 1;
+        if (value3 > 0) widgetAndHostRuntimeMap.set(dock, value3);
+        else widgetAndHostRuntimeMap.delete(dock);
+      }
+    ),
+    [dock],
+  );
+  if (!value2) return null;
+  return (
+    <div
+      ref={value}
+      {...{
+        [widgetAndHostRuntimeDataLfileWidgetOrigin]: "caret",
+      }}
+      contentEditable={false}
+    >
+      {createReactElement(
+        HeadingAndControlsRoot2.Root,
+        {
+          open: open,
+          onOpenChange: (input2?: unknown, ..._extraArguments: unknown[]): undefined =>
+            void (dock.open = input2),
+        },
+        createReactElement(
+          HeadingAndControlsRoot2.Trigger,
+          {
+            "aria-controls": open ? panelId : undefined,
+          },
+          "Data",
+        ),
+      )}
+    </div>
+  );
+};
+
+export const CollectWidgetAndHostRuntimeDockComponent: React.FC<Dynamic> = (input) => {
+  let { dock: dock, panelId: panelId }: Dynamic = input;
+  let {
+    sources: sources,
+    open: open,
+    tab: tab,
+    lit: lit2,
+  }: Dynamic = updateWidgetAndHostRuntimeSources(dock);
+  let value = useRef(null);
+  let value2: Dynamic = open && sources.length > 0;
+  resolveWidgetAndHostRuntimeCurrent(value, value2);
+  installWidgetAndHostRuntimeSelectionchange(value, value2);
+  if (!value2) return null;
+  let value3: Dynamic = sources.some(
+    (input2?: Dynamic, ..._extraArguments: unknown[]) => input2.key === tab,
+  )
+    ? tab
+    : sources[0].key;
+  let value4: Dynamic = collectWidgetAndHostRuntimeComponent(sources);
+  return (
+    <div
+      ref={value}
+      id={panelId}
+      {...{
+        [widgetAndHostRuntimeDataLfileWidgetOrigin]: "panel",
+      }}
+      contentEditable={false}
+      role={"region"}
+      aria-label={"Data"}
+    >
+      {createReactElement(
+        HeadingAndControlsRoot7.Root,
+        {
+          value: value3,
+          onValueChange: (input2?: unknown, ..._extraArguments: unknown[]): undefined =>
+            void (dock.tab = String(input2)),
+        },
+        createReactElement(
+          HeadingAndControlsRoot7.List,
+          {
+            "aria-label": "Data sources",
+          },
+          sources.map(
+            (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) =>
+              createReactElement(
+                HeadingAndControlsRoot7.Tab,
+                {
+                  key: input2.key,
+                  value: input2.key,
+                },
+                value4[options],
+              ),
+          ),
+        ),
+        sources.map((input2?: Dynamic, ..._extraArguments: unknown[]) =>
+          createReactElement(
+            HeadingAndControlsRoot7.Panel,
+            {
+              key: input2.key,
+              value: input2.key,
+            },
+            createReactElement(FilterWidgetAndHostRuntimeSourceComponent, {
+              source: input2,
+              dock: dock,
+              lit: lit2 !== null && lit2.key === input2.key ? lit2 : null,
+            }),
+          ),
+        ),
+      )}
+    </div>
+  );
+};
+
+export const UseWidgetNaturalDimensionsComponent: React.FC<Dynamic> = (input) => {
+  let { hooks: hooks }: Dynamic = input;
+  let ref: Dynamic = hooks.useRef(null);
+  let ref2: Dynamic = hooks.useRef(null);
+  let ref3: Dynamic = hooks.useRef(null);
+  let ref4: Dynamic = hooks.useRef(null);
+  let ref5: Dynamic = hooks.useRef(null);
+  hooks.useEffect((..._extraArguments: unknown[]) => {
+    let state: Dynamic = {
+      key: "",
+      natural: null,
+      applied: undefined,
+      budget: widgetAndHostRuntimeBudget4,
+      apply: (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
+        state.applied = input2;
+        queueMicrotask((..._extraArguments: unknown[]): undefined => {
+          let current: Dynamic = ref4.current;
+          let current2: Dynamic = ref3.current;
+          if (current === null || current2 === null || ref5.current !== state) return;
+          let { gutters: gutters, ...value10 }: Dynamic = current;
+          let value11: Dynamic =
+            state.applied !== undefined
+              ? {
+                  ...value10,
+                  gutters: state.applied,
+                }
+              : value10;
+          ref4.current = value11;
+          current2.update(value11);
+        });
+      },
+    };
+    ref5.current = state;
+    let text: Dynamic = input.column.join(state);
+    return (..._extraArguments: unknown[]): undefined => {
+      ref5.current = null;
+      text();
+    };
+  }, []);
+  let ref6: Dynamic = hooks.useRef(false);
+  let [value, value2]: Dynamic = hooks.useState(null);
+  let [value3, value4]: Dynamic = hooks.useState(0);
+  let [value5, value6]: Dynamic = hooks.useState(0);
+  hooks.useEffect(
+    (..._extraArguments: unknown[]) =>
+      clearWidgetAndHostRuntimeDelete3(
+        (..._extraArguments: unknown[]): Dynamic =>
+          value6(
+            (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input2 + 1,
+          ),
+      ),
+    [],
+  );
+  hooks.useEffect(
+    (..._extraArguments: unknown[]) =>
+      clearWidgetAndHostRuntimeDelete4(
+        (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          if (input.nodeId !== undefined && input2.has(input.nodeId))
+            value6(
+              (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input3 + 1,
+            );
+        },
+      ),
+    [],
+  );
+  let value7 = (entry?: Dynamic, ..._extraArguments: unknown[]) =>
+    entry.kind === "error"
+      ? `error:${entry.message}`
+      : `ok:${entry.zoned !== undefined ? `${entry.zoned.zone}/${entry.zoned.name}` : ""}|${entry.warning ?? ""}`;
+  let value8 = (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+    value2(
+      (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+        input3 !== null && value7(input3) === value7(input2) ? input3 : input2,
+    );
+  hooks.useEffect(
+    (..._extraArguments: unknown[]): undefined => {
+      let current: Dynamic = ref.current;
+      let current2: Dynamic = ref2.current;
+      if (!current || !current2) return;
+      let ownerDocument: Dynamic = current.ownerDocument;
+      let value10 =
+        ownerDocument.documentElement.getAttribute("data-mode") === "dark"
+          ? "dark"
+          : "light";
+      let value11 = resolveWidgetAndHostRuntimeLocal(ownerDocument);
+      let value12 = Math.max(160, current2.clientWidth || 480);
+      let value13: number = resolveVisualizationGrammarFloor(
+        value12,
+        isVisualizationRuntimeValue3(input.definition)
+          ? collectVisualizationRuntimeWrap(
+              input.definition,
+              (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+                input.tables.get(input2)?.rows,
+            )
+          : 1,
+      );
+      let state: Dynamic = {};
+      for (let [value19, value20] of input.tables as Dynamic)
+        state[value19] = {
+          table: {
+            columns: value20.columns,
+            rows: value20.rows,
+          },
+          run: value20.run,
+        };
+      let value14: Dynamic =
+        input.component !== undefined
+          ? getWidgetAndHostRuntimeSource(
+              resolveWidgetAndHostRuntimeValue15(input.nodeId),
+              input.component,
+              input.tables,
+              widgetAndHostRuntimeState9,
+            )
+          : [];
+      let value15 = (..._extraArguments: unknown[]): undefined => {
+        let { component: component, nodeId: nodeId }: Dynamic = input;
+        if (
+          widgetAndHostRuntimeState7 === null ||
+          component === undefined ||
+          nodeId === undefined
+        )
+          return;
+        let value19: Dynamic = ref3.current?.describePin?.bind(ref3.current);
+        let state3: Dynamic = {};
+        if (value19 !== undefined)
+          for (let value22 of value14 as Dynamic) {
+            if (value22.id === undefined || Object.hasOwn(state3, value22.id)) continue;
+            let value23: Dynamic = null;
+            try {
+              value23 = value19(value22);
+            } catch {
+              value23 = null;
+            }
+            if (value23 !== null) state3[value22.id] = value23;
+          }
+        let title: Dynamic = input.definition.title;
+        let state4: Dynamic = {
+          nodeId: nodeId,
+          component: component,
+          ...(typeof title === "string" && title.trim().length > 0
+            ? {
+                chart: title.trim(),
+              }
+            : {}),
+          byId: state3,
+        };
+        let value20 = JSON.stringify(state4);
+        let value21 = `${nodeId}|${component}`;
+        if (widgetAndHostRuntimeMap2.get(value21) === value20) return;
+        widgetAndHostRuntimeMap2.set(value21, value20);
+        widgetAndHostRuntimeState7(state4);
+      };
+      let value16 = (
+        input2?: Dynamic,
+        options?: Dynamic,
+        ..._extraArguments: unknown[]
+      ) => {
+        if (input.component === undefined || widgetAndHostRuntimeState5 === null)
+          return false;
+        let group: Dynamic = input2.group;
+        if (input2.source === undefined) return false;
+        if (group === undefined && input2.field === undefined) return false;
+        if (input2.rowIndex === undefined) return false;
+        let nodeId: Dynamic = input.nodeId;
+        if (nodeId === undefined) return false;
+        if (
+          input2.field !== undefined &&
+          (input2.field.length === 0 || input2.field.length > 256)
+        )
+          return false;
+        if (
+          group !== undefined &&
+          (group.column.length === 0 || group.column.length > 256)
+        )
+          return false;
+        if (!Number.isInteger(input2.rowIndex) || input2.rowIndex < 0) return false;
+        if (options === "probe") return true;
+        let value19: Dynamic = resolveWidgetAndHostRuntimeSource(
+          input2.source,
+          input.sources[input2.source],
+          group !== undefined || input2.field === undefined
+            ? null
+            : [String(input2.rowIndex), input2.field],
+          nodeId,
+        );
+        let value20: Dynamic = input.tables.get(input2.source)?.rows ?? [];
+        let value21: Dynamic = input.sources[input2.source];
+        let value22: Dynamic =
+          value21 !== undefined && value21.kind === "data"
+            ? {
+                name: input2.source,
+                rows: value20.length,
+              }
+            : undefined;
+        let bounds: Dynamic = current.getBoundingClientRect();
+        let value23: Dynamic =
+          input2.field !== undefined && group === undefined
+            ? (ref3.current?.rectFor({
+                source: input2.source,
+                rowIndex: input2.rowIndex,
+                field: input2.field,
+              }) ?? null)
+            : null;
+        let value24: Dynamic =
+          value23 !== null
+            ? {
+                x: bounds.left + value23.x,
+                y: bounds.top + value23.y,
+                w: value23.w,
+                h: value23.h,
+              }
+            : undefined;
+        widgetAndHostRuntimeState5({
+          nodeId: nodeId,
+          component: input.component,
+          ...value19,
+          ...(value19 !== undefined && resolveWidgetAndHostRuntimeValue16(input2.value)
+            ? {
+                value: input2.value,
+              }
+            : {}),
+          ...(value19 !== undefined &&
+          group === undefined &&
+          input2.anchor !== undefined &&
+          input2.selector !== undefined &&
+          isRenderedCodeAndProofreadingEntries(input2.selector)
+            ? {
+                datum: input2.selector,
+              }
+            : {}),
+          ...(value19 !== undefined &&
+          group !== undefined &&
+          isRenderedCodeAndProofreadingEntries({
+            [group.column]: group.x,
+          })
+            ? {
+                datum: {
+                  [group.column]: group.x,
+                },
+                grain: "group",
+              }
+            : group !== undefined
+              ? {
+                  grain: "group",
+                }
+              : {}),
+          ...(input2.words !== undefined || input2.title !== undefined
+            ? {
+                words: {
+                  ...(input2.title !== undefined
+                    ? {
+                        chart: input2.title,
+                      }
+                    : {}),
+                  ...input2.words,
+                },
+              }
+            : {}),
+          rows: value20,
+          rowsPin: {
+            row: input2.rowIndex,
+            column: group !== undefined ? group.column : input2.field,
+          },
+          ...(value22 !== undefined
+            ? {
+                inline: value22,
+              }
+            : {}),
+          ...((..._extraArguments: unknown[]): Dynamic => {
+            let value25: Dynamic = input.tables.get(input2.source)?.at ?? null;
+            return value25 !== null
+              ? {
+                  at: value25,
+                }
+              : {};
+          })(),
+          ...((..._extraArguments: unknown[]): Dynamic => {
+            let value25: Dynamic = input.tables.get(input2.source)?.runStatus ?? null;
+            return value25 !== null
+              ? {
+                  status: value25,
+                }
+              : {};
+          })(),
+          ...(options === "place"
+            ? {
+                placing: true,
+              }
+            : {}),
+          vs: input.vs?.() ?? {},
+          y: bounds.top,
+          ...(value24 !== undefined
+            ? {
+                rect: value24,
+              }
+            : {}),
+        });
+        return true;
+      };
+      let current3: Dynamic = ref5.current;
+      let value17 =
+        current3 !== null
+          ? resolveWidgetAndHostRuntimeOrient(input.definition, current, value12)
+          : null;
+      if (current3 !== null) {
+        current3.budget = widgetAndHostRuntimeBudget4;
+        if (value17 === null && current3.key !== "") input.column.withdraw(current3);
+        else if (value17 !== current3.key) current3.applied = undefined;
+      }
+      let state2: Dynamic = {
+        definition: input.definition,
+        sources: input.sources,
+        ...(input.component !== undefined
+          ? {
+              component: input.component,
+            }
+          : {}),
+        data: state,
+        ...(value14.length
+          ? {
+              pins: value14,
+            }
+          : {}),
+        width: value12,
+        height: value13,
+        mode: value10,
+        zone: value11,
+        ...(current3?.applied !== undefined
+          ? {
+              gutters: current3.applied,
+            }
+          : {}),
+        onLayout: (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          current.setAttribute(
+            widgetAndHostRuntimeDataLfileChartGutters,
+            `${Math.round(input2.left)},${Math.round(input2.right)}`,
+          );
+          if (current3 !== null && value17 !== null && ref5.current === current3)
+            input.column.publish(current3, value17, {
+              left: input2.naturalLeft,
+              right: input2.naturalRight,
+            });
+        },
+        onStatus: (entry?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          value8(entry);
+          if (entry.kind === "ok") value15();
+        },
+        onDatumClick: (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          let value19: Dynamic =
+            input2.source !== undefined ? input.sources[input2.source] : undefined;
+          if (
+            input2.source !== undefined &&
+            value19 !== undefined &&
+            input2.rowIndex !== undefined
+          )
+            input.originDock?.press(
+              resolveWidgetAndHostRuntimeValue6(input.component, input2.source, value19),
+              input2.rowIndex,
+            );
+          if (value16(input2, "click")) ref6.current = true;
+        },
+      };
+      ref4.current = state2;
+      if (ref3.current === null)
+        ref3.current = input.renderer(
+          current,
+          input.entrance?.() === true
+            ? {
+                ...state2,
+                entrance: true,
+              }
+            : state2,
+        );
+      else ref3.current.update(state2);
+      let value18: Dynamic = resolveWidgetAndHostRuntimeByNode(input.nodeId)
+        ? updateVisualizationGrammarSource(current)
+        : null;
+      isRenderedCodeAndProofreadingQuerySelectorAll(
+        current,
+        updateWidgetAndHostRuntimeIds(
+          widgetAndHostRuntimeRenderedCodeAndProofreadingByNodeAlias,
+          input.nodeId,
+          input.component,
+          (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+            let value19: Dynamic =
+              value18 !== null && value18.size > 0
+                ? resolveRenderedCodeAndProofreadingRowIndex(input2.path)
+                : null;
+            let value20: Dynamic =
+              value19 !== null
+                ? resolveWidgetAndHostRuntimeIds(input2, value19, input.tables)
+                : null;
+            if (value19 === null || value20 === null) return [];
+            return (
+              value18.get(
+                resolveVisualizationGrammarSource4({
+                  source: input2.source,
+                  rowIndex: value20,
+                  field: value19.field,
+                }),
+              ) ?? []
+            );
+          },
+        ),
+      );
+      value15();
+      widgetAndHostRuntimeWeakMap6.set(current, {
+        placeAt: (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {
+          let value19: Dynamic = ref3.current?.clickAt(input2, options) ?? null;
+          return value19 !== null && value16(value19, "place");
+        },
+        datumAt: (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {
+          let value19: Dynamic = ref3.current?.clickAt(input2, options) ?? null;
+          return value19 !== null && value16(value19, "probe");
+        },
+      });
+    },
+    [
+      input.tables,
+      input.definition,
+      input.anchor,
+      input.component,
+      input.nodeId,
+      value3,
+      value5,
+    ],
+  );
+  hooks.useEffect((..._extraArguments: unknown[]) => {
+    let current: Dynamic = ref.current;
+    let current2: Dynamic = ref2.current;
+    if (!current || !current2) return;
+    let ownerDocument: Dynamic = current.ownerDocument;
+    let value10 = (..._extraArguments: unknown[]): Dynamic =>
+      value4((input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input2 + 1);
+    let observer = new MutationObserver(value10);
+    observer.observe(ownerDocument.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-mode", widgetAndHostRuntimeDataChartZone],
+    });
+    let value11: Dynamic = null;
+    let ResizeObserver2 = globalThis.ResizeObserver;
+    let value12: Dynamic = null;
+    let clientWidth: Dynamic = current2.clientWidth;
+    let value13 = (..._extraArguments: unknown[]): undefined => {
+      if (value12 !== null) return;
+      value12 = requestAnimationFrame((..._extraArguments: unknown[]): undefined => {
+        value12 = null;
+        let clientWidth2: Dynamic = current2.clientWidth;
+        if (clientWidth2 === clientWidth) return;
+        clientWidth = clientWidth2;
+        value10();
+      });
+    };
+    if (ResizeObserver2) {
+      let value14: Dynamic = new (ResizeObserver2 as Dynamic)(value13);
+      value14.observe(current2);
+      value11 = value14;
+    }
+    return (..._extraArguments: unknown[]): undefined => {
+      observer.disconnect();
+      value11?.disconnect();
+      if (value12 !== null) cancelAnimationFrame(value12);
+    };
+  }, []);
+  hooks.useEffect((..._extraArguments: unknown[]) => {
+    let current: Dynamic = ref.current;
+    if (!current) return;
+    let value10 = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (ref6.current) {
+        ref6.current = false;
+        event.stopPropagation();
+        let value12: Dynamic = resolveVisualizationGrammarClosest2(
+          current,
+          event.target,
+        )?.el;
+        if (value12 !== undefined) installWidgetAndHostRuntimeFocus(value12);
+      }
+    };
+    let value11 = (..._extraArguments: unknown[]): undefined => {
+      ref6.current = false;
+    };
+    current.addEventListener("click", value11, true);
+    current.addEventListener("click", value10);
+    return (..._extraArguments: unknown[]): undefined => {
+      current.removeEventListener("click", value11, true);
+      current.removeEventListener("click", value10);
+    };
+  }, []);
+  hooks.useEffect((..._extraArguments: unknown[]) => {
+    let current: Dynamic = ref.current;
+    return (..._extraArguments: unknown[]): undefined => {
+      if (current) widgetAndHostRuntimeWeakMap6.delete(current);
+      ref3.current?.destroy();
+      ref3.current = null;
+    };
+  }, []);
+  let value9 =
+    input.component === undefined &&
+    input.nodeId !== undefined &&
+    widgetAndHostRuntimeState5 !== null;
+  return (
+    <div
+      ref={ref2}
+      {...(input.anchor !== undefined
+        ? {
+            "data-claude-anchor": input.anchor,
+          }
+        : {})}
+      {...(input.component !== undefined
+        ? {
+            "data-claude-component": input.component,
+          }
+        : {})}
+      data-lfile-visualize-state={value === null ? "loading" : value.kind}
+      {...(value === null
+        ? {
+            "data-widget-shot-pending": "",
+            "data-widget-filmed-pending": "",
+          }
+        : {})}
+    >
+      {value !== null && value.kind === "ok" && value.zoned !== undefined
+        ? resolveWidgetAndHostRuntimeDisplay(
+            value.zoned,
+            (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
+              let value10: Dynamic = ref.current?.ownerDocument;
+              if (value10) resolveWidgetAndHostRuntimeLocal2(value10, input2);
+            },
+          )
+        : null}
+      {
+        <div
+          ref={ref}
+          {...{
+            [prosePluginsDataLfileVisualizeHost]: "",
+          }}
+          style={{
+            minHeight: "40px",
+            position: "relative",
+            maxWidth: "100%",
+          }}
+        />
+      }
+      {value !== null && value.kind === "error"
+        ? resolveWidgetAndHostRuntimeDataLfileVisualizeCard(value.message)
+        : null}
+      {value !== null && value.kind === "ok" && value.warning !== undefined
+        ? resolveWidgetAndHostRuntimeFont(value.warning)
+        : null}
+    </div>
+  );
+};
+
 const loadHighlightJsLibCore = (
   ..._extraArguments: unknown[]
 ) => (highlightJsLibCoreModule).default;
@@ -269687,219 +271066,7 @@ function getVisualizationRuntimeMessage(
     };
   }
 }
-function GetVisualizationRuntimeCellComponent(
-  { cell: cell }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = useSyncExternalStore(
-    useMemo(
-      (..._extraArguments: unknown[]): Dynamic =>
-        clearVisualizationRuntimeSubs(cell),
-      [cell],
-    ),
-    (..._extraArguments: unknown[]): Dynamic => cell.version,
-  );
-  let value2: string = useSyncExternalStore(
-    clearVisualizationRuntimeAttributes,
-    resolveVisualizationRuntimeDataMode,
-  );
-  let value3 = useRef(null);
-  let [value4, value5]: Dynamic = useState(0);
-  useLayoutEffect((..._extraArguments: unknown[]) => {
-    let current: Dynamic = value3.current;
-    if (!current) return;
-    let value18 = (..._extraArguments: unknown[]): undefined => {
-      let value20 = Math.round(current.getBoundingClientRect().width) || 640;
-      value5(
-        (input?: unknown, ..._extraArguments: unknown[]) =>
-          input === value20 ? input : value20,
-      );
-    };
-    value18();
-    if (typeof ResizeObserver === "undefined") return;
-    let value19: Dynamic = null;
-    let observer = new ResizeObserver(
-      (..._extraArguments: unknown[]): undefined => {
-        if (value19 !== null) return;
-        value19 = requestAnimationFrame(
-          (..._extraArguments: unknown[]): undefined => {
-            value19 = null;
-            value18();
-          },
-        );
-      },
-    );
-    observer.observe(current);
-    return (..._extraArguments: unknown[]): undefined => {
-      observer.disconnect();
-      if (value19 !== null) cancelAnimationFrame(value19);
-    };
-  }, []);
-  let value6: Dynamic = useMemo(
-    (..._extraArguments: unknown[]): Dynamic =>
-      getVisualizationRuntimeMessage(cell),
-    [cell, value],
-  );
-  let value7 = useRef(0);
-  let value8: number = useMemo(
-    (..._extraArguments: unknown[]): number => ++value7.current,
-    [value6, value4, value2],
-  );
-  let value9 = useRef(null);
-  let value10: Dynamic = useRef(null);
-  let [value11, value12]: Dynamic = useState(null);
-  useEffect(
-    (..._extraArguments: unknown[]) => {
-      let current: Dynamic = value9.current;
-      if (value6.kind !== "ready" || value4 <= 0 || !current) {
-        if (value10.current) {
-          value10.current.destroy();
-          value10.current = null;
-        }
-        return;
-      }
-      let current2: Dynamic = value7.current;
-      let value18 = Math.max(160, value4);
-      let value19: number = resolveVisualizationGrammarRound(value18);
-      current.style.height = `${value19}px`;
-      let state: Dynamic = {
-        ...value6.plotSpec,
-        width: value18,
-        height: value19,
-        animate: false,
-        data: value6.table,
-      };
-      let state2: Dynamic = {
-        theme: resolveVisualizationRuntimeDark(value2),
-        seriesEndLabels: true,
-        timeDomainFit: true,
-        locale: isVisualizationRuntimeGetCanonicalLocales(
-          value6.plotSpec.locale,
-        )
-          ? undefined
-          : "en-US",
-        motion: false,
-        interactions: false,
-        idPrefix: `lfile-chart-${cell.uid}-${resolveVisualizationRuntimeChart(cell.id)}`,
-      };
-      try {
-        if (!value10.current)
-          value10.current = mountCandelaChart(current, state, state2);
-        else value10.current.update(state, state2);
-      } catch {
-        value10.current?.destroy();
-        value10.current = null;
-        value12({
-          epoch: current2,
-          s: "error",
-          source: "throw",
-        });
-        return;
-      }
-      let current3: Dynamic = value10.current;
-      let value20 = (..._extraArguments: unknown[]): undefined => {
-        if (value7.current === current2)
-          value12(
-            (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              input?.epoch === current2 && input.s === "ok"
-                ? input
-                : {
-                    epoch: current2,
-                    s: "ok",
-                  },
-          );
-      };
-      if (current3.getScene() !== null) value20();
-      let value21: Dynamic = current3.onRender(value20);
-      let element: Dynamic = current.querySelector("[data-chart-error]");
-      let value22 = (..._extraArguments: unknown[]): undefined => {
-        if (
-          element &&
-          element.style.display !== "none" &&
-          (element.textContent ?? "").length > 0 &&
-          value7.current === current2
-        )
-          value12({
-            epoch: current2,
-            s: "error",
-            source: "native",
-          });
-      };
-      value22();
-      let value23: Dynamic = null;
-      if (element && typeof MutationObserver !== "undefined") {
-        value23 = new MutationObserver(value22);
-        value23.observe(element, {
-          attributes: true,
-          childList: true,
-          characterData: true,
-        });
-      }
-      return (..._extraArguments: unknown[]): undefined => {
-        value23?.disconnect();
-        value21();
-      };
-    },
-    [value6, value4, value2, value8, cell.id, cell.uid],
-  );
-  useEffect(
-    (..._extraArguments: unknown[]) =>
-      (..._extraArguments: unknown[]): undefined => {
-        value10.current?.destroy();
-        value10.current = null;
-      },
-    [],
-  );
-  let value13 = resolveVisualizationRuntimeTitle(
-    visualizationRuntimeWeakMap2.get(cell),
-  );
-  let value14 = resolveVisualizationRuntimeNote(
-    visualizationRuntimeWeakMap2.get(cell),
-  );
-  let value15: Dynamic =
-    value11 !== null && value11.epoch === value8 ? value11 : null;
-  let value16: Dynamic;
-  if (value6.kind === "refused") value16 = "refused";
-  else if (value15) value16 = value15.s;
-  else value16 = "loading";
-  let value17: Dynamic;
-  if (value16 === "refused" && value6.kind === "refused")
-    value17 = resolveVisualizationRuntimePadding(value6.message, value6.raw);
-  else if (value15?.source === "throw")
-    value17 = resolveVisualizationRuntimePadding(
-      "This chart couldn't be drawn.",
-    );
-  else
-    value17 = (
-      <div
-        ref={value9}
-        data-lfile-chart-host={""}
-        style={{
-          minHeight: "40px",
-          position: "relative",
-          maxWidth: "100%",
-        }}
-      />
-    );
-  return (
-    <div ref={value3} data-lfile-chart-state={value16} data-lfile-chart-id={cell.id} {...value16 === "loading" ? {
-  "data-widget-shot-pending": "",
-  "data-widget-filmed-pending": ""
-} : {}}>{value13 ? <div style={{
-    font: "600 13px/1.4 system-ui, sans-serif",
-    color: "var(--cds-text-primary, #0b0b0b)",
-    margin: "0 0 4px"
-  }} data-lfile-chart-title={""} onClick={(input?: Dynamic, ..._extraArguments: unknown[]) => resolveVisualizationRuntimeDataWidgetAuthoring(input, cell.id)}>
-            {value13}
-          </div> : null}{value17}{value14 ? <div style={{
-    font: "12px/1.45 system-ui, sans-serif",
-    color: "var(--cds-text-muted, #898781)",
-    margin: "4px 0 0"
-  }} data-lfile-chart-note={""}>
-            {value14}
-          </div> : null}</div>
-  );
-}
+
 class VisualizationRuntimeErr extends (Component as typeof ReactComponentTypes.Component)<ChartBoundaryProps> {
   [key: string]: Dynamic;
   state: Dynamic = {
@@ -281512,364 +282679,7 @@ function resolveWidgetAndHostRuntimeGetBoundingClientRect(
       }
     : undefined;
 }
-function ResolveWidgetAndHostRuntimeRoleComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = useCallback(
-    (element?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      if (element !== null && element.firstChild === null)
-        element.append(
-          resolveProsePluginsGrid2(
-            element.ownerDocument,
-            DocumentInteractionsComment2,
-            16,
-          ),
-        );
-    },
-    [],
-  );
-  let { at: at }: Dynamic = input;
-  return (
-    <div
-      className={"wo-bar"}
-      role={"toolbar"}
-      aria-label={"Selection"}
-      style={
-        at !== undefined
-          ? {
-              position: "fixed",
-              left: at.x + at.w / 2,
-              top: at.y,
-            }
-          : {
-              position: "static",
-              transform: "none",
-            }
-      }
-    >
-      <button
-        ref={value}
-        type={"button"}
-        aria-label={"Comment"}
-        title={"Comment"}
-        onMouseDown={(
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic => event.preventDefault()}
-        onClick={input.onComment}
-      />
-    </div>
-  );
-}
-function IsWidgetAndHostRuntimeArgComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let { arg: arg, source: source, dock: dock }: Dynamic = input;
-  let value: Dynamic = WidgetAndHostRuntimeSql[arg.render];
-  let value2: Dynamic = useMemo(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (value === undefined || widgetAndHostRuntimeState4 === null)
-        return arg.text;
-      if (arg.text.length > widgetAndHostRuntimeLimit8192) return arg.text;
-      try {
-        let children: Dynamic = widgetAndHostRuntimeState4(
-          value,
-          arg.text,
-        ).children;
-        return children.length > 0
-          ? collectWidgetAndHostRuntimeKey(children)
-          : arg.text;
-      } catch {
-        return arg.text;
-      }
-    },
-    [arg, value],
-  );
-  let value3 = useRef(null);
-  let [value4, value5]: Dynamic = useState(null);
-  let value6: Dynamic =
-    useSyncExternalStore(
-      clearWidgetAndHostRuntimeDelete,
-      (..._extraArguments: unknown[]): boolean => widgetAndHostRuntimeLimit1,
-      (..._extraArguments: unknown[]) => false,
-    ) &&
-    dock.mayComment &&
-    source.comment !== undefined &&
-    arg.stored;
-  useEffect(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let current: Dynamic = value3.current;
-      let value14: Dynamic = current?.ownerDocument;
-      if (!value6 || !current || !value14) return;
-      let value15 = (..._extraArguments: unknown[]): undefined => {
-        let value16: Dynamic = value14.getSelection();
-        let value17: Dynamic =
-          value16 !== null && !value16.isCollapsed && value16.rangeCount > 0
-            ? value16.getRangeAt(0)
-            : null;
-        let value18: Dynamic =
-          value17 &&
-          resolveWidgetAndHostRuntimeContains(
-            current,
-            value17.startContainer,
-            value17.startOffset,
-          );
-        let value19: Dynamic =
-          value17 &&
-          resolveWidgetAndHostRuntimeContains(
-            current,
-            value17.endContainer,
-            value17.endOffset,
-          );
-        let value20: Dynamic =
-          typeof value18 === "number" && typeof value19 === "number"
-            ? resolveSchemaAndRenderingText(arg, value18, value19)
-            : null;
-        let value21: Dynamic =
-          value20 === null
-            ? undefined
-            : resolveWidgetAndHostRuntimeGetBoundingClientRect(value17);
-        value5(
-          value20 === null
-            ? null
-            : {
-                cited: value20,
-                ...(value21 !== undefined
-                  ? {
-                      at: value21,
-                    }
-                  : {}),
-              },
-        );
-      };
-      value14.addEventListener("selectionchange", value15);
-      return (..._extraArguments: unknown[]): Dynamic =>
-        value14.removeEventListener("selectionchange", value15);
-    },
-    [value6, arg],
-  );
-  let value7 = (..._extraArguments: unknown[]): undefined => {
-    let current: Dynamic = value3.current;
-    if (!current || value4 === null || source.comment === undefined) return;
-    source.comment(value4.cited, {
-      y: value4.at?.y ?? current.getBoundingClientRect().top,
-      ...(value4.at !== undefined
-        ? {
-            rect: value4.at,
-          }
-        : {}),
-    });
-  };
-  let value8: Dynamic = useSyncExternalStore(
-    clearWidgetAndHostRuntimeDelete,
-    (..._extraArguments: unknown[]): Dynamic =>
-      dock.nodeId !== undefined &&
-      Object.hasOwn(WidgetAndHostRuntimeData2, dock.nodeId)
-        ? (WidgetAndHostRuntimeData2[dock.nodeId] ?? widgetAndHostRuntimeValues)
-        : widgetAndHostRuntimeValues,
-    (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeValues,
-  );
-  let value9: Dynamic = useMemo(
-    (..._extraArguments: unknown[]): Dynamic =>
-      value8.filter(
-        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input2.ref === source.key &&
-          input2.path === arg.path &&
-          arg.stored &&
-          resolveSchemaAndRenderingExact(arg.text, input2),
-      ),
-    [value8, source.key, arg],
-  );
-  let value10: Dynamic = useSyncExternalStore(
-    clearWidgetAndHostRuntimeDelete,
-    (..._extraArguments: unknown[]): Dynamic =>
-      widgetAndHostRuntimeWidgetAndHostRuntimeSet3Alias,
-    (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeSet3,
-  );
-  useEffect(
-    (..._extraArguments: unknown[]) => {
-      let current: Dynamic = value3.current;
-      if (!current || value9.length === 0) return;
-      let defaultView: Dynamic = current.ownerDocument.defaultView;
-      let value14: Dynamic = defaultView?.CSS?.highlights;
-      let value15 = (
-        input2?: unknown,
-        ..._extraArguments: unknown[]
-      ): Dynamic => {
-        if (
-          !defaultView ||
-          defaultView.Highlight === undefined ||
-          value14 === undefined
-        )
-          return;
-        let entry: Dynamic = value14.get(input2);
-        if (entry !== undefined) return entry;
-        let value16: Dynamic = new (defaultView.Highlight as Dynamic)();
-        value14.set(input2, value16);
-        return value16;
-      };
-      let mapped: Dynamic = value9.map(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) => {
-          let value16: Dynamic = resolveWidgetAndHostRuntimeOwnerDocument(
-            current,
-            input2.range[0],
-            input2.range[1],
-          );
-          if (value16 === null)
-            return (..._extraArguments: unknown[]): undefined => {};
-          let state2: Dynamic = {
-            range: value16,
-            box: current,
-            ids: input2.ids,
-          };
-          let value17: Dynamic = value15(
-            input2.ids.some(
-              (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-                value10.has(input3),
-            )
-              ? LfileOriginQuoteOnClass
-              : LfileOriginQuoteClass,
-          );
-          widgetAndHostRuntimeSet2.add(state2);
-          value17?.add(value16);
-          return (..._extraArguments: unknown[]): undefined => {
-            widgetAndHostRuntimeSet2.delete(state2);
-            value17?.delete(value16);
-          };
-        },
-      );
-      return (..._extraArguments: unknown[]): undefined => {
-        for (let value16 of mapped as Dynamic) value16();
-      };
-    },
-    [value9, value2, value10],
-  );
-  useEffect(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (value9.length === 0) return;
-      widgetAndHostRuntimeState?.();
-      return (..._extraArguments: unknown[]): Dynamic =>
-        widgetAndHostRuntimeState?.();
-    },
-    [value9, value2],
-  );
-  let value11: Dynamic = useSyncExternalStore(
-    clearWidgetAndHostRuntimeDelete,
-    (..._extraArguments: unknown[]): Dynamic => widgetAndHostRuntimeState2,
-    (..._extraArguments: unknown[]) => null,
-  );
-  useEffect(
-    (..._extraArguments: unknown[]): undefined => {
-      let current: Dynamic = value3.current;
-      let value14: Dynamic =
-        value11 === null
-          ? undefined
-          : value9.find(
-              (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                input2.ids.includes(value11.id),
-            );
-      let value15: Dynamic =
-        current && value14
-          ? resolveWidgetAndHostRuntimeOwnerDocument(
-              current,
-              value14.range[0],
-              value14.range[1],
-            )
-          : null;
-      let value16: Dynamic =
-        value15 === null
-          ? undefined
-          : resolveWidgetAndHostRuntimeGetClientRects(value15);
-      if (
-        !current ||
-        value11 === null ||
-        value16 === undefined ||
-        widgetAndHostRuntimeState2 !== value11
-      )
-        return;
-      widgetAndHostRuntimeState2 = null;
-      let bounds: Dynamic = current.getBoundingClientRect();
-      if (value16.top < bounds.top || value16.bottom > bounds.bottom)
-        current.scrollTop +=
-          value16.top - bounds.top - (bounds.height - value16.height) / 2;
-      if (value16.left < bounds.left || value16.right > bounds.right)
-        current.scrollLeft += value16.left - bounds.left;
-      if (value11.intoWindow)
-        current.scrollIntoView?.({
-          block: "nearest",
-          inline: "nearest",
-        });
-    },
-    [value11, value9, value2],
-  );
-  let value12 = (
-    input2?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (dock.nodeId !== undefined && input2.length > 0)
-      widgetAndHostRuntimeState3?.(dock.nodeId, input2);
-  };
-  let value13 = (
-    input2?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    let current: Dynamic = value3.current;
-    if (
-      !current ||
-      value9.length === 0 ||
-      current.ownerDocument.getSelection()?.isCollapsed === false
-    )
-      return;
-    let value14: Dynamic = resolveWidgetAndHostRuntimeOffsetNode(
-      current,
-      input2.clientX,
-      input2.clientY,
-    );
-    let value15: Dynamic =
-      value14 === null
-        ? undefined
-        : value9.find(
-            (input3?: Dynamic, ..._extraArguments: unknown[]): boolean =>
-              value14 >= input3.range[0] && value14 < input3.range[1],
-          );
-    if (value15 !== undefined) value12(value15.ids);
-  };
-  let state: Dynamic = {
-    ref: value3,
-    tabIndex: 0,
-    role: "group",
-    "aria-label": arg.path,
-    onClick: value13,
-    ...(value9.length > 0
-      ? {
-          onScroll: (..._extraArguments: unknown[]): Dynamic =>
-            widgetAndHostRuntimeState?.(),
-        }
-      : {}),
-  };
-  return (
-    createReactElement(Fragment, null, <div className={"wo-path"} dir={"auto"}>
-          {arg.path}
-        </div>, value6 && value4 !== null ? createReactElement(ResolveWidgetAndHostRuntimeRoleComponent, {
-  at: value4.at,
-  onComment: value7
-}) : null, value === undefined ? <div {...state} className={"wo-text"} dir={"auto"}>{value2}</div> : <pre {...state} dir={"ltr"} spellCheck={false}>{<code>{value2}</code>}</pre>, value9.length > 0 ? <div className={resolveWidgetAndHostRuntimeValue8(value3.current) ? "wo-quotes wo-quiet" : "wo-quotes"}>
-            {value9.map((input2?: Dynamic, ..._extraArguments: unknown[]) => createReactElement("button", {
-    key: `${input2.range[0]}-${input2.range[1]}`,
-    type: "button",
-    className: "wo-quote",
-    "aria-label": `${input2.ids.length === 1 ? "1 comment" : `${input2.ids.length} comments`} on: ${input2.exact}`,
-    onClick: (..._extraArguments: unknown[]) => value12(input2.ids)
-  }, <span className={"wo-quote-n"} aria-hidden={true}>
-                      {String(input2.ids.length)}
-                    </span>, <span className={"wo-quote-words"} dir={"auto"}>
-                      {input2.exact}
-                    </span>))}
-          </div> : null)
-  );
-}
+
 var resolveWidgetAndHostRuntimeBigint = (
   input?: unknown,
   ..._extraArguments: unknown[]
@@ -281888,79 +282698,7 @@ var resolveWidgetAndHostRuntimeBigint = (
     return "";
   }
 };
-function CollectWidgetAndHostRuntimeTableComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let { table: table, name: name, lit: lit2 }: Dynamic = input;
-  let length: Dynamic = table.rows.length;
-  let value: Dynamic = lit2 !== null && lit2.row < length ? lit2.row : null;
-  let value2 =
-    value !== null && value >= widgetAndHostRuntimeLimit200
-      ? value - widgetAndHostRuntimeLimit200 + 1
-      : 0;
-  let slice: Dynamic = table.rows.slice(
-    value2,
-    value2 + widgetAndHostRuntimeLimit200,
-  );
-  let value3: Dynamic = useRef(null);
-  useEffect(
-    (..._extraArguments: unknown[]): undefined => {
-      if (lit2 !== null)
-        value3.current?.scrollIntoView?.({
-          block: "nearest",
-          inline: "nearest",
-        });
-    },
-    [lit2],
-  );
-  return (
-    createReactElement(Fragment, null, <div className={"wo-rows"} tabIndex={0} role={"group"} aria-label={`${name} rows`}>
-          <table>{<thead>{<tr>{table.columns.map((input2?: Dynamic, ..._extraArguments: unknown[]) => createReactElement("th", {
-          key: input2,
-          scope: "col",
-          dir: "auto"
-        }, input2))}</tr>}</thead>}{<tbody>{slice.map((input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => createReactElement("tr", value2 + options === value ? {
-        key: value2 + options,
-        ref: value3,
-        "data-lit": "",
-        "aria-selected": true
-      } : {
-        key: value2 + options
-      }, table.columns.map((input3?: Dynamic, ..._extraArguments: unknown[]) => {
-        let value4: Dynamic = Object.hasOwn(input2, input3) ? input2[input3] : undefined;
-        return createReactElement("td", {
-          key: input3,
-          dir: "auto",
-          "data-number": typeof value4 === "number" ? "" : undefined
-        }, resolveWidgetAndHostRuntimeBigint(value4));
-      })))}</tbody>}</table>
-        </div>, <div className={"wo-count"}>
-          {length > slice.length ? value2 === 0 ? `Showing the first ${slice.length} of ${length} rows` : `Showing rows ${value2 + 1} to ${value2 + slice.length} of ${length}` : length === 1 ? "1 row" : `${length} rows`}
-        </div>)
-  );
-}
-function FilterWidgetAndHostRuntimeSourceComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let { source: source, dock: dock, lit: lit2 }: Dynamic = input;
-  let origin: Dynamic = source.origin;
-  return (
-    createReactElement(Fragment, null, source.table !== undefined ? createReactElement(CollectWidgetAndHostRuntimeTableComponent, {
-  name: source.name,
-  table: source.table,
-  lit: lit2
-}) : null, origin !== undefined ? createReactElement(Fragment, null, <div className={"wo-name"} dir={"auto"}>
-                {[origin.connector, origin.tool].filter((input2?: Dynamic, ..._extraArguments: unknown[]) => input2 !== "").join(" · ")}
-              </div>, origin.args.map((input2?: Dynamic, ..._extraArguments: unknown[]) => createReactElement(IsWidgetAndHostRuntimeArgComponent, {
-  key: input2.path,
-  arg: input2,
-  source: source,
-  dock: dock
-}))) : null)
-  );
-}
+
 class WidgetAndHostRuntimeDown extends (Component as typeof ReactComponentTypes.Component)<WidgetBoundaryProps> {
   [key: string]: Dynamic;
   state: Dynamic = {
@@ -282020,85 +282758,7 @@ function collectWidgetAndHostRuntimeComponent(
         : input2.name,
   );
 }
-function UpdateWidgetAndHostRuntimeDockComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let { dock: dock, panelId: panelId }: Dynamic = input;
-  let { sources: sources, open: open }: Dynamic =
-    updateWidgetAndHostRuntimeSources(dock);
-  let value = useRef(null);
-  let value2 = sources.length > 0;
-  resolveWidgetAndHostRuntimeCurrent(value, value2);
-  useLayoutEffect(
-    (..._extraArguments: unknown[]) => (
-      widgetAndHostRuntimeMap.set(
-        dock,
-        (widgetAndHostRuntimeMap.get(dock) ?? 0) + 1,
-      ),
-      (..._extraArguments: unknown[]): undefined => {
-        let value3 = (widgetAndHostRuntimeMap.get(dock) ?? 1) - 1;
-        if (value3 > 0) widgetAndHostRuntimeMap.set(dock, value3);
-        else widgetAndHostRuntimeMap.delete(dock);
-      }
-    ),
-    [dock],
-  );
-  if (!value2) return null;
-  return (
-    <div ref={value} {...{
-  [widgetAndHostRuntimeDataLfileWidgetOrigin]: "caret"
-}} contentEditable={false}>{createReactElement(HeadingAndControlsRoot2.Root, {
-    open: open,
-    onOpenChange: (input2?: unknown, ..._extraArguments: unknown[]): undefined => void (dock.open = input2)
-  }, createReactElement(HeadingAndControlsRoot2.Trigger, {
-    "aria-controls": open ? panelId : undefined
-  }, "Data"))}</div>
-  );
-}
-function CollectWidgetAndHostRuntimeDockComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let { dock: dock, panelId: panelId }: Dynamic = input;
-  let {
-    sources: sources,
-    open: open,
-    tab: tab,
-    lit: lit2,
-  }: Dynamic = updateWidgetAndHostRuntimeSources(dock);
-  let value = useRef(null);
-  let value2: Dynamic = open && sources.length > 0;
-  resolveWidgetAndHostRuntimeCurrent(value, value2);
-  installWidgetAndHostRuntimeSelectionchange(value, value2);
-  if (!value2) return null;
-  let value3: Dynamic = sources.some(
-    (input2?: Dynamic, ..._extraArguments: unknown[]) => input2.key === tab,
-  )
-    ? tab
-    : sources[0].key;
-  let value4: Dynamic = collectWidgetAndHostRuntimeComponent(sources);
-  return (
-    <div ref={value} id={panelId} {...{
-  [widgetAndHostRuntimeDataLfileWidgetOrigin]: "panel"
-}} contentEditable={false} role={"region"} aria-label={"Data"}>{createReactElement(HeadingAndControlsRoot7.Root, {
-    value: value3,
-    onValueChange: (input2?: unknown, ..._extraArguments: unknown[]): undefined => void (dock.tab = String(input2))
-  }, createReactElement(HeadingAndControlsRoot7.List, {
-    "aria-label": "Data sources"
-  }, sources.map((input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => createReactElement(HeadingAndControlsRoot7.Tab, {
-    key: input2.key,
-    value: input2.key
-  }, value4[options]))), sources.map((input2?: Dynamic, ..._extraArguments: unknown[]) => createReactElement(HeadingAndControlsRoot7.Panel, {
-    key: input2.key,
-    value: input2.key
-  }, createReactElement(FilterWidgetAndHostRuntimeSourceComponent, {
-    source: input2,
-    dock: dock,
-    lit: lit2 !== null && lit2.key === input2.key ? lit2 : null
-  }))))}</div>
-  );
-}
+
 function ResolveWidgetAndHostRuntimeDockComponent(
   input?: Dynamic,
   ..._extraArguments: unknown[]
@@ -284491,582 +285151,7 @@ function getWidgetAndHostRuntimeSource(
   }
   return items;
 }
-function UseWidgetNaturalDimensionsComponent(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let { hooks: hooks }: Dynamic = input;
-  let ref: Dynamic = hooks.useRef(null);
-  let ref2: Dynamic = hooks.useRef(null);
-  let ref3: Dynamic = hooks.useRef(null);
-  let ref4: Dynamic = hooks.useRef(null);
-  let ref5: Dynamic = hooks.useRef(null);
-  hooks.useEffect((..._extraArguments: unknown[]) => {
-    let state: Dynamic = {
-      key: "",
-      natural: null,
-      applied: undefined,
-      budget: widgetAndHostRuntimeBudget4,
-      apply: (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
-        state.applied = input2;
-        queueMicrotask((..._extraArguments: unknown[]): undefined => {
-          let current: Dynamic = ref4.current;
-          let current2: Dynamic = ref3.current;
-          if (current === null || current2 === null || ref5.current !== state)
-            return;
-          let { gutters: gutters, ...value10 }: Dynamic = current;
-          let value11: Dynamic =
-            state.applied !== undefined
-              ? {
-                  ...value10,
-                  gutters: state.applied,
-                }
-              : value10;
-          ref4.current = value11;
-          current2.update(value11);
-        });
-      },
-    };
-    ref5.current = state;
-    let text: Dynamic = input.column.join(state);
-    return (..._extraArguments: unknown[]): undefined => {
-      ref5.current = null;
-      text();
-    };
-  }, []);
-  let ref6: Dynamic = hooks.useRef(false);
-  let [value, value2]: Dynamic = hooks.useState(null);
-  let [value3, value4]: Dynamic = hooks.useState(0);
-  let [value5, value6]: Dynamic = hooks.useState(0);
-  hooks.useEffect(
-    (..._extraArguments: unknown[]) =>
-      clearWidgetAndHostRuntimeDelete3(
-        (..._extraArguments: unknown[]): Dynamic =>
-          value6(
-            (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              input2 + 1,
-          ),
-      ),
-    [],
-  );
-  hooks.useEffect(
-    (..._extraArguments: unknown[]) =>
-      clearWidgetAndHostRuntimeDelete4(
-        (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          if (input.nodeId !== undefined && input2.has(input.nodeId))
-            value6(
-              (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                input3 + 1,
-            );
-        },
-      ),
-    [],
-  );
-  let value7 = (entry?: Dynamic, ..._extraArguments: unknown[]) =>
-    entry.kind === "error"
-      ? `error:${entry.message}`
-      : `ok:${entry.zoned !== undefined ? `${entry.zoned.zone}/${entry.zoned.name}` : ""}|${entry.warning ?? ""}`;
-  let value8 = (
-    input2?: unknown,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    value2(
-      (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-        input3 !== null && value7(input3) === value7(input2) ? input3 : input2,
-    );
-  hooks.useEffect(
-    (..._extraArguments: unknown[]): undefined => {
-      let current: Dynamic = ref.current;
-      let current2: Dynamic = ref2.current;
-      if (!current || !current2) return;
-      let ownerDocument: Dynamic = current.ownerDocument;
-      let value10 =
-        ownerDocument.documentElement.getAttribute("data-mode") === "dark"
-          ? "dark"
-          : "light";
-      let value11 = resolveWidgetAndHostRuntimeLocal(ownerDocument);
-      let value12 = Math.max(160, current2.clientWidth || 480);
-      let value13: number = resolveVisualizationGrammarFloor(
-        value12,
-        isVisualizationRuntimeValue3(input.definition)
-          ? collectVisualizationRuntimeWrap(
-              input.definition,
-              (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-                input.tables.get(input2)?.rows,
-            )
-          : 1,
-      );
-      let state: Dynamic = {};
-      for (let [value19, value20] of input.tables as Dynamic)
-        state[value19] = {
-          table: {
-            columns: value20.columns,
-            rows: value20.rows,
-          },
-          run: value20.run,
-        };
-      let value14: Dynamic =
-        input.component !== undefined
-          ? getWidgetAndHostRuntimeSource(
-              resolveWidgetAndHostRuntimeValue15(input.nodeId),
-              input.component,
-              input.tables,
-              widgetAndHostRuntimeState9,
-            )
-          : [];
-      let value15 = (..._extraArguments: unknown[]): undefined => {
-        let { component: component, nodeId: nodeId }: Dynamic = input;
-        if (
-          widgetAndHostRuntimeState7 === null ||
-          component === undefined ||
-          nodeId === undefined
-        )
-          return;
-        let value19: Dynamic = ref3.current?.describePin?.bind(ref3.current);
-        let state3: Dynamic = {};
-        if (value19 !== undefined)
-          for (let value22 of value14 as Dynamic) {
-            if (value22.id === undefined || Object.hasOwn(state3, value22.id))
-              continue;
-            let value23: Dynamic = null;
-            try {
-              value23 = value19(value22);
-            } catch {
-              value23 = null;
-            }
-            if (value23 !== null) state3[value22.id] = value23;
-          }
-        let title: Dynamic = input.definition.title;
-        let state4: Dynamic = {
-          nodeId: nodeId,
-          component: component,
-          ...(typeof title === "string" && title.trim().length > 0
-            ? {
-                chart: title.trim(),
-              }
-            : {}),
-          byId: state3,
-        };
-        let value20 = JSON.stringify(state4);
-        let value21 = `${nodeId}|${component}`;
-        if (widgetAndHostRuntimeMap2.get(value21) === value20) return;
-        widgetAndHostRuntimeMap2.set(value21, value20);
-        widgetAndHostRuntimeState7(state4);
-      };
-      let value16 = (
-        input2?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments: unknown[]
-      ) => {
-        if (
-          input.component === undefined ||
-          widgetAndHostRuntimeState5 === null
-        )
-          return false;
-        let group: Dynamic = input2.group;
-        if (input2.source === undefined) return false;
-        if (group === undefined && input2.field === undefined) return false;
-        if (input2.rowIndex === undefined) return false;
-        let nodeId: Dynamic = input.nodeId;
-        if (nodeId === undefined) return false;
-        if (
-          input2.field !== undefined &&
-          (input2.field.length === 0 || input2.field.length > 256)
-        )
-          return false;
-        if (
-          group !== undefined &&
-          (group.column.length === 0 || group.column.length > 256)
-        )
-          return false;
-        if (!Number.isInteger(input2.rowIndex) || input2.rowIndex < 0)
-          return false;
-        if (options === "probe") return true;
-        let value19: Dynamic = resolveWidgetAndHostRuntimeSource(
-          input2.source,
-          input.sources[input2.source],
-          group !== undefined || input2.field === undefined
-            ? null
-            : [String(input2.rowIndex), input2.field],
-          nodeId,
-        );
-        let value20: Dynamic = input.tables.get(input2.source)?.rows ?? [];
-        let value21: Dynamic = input.sources[input2.source];
-        let value22: Dynamic =
-          value21 !== undefined && value21.kind === "data"
-            ? {
-                name: input2.source,
-                rows: value20.length,
-              }
-            : undefined;
-        let bounds: Dynamic = current.getBoundingClientRect();
-        let value23: Dynamic =
-          input2.field !== undefined && group === undefined
-            ? (ref3.current?.rectFor({
-                source: input2.source,
-                rowIndex: input2.rowIndex,
-                field: input2.field,
-              }) ?? null)
-            : null;
-        let value24: Dynamic =
-          value23 !== null
-            ? {
-                x: bounds.left + value23.x,
-                y: bounds.top + value23.y,
-                w: value23.w,
-                h: value23.h,
-              }
-            : undefined;
-        widgetAndHostRuntimeState5({
-          nodeId: nodeId,
-          component: input.component,
-          ...value19,
-          ...(value19 !== undefined &&
-          resolveWidgetAndHostRuntimeValue16(input2.value)
-            ? {
-                value: input2.value,
-              }
-            : {}),
-          ...(value19 !== undefined &&
-          group === undefined &&
-          input2.anchor !== undefined &&
-          input2.selector !== undefined &&
-          isRenderedCodeAndProofreadingEntries(input2.selector)
-            ? {
-                datum: input2.selector,
-              }
-            : {}),
-          ...(value19 !== undefined &&
-          group !== undefined &&
-          isRenderedCodeAndProofreadingEntries({
-            [group.column]: group.x,
-          })
-            ? {
-                datum: {
-                  [group.column]: group.x,
-                },
-                grain: "group",
-              }
-            : group !== undefined
-              ? {
-                  grain: "group",
-                }
-              : {}),
-          ...(input2.words !== undefined || input2.title !== undefined
-            ? {
-                words: {
-                  ...(input2.title !== undefined
-                    ? {
-                        chart: input2.title,
-                      }
-                    : {}),
-                  ...input2.words,
-                },
-              }
-            : {}),
-          rows: value20,
-          rowsPin: {
-            row: input2.rowIndex,
-            column: group !== undefined ? group.column : input2.field,
-          },
-          ...(value22 !== undefined
-            ? {
-                inline: value22,
-              }
-            : {}),
-          ...((..._extraArguments: unknown[]): Dynamic => {
-            let value25: Dynamic = input.tables.get(input2.source)?.at ?? null;
-            return value25 !== null
-              ? {
-                  at: value25,
-                }
-              : {};
-          })(),
-          ...((..._extraArguments: unknown[]): Dynamic => {
-            let value25: Dynamic =
-              input.tables.get(input2.source)?.runStatus ?? null;
-            return value25 !== null
-              ? {
-                  status: value25,
-                }
-              : {};
-          })(),
-          ...(options === "place"
-            ? {
-                placing: true,
-              }
-            : {}),
-          vs: input.vs?.() ?? {},
-          y: bounds.top,
-          ...(value24 !== undefined
-            ? {
-                rect: value24,
-              }
-            : {}),
-        });
-        return true;
-      };
-      let current3: Dynamic = ref5.current;
-      let value17 =
-        current3 !== null
-          ? resolveWidgetAndHostRuntimeOrient(
-              input.definition,
-              current,
-              value12,
-            )
-          : null;
-      if (current3 !== null) {
-        current3.budget = widgetAndHostRuntimeBudget4;
-        if (value17 === null && current3.key !== "")
-          input.column.withdraw(current3);
-        else if (value17 !== current3.key) current3.applied = undefined;
-      }
-      let state2: Dynamic = {
-        definition: input.definition,
-        sources: input.sources,
-        ...(input.component !== undefined
-          ? {
-              component: input.component,
-            }
-          : {}),
-        data: state,
-        ...(value14.length
-          ? {
-              pins: value14,
-            }
-          : {}),
-        width: value12,
-        height: value13,
-        mode: value10,
-        zone: value11,
-        ...(current3?.applied !== undefined
-          ? {
-              gutters: current3.applied,
-            }
-          : {}),
-        onLayout: (
-          input2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          current.setAttribute(
-            widgetAndHostRuntimeDataLfileChartGutters,
-            `${Math.round(input2.left)},${Math.round(input2.right)}`,
-          );
-          if (
-            current3 !== null &&
-            value17 !== null &&
-            ref5.current === current3
-          )
-            input.column.publish(current3, value17, {
-              left: input2.naturalLeft,
-              right: input2.naturalRight,
-            });
-        },
-        onStatus: (
-          entry?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          value8(entry);
-          if (entry.kind === "ok") value15();
-        },
-        onDatumClick: (
-          input2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let value19: Dynamic =
-            input2.source !== undefined
-              ? input.sources[input2.source]
-              : undefined;
-          if (
-            input2.source !== undefined &&
-            value19 !== undefined &&
-            input2.rowIndex !== undefined
-          )
-            input.originDock?.press(
-              resolveWidgetAndHostRuntimeValue6(
-                input.component,
-                input2.source,
-                value19,
-              ),
-              input2.rowIndex,
-            );
-          if (value16(input2, "click")) ref6.current = true;
-        },
-      };
-      ref4.current = state2;
-      if (ref3.current === null)
-        ref3.current = input.renderer(
-          current,
-          input.entrance?.() === true
-            ? {
-                ...state2,
-                entrance: true,
-              }
-            : state2,
-        );
-      else ref3.current.update(state2);
-      let value18: Dynamic = resolveWidgetAndHostRuntimeByNode(input.nodeId)
-        ? updateVisualizationGrammarSource(current)
-        : null;
-      isRenderedCodeAndProofreadingQuerySelectorAll(
-        current,
-        updateWidgetAndHostRuntimeIds(
-          widgetAndHostRuntimeRenderedCodeAndProofreadingByNodeAlias,
-          input.nodeId,
-          input.component,
-          (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-            let value19: Dynamic =
-              value18 !== null && value18.size > 0
-                ? resolveRenderedCodeAndProofreadingRowIndex(input2.path)
-                : null;
-            let value20: Dynamic =
-              value19 !== null
-                ? resolveWidgetAndHostRuntimeIds(input2, value19, input.tables)
-                : null;
-            if (value19 === null || value20 === null) return [];
-            return (
-              value18.get(
-                resolveVisualizationGrammarSource4({
-                  source: input2.source,
-                  rowIndex: value20,
-                  field: value19.field,
-                }),
-              ) ?? []
-            );
-          },
-        ),
-      );
-      value15();
-      widgetAndHostRuntimeWeakMap6.set(current, {
-        placeAt: (
-          input2?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments: unknown[]
-        ) => {
-          let value19: Dynamic = ref3.current?.clickAt(input2, options) ?? null;
-          return value19 !== null && value16(value19, "place");
-        },
-        datumAt: (
-          input2?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments: unknown[]
-        ) => {
-          let value19: Dynamic = ref3.current?.clickAt(input2, options) ?? null;
-          return value19 !== null && value16(value19, "probe");
-        },
-      });
-    },
-    [
-      input.tables,
-      input.definition,
-      input.anchor,
-      input.component,
-      input.nodeId,
-      value3,
-      value5,
-    ],
-  );
-  hooks.useEffect((..._extraArguments: unknown[]) => {
-    let current: Dynamic = ref.current;
-    let current2: Dynamic = ref2.current;
-    if (!current || !current2) return;
-    let ownerDocument: Dynamic = current.ownerDocument;
-    let value10 = (..._extraArguments: unknown[]): Dynamic =>
-      value4(
-        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input2 + 1,
-      );
-    let observer = new MutationObserver(value10);
-    observer.observe(ownerDocument.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-mode", widgetAndHostRuntimeDataChartZone],
-    });
-    let value11: Dynamic = null;
-    let ResizeObserver2 = (globalThis).ResizeObserver;
-    let value12: Dynamic = null;
-    let clientWidth: Dynamic = current2.clientWidth;
-    let value13 = (..._extraArguments: unknown[]): undefined => {
-      if (value12 !== null) return;
-      value12 = requestAnimationFrame(
-        (..._extraArguments: unknown[]): undefined => {
-          value12 = null;
-          let clientWidth2: Dynamic = current2.clientWidth;
-          if (clientWidth2 === clientWidth) return;
-          clientWidth = clientWidth2;
-          value10();
-        },
-      );
-    };
-    if (ResizeObserver2) {
-      let value14: Dynamic = new (ResizeObserver2 as Dynamic)(value13);
-      value14.observe(current2);
-      value11 = value14;
-    }
-    return (..._extraArguments: unknown[]): undefined => {
-      observer.disconnect();
-      value11?.disconnect();
-      if (value12 !== null) cancelAnimationFrame(value12);
-    };
-  }, []);
-  hooks.useEffect((..._extraArguments: unknown[]) => {
-    let current: Dynamic = ref.current;
-    if (!current) return;
-    let value10 = (
-      event?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
-      if (ref6.current) {
-        ref6.current = false;
-        event.stopPropagation();
-        let value12: Dynamic = resolveVisualizationGrammarClosest2(
-          current,
-          event.target,
-        )?.el;
-        if (value12 !== undefined) installWidgetAndHostRuntimeFocus(value12);
-      }
-    };
-    let value11 = (..._extraArguments: unknown[]): undefined => {
-      ref6.current = false;
-    };
-    current.addEventListener("click", value11, true);
-    current.addEventListener("click", value10);
-    return (..._extraArguments: unknown[]): undefined => {
-      current.removeEventListener("click", value11, true);
-      current.removeEventListener("click", value10);
-    };
-  }, []);
-  hooks.useEffect((..._extraArguments: unknown[]) => {
-    let current: Dynamic = ref.current;
-    return (..._extraArguments: unknown[]): undefined => {
-      if (current) widgetAndHostRuntimeWeakMap6.delete(current);
-      ref3.current?.destroy();
-      ref3.current = null;
-    };
-  }, []);
-  let value9 =
-    input.component === undefined &&
-    input.nodeId !== undefined &&
-    widgetAndHostRuntimeState5 !== null;
-  return (
-    <div ref={ref2} {...input.anchor !== undefined ? {
-  "data-claude-anchor": input.anchor
-} : {}} {...input.component !== undefined ? {
-  "data-claude-component": input.component
-} : {}} data-lfile-visualize-state={value === null ? "loading" : value.kind} {...value === null ? {
-  "data-widget-shot-pending": "",
-  "data-widget-filmed-pending": ""
-} : {}}>{value !== null && value.kind === "ok" && value.zoned !== undefined ? resolveWidgetAndHostRuntimeDisplay(value.zoned, (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
-    let value10: Dynamic = ref.current?.ownerDocument;
-    if (value10) resolveWidgetAndHostRuntimeLocal2(value10, input2);
-  }) : null}{<div ref={ref} {...{
-    [prosePluginsDataLfileVisualizeHost]: ""
-  }} style={{
-    minHeight: "40px",
-    position: "relative",
-    maxWidth: "100%"
-  }} />}{value !== null && value.kind === "error" ? resolveWidgetAndHostRuntimeDataLfileVisualizeCard(value.message) : null}{value !== null && value.kind === "ok" && value.warning !== undefined ? resolveWidgetAndHostRuntimeFont(value.warning) : null}</div>
-  );
-}
+
 function resolveWidgetAndHostRuntimeEmbedRef(
   input?: Dynamic,
   ..._extraArguments: unknown[]

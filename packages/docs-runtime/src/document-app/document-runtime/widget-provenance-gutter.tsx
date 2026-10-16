@@ -56,24 +56,20 @@ import {
   resolveDocumentRuntimeElapsedSec,
   resolveDocumentRuntimeElapsedSec2,
 } from "./use-document-iframe-focus";
+import type * as ReactComponentTypes from "react";
 
-function WidgetProvenanceGutter(
-  {
-    fetchFor: fetchFor,
-    railKey: railKey,
-    onOpenDependencies: onOpenDependencies,
-    vouch: vouch,
-    actions: actions,
-    rightKeepout = 0,
-    layoutMax: layoutMax,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const WidgetProvenanceGutter: ReactComponentTypes.FC<Dynamic> = ({
+  fetchFor: fetchFor,
+  railKey: railKey,
+  onOpenDependencies: onOpenDependencies,
+  vouch: vouch,
+  actions: actions,
+  rightKeepout = 0,
+  layoutMax: layoutMax,
+}) => {
   let widgetProvenanceGutterResult: Dynamic = EditorSelectionAndTablesByFile2(
-    (
-      widgetProvenanceGutter?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => widgetProvenanceGutter.byFile[railKey],
+    (widgetProvenanceGutter?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      widgetProvenanceGutter.byFile[railKey],
   );
   (0, React.useSyncExternalStore)(page.subscribe, page.snapshot, page.snapshot);
   (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
@@ -82,8 +78,7 @@ function WidgetProvenanceGutter(
       ..._extraArguments: unknown[]
     ): undefined => {
       let data: Dynamic = widgetProvenanceGutter.data;
-      if (data?.kind !== `lfile-embed-reveal` || typeof data.ref != `string`)
-        return;
+      if (data?.kind !== `lfile-embed-reveal` || typeof data.ref != `string`) return;
       let refSlice: Dynamic =
         resolvePlatformSessionAndSourcesNode(data.ref) ??
         (data.ref.startsWith(`#`) ? data.ref.slice(1) : data.ref);
@@ -102,8 +97,8 @@ function WidgetProvenanceGutter(
     return (..._extraArguments: unknown[]) =>
       window.removeEventListener(`message`, select);
   }, []);
-  let [widgetProvenanceGutterState, setWidgetProvenanceGutterState]: Dynamic =
-    (0, React.useState)(null);
+  let [widgetProvenanceGutterState, setWidgetProvenanceGutterState]: Dynamic = (0,
+  React.useState)(null);
   let [amountState, setAmountState]: Dynamic = (0, React.useState)(1 / 0);
   let [amountState2, setAmountState2]: Dynamic = (0, React.useState)(1 / 0);
   (0, React.useLayoutEffect)(
@@ -131,18 +126,10 @@ function WidgetProvenanceGutter(
   );
   let filteredWidgetProvenanceGutterResultEntries: Dynamic =
     widgetProvenanceGutterResultEntries.filter(
-      (
-        [widgetProvenanceGutterResultEntry]: Dynamic,
-        ..._extraArguments: unknown[]
-      ) =>
-        !resolvePlatformSessionAndSourcesTest6(
-          widgetProvenanceGutterResultEntry,
-        ),
+      ([widgetProvenanceGutterResultEntry]: Dynamic, ..._extraArguments: unknown[]) =>
+        !resolvePlatformSessionAndSourcesTest6(widgetProvenanceGutterResultEntry),
     );
-  if (
-    vouch !== undefined &&
-    filteredWidgetProvenanceGutterResultEntries.length > 0
-  ) {
+  if (vouch !== undefined && filteredWidgetProvenanceGutterResultEntries.length > 0) {
     let uniqueItems: Dynamic = new (Set as Dynamic)(
       vouch(
         filteredWidgetProvenanceGutterResultEntries.map(
@@ -158,8 +145,7 @@ function WidgetProvenanceGutter(
         (
           [filteredWidgetProvenanceGutterResultEntry]: Dynamic,
           ..._extraArguments: unknown[]
-        ): Dynamic =>
-          uniqueItems.has(filteredWidgetProvenanceGutterResultEntry),
+        ): Dynamic => uniqueItems.has(filteredWidgetProvenanceGutterResultEntry),
       );
   }
   let filteredWidgetProvenanceGutterResultEntries2: Dynamic =
@@ -173,9 +159,7 @@ function WidgetProvenanceGutter(
                 [widgetProvenanceGutterResultEntry]: Dynamic,
                 ..._extraArguments: unknown[]
               ): Dynamic =>
-                resolvePlatformSessionAndSourcesTest6(
-                  widgetProvenanceGutterResultEntry,
-                ),
+                resolvePlatformSessionAndSourcesTest6(widgetProvenanceGutterResultEntry),
             )
             .slice(0, documentRuntimeLimit642),
         ];
@@ -199,8 +183,7 @@ function WidgetProvenanceGutter(
             Math.max(0, rightKeepout);
           let matchesTotal =
             total >= 0 &&
-            total + documentRuntimeLimit8 + documentRuntimeLimit28 <=
-              difference;
+            total + documentRuntimeLimit8 + documentRuntimeLimit28 <= difference;
           let documentRuntimeLimit43: Dynamic =
             item3 < 0 || item4 < 0
               ? documentRuntimeLimit4
@@ -209,10 +192,7 @@ function WidgetProvenanceGutter(
                 : Math.max(
                     0,
                     Math.min(
-                      item3 +
-                        item4 -
-                        documentRuntimeLimit28 -
-                        documentRuntimeLimit6,
+                      item3 + item4 - documentRuntimeLimit28 - documentRuntimeLimit6,
                       difference - documentRuntimeLimit28,
                     ),
                   );
@@ -227,106 +207,138 @@ function WidgetProvenanceGutter(
                 ? total - documentRuntimeLimit6
                 : documentRuntimeLimit43 - documentRuntimeLimit42;
           return (
-            <React.Fragment key={dataWidgetChrome}>{onEdit !== undefined && <div className={`pointer-events-auto absolute transition-opacity duration-100`} data-testid={`widget-hover-toolbar-seat`} data-widget-chrome={dataWidgetChrome} style={{
-    top: Math.max(0, item2 + documentRuntimeLimit6),
-    ...(difference2 === undefined ? {
-      left: 36
-    } : {
-      left: Math.max(0, difference2),
-      transform: `translateX(-100%)`
-    }),
-    visibility: matchesItem ? `visible` : `hidden`,
-    opacity: +!!revealed,
-    pointerEvents: matchesItem && revealed ? `auto` : `none`
-  }} onPointerEnter={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, true, `toolbar`)} onPointerLeave={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, false, `toolbar`)} onFocus={(..._extraArguments: unknown[]): Dynamic => page.focus(dataWidgetChrome, true)} onBlur={(widgetProvenanceGutter?: Dynamic, ..._extraArguments: unknown[]) => resolveDocumentRuntimeRelatedTarget(widgetProvenanceGutter, dataWidgetChrome)}>
-                        <UseDocumentRuntimeNodeIdComponent nodeId={dataWidgetChrome} />
-                        <DocumentRuntimeMemo nodeId={dataWidgetChrome} onEdit={onEdit} onEscape={actions?.onEscape} />
-                      </div>}{<div className={`pointer-events-auto absolute flex flex-col items-center gap-1`} data-widget-chrome={dataWidgetChrome} style={{
-    top: Math.max(0, item2 + documentRuntimeLimit6),
-    left: Math.max(0, documentRuntimeLimit43),
-    paddingLeft: matchesTotal ? documentRuntimeLimit8 : undefined,
-    visibility: matchesItem && revealed ? `visible` : `hidden`
-  }} onPointerEnter={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, true, `dock`)} onPointerLeave={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, false, `dock`)} onFocus={(..._extraArguments: unknown[]): Dynamic => page.focus(dataWidgetChrome, true)} onBlur={(widgetProvenanceGutter?: Dynamic, ..._extraArguments: unknown[]) => resolveDocumentRuntimeRelatedTarget(widgetProvenanceGutter, dataWidgetChrome)}>
-                      <UseDocumentRuntimeNodeIdComponent nodeId={dataWidgetChrome} />
-                      {fetchFor !== undefined && !widgetProvenanceGutterResult2 && <WidgetProvenanceTrigger
-                        nodeId={dataWidgetChrome}
-                        fetchFor={fetchFor}
-                        trigger={`gutter`}
-                        onOpenDependencies={onOpenDependencies}
-                        anchorHidden={!matchesItem}
-                      />}
-                      {actions !== undefined && <DocumentRuntimeMemo2
-                        nodeId={dataWidgetChrome}
-                        loadHandlers={actions.loadHandlers}
-                        onRun={actions.onRun}
-                        onOpenPanel={actions.onOpenPanel}
-                        onViewData={actions.viewDataFor === dataWidgetChrome ? actions.onViewData : undefined}
-                        onOpenCode={widgetProvenanceGutterResult2 ? undefined : actions.onOpenCode}
-                        onAskClaude={widgetProvenanceGutterResult2 ? undefined : actions.onAskClaude}
-                        onComment={widgetProvenanceGutterResult2 ? undefined : actions.onComment}
-                        onReact={widgetProvenanceGutterResult2 ? undefined : actions.onReact}
-                        onDelete={widgetProvenanceGutterResult2 ? undefined : actions.onDelete}
-                        noun={item.noun}
-                        onEscape={actions.onEscape}
-                        chordTarget={actions.chord === true && onEdit === undefined}
-                        anchorHidden={!matchesItem}
-                      />}
-                    </div>}</React.Fragment>
+            <React.Fragment key={dataWidgetChrome}>
+              {onEdit !== undefined && (
+                <div
+                  className={`pointer-events-auto absolute transition-opacity duration-100`}
+                  data-testid={`widget-hover-toolbar-seat`}
+                  data-widget-chrome={dataWidgetChrome}
+                  style={{
+                    top: Math.max(0, item2 + documentRuntimeLimit6),
+                    ...(difference2 === undefined
+                      ? {
+                          left: 36,
+                        }
+                      : {
+                          left: Math.max(0, difference2),
+                          transform: `translateX(-100%)`,
+                        }),
+                    visibility: matchesItem ? `visible` : `hidden`,
+                    opacity: +!!revealed,
+                    pointerEvents: matchesItem && revealed ? `auto` : `none`,
+                  }}
+                  onPointerEnter={(..._extraArguments: unknown[]): Dynamic =>
+                    page.hover(dataWidgetChrome, true, `toolbar`)
+                  }
+                  onPointerLeave={(..._extraArguments: unknown[]): Dynamic =>
+                    page.hover(dataWidgetChrome, false, `toolbar`)
+                  }
+                  onFocus={(..._extraArguments: unknown[]): Dynamic =>
+                    page.focus(dataWidgetChrome, true)
+                  }
+                  onBlur={(
+                    widgetProvenanceGutter?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ) =>
+                    resolveDocumentRuntimeRelatedTarget(
+                      widgetProvenanceGutter,
+                      dataWidgetChrome,
+                    )
+                  }
+                >
+                  <UseDocumentRuntimeNodeIdComponent nodeId={dataWidgetChrome} />
+                  <DocumentRuntimeMemo
+                    nodeId={dataWidgetChrome}
+                    onEdit={onEdit}
+                    onEscape={actions?.onEscape}
+                  />
+                </div>
+              )}
+              {
+                <div
+                  className={`pointer-events-auto absolute flex flex-col items-center gap-1`}
+                  data-widget-chrome={dataWidgetChrome}
+                  style={{
+                    top: Math.max(0, item2 + documentRuntimeLimit6),
+                    left: Math.max(0, documentRuntimeLimit43),
+                    paddingLeft: matchesTotal ? documentRuntimeLimit8 : undefined,
+                    visibility: matchesItem && revealed ? `visible` : `hidden`,
+                  }}
+                  onPointerEnter={(..._extraArguments: unknown[]): Dynamic =>
+                    page.hover(dataWidgetChrome, true, `dock`)
+                  }
+                  onPointerLeave={(..._extraArguments: unknown[]): Dynamic =>
+                    page.hover(dataWidgetChrome, false, `dock`)
+                  }
+                  onFocus={(..._extraArguments: unknown[]): Dynamic =>
+                    page.focus(dataWidgetChrome, true)
+                  }
+                  onBlur={(
+                    widgetProvenanceGutter?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ) =>
+                    resolveDocumentRuntimeRelatedTarget(
+                      widgetProvenanceGutter,
+                      dataWidgetChrome,
+                    )
+                  }
+                >
+                  <UseDocumentRuntimeNodeIdComponent nodeId={dataWidgetChrome} />
+                  {fetchFor !== undefined && !widgetProvenanceGutterResult2 && (
+                    <WidgetProvenanceTrigger
+                      nodeId={dataWidgetChrome}
+                      fetchFor={fetchFor}
+                      trigger={`gutter`}
+                      onOpenDependencies={onOpenDependencies}
+                      anchorHidden={!matchesItem}
+                    />
+                  )}
+                  {actions !== undefined && (
+                    <DocumentRuntimeMemo2
+                      nodeId={dataWidgetChrome}
+                      loadHandlers={actions.loadHandlers}
+                      onRun={actions.onRun}
+                      onOpenPanel={actions.onOpenPanel}
+                      onViewData={
+                        actions.viewDataFor === dataWidgetChrome
+                          ? actions.onViewData
+                          : undefined
+                      }
+                      onOpenCode={
+                        widgetProvenanceGutterResult2 ? undefined : actions.onOpenCode
+                      }
+                      onAskClaude={
+                        widgetProvenanceGutterResult2 ? undefined : actions.onAskClaude
+                      }
+                      onComment={
+                        widgetProvenanceGutterResult2 ? undefined : actions.onComment
+                      }
+                      onReact={
+                        widgetProvenanceGutterResult2 ? undefined : actions.onReact
+                      }
+                      onDelete={
+                        widgetProvenanceGutterResult2 ? undefined : actions.onDelete
+                      }
+                      noun={item.noun}
+                      onEscape={actions.onEscape}
+                      chordTarget={actions.chord === true && onEdit === undefined}
+                      anchorHidden={!matchesItem}
+                    />
+                  )}
+                </div>
+              }
+            </React.Fragment>
           );
         },
       )}
     </div>
   );
-}
+};
 
-function UseDocumentRuntimeNodeIdComponent(
-  { nodeId: nodeId }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): undefined => {
-        let activeElement =
-          typeof document === "undefined" ? null : document.activeElement;
-        if (activeElement) {
-          for (let element of document.querySelectorAll(
-            `[data-widget-chrome]`,
-          ) as Dynamic)
-            if (
-              element.getAttribute(`data-widget-chrome`) === nodeId &&
-              element.contains(activeElement)
-            )
-              return;
-        }
-        page.focus(nodeId, false);
-      },
-    [nodeId],
-  );
-  return null;
-}
-
-function resolveDocumentRuntimeRelatedTarget(
-  event?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): undefined {
-  let relatedTarget: Dynamic = event.relatedTarget;
-  if (!(relatedTarget && event.currentTarget.contains(relatedTarget))) {
-    if (
-      (relatedTarget && typeof relatedTarget.closest == `function`
-        ? relatedTarget.closest(`[data-widget-chrome]`)
-        : null
-      )?.getAttribute(`data-widget-chrome`) !== options
-    ) {
-      page.focus(options, false);
-    }
-  }
-}
-
-function WidgetBuildQueued(
-  { build: build, scheduler = DocumentContextSetTimeout }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const WidgetBuildQueued: ReactComponentTypes.FC<Dynamic> = ({
+  build: build,
+  scheduler = DocumentContextSetTimeout,
+}) => {
   let widgetBuildQueuedResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
   let [, setCountState]: Dynamic = (0, React.useState)(0);
   let matchesLocale =
@@ -339,10 +351,8 @@ function WidgetBuildQueued(
         (..._extraArguments: unknown[]): undefined => {
           if (!document.hidden) {
             setCountState(
-              (
-                widgetBuildQueued?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => widgetBuildQueued + 1,
+              (widgetBuildQueued?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                widgetBuildQueued + 1,
             );
           }
         },
@@ -355,8 +365,7 @@ function WidgetBuildQueued(
   );
   let parse = Date.parse(widgetBuildQueuedResult.now());
   let parse2 =
-    (0, React.useRef)((build ?? null)?.status === `pending`).current &&
-    build?.createdAt
+    (0, React.useRef)((build ?? null)?.status === `pending`).current && build?.createdAt
       ? Date.parse(build.createdAt)
       : NaN;
   let parseRef: Dynamic = (0, React.useRef)(parse);
@@ -370,75 +379,16 @@ function WidgetBuildQueued(
       className={`text-secondary text-footnote mt-1.5 truncate`}
       data-testid={`widget-build-queued`}
       data-stalled={documentRuntimeElapsedSec.stalled ? `1` : undefined}
-      data-run-row-backed={
-        documentRuntimeElapsedSec.runRowBacked ? `1` : undefined
-      }
+      data-run-row-backed={documentRuntimeElapsedSec.runRowBacked ? `1` : undefined}
     >
       {resolveDocumentRuntimeElapsedSec2(documentRuntimeElapsedSec)}
     </div>
   );
-}
+};
 
-function resolveDocumentRuntimeReadOnly(
-  documentRuntimeReadOnly?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let frameCommentable: Dynamic =
-    documentRuntimeReadOnly.frameCommentable &&
-    !documentRuntimeReadOnly.frameWritable;
-  return {
-    readOnly:
-      !documentRuntimeReadOnly.frameWritable ||
-      documentRuntimeReadOnly.hostReadOnly
-        ? true
-        : undefined,
-    commentsReadOnly:
-      !documentRuntimeReadOnly.frameCommentable ||
-      (documentRuntimeReadOnly.hostReadOnly && !frameCommentable),
-    commentOnly: frameCommentable || undefined,
-  };
-}
-
-function resolveDocumentRuntimeReadOnly2(
-  documentRuntimeReadOnly2?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return {
-    readOnly:
-      documentRuntimeReadOnly2.readOnly ||
-      !!documentRuntimeReadOnly2.doorViewOnly,
-    commentsReadOnly:
-      documentRuntimeReadOnly2.commentsReadOnly ||
-      (!!documentRuntimeReadOnly2.doorViewOnly &&
-        !documentRuntimeReadOnly2.laneCommentOnly),
-  };
-}
-
-function resolveDocumentRuntimeReadOnly3(
-  documentRuntimeReadOnly3?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let {
-    readOnly: documentRuntimeReadOnly2,
-    commentsReadOnly: documentRuntimeReadOnly22,
-  }: Dynamic = resolveDocumentRuntimeReadOnly2(documentRuntimeReadOnly3);
-  return {
-    tier: documentRuntimeReadOnly2 && !documentRuntimeReadOnly3.room ? 1 : 2,
-    readonly: documentRuntimeReadOnly2 || !documentRuntimeReadOnly3.room,
-    viewOnly: documentRuntimeReadOnly2 && documentRuntimeReadOnly22,
-    commentOnly:
-      documentRuntimeReadOnly2 &&
-      !documentRuntimeReadOnly22 &&
-      !!documentRuntimeReadOnly3.laneCommentOnly,
-  };
-}
-
-var resolveDocumentRuntimeTier: (documentRuntimeTier?: Dynamic, ..._extraArguments: unknown[]) => string;
-
-function WidgetSegMenuPopup(
-  widgetSegMenuPopup?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const WidgetSegMenuPopup: ReactComponentTypes.FC<Dynamic> = (
+  widgetSegMenuPopup,
+) => {
   let {
     x: widgetSegMenuPopup2,
     y: widgetSegMenuPopup3,
@@ -455,12 +405,7 @@ function WidgetSegMenuPopup(
   let anchor: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => ({
       getBoundingClientRect: (..._extraArguments: unknown[]): Dynamic =>
-        new (DOMRect as Dynamic)(
-          widgetSegMenuPopup2,
-          widgetSegMenuPopup3,
-          1,
-          1,
-        ),
+        new (DOMRect as Dynamic)(widgetSegMenuPopup2, widgetSegMenuPopup3, 1, 1),
     }),
     [widgetSegMenuPopup2, widgetSegMenuPopup3],
   );
@@ -475,8 +420,7 @@ function WidgetSegMenuPopup(
     onDelete: onDelete,
     noun: noun,
   });
-  let matchesDocumentRuntimeAskClaudeCount =
-    documentRuntimeAskClaude.length === 0;
+  let matchesDocumentRuntimeAskClaudeCount = documentRuntimeAskClaude.length === 0;
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (matchesDocumentRuntimeAskClaudeCount) {
@@ -536,7 +480,107 @@ function WidgetSegMenuPopup(
       </Menu.Popup>
     </Menu.Root>
   );
+};
+
+function UseDocumentRuntimeNodeIdComponent(
+  { nodeId: nodeId }: Dynamic,
+  ..._extraArguments: unknown[]
+) {
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): undefined => {
+        let activeElement =
+          typeof document === "undefined" ? null : document.activeElement;
+        if (activeElement) {
+          for (let element of document.querySelectorAll(
+            `[data-widget-chrome]`,
+          ) as Dynamic)
+            if (
+              element.getAttribute(`data-widget-chrome`) === nodeId &&
+              element.contains(activeElement)
+            )
+              return;
+        }
+        page.focus(nodeId, false);
+      },
+    [nodeId],
+  );
+  return null;
 }
+
+function resolveDocumentRuntimeRelatedTarget(
+  event?: Dynamic,
+  options?: Dynamic,
+  ..._extraArguments: unknown[]
+): undefined {
+  let relatedTarget: Dynamic = event.relatedTarget;
+  if (!(relatedTarget && event.currentTarget.contains(relatedTarget))) {
+    if (
+      (relatedTarget && typeof relatedTarget.closest == `function`
+        ? relatedTarget.closest(`[data-widget-chrome]`)
+        : null
+      )?.getAttribute(`data-widget-chrome`) !== options
+    ) {
+      page.focus(options, false);
+    }
+  }
+}
+
+function resolveDocumentRuntimeReadOnly(
+  documentRuntimeReadOnly?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let frameCommentable: Dynamic =
+    documentRuntimeReadOnly.frameCommentable &&
+    !documentRuntimeReadOnly.frameWritable;
+  return {
+    readOnly:
+      !documentRuntimeReadOnly.frameWritable ||
+      documentRuntimeReadOnly.hostReadOnly
+        ? true
+        : undefined,
+    commentsReadOnly:
+      !documentRuntimeReadOnly.frameCommentable ||
+      (documentRuntimeReadOnly.hostReadOnly && !frameCommentable),
+    commentOnly: frameCommentable || undefined,
+  };
+}
+
+function resolveDocumentRuntimeReadOnly2(
+  documentRuntimeReadOnly2?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  return {
+    readOnly:
+      documentRuntimeReadOnly2.readOnly ||
+      !!documentRuntimeReadOnly2.doorViewOnly,
+    commentsReadOnly:
+      documentRuntimeReadOnly2.commentsReadOnly ||
+      (!!documentRuntimeReadOnly2.doorViewOnly &&
+        !documentRuntimeReadOnly2.laneCommentOnly),
+  };
+}
+
+function resolveDocumentRuntimeReadOnly3(
+  documentRuntimeReadOnly3?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let {
+    readOnly: documentRuntimeReadOnly2,
+    commentsReadOnly: documentRuntimeReadOnly22,
+  }: Dynamic = resolveDocumentRuntimeReadOnly2(documentRuntimeReadOnly3);
+  return {
+    tier: documentRuntimeReadOnly2 && !documentRuntimeReadOnly3.room ? 1 : 2,
+    readonly: documentRuntimeReadOnly2 || !documentRuntimeReadOnly3.room,
+    viewOnly: documentRuntimeReadOnly2 && documentRuntimeReadOnly22,
+    commentOnly:
+      documentRuntimeReadOnly2 &&
+      !documentRuntimeReadOnly22 &&
+      !!documentRuntimeReadOnly3.laneCommentOnly,
+  };
+}
+
+var resolveDocumentRuntimeTier: (documentRuntimeTier?: Dynamic, ..._extraArguments: unknown[]) => string;
 
 var resolveDocumentRuntimeValue9: Dynamic;
 
@@ -809,49 +853,4 @@ export function initializeDocumentRuntimeWidgetProvenanceGutterStep1(): void {
   (documentRuntimeSet5 = new (Set as Dynamic)());
 }
 
-export {
-  DocumentRuntimeAdd,
-  DocumentRuntimeFreeze,
-  DocumentRuntimeGranted,
-  DocumentRuntimeOffered,
-  DocumentRuntimePid,
-  DocumentRuntimePrototype,
-  DocumentRuntimeSearch,
-  DocumentRuntimeState4,
-  DocumentRuntimeState5,
-  DocumentRuntimeState6,
-  DocumentRuntimeState7,
-  DocumentRuntimeState8,
-  DocumentRuntime_Styles5,
-  DocumentRuntime_Styles6,
-  WidgetBuildQueued,
-  WidgetProvenanceGutter,
-  WidgetSegMenuPopup,
-  documentRuntimeLimit10000,
-  documentRuntimeLimit120,
-  documentRuntimeLimit180,
-  documentRuntimeLimit2000,
-  documentRuntimeLimit24,
-  documentRuntimeLimit284,
-  documentRuntimeLimit300,
-  documentRuntimeLimit40,
-  documentRuntimeLimit48,
-  documentRuntimeLimit48000,
-  documentRuntimeLimit75,
-  documentRuntimeSet3,
-  documentRuntimeSet4,
-  documentRuntimeSet5,
-  documentRuntimeState2,
-  getDocumentRuntimeHoldMs,
-  resolveDocumentRuntimeActiveId,
-  resolveDocumentRuntimeActiveId2,
-  resolveDocumentRuntimeCatch2,
-  resolveDocumentRuntimeCatch3,
-  resolveDocumentRuntimeEntries,
-  resolveDocumentRuntimeFocusId,
-  resolveDocumentRuntimeReadOnly,
-  resolveDocumentRuntimeReadOnly2,
-  resolveDocumentRuntimeReadOnly3,
-  resolveDocumentRuntimeTier,
-  resolveDocumentRuntimeValue9,
-};
+export { DocumentRuntimeAdd, DocumentRuntimeFreeze, DocumentRuntimeGranted, DocumentRuntimeOffered, DocumentRuntimePid, DocumentRuntimePrototype, DocumentRuntimeSearch, DocumentRuntimeState4, DocumentRuntimeState5, DocumentRuntimeState6, DocumentRuntimeState7, DocumentRuntimeState8, DocumentRuntime_Styles5, DocumentRuntime_Styles6, documentRuntimeLimit10000, documentRuntimeLimit120, documentRuntimeLimit180, documentRuntimeLimit2000, documentRuntimeLimit24, documentRuntimeLimit284, documentRuntimeLimit300, documentRuntimeLimit40, documentRuntimeLimit48, documentRuntimeLimit48000, documentRuntimeLimit75, documentRuntimeSet3, documentRuntimeSet4, documentRuntimeSet5, documentRuntimeState2, getDocumentRuntimeHoldMs, resolveDocumentRuntimeActiveId, resolveDocumentRuntimeActiveId2, resolveDocumentRuntimeCatch2, resolveDocumentRuntimeCatch3, resolveDocumentRuntimeEntries, resolveDocumentRuntimeFocusId, resolveDocumentRuntimeReadOnly, resolveDocumentRuntimeReadOnly2, resolveDocumentRuntimeReadOnly3, resolveDocumentRuntimeTier, resolveDocumentRuntimeValue9 };

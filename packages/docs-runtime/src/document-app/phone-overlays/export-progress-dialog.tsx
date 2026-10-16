@@ -29,6 +29,165 @@ import {
   REACT_FORWARD_REF_SYMBOL,
   REACT_MEMO_SYMBOL,
 } from "../connection-and-errors/shared";
+import type * as ReactComponentTypes from "react";
+
+export const BottomSheet: ReactComponentTypes.FC<Dynamic> = (bottomSheet) => {
+  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
+    useBottomSheetModule(true);
+  let shouldCloseRef: Dynamic = (0, React.useRef)(bottomSheet.shouldClose);
+  shouldCloseRef.current = bottomSheet.shouldClose;
+  let onCloseRef: Dynamic = (0, React.useRef)(bottomSheet.onClose);
+  onCloseRef.current = bottomSheet.onClose;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (useBottomSheetModule3 && shouldCloseRef.current?.(`backdrop`) !== false) {
+        onCloseRef.current(`backdrop`);
+      }
+    },
+    [useBottomSheetModule3],
+  );
+  return useBottomSheetModule2 ? (
+    <useBottomSheetModule2.BottomSheet {...bottomSheet} />
+  ) : null;
+};
+
+export const ExportProgressDialog: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let exportProgressDialogResult: Dynamic = PlatformSyncAndRoutingDialog(
+    (exportProgressDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      exportProgressDialog.dialog,
+  );
+  let exportProgressDialogResult2: Dynamic = PlatformSyncAndRoutingDialog(
+    (exportProgressDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      exportProgressDialog.clear,
+  );
+  if (exportProgressDialogResult === null) return null;
+  let url: Dynamic =
+    exportProgressDialogResult.phase === `done`
+      ? exportProgressDialogResult.url
+      : undefined;
+  let action: Dynamic =
+    exportProgressDialogResult.phase === `done`
+      ? exportProgressDialogResult.action
+      : undefined;
+  return (
+    <UiDialogsRoot2.Root
+      open={true}
+      onOpenChange={(
+        exportProgressDialog?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => !exportProgressDialog && exportProgressDialogResult2()}
+    >
+      <PhoneDialogPopup kind={`alert`} size={`sm`} data-testid={`export-dialog`}>
+        {exportProgressDialogResult.phase === `working` ? (
+          <UiDialogsRoot2.Header showClose={false}>
+            <span
+              role={`status`}
+              className={`flex items-center gap-2`}
+              data-testid={`export-dialog-working`}
+            >
+              <UiTooltipsAndControlsDelay size={`sm`} />
+              {exportProgressDialogResult.title}
+            </span>
+          </UiDialogsRoot2.Header>
+        ) : (
+          <UiDialogsRoot2.Header
+            showClose={false}
+            description={exportProgressDialogResult.description}
+          >
+            {exportProgressDialogResult.title}
+          </UiDialogsRoot2.Header>
+        )}
+        <ExportOutcomeAnnouncement
+          title={
+            exportProgressDialogResult.phase === `done`
+              ? exportProgressDialogResult.title
+              : null
+          }
+          description={
+            exportProgressDialogResult.phase === `done`
+              ? exportProgressDialogResult.description
+              : undefined
+          }
+        />
+        <UiDialogsRoot2.Footer align={`end`}>
+          <UiDialogsRoot2.Close
+            render={
+              <Button
+                variant={
+                  exportProgressDialogResult.phase === `done` &&
+                  url === undefined &&
+                  action === undefined
+                    ? `primary`
+                    : `secondary`
+                }
+              >{`Close`}</Button>
+            }
+          />
+          {url !== undefined && (
+            <Button
+              variant={action === undefined ? `primary` : `secondary`}
+              onClick={(..._extraArguments: unknown[]): undefined => {
+                frameOpenExternal(url);
+                exportProgressDialogResult2();
+              }}
+              data-testid={`export-dialog-open`}
+            >
+              {exportProgressDialogResult.phase === `done` &&
+              exportProgressDialogResult.urlLabel !== undefined
+                ? exportProgressDialogResult.urlLabel
+                : `Open`}
+            </Button>
+          )}
+          {action !== undefined && (
+            <Button
+              variant={`primary`}
+              onClick={(..._extraArguments: unknown[]): undefined => {
+                (0, ReactDom.flushSync)(exportProgressDialogResult2);
+                action.run();
+              }}
+              data-testid={`export-dialog-action`}
+            >
+              {action.label}
+            </Button>
+          )}
+        </UiDialogsRoot2.Footer>
+      </PhoneDialogPopup>
+    </UiDialogsRoot2.Root>
+  );
+};
+
+export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (
+  phoneConfirmationDialog,
+) => {
+  let phoneConfirmationDialogResult: Dynamic = resolvePlatformSyncAndRoutingValue10();
+  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
+    useBottomSheetModule(phoneConfirmationDialogResult);
+  return !phoneConfirmationDialogResult ||
+    (!useBottomSheetModule2 && useBottomSheetModule3) ? (
+    <UiDialogsOpen {...phoneConfirmationDialog} />
+  ) : useBottomSheetModule2 ? (
+    <useBottomSheetModule2.PhoneConfirmationDialog {...phoneConfirmationDialog} />
+  ) : null;
+};
+
+export const ExportOutcomeAnnouncement: ReactComponentTypes.FC<Dynamic> = ({
+  title: title,
+  description: description,
+}) => {
+  let [matchesTitleState]: Dynamic = (0, React.useState)(title === null);
+  return (
+    <div role={`status`} className={`sr-only`} data-testid={`export-dialog-outcome`}>
+      {matchesTitleState && title !== null && (
+        <div>
+          <div>{title}</div>
+          {description && <div>{description}</div>}
+        </div>
+      )}
+    </div>
+  );
+};
 
 function isReactComponent(
   reactComponent?: Dynamic,
@@ -109,178 +268,7 @@ function preloadBottomSheet(..._extraArguments: unknown[]): undefined {
 
 var DesktopDialogPopup: Dynamic;
 
-function BottomSheet(bottomSheet?: Dynamic, ..._extraArguments: unknown[]) {
-  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
-    useBottomSheetModule(true);
-  let shouldCloseRef: Dynamic = (0, React.useRef)(bottomSheet.shouldClose);
-  shouldCloseRef.current = bottomSheet.shouldClose;
-  let onCloseRef: Dynamic = (0, React.useRef)(bottomSheet.onClose);
-  onCloseRef.current = bottomSheet.onClose;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (
-        useBottomSheetModule3 &&
-        shouldCloseRef.current?.(`backdrop`) !== false
-      ) {
-        onCloseRef.current(`backdrop`);
-      }
-    },
-    [useBottomSheetModule3],
-  );
-  return useBottomSheetModule2 ? (
-    <useBottomSheetModule2.BottomSheet {...bottomSheet} />
-  ) : null;
-}
-
 var PhoneDialogPopup: Dynamic;
-
-function PhoneConfirmationDialog(
-  phoneConfirmationDialog?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let phoneConfirmationDialogResult: Dynamic =
-    resolvePlatformSyncAndRoutingValue10();
-  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
-    useBottomSheetModule(phoneConfirmationDialogResult);
-  return !phoneConfirmationDialogResult ||
-    (!useBottomSheetModule2 && useBottomSheetModule3) ? (
-    <UiDialogsOpen {...phoneConfirmationDialog} />
-  ) : useBottomSheetModule2 ? (
-    <useBottomSheetModule2.PhoneConfirmationDialog {...phoneConfirmationDialog} />
-  ) : null;
-}
-
-function ExportProgressDialog(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  let exportProgressDialogResult: Dynamic = PlatformSyncAndRoutingDialog(
-    (exportProgressDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      exportProgressDialog.dialog,
-  );
-  let exportProgressDialogResult2: Dynamic = PlatformSyncAndRoutingDialog(
-    (exportProgressDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      exportProgressDialog.clear,
-  );
-  if (exportProgressDialogResult === null) return null;
-  let url: Dynamic =
-    exportProgressDialogResult.phase === `done`
-      ? exportProgressDialogResult.url
-      : undefined;
-  let action: Dynamic =
-    exportProgressDialogResult.phase === `done`
-      ? exportProgressDialogResult.action
-      : undefined;
-  return (
-    <UiDialogsRoot2.Root
-      open={true}
-      onOpenChange={(
-        exportProgressDialog?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => !exportProgressDialog && exportProgressDialogResult2()}
-    >
-      <PhoneDialogPopup
-        kind={`alert`}
-        size={`sm`}
-        data-testid={`export-dialog`}
-      >
-        {exportProgressDialogResult.phase === `working` ? (
-          <UiDialogsRoot2.Header showClose={false}>
-            <span
-              role={`status`}
-              className={`flex items-center gap-2`}
-              data-testid={`export-dialog-working`}
-            >
-              <UiTooltipsAndControlsDelay size={`sm`} />
-              {exportProgressDialogResult.title}
-            </span>
-          </UiDialogsRoot2.Header>
-        ) : (
-          <UiDialogsRoot2.Header
-            showClose={false}
-            description={exportProgressDialogResult.description}
-          >
-            {exportProgressDialogResult.title}
-          </UiDialogsRoot2.Header>
-        )}
-        <ExportOutcomeAnnouncement
-          title={
-            exportProgressDialogResult.phase === `done`
-              ? exportProgressDialogResult.title
-              : null
-          }
-          description={
-            exportProgressDialogResult.phase === `done`
-              ? exportProgressDialogResult.description
-              : undefined
-          }
-        />
-        <UiDialogsRoot2.Footer align={`end`}>
-          <UiDialogsRoot2.Close
-            render={
-              <Button
-                variant={
-                  exportProgressDialogResult.phase === `done` &&
-                  url === undefined &&
-                  action === undefined
-                    ? `primary`
-                    : `secondary`
-                }
-              >{`Close`}</Button>
-            }
-          />
-          {url !== undefined && (
-            <Button
-              variant={action === undefined ? `primary` : `secondary`}
-              onClick={(..._extraArguments: unknown[]): undefined => {
-                frameOpenExternal(url);
-                exportProgressDialogResult2();
-              }}
-              data-testid={`export-dialog-open`}
-            >
-              {exportProgressDialogResult.phase === `done` &&
-              exportProgressDialogResult.urlLabel !== undefined
-                ? exportProgressDialogResult.urlLabel
-                : `Open`}
-            </Button>
-          )}
-          {action !== undefined && (
-            <Button
-              variant={`primary`}
-              onClick={(..._extraArguments: unknown[]): undefined => {
-                (0, ReactDom.flushSync)(exportProgressDialogResult2);
-                action.run();
-              }}
-              data-testid={`export-dialog-action`}
-            >
-              {action.label}
-            </Button>
-          )}
-        </UiDialogsRoot2.Footer>
-      </PhoneDialogPopup>
-    </UiDialogsRoot2.Root>
-  );
-}
-
-function ExportOutcomeAnnouncement(
-  { title: title, description: description }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [matchesTitleState]: Dynamic = (0, React.useState)(title === null);
-  return (
-    <div
-      role={`status`}
-      className={`sr-only`}
-      data-testid={`export-dialog-outcome`}
-    >
-      {matchesTitleState && title !== null && (
-        <div>
-          <div>{title}</div>
-          {description && <div>{description}</div>}
-        </div>
-      )}
-    </div>
-  );
-}
 
 var isDocumentFocusedElsewhere: Dynamic;
 
@@ -325,12 +313,4 @@ export function initializePhoneOverlaysExportProgressDialogStep1(): void {
     documentFocusedElsewhere.visibilityState === `visible`);
 }
 
-export {
-  BottomSheet,
-  ExportProgressDialog,
-  PhoneConfirmationDialog,
-  PhoneDialogPopup,
-  isDocumentFocusedElsewhere,
-  preloadBottomSheet,
-  validateBottomSheetModule,
-};
+export { PhoneDialogPopup, isDocumentFocusedElsewhere, preloadBottomSheet, validateBottomSheetModule };

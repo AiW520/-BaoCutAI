@@ -50,23 +50,19 @@ import {
   resolveCommentComponentsLeft,
   resolveCommentComponentsWidth2,
 } from "../comment-components/state";
+import type * as ReactComponentTypes from "react";
 
-var resolveDocumentCommandsGone: Dynamic;
-
-function InlineAskComposer(
-  {
-    nonce: nonce,
-    rect: rect,
-    notice: notice,
-    onPost: onPost,
-    onCancel: onCancel,
-    onHeight: onHeight,
-    suggestions: suggestions,
-    dock: dock,
-    onEscape: onEscape,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const InlineAskComposer: ReactComponentTypes.FC<Dynamic> = ({
+  nonce: nonce,
+  rect: rect,
+  notice: notice,
+  onPost: onPost,
+  onCancel: onCancel,
+  onHeight: onHeight,
+  suggestions: suggestions,
+  dock: dock,
+  onEscape: onEscape,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   let onHeightRef: Dynamic = (0, React.useRef)(onHeight);
   onHeightRef.current = onHeight;
@@ -173,10 +169,7 @@ function InlineAskComposer(
       data-testid={`inline-ask-composer`}
       data-inline-ask={nonce}
       data-docked={`true`}
-      onKeyDown={(
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
+      onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         let isComposing: Dynamic =
           event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
         if (
@@ -224,24 +217,21 @@ function InlineAskComposer(
       {jsxs}
     </div>
   );
-}
+};
 
-function UseDocumentCommandsNonceComponent(
-  {
-    nonce: nonce,
-    chrome = `flush`,
-    notice: notice,
-    noticeQuiet: noticeQuiet,
-    suggestions: suggestions,
-    onPost: onPost,
-    onCancel: onCancel,
-    autoFocus = true,
-    persistent: persistent,
-    onHolding: onHolding,
-    draftKey: draftKey,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseDocumentCommandsNonceComponent: ReactComponentTypes.FC<Dynamic> = ({
+  nonce: nonce,
+  chrome = `flush`,
+  notice: notice,
+  noticeQuiet: noticeQuiet,
+  suggestions: suggestions,
+  onPost: onPost,
+  onCancel: onCancel,
+  autoFocus = true,
+  persistent: persistent,
+  onHolding: onHolding,
+  draftKey: draftKey,
+}) => {
   return (
     <jsxRuntime.Fragment>
       {notice ? <InlineAskNotice notice={notice} quiet={noticeQuiet} /> : null}
@@ -260,28 +250,32 @@ function UseDocumentCommandsNonceComponent(
         onHolding={onHolding}
         draftKey={draftKey}
         suggestions={suggestions}
-        onPost={(documentCommandsNonce?: Dynamic, options?: Dynamic, context?: Dynamic, dependencies?: unknown, argument?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onPost(documentCommandsNonce, options, context, argument)}
+        onPost={(
+          documentCommandsNonce?: Dynamic,
+          options?: Dynamic,
+          context?: Dynamic,
+          dependencies?: unknown,
+          argument?: Dynamic,
+          ..._extraArguments: unknown[]
+        ): Dynamic => onPost(documentCommandsNonce, options, context, argument)}
         onCancel={onCancel}
         key={nonce}
       />
     </jsxRuntime.Fragment>
   );
-}
+};
 
-function InlineAskSheet(
-  {
-    nonce: nonce,
-    notice: notice,
-    suggestions: suggestions,
-    onPost: onPost,
-    onCancel: onCancel,
-    dirty: dirty,
-    sending: sending,
-    onHeight: onHeight,
-    onLayout: onLayout,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const InlineAskSheet: ReactComponentTypes.FC<Dynamic> = ({
+  nonce: nonce,
+  notice: notice,
+  suggestions: suggestions,
+  onPost: onPost,
+  onCancel: onCancel,
+  dirty: dirty,
+  sending: sending,
+  onHeight: onHeight,
+  onLayout: onLayout,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   let [open, setOpen]: Dynamic = (0, React.useState)(false);
   let onHeightRef: Dynamic = (0, React.useRef)(onHeight);
@@ -301,10 +295,7 @@ function InlineAskSheet(
             ? (setOpen(true), false)
             : (elementRef.current?.setAttribute(`inert`, ``), true)
       }
-      onClose={(
-        inlineAskSheet?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic =>
+      onClose={(inlineAskSheet?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
         onCancel(inlineAskSheet === `close` || inlineAskSheet === `escape`)
       }
       title={`Ask Agent`}
@@ -318,11 +309,7 @@ function InlineAskSheet(
       data-mode={`inline-ask`}
       bodyClassName={`px-4 pb-1`}
     >
-      <div
-        ref={elementRef}
-        data-inline-ask={nonce}
-        data-testid={`inline-ask-sheet-body`}
-      >
+      <div ref={elementRef} data-inline-ask={nonce} data-testid={`inline-ask-sheet-body`}>
         <UseDocumentCommandsNonceComponent
           nonce={nonce}
           chrome={`sheet`}
@@ -348,7 +335,196 @@ function InlineAskSheet(
       />
     </BottomSheet>
   );
-}
+};
+
+export const MediaAltTextPopover: ReactComponentTypes.FC<Dynamic> = ({
+  pop: pop,
+  iframeEl: iframeEl,
+  onCancel: onCancel,
+  onClose: onClose,
+  onSave: onSave,
+}) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let elementRef2: Dynamic = (0, React.useRef)(null);
+  let [altState, setAltState]: Dynamic = (0, React.useState)(pop.alt);
+  let zIndex: Dynamic = resolveUiProviderAndLayersUseContext11(50);
+  let matchesTrimmedAltState = altState.trim() !== ``;
+  let matchesAltStateCount = altState.length >= documentCommandsLimit2048;
+  let [countState, setCountState]: Dynamic = (0, React.useState)(0);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (
+        hasKeyboardFrameFocus({
+          kbd: true,
+          hasFocus: document.hasFocus(),
+          activeElement: document.activeElement,
+          iframe: iframeEl,
+        })
+      ) {
+        elementRef2.current?.focus();
+        elementRef2.current?.select();
+      }
+    },
+    [pop.nodeId, pop.openedAt, iframeEl],
+  );
+  let mediaAltTextPopoverHandler = (..._extraArguments: unknown[]) =>
+    Date.now() - pop.openedAt < documentCommandsLimit250;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let closest = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (!elementRef.current?.contains(event.target)) {
+          if (
+            event.target?.closest?.(
+              `input, textarea, select, button, a[href], [contenteditable], [tabindex]`,
+            )
+          ) {
+            onClose();
+          } else {
+            onCancel();
+          }
+        }
+      };
+      let onCancel2 = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (!(event.key !== `Escape` || event.isComposing || event.keyCode === 229)) {
+          event.preventDefault();
+          onCancel();
+        }
+      };
+      document.addEventListener(`mousedown`, closest, true);
+      document.addEventListener(`keydown`, onCancel2, true);
+      return (..._extraArguments: unknown[]): undefined => {
+        document.removeEventListener(`mousedown`, closest, true);
+        document.removeEventListener(`keydown`, onCancel2, true);
+      };
+    },
+    [onCancel, onClose],
+  );
+  let onClick = (..._extraArguments: unknown[]): undefined => {
+    if (!mediaAltTextPopoverHandler()) {
+      if (matchesTrimmedAltState) {
+        onSave(altState);
+      }
+    }
+  };
+  let onKeyDownCapture = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (
+      event.repeat &&
+      (event.key === `Enter` ||
+        (event.key === ` ` && event.target instanceof HTMLButtonElement))
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+  let onKeyDown = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (
+      event.key === `Enter` &&
+      event.target === elementRef2.current &&
+      !event.nativeEvent.isComposing &&
+      event.keyCode !== 229
+    ) {
+      event.preventDefault();
+      if (!matchesTrimmedAltState) {
+        setCountState(
+          (mediaAltTextPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            mediaAltTextPopover + 1,
+        );
+      }
+      onClick();
+      return;
+    }
+    if (event.key !== `Tab` || event.ctrlKey || event.metaKey) return;
+    let matchedElements: Dynamic = Array.from<Dynamic>(
+      elementRef.current?.querySelectorAll(
+        `textarea:not([disabled]), button:not([disabled]):not([aria-disabled="true"])`,
+      ) ?? [],
+    );
+    if (matchedElements.length === 0) return;
+    let matchedElementIndex: Dynamic = matchedElements.indexOf(document.activeElement);
+    let count: number =
+      matchedElementIndex < 0
+        ? 0
+        : (matchedElementIndex + (event.shiftKey ? -1 : 1) + matchedElements.length) %
+          matchedElements.length;
+    event.preventDefault();
+    matchedElements[count]?.focus();
+  };
+  let iframeElBounds: Dynamic = iframeEl?.getBoundingClientRect() ?? {
+    top: 0,
+    left: 0,
+    height: 0,
+  };
+  let documentCommandsLeft = resolveDocumentCommandsLeft(
+    pop.rect,
+    iframeElBounds,
+    document.documentElement.clientWidth,
+  );
+  return (0, ReactDom.createPortal)(
+    <Surface
+      elevation={`popover`}
+      ref={elementRef}
+      data-testid={`ldoc-altpop`}
+      role={`dialog`}
+      aria-label={DocumentCommands_EditAltText}
+      onKeyDownCapture={onKeyDownCapture}
+      onKeyDown={onKeyDown}
+      className={`text-primary p-lg fixed flex flex-col`}
+      style={{
+        left: documentCommandsLeft.left,
+        top: documentCommandsLeft.top,
+        width: documentCommandsLeft.width,
+        zIndex: zIndex,
+        transform: documentCommandsLeft.above ? `translateY(-100%)` : undefined,
+      }}
+    >
+      <div className={`gap-md flex flex-col`}>
+        <div className={`flex flex-col`}>
+          <LabeledTextArea
+            ref={elementRef2}
+            label={DocumentCommands_AltText}
+            hint={DocumentCommands_Message}
+            value={altState}
+            onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              setAltState(event.target.value);
+              setCountState(0);
+            }}
+            maxLength={documentCommandsLimit2048}
+            rows={3}
+            autoComplete={`off`}
+            data-testid={`ldoc-altpop-field`}
+          />
+          <p
+            role={`status`}
+            className={matchesAltStateCount ? `text-footnote text-muted` : `sr-only`}
+            data-testid={`ldoc-altpop-full`}
+          >
+            {matchesAltStateCount
+              ? DocumentCommands_Message2
+              : countState
+                ? DocumentCommands_AddAltTextToSave + (countState % 2 ? `` : `\xA0`)
+                : ``}
+          </p>
+        </div>
+        <div className={`gap-sm flex justify-end`}>
+          <Button
+            onClick={(..._extraArguments: unknown[]): Dynamic =>
+              !mediaAltTextPopoverHandler() && onCancel()
+            }
+          >{`Cancel`}</Button>
+          <Button
+            variant={`primary`}
+            disabled={!matchesTrimmedAltState}
+            onClick={onClick}
+            data-testid={`ldoc-altpop-save`}
+          >{`Save`}</Button>
+        </div>
+      </div>
+    </Surface>,
+    document.body,
+  );
+};
+
+var resolveDocumentCommandsGone: Dynamic;
 
 function resolveDocumentCommandsReplace(
   documentCommandsReplace?: Dynamic,
@@ -487,226 +663,6 @@ function resolveDocumentCommandsLeft(
     width: width,
     above: above,
   };
-}
-
-function MediaAltTextPopover(
-  {
-    pop: pop,
-    iframeEl: iframeEl,
-    onCancel: onCancel,
-    onClose: onClose,
-    onSave: onSave,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let elementRef2: Dynamic = (0, React.useRef)(null);
-  let [altState, setAltState]: Dynamic = (0, React.useState)(pop.alt);
-  let zIndex: Dynamic = resolveUiProviderAndLayersUseContext11(50);
-  let matchesTrimmedAltState = altState.trim() !== ``;
-  let matchesAltStateCount = altState.length >= documentCommandsLimit2048;
-  let [countState, setCountState]: Dynamic = (0, React.useState)(0);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (
-        hasKeyboardFrameFocus({
-          kbd: true,
-          hasFocus: document.hasFocus(),
-          activeElement: document.activeElement,
-          iframe: iframeEl,
-        })
-      ) {
-        elementRef2.current?.focus();
-        elementRef2.current?.select();
-      }
-    },
-    [pop.nodeId, pop.openedAt, iframeEl],
-  );
-  let mediaAltTextPopoverHandler = (..._extraArguments: unknown[]) =>
-    Date.now() - pop.openedAt < documentCommandsLimit250;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let closest = (
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (!elementRef.current?.contains(event.target)) {
-          if (
-            event.target?.closest?.(
-              `input, textarea, select, button, a[href], [contenteditable], [tabindex]`,
-            )
-          ) {
-            onClose();
-          } else {
-            onCancel();
-          }
-        }
-      };
-      let onCancel2 = (
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (
-          !(
-            event.key !== `Escape` ||
-            event.isComposing ||
-            event.keyCode === 229
-          )
-        ) {
-          event.preventDefault();
-          onCancel();
-        }
-      };
-      document.addEventListener(`mousedown`, closest, true);
-      document.addEventListener(`keydown`, onCancel2, true);
-      return (..._extraArguments: unknown[]): undefined => {
-        document.removeEventListener(`mousedown`, closest, true);
-        document.removeEventListener(`keydown`, onCancel2, true);
-      };
-    },
-    [onCancel, onClose],
-  );
-  let onClick = (..._extraArguments: unknown[]): undefined => {
-    if (!mediaAltTextPopoverHandler()) {
-      if (matchesTrimmedAltState) {
-        onSave(altState);
-      }
-    }
-  };
-  let onKeyDownCapture = (
-    event?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (
-      event.repeat &&
-      (event.key === `Enter` ||
-        (event.key === ` ` && event.target instanceof HTMLButtonElement))
-    ) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  };
-  let onKeyDown = (
-    event?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (
-      event.key === `Enter` &&
-      event.target === elementRef2.current &&
-      !event.nativeEvent.isComposing &&
-      event.keyCode !== 229
-    ) {
-      event.preventDefault();
-      if (!matchesTrimmedAltState) {
-        setCountState(
-          (
-            mediaAltTextPopover?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => mediaAltTextPopover + 1,
-        );
-      }
-      onClick();
-      return;
-    }
-    if (event.key !== `Tab` || event.ctrlKey || event.metaKey) return;
-    let matchedElements: Dynamic = Array.from<Dynamic>(
-      elementRef.current?.querySelectorAll(
-        `textarea:not([disabled]), button:not([disabled]):not([aria-disabled="true"])`,
-      ) ?? [],
-    );
-    if (matchedElements.length === 0) return;
-    let matchedElementIndex: Dynamic = matchedElements.indexOf(
-      document.activeElement,
-    );
-    let count: number =
-      matchedElementIndex < 0
-        ? 0
-        : (matchedElementIndex +
-            (event.shiftKey ? -1 : 1) +
-            matchedElements.length) %
-          matchedElements.length;
-    event.preventDefault();
-    matchedElements[count]?.focus();
-  };
-  let iframeElBounds: Dynamic = iframeEl?.getBoundingClientRect() ?? {
-    top: 0,
-    left: 0,
-    height: 0,
-  };
-  let documentCommandsLeft = resolveDocumentCommandsLeft(
-    pop.rect,
-    iframeElBounds,
-    document.documentElement.clientWidth,
-  );
-  return (0, ReactDom.createPortal)(
-    <Surface
-      elevation={`popover`}
-      ref={elementRef}
-      data-testid={`ldoc-altpop`}
-      role={`dialog`}
-      aria-label={DocumentCommands_EditAltText}
-      onKeyDownCapture={onKeyDownCapture}
-      onKeyDown={onKeyDown}
-      className={`text-primary p-lg fixed flex flex-col`}
-      style={{
-        left: documentCommandsLeft.left,
-        top: documentCommandsLeft.top,
-        width: documentCommandsLeft.width,
-        zIndex: zIndex,
-        transform: documentCommandsLeft.above ? `translateY(-100%)` : undefined,
-      }}
-    >
-      <div className={`gap-md flex flex-col`}>
-        <div className={`flex flex-col`}>
-          <LabeledTextArea
-            ref={elementRef2}
-            label={DocumentCommands_AltText}
-            hint={DocumentCommands_Message}
-            value={altState}
-            onChange={(
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              setAltState(event.target.value);
-              setCountState(0);
-            }}
-            maxLength={documentCommandsLimit2048}
-            rows={3}
-            autoComplete={`off`}
-            data-testid={`ldoc-altpop-field`}
-          />
-          <p
-            role={`status`}
-            className={
-              matchesAltStateCount ? `text-footnote text-muted` : `sr-only`
-            }
-            data-testid={`ldoc-altpop-full`}
-          >
-            {matchesAltStateCount
-              ? DocumentCommands_Message2
-              : countState
-                ? DocumentCommands_AddAltTextToSave +
-                  (countState % 2 ? `` : `\xA0`)
-                : ``}
-          </p>
-        </div>
-        <div className={`gap-sm flex justify-end`}>
-          <Button
-            onClick={(..._extraArguments: unknown[]): Dynamic =>
-              !mediaAltTextPopoverHandler() && onCancel()
-            }
-          >{`Cancel`}</Button>
-          <Button
-            variant={`primary`}
-            disabled={!matchesTrimmedAltState}
-            onClick={onClick}
-            data-testid={`ldoc-altpop-save`}
-          >{`Save`}</Button>
-        </div>
-      </div>
-    </Surface>,
-    document.body,
-  );
 }
 
 var DocumentCommands_PAGEDATA: string;
@@ -1633,24 +1589,4 @@ Rules (all of them, every time):
   (documentCommandsSet = new (Set as Dynamic)());
 }
 
-export {
-  InlineAskComposer,
-  InlineAskSheet,
-  MediaAltTextPopover,
-  claudeAskRoute,
-  createSelectionAskCoordinator,
-  documentCommandsMap,
-  documentCommandsSet,
-  loadDocumentCommandsLook,
-  resolveDocumentCommandsArtifactLinkChips,
-  resolveDocumentCommandsGone,
-  resolveDocumentCommandsLoad,
-  resolveDocumentCommandsNodeId,
-  resolveDocumentCommandsNonce,
-  resolveDocumentCommandsResolve,
-  resolveDocumentCommandsSaid,
-  resolveDocumentCommandsSaid2,
-  resolveDocumentCommandsValue3,
-  resolveDocumentCommandsValue4,
-  resolveDocumentCommandsViaSession,
-};
+export { claudeAskRoute, createSelectionAskCoordinator, documentCommandsMap, documentCommandsSet, loadDocumentCommandsLook, resolveDocumentCommandsArtifactLinkChips, resolveDocumentCommandsGone, resolveDocumentCommandsLoad, resolveDocumentCommandsNodeId, resolveDocumentCommandsNonce, resolveDocumentCommandsResolve, resolveDocumentCommandsSaid, resolveDocumentCommandsSaid2, resolveDocumentCommandsValue3, resolveDocumentCommandsValue4, resolveDocumentCommandsViaSession };

@@ -25,17 +25,9 @@ import {
 import { MenuPopupsAnchor } from "./menu/popup-frame";
 import { MenuPopupsValue, isMenuPopupsReason } from "./menu/popup";
 import { Menu } from "./menu/search";
+import type * as ReactComponentTypes from "react";
 
-var ContextMenuRef: Dynamic;
-
-var ContextMenuDataCds: Dynamic;
-
-var ContextMenuRef2: Dynamic;
-
-function ContextMenuSheetTitle(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ContextMenuSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) => {
   let {
     sheetTitle: value,
     backLabel: value2,
@@ -46,11 +38,7 @@ function ContextMenuSheetTitle(
   let value6: Dynamic = (0, React.useRef)(null);
   resolveUiTooltipsAndControlsClose(value6, value4.actionsRef);
   let value7: Dynamic = useUiOverlaysAndIconsUseInsertionEffect2(
-    (
-      input2?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
+    (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       value4.onOpenChange?.(input2, options);
       updateMenuInteractionsIsCanceled(value6, input2, options);
     },
@@ -66,20 +54,9 @@ function ContextMenuSheetTitle(
       </MenuInteractionsCreateContext5.Provider>
     </UiOverlaysAndIconsActionsRef>
   );
-}
+};
 
-function resolveContextMenuValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): boolean {
-  return isMenuPopupsReason(false, input, options);
-}
-
-function ContextMenuSheetTitle2(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ContextMenuSheetTitle2: ReactComponentTypes.FC<Dynamic> = (input) => {
   let {
     children: value,
     sheetTitle: value2,
@@ -112,10 +89,26 @@ function ContextMenuSheetTitle2(
           actionsRef={value8.actionsRef}
           onOpenChange={value8.onOpenChange}
           onOpenChangeComplete={value8.onOpenChangeComplete}
-        >{MenuPopupsValue(value, null, value8.actionsRef, true)}</BaseContextMenuRoot>
+        >
+          {MenuPopupsValue(value, null, value8.actionsRef, true)}
+        </BaseContextMenuRoot>
       </MenuInteractionsSheetTitle.Provider>
     </SheetsValue2>
   );
+};
+
+var ContextMenuRef: Dynamic;
+
+var ContextMenuDataCds: Dynamic;
+
+var ContextMenuRef2: Dynamic;
+
+function resolveContextMenuValue(
+  input?: Dynamic,
+  options?: Dynamic,
+  ..._extraArguments: unknown[]
+): boolean {
+  return isMenuPopupsReason(false, input, options);
 }
 
 var ContextMenu: Dynamic;

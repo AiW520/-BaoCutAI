@@ -27,6 +27,206 @@ import {
   resolveDocumentSelectionValue3,
   updateDocumentSelectionParse,
 } from "../document-selection/map-document-selection-tops";
+import type * as ReactComponentTypes from "react";
+
+export const ImagePickPopup: ReactComponentTypes.FC<Dynamic> = ({
+  at: at2,
+  onChoose: onChoose,
+  onClose: onClose,
+  returnFocusTo: returnFocusTo,
+  lifetimeMs = frameGesturesLimit20000,
+  now = resolveFrameGesturesValue6,
+}) => {
+  let initialFocus: Dynamic = (0, React.useRef)(null);
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let anchor: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => ({
+      getBoundingClientRect: (..._extraArguments: unknown[]): Dynamic =>
+        new (DOMRect as Dynamic)(at2.x, at2.y, 0, 0),
+    }),
+    [at2.x, at2.y],
+  );
+  let onCloseRef: Dynamic = (0, React.useRef)(onClose);
+  onCloseRef.current = onClose;
+  let nowRef: Dynamic = (0, React.useRef)(now);
+  nowRef.current = now;
+  let enabledRef: Dynamic = (0, React.useRef)(false);
+  let onClose2: Dynamic = (0, React.useCallback)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (!enabledRef.current) {
+        enabledRef.current = true;
+        onCloseRef.current();
+      }
+    },
+    [],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let setTimeout2 = setTimeout(onClose2, lifetimeMs);
+      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
+    },
+    [lifetimeMs, onClose2],
+  );
+  let enabledRef2: Dynamic = (0, React.useRef)(false);
+  let elementRef2: Dynamic = (0, React.useRef)(null);
+  let itemsRef: Dynamic = (0, React.useRef)([]);
+  let cancelAnimationFrame2: Dynamic = (0, React.useCallback)(
+    (..._extraArguments: unknown[]): undefined => {
+      for (let imagePickPopupResult of itemsRef.current as Dynamic)
+        cancelAnimationFrame(imagePickPopupResult);
+      itemsRef.current = [];
+    },
+    [],
+  );
+  let requestAnimationFrame2: Dynamic = (0, React.useCallback)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (
+        elementRef.current === null ||
+        elementRef2.current !== null ||
+        itemsRef.current.length > 0
+      )
+        return;
+      let requestAnimationFrame3 = (..._extraArguments: unknown[]): undefined => {
+        itemsRef.current = [];
+        let element: Dynamic = elementRef.current;
+        if (element !== null) {
+          if (getComputedStyle(element).visibility === `visible`) {
+            elementRef2.current = nowRef.current();
+          } else {
+            itemsRef.current = [requestAnimationFrame(requestAnimationFrame3)];
+          }
+        }
+      };
+      itemsRef.current = [
+        requestAnimationFrame((..._extraArguments: unknown[]): undefined => {
+          itemsRef.current = [requestAnimationFrame(requestAnimationFrame3)];
+        }),
+      ];
+    },
+    [],
+  );
+  let cancelAnimationFrame3: Dynamic = (0, React.useCallback)(
+    (imagePickPopup?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+      elementRef.current = imagePickPopup;
+      if (imagePickPopup !== null) return requestAnimationFrame2();
+      cancelAnimationFrame2();
+      elementRef2.current = null;
+      enabledRef2.current = false;
+    },
+    [cancelAnimationFrame2, requestAnimationFrame2],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => (
+      requestAnimationFrame2(),
+      cancelAnimationFrame2
+    ),
+    [requestAnimationFrame2, cancelAnimationFrame2],
+  );
+  let updateElement = (
+    imagePickPopup?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): undefined => {
+    if (elementRef2.current !== null) {
+      elementRef2.current = Math.max(elementRef2.current, imagePickPopup);
+    }
+  };
+  let updateElement2: Dynamic = (
+    imagePickPopup?: Dynamic,
+    ..._extraArguments: unknown[]
+  ) =>
+    resolveFrameGesturesValue3(elementRef2.current, imagePickPopup)
+      ? true
+      : (updateElement(imagePickPopup), false);
+  return (
+    <Popover.Root
+      open={true}
+      modal={true}
+      onOpenChange={(
+        imagePickPopup?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): undefined => void (imagePickPopup || onClose2())}
+    >
+      <Popover.Popup
+        ref={initialFocus}
+        anchor={anchor}
+        side={`bottom`}
+        align={`start`}
+        sideOffset={4}
+        padding={`xs`}
+        aria-label={FrameGestures_ChooseImages}
+        initialFocus={initialFocus}
+        finalFocus={returnFocusTo}
+        onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          if (frameGesturesSet3.has(event.key)) return;
+          if (event.repeat) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          let matchesTarget = event.target === elementRef.current;
+          let frameGesturesValue4 = resolveFrameGesturesValue4(
+            event.timeStamp,
+            nowRef.current(),
+          );
+          if (
+            matchesTarget &&
+            enabledRef2.current &&
+            (event.key === `Enter` || event.key === ` `)
+          ) {
+            if (!updateElement2(frameGesturesValue4)) {
+              event.preventDefault();
+            }
+            return;
+          }
+          let ctrlKey: Dynamic = event.ctrlKey || event.metaKey || event.altKey;
+          if (event.key === `Tab` && !matchesTarget && !ctrlKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            updateElement(frameGesturesValue4);
+            elementRef.current?.focus({
+              focusVisible: true,
+            });
+            enabledRef2.current =
+              elementRef.current !== null &&
+              document.activeElement === elementRef.current;
+            return;
+          }
+          event.stopPropagation();
+          if (!ctrlKey) {
+            event.preventDefault();
+          }
+          onClose2();
+        }}
+        data-testid={`image-pick-popup`}
+      >
+        <Button
+          ref={cancelAnimationFrame3}
+          variant={`secondary`}
+          size={`sm`}
+          icon={`Image`}
+          onClick={(
+            imagePickPopup?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            if (!enabledRef.current) {
+              if (
+                updateElement2(
+                  resolveFrameGesturesValue4(imagePickPopup.timeStamp, nowRef.current()),
+                )
+              ) {
+                onChoose();
+                onClose2();
+              }
+            }
+          }}
+          data-testid={`image-pick-button`}
+        >
+          {FrameGestures_ChooseImages}
+        </Button>
+      </Popover.Popup>
+    </Popover.Root>
+  );
+};
 
 function resolveFrameGesturesSize(..._extraArguments: unknown[]): undefined {
   let documentSelectionValue3: Dynamic = resolveDocumentSelectionValue3();
@@ -794,216 +994,6 @@ var frameGesturesSet3: Dynamic;
 
 var resolveFrameGesturesValue6: Dynamic;
 
-function ImagePickPopup(
-  {
-    at: at2,
-    onChoose: onChoose,
-    onClose: onClose,
-    returnFocusTo: returnFocusTo,
-    lifetimeMs = frameGesturesLimit20000,
-    now = resolveFrameGesturesValue6,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let initialFocus: Dynamic = (0, React.useRef)(null);
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let anchor: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => ({
-      getBoundingClientRect: (..._extraArguments: unknown[]): Dynamic =>
-        new (DOMRect as Dynamic)(at2.x, at2.y, 0, 0),
-    }),
-    [at2.x, at2.y],
-  );
-  let onCloseRef: Dynamic = (0, React.useRef)(onClose);
-  onCloseRef.current = onClose;
-  let nowRef: Dynamic = (0, React.useRef)(now);
-  nowRef.current = now;
-  let enabledRef: Dynamic = (0, React.useRef)(false);
-  let onClose2: Dynamic = (0, React.useCallback)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (!enabledRef.current) {
-        enabledRef.current = true;
-        onCloseRef.current();
-      }
-    },
-    [],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let setTimeout2 = setTimeout(onClose2, lifetimeMs);
-      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
-    },
-    [lifetimeMs, onClose2],
-  );
-  let enabledRef2: Dynamic = (0, React.useRef)(false);
-  let elementRef2: Dynamic = (0, React.useRef)(null);
-  let itemsRef: Dynamic = (0, React.useRef)([]);
-  let cancelAnimationFrame2: Dynamic = (0, React.useCallback)(
-    (..._extraArguments: unknown[]): undefined => {
-      for (let imagePickPopupResult of itemsRef.current as Dynamic)
-        cancelAnimationFrame(imagePickPopupResult);
-      itemsRef.current = [];
-    },
-    [],
-  );
-  let requestAnimationFrame2: Dynamic = (0, React.useCallback)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (
-        elementRef.current === null ||
-        elementRef2.current !== null ||
-        itemsRef.current.length > 0
-      )
-        return;
-      let requestAnimationFrame3 = (
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        itemsRef.current = [];
-        let element: Dynamic = elementRef.current;
-        if (element !== null) {
-          if (getComputedStyle(element).visibility === `visible`) {
-            elementRef2.current = nowRef.current();
-          } else {
-            itemsRef.current = [requestAnimationFrame(requestAnimationFrame3)];
-          }
-        }
-      };
-      itemsRef.current = [
-        requestAnimationFrame((..._extraArguments: unknown[]): undefined => {
-          itemsRef.current = [requestAnimationFrame(requestAnimationFrame3)];
-        }),
-      ];
-    },
-    [],
-  );
-  let cancelAnimationFrame3: Dynamic = (0, React.useCallback)(
-    (imagePickPopup?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-      elementRef.current = imagePickPopup;
-      if (imagePickPopup !== null) return requestAnimationFrame2();
-      cancelAnimationFrame2();
-      elementRef2.current = null;
-      enabledRef2.current = false;
-    },
-    [cancelAnimationFrame2, requestAnimationFrame2],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => (
-      requestAnimationFrame2(),
-      cancelAnimationFrame2
-    ),
-    [requestAnimationFrame2, cancelAnimationFrame2],
-  );
-  let updateElement = (
-    imagePickPopup?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (elementRef2.current !== null) {
-      elementRef2.current = Math.max(elementRef2.current, imagePickPopup);
-    }
-  };
-  let updateElement2: Dynamic = (
-    imagePickPopup?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) =>
-    resolveFrameGesturesValue3(elementRef2.current, imagePickPopup)
-      ? true
-      : (updateElement(imagePickPopup), false);
-  return (
-    <Popover.Root
-      open={true}
-      modal={true}
-      onOpenChange={(
-        imagePickPopup?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => void (imagePickPopup || onClose2())}
-    >
-      <Popover.Popup
-        ref={initialFocus}
-        anchor={anchor}
-        side={`bottom`}
-        align={`start`}
-        sideOffset={4}
-        padding={`xs`}
-        aria-label={FrameGestures_ChooseImages}
-        initialFocus={initialFocus}
-        finalFocus={returnFocusTo}
-        onKeyDown={(
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          if (frameGesturesSet3.has(event.key)) return;
-          if (event.repeat) {
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-          let matchesTarget = event.target === elementRef.current;
-          let frameGesturesValue4 = resolveFrameGesturesValue4(
-            event.timeStamp,
-            nowRef.current(),
-          );
-          if (
-            matchesTarget &&
-            enabledRef2.current &&
-            (event.key === `Enter` || event.key === ` `)
-          ) {
-            if (!updateElement2(frameGesturesValue4)) {
-              event.preventDefault();
-            }
-            return;
-          }
-          let ctrlKey: Dynamic = event.ctrlKey || event.metaKey || event.altKey;
-          if (event.key === `Tab` && !matchesTarget && !ctrlKey) {
-            event.preventDefault();
-            event.stopPropagation();
-            updateElement(frameGesturesValue4);
-            elementRef.current?.focus({
-              focusVisible: true,
-            });
-            enabledRef2.current =
-              elementRef.current !== null &&
-              document.activeElement === elementRef.current;
-            return;
-          }
-          event.stopPropagation();
-          if (!ctrlKey) {
-            event.preventDefault();
-          }
-          onClose2();
-        }}
-        data-testid={`image-pick-popup`}
-      >
-        <Button
-          ref={cancelAnimationFrame3}
-          variant={`secondary`}
-          size={`sm`}
-          icon={`Image`}
-          onClick={(
-            imagePickPopup?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            if (!enabledRef.current) {
-              if (
-                updateElement2(
-                  resolveFrameGesturesValue4(
-                    imagePickPopup.timeStamp,
-                    nowRef.current(),
-                  ),
-                )
-              ) {
-                onChoose();
-                onClose2();
-              }
-            }
-          }}
-          data-testid={`image-pick-button`}
-        >
-          {FrameGestures_ChooseImages}
-        </Button>
-      </Popover.Popup>
-    </Popover.Root>
-  );
-}
-
 var resolveFrameGesturesValue7: (frameGesturesValue7?: Dynamic, ..._extraArguments: unknown[]) => string;
 
 var resolveFrameGesturesValue8: (frameGesturesValue8?: Dynamic, ..._extraArguments: unknown[]) => string;
@@ -1669,44 +1659,4 @@ export function initializeFrameGesturesState1Step1(): void {
   ]));
 }
 
-export {
-  ImagePickPopup,
-  clearFrameGesturesIsArray,
-  frameGesturesSet7,
-  getFrameGesturesValue,
-  getFrameGesturesValue2,
-  installFrameGesturesValue,
-  isFrameGesturesDisplayOn,
-  resolveFrameGesturesAccept,
-  resolveFrameGesturesExec,
-  resolveFrameGesturesHasFocus,
-  resolveFrameGesturesIds,
-  resolveFrameGesturesIsActive,
-  resolveFrameGesturesIsArray,
-  resolveFrameGesturesIsFinite,
-  resolveFrameGesturesKeyboard,
-  resolveFrameGesturesKeyboard2,
-  resolveFrameGesturesLayer2,
-  resolveFrameGesturesOpen,
-  resolveFrameGesturesOpenedAt,
-  resolveFrameGesturesOpenedAt2,
-  resolveFrameGesturesRoom,
-  resolveFrameGesturesRowsPin,
-  resolveFrameGesturesStale,
-  resolveFrameGesturesValue,
-  resolveFrameGesturesValue10,
-  resolveFrameGesturesValue11,
-  resolveFrameGesturesValue2,
-  resolveFrameGesturesValue3,
-  resolveFrameGesturesValue4,
-  resolveFrameGesturesValue7,
-  resolveFrameGesturesValue8,
-  resolveFrameGesturesValue9,
-  updateFrameGesturesAnchor,
-  updateFrameGesturesDelete,
-  updateFrameGesturesDelete2,
-  updateFrameGesturesParse,
-  updateFrameGesturesSize,
-  updateFrameGesturesVisibilityState,
-  useFrameGesturesWanted,
-};
+export { clearFrameGesturesIsArray, frameGesturesSet7, getFrameGesturesValue, getFrameGesturesValue2, installFrameGesturesValue, isFrameGesturesDisplayOn, resolveFrameGesturesAccept, resolveFrameGesturesExec, resolveFrameGesturesHasFocus, resolveFrameGesturesIds, resolveFrameGesturesIsActive, resolveFrameGesturesIsArray, resolveFrameGesturesIsFinite, resolveFrameGesturesKeyboard, resolveFrameGesturesKeyboard2, resolveFrameGesturesLayer2, resolveFrameGesturesOpen, resolveFrameGesturesOpenedAt, resolveFrameGesturesOpenedAt2, resolveFrameGesturesRoom, resolveFrameGesturesRowsPin, resolveFrameGesturesStale, resolveFrameGesturesValue, resolveFrameGesturesValue10, resolveFrameGesturesValue11, resolveFrameGesturesValue2, resolveFrameGesturesValue3, resolveFrameGesturesValue4, resolveFrameGesturesValue7, resolveFrameGesturesValue8, resolveFrameGesturesValue9, updateFrameGesturesAnchor, updateFrameGesturesDelete, updateFrameGesturesDelete2, updateFrameGesturesParse, updateFrameGesturesSize, updateFrameGesturesVisibilityState, useFrameGesturesWanted };

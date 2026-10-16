@@ -17,123 +17,27 @@ import {
   BOTTOM_SHEET_SCRIM_CLASS,
   PHONE_TOUCH_TARGET_CLASS as SHEET_CONTROL_CLASS,
 } from "../../document-app/index";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-var SHEET_ENTER_CLASS: string = `starting:translate-y-[calc(100%+1.5rem)] data-[starting-style]:translate-y-[calc(100%+1.5rem)]`;
-var SHEET_EXIT_CLASS: string = `translate-y-[calc(100%+1.5rem)]`;
-var SHEET_POPUP_CLASS: Dynamic = resolveUiDesignSystemValue2(
-  `fixed inset-x-0 bottom-0 flex max-h-[90dvh] w-full max-w-none flex-col`,
-  `cds-reset rounded-t-card rounded-b-none bg-surface-3 shadow-panel text-body text-primary`,
-  `pb-2 outline-none focus-visible:outline-hidden`,
-  `before:pointer-events-none before:absolute before:inset-x-0 before:top-full before:h-dvh before:bg-surface-3`,
-  `transition-[translate] duration-sheet ease-out motion-reduce:transition-none`,
-  SHEET_ENTER_CLASS,
-  `data-[ending-style]:translate-y-[calc(100%+1.5rem)]`,
-);
-var ON_KEYBOARD_CLASS: string = `before:top-[calc(100%-var(--cds-ring-inner,1px))]`;
-var SHEET_BACKDROP_CLASS: Dynamic = resolveUiDesignSystemValue2(
-  BOTTOM_SHEET_SCRIM_CLASS,
-  `backdrop-blur-none duration-sheet starting:opacity-0`,
-);
-var ENTER_GUARD_MS: number = 500;
-var SHEET_OPEN_MS: number = 360;
-var SHEET_CLOSE_MS: number = 200;
-var activeSheets: Dynamic = [];
-function syncSheetClearance(..._extraArguments: unknown[]): undefined {
-  let topSheet: Dynamic = activeSheets.findLast(
-    (activeSheet?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      activeSheet.open,
-  );
-  let clearance: string = topSheet
-    ? `${topSheet.el.offsetHeight + topSheet.lift}px`
-    : ``;
-  let rootStyle: Dynamic = (document as Dynamic).documentElement.style;
-  if (rootStyle.getPropertyValue(`--bottom-sheet-clear`) !== clearance) {
-    if (clearance) {
-      rootStyle.setProperty(BOTTOM_SHEET_CLEAR_PROPERTY, clearance);
-    } else {
-      rootStyle.removeProperty(BOTTOM_SHEET_CLEAR_PROPERTY);
-    }
-  }
-}
-function useSheetClearance(
-  element?: Dynamic,
-  lift?: Dynamic,
-  open?: Dynamic,
-  ..._extraArguments: unknown[]
-): undefined {
-  let sheetStateRef: Dynamic = (0, React.useRef)({
-    lift: lift,
-    open: open,
-  });
-  sheetStateRef.current = {
-    lift: lift,
-    open: open,
-  };
-  let registrationRef: Dynamic = (0, React.useRef)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!element) return;
-      let record: Dynamic = {
-        el: element,
-        ...sheetStateRef.current,
-      };
-      registrationRef.current = record;
-      activeSheets.push(record);
-      syncSheetClearance();
-      let resizeObserver: Dynamic =
-        typeof ResizeObserver === "undefined"
-          ? null
-          : new (ResizeObserver as Dynamic)(syncSheetClearance);
-      resizeObserver?.observe(element);
-      return (..._extraArguments: unknown[]): undefined => {
-        resizeObserver?.disconnect();
-        registrationRef.current = null;
-        activeSheets.splice(activeSheets.indexOf(record), 1);
-        syncSheetClearance();
-      };
-    },
-    [element],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (registrationRef.current) {
-        Object.assign(registrationRef.current, {
-          lift: lift,
-          open: open,
-        });
-        syncSheetClearance();
-      }
-    },
-    [lift, open],
-  );
-}
-var isKeyboardInteraction = (
-  interaction?: Dynamic,
-  ..._extraArguments: unknown[]
-) => interaction === `keyboard`;
-function BottomSheet(
-  {
-    shouldClose: shouldClose,
-    onClose: onClose,
-    title: title,
-    titleHidden = false,
-    leading: leading,
-    trailing: trailing,
-    children: children,
-    footer: footer,
-    bodyClassName: bodyClassName,
-    bottomInset = 0,
-    closeLabel: closeLabel,
-    detent = `content`,
-    onHeightChange: onHeightChange,
-    initialFocus: initialFocus,
-    finalFocus: finalFocus,
-    "data-testid": dataTestid,
-    "data-mode": dataMode,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const BottomSheet: ReactComponentTypes.FC<Dynamic> = ({
+  shouldClose: shouldClose,
+  onClose: onClose,
+  title: title,
+  titleHidden = false,
+  leading: leading,
+  trailing: trailing,
+  children: children,
+  footer: footer,
+  bodyClassName: bodyClassName,
+  bottomInset = 0,
+  closeLabel: closeLabel,
+  detent = `content`,
+  onHeightChange: onHeightChange,
+  initialFocus: initialFocus,
+  finalFocus: finalFocus,
+  "data-testid": dataTestid,
+  "data-mode": dataMode,
+}) => {
   let popupRef: Dynamic = (0, React.useRef)(null);
   let openRef: Dynamic = (0, React.useRef)(onHeightChange);
   openRef.current = onHeightChange;
@@ -156,9 +60,7 @@ function BottomSheet(
       };
       bottomSheetHandler();
       if (!(typeof ResizeObserver === "undefined")) {
-        observerRef.current = new (ResizeObserver as Dynamic)(
-          bottomSheetHandler,
-        );
+        observerRef.current = new (ResizeObserver as Dynamic)(bottomSheetHandler);
         observerRef.current.observe(bottomSheet);
       }
     },
@@ -185,9 +87,7 @@ function BottomSheet(
       closingPromiseRef.current === null
         ? shouldCloseRef.current?.(bottomSheet) === false
           ? false
-          : ((closingPromiseRef.current = bottomSheet),
-            setCloseReason(bottomSheet),
-            true)
+          : ((closingPromiseRef.current = bottomSheet), setCloseReason(bottomSheet), true)
         : true,
     [],
   );
@@ -200,20 +100,12 @@ function BottomSheet(
         if (!enabled) {
           enabled = true;
           onCloseRef.current(closeReason);
-          (window as Dynamic).setTimeout(
-            (..._extraArguments: unknown[]): undefined => {
-              if (
-                !(
-                  !mountedRef.current ||
-                  closingPromiseRef.current !== closeReason
-                )
-              ) {
-                closingPromiseRef.current = null;
-                setCloseReason(null);
-              }
-            },
-            SHEET_CLOSE_MS,
-          );
+          (window as Dynamic).setTimeout((..._extraArguments: unknown[]): undefined => {
+            if (!(!mountedRef.current || closingPromiseRef.current !== closeReason)) {
+              closingPromiseRef.current = null;
+              setCloseReason(null);
+            }
+          }, SHEET_CLOSE_MS);
         }
       };
       let computedStyle: Dynamic = popup ? getComputedStyle(popup) : null;
@@ -319,9 +211,25 @@ function BottomSheet(
           {...dragHandlers}
           className={`flex min-h-control shrink-0 touch-none items-center gap-sm px-4 pt-4 pb-2 select-none`}
           data-testid={`bottom-sheet-header`}
-        >{leading !== undefined && <span className={`flex shrink-0 items-center`}>{leading}</span>}{<UiDialogsRoot.Title className={resolveUiDesignSystemValue2(`text-heading min-w-0 flex-1 truncate font-semibold`, titleHidden && `sr-only`)}>
-                {title}
-              </UiDialogsRoot.Title>}{titleHidden && <span className={`flex-1`} aria-hidden={true} />}{trailing !== undefined && <span className={`flex shrink-0 items-center`}>{trailing}</span>}</div>
+        >
+          {leading !== undefined && (
+            <span className={`flex shrink-0 items-center`}>{leading}</span>
+          )}
+          {
+            <UiDialogsRoot.Title
+              className={resolveUiDesignSystemValue2(
+                `text-heading min-w-0 flex-1 truncate font-semibold`,
+                titleHidden && `sr-only`,
+              )}
+            >
+              {title}
+            </UiDialogsRoot.Title>
+          }
+          {titleHidden && <span className={`flex-1`} aria-hidden={true} />}
+          {trailing !== undefined && (
+            <span className={`flex shrink-0 items-center`}>{trailing}</span>
+          )}
+        </div>
         <div
           className={resolveUiDesignSystemValue2(
             `min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[inherit] px-4`,
@@ -331,9 +239,7 @@ function BottomSheet(
         >
           {children}
         </div>
-        {footer !== undefined && (
-          <div className={`shrink-0 px-4 pt-2`}>{footer}</div>
-        )}
+        {footer !== undefined && <div className={`shrink-0 px-4 pt-2`}>{footer}</div>}
         <SheetCloseButton label={closeLabel} />
         <SheetSafeAreaFoot folded={hasBottomInset} />
         {visible && notClosing && (
@@ -342,24 +248,188 @@ function BottomSheet(
             aria-hidden={true}
             data-testid={`bottom-sheet-arriving`}
             className={`absolute inset-0`}
-            onPointerDown={(
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => event.preventDefault()}
-            onMouseDown={(
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => event.preventDefault()}
+            onPointerDown={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              event.preventDefault()
+            }
+            onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              event.preventDefault()
+            }
           />
         )}
       </UiDialogsRoot.Popup>
     </UiDialogsRoot.Root>
   );
-}
-function SheetCloseButton(
-  { label: label }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const PhonePopupContent: ReactComponentTypes.FC<Dynamic> = ({
+  Ns: Ns,
+  popupRef: popupRef,
+  portalClassName: portalClassName,
+  backdropClassName: backdropClassName,
+  touchActions: touchActions,
+  rest: rest,
+  children: children,
+}) => {
+  let popupRef2: Dynamic = (0, React.useRef)(null);
+  let [popupElement, setPopupElement]: Dynamic = (0, React.useState)(null);
+  useSheetClearance(popupElement, 0, true);
+  usePreventFocusScroll(popupElement);
+  let closeButtonRef: Dynamic = (0, React.useRef)(null);
+  let dragHandlers: Dynamic = useSwipeToClose(
+    popupRef2,
+    (0, React.useCallback)(
+      (..._extraArguments: unknown[]): boolean => (closeButtonRef.current?.click(), true),
+      [],
+    ),
+  );
+  let setPopupRef: Dynamic = (0, React.useCallback)(
+    (phonePopupContent?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      popupRef2.current = phonePopupContent;
+      setPopupElement(phonePopupContent);
+      if (typeof popupRef == `function`) {
+        popupRef(phonePopupContent);
+      } else {
+        if (popupRef) {
+          popupRef.current = phonePopupContent;
+        }
+      }
+    },
+    [popupRef],
+  );
+  return (
+    <Ns.Popup
+      {...rest}
+      ref={setPopupRef}
+      unstyled={true}
+      surface={`surface-3`}
+      data-bottom-sheet={``}
+      portalClassName={portalClassName}
+      backdropClassName={resolveUiDesignSystemValue2(
+        SHEET_BACKDROP_CLASS,
+        backdropClassName,
+      )}
+      className={SHEET_POPUP_CLASS}
+    >
+      {<SheetDragStrip drag={dragHandlers} />}
+      {
+        <div
+          className={resolveUiDesignSystemValue2(
+            `isolate flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[inherit] px-xl pt-sm pb-xl`,
+            touchActions && `[&_[data-cds=Button]:not([data-cds-icon-only])]:min-h-11`,
+          )}
+        >
+          {children}
+        </div>
+      }
+      {<Ns.Close ref={closeButtonRef} hidden={true} tabIndex={-1} aria-hidden={true} />}
+      {<SheetSafeAreaFoot />}
+    </Ns.Popup>
+  );
+};
+
+export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (props) => {
+  let phone: Dynamic = resolvePlatformSyncAndRoutingValue10();
+  let [pending, setPending]: Dynamic = (0, React.useState)(false);
+  let confirmRef: Dynamic = (0, React.useRef)(null);
+  let cancelRef: Dynamic = (0, React.useRef)(null);
+  let confirmedRef: Dynamic = (0, React.useRef)(false);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (props.open) {
+        confirmedRef.current = false;
+      }
+    },
+    [props.open],
+  );
+  if (!phone) return <UiDialogsOpen {...props} />;
+  let {
+    open: props2,
+    onOpenChange: props3,
+    title: props4,
+    description: props5,
+    confirmLabel: props9 = `Confirm`,
+    cancelLabel: props10 = `Cancel`,
+    confirmVariant: props11 = `primary`,
+    initialFocus: props12 = `confirm`,
+    disabled: props13 = false,
+    portalClassName: props6,
+    onConfirm: props7,
+    closeOnConfirm: props14 = false,
+    children: props8,
+  }: Dynamic = props;
+  let confirm = async (..._extraArguments: unknown[]): Promise<undefined> => {
+    if (pending || props13 || !props2 || confirmedRef.current) return;
+    let phoneConfirmationDialogResult: Dynamic;
+    try {
+      phoneConfirmationDialogResult = Promise.resolve(props7());
+    } catch (phoneConfirmationDialogResult2: Dynamic) {
+      phoneConfirmationDialogResult = Promise.reject(phoneConfirmationDialogResult2);
+    }
+    if (props14) {
+      confirmedRef.current = true;
+      props3(false, {
+        reason: `confirm`,
+      });
+      return;
+    }
+    setPending(true);
+    try {
+      await phoneConfirmationDialogResult;
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <UiDialogsRoot2.Root
+      open={props2}
+      onOpenChange={(
+        phoneConfirmationDialog?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): undefined => {
+        if (!(pending || !props2)) {
+          props3(phoneConfirmationDialog, {
+            reason: `dismiss`,
+          });
+        }
+      }}
+    >
+      <PhoneDialogPopup
+        kind={`alert`}
+        portalClassName={props6}
+        initialFocus={props12 === `cancel` ? confirmRef : cancelRef}
+        data-testid={`phone-confirmation-sheet`}
+      >
+        <UiDialogsRoot2.Header showClose={false} description={props5}>
+          {props4}
+        </UiDialogsRoot2.Header>
+        {props8}
+        <UiDialogsRoot2.Footer align={`end`}>
+          <UiDialogsRoot2.Close
+            ref={confirmRef}
+            disabled={pending}
+            render={<Button>{props10}</Button>}
+          />
+          <Button
+            ref={cancelRef}
+            variant={props11}
+            busy={pending}
+            disabled={props13}
+            onClick={(..._extraArguments: unknown[]): undefined => void confirm()}
+            onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              if (event.repeat && (event.key === `Enter` || event.key === ` `)) {
+                event.preventDefault();
+              }
+            }}
+          >
+            {props9}
+          </Button>
+        </UiDialogsRoot2.Footer>
+      </PhoneDialogPopup>
+    </UiDialogsRoot2.Root>
+  );
+};
+
+export const SheetCloseButton: ReactComponentTypes.FC<Dynamic> = ({ label: label }) => {
   return (
     <UiDialogsRoot.Close
       render={
@@ -373,21 +443,22 @@ function SheetCloseButton(
       }
     />
   );
-}
-function SheetDragStrip(
-  { drag: drag }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const SheetDragStrip: ReactComponentTypes.FC<Dynamic> = ({ drag: drag }) => {
   return (
-    <div aria-hidden={true} data-testid={`bottom-sheet-drag-strip`} {...drag} className={`min-h-5 shrink-0 touch-none select-none`} />
+    <div
+      aria-hidden={true}
+      data-testid={`bottom-sheet-drag-strip`}
+      {...drag}
+      className={`min-h-5 shrink-0 touch-none select-none`}
+    />
   );
-}
-var TEXT_FIELD: string = `:is([contenteditable],textarea,input:not([type=checkbox],[type=radio],[type=range]))`;
-var SAFE_AREA_FOOT_CLASS: string = `h-[env(safe-area-inset-bottom)] shrink-0 [[data-bottom-sheet][data-keyboard]:has(:is([contenteditable],textarea,input:not([type=checkbox],[type=radio],[type=range])):focus)_&]:h-0`;
-function SheetSafeAreaFoot(
-  { folded = false }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const SheetSafeAreaFoot: ReactComponentTypes.FC<Dynamic> = ({
+  folded = false,
+}) => {
   return (
     <div
       aria-hidden={true}
@@ -395,7 +466,107 @@ function SheetSafeAreaFoot(
       className={folded ? `h-0 shrink-0` : SAFE_AREA_FOOT_CLASS}
     />
   );
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+var SHEET_ENTER_CLASS: string = `starting:translate-y-[calc(100%+1.5rem)] data-[starting-style]:translate-y-[calc(100%+1.5rem)]`;
+var SHEET_EXIT_CLASS: string = `translate-y-[calc(100%+1.5rem)]`;
+var SHEET_POPUP_CLASS: Dynamic = resolveUiDesignSystemValue2(
+  `fixed inset-x-0 bottom-0 flex max-h-[90dvh] w-full max-w-none flex-col`,
+  `cds-reset rounded-t-card rounded-b-none bg-surface-3 shadow-panel text-body text-primary`,
+  `pb-2 outline-none focus-visible:outline-hidden`,
+  `before:pointer-events-none before:absolute before:inset-x-0 before:top-full before:h-dvh before:bg-surface-3`,
+  `transition-[translate] duration-sheet ease-out motion-reduce:transition-none`,
+  SHEET_ENTER_CLASS,
+  `data-[ending-style]:translate-y-[calc(100%+1.5rem)]`,
+);
+var ON_KEYBOARD_CLASS: string = `before:top-[calc(100%-var(--cds-ring-inner,1px))]`;
+var SHEET_BACKDROP_CLASS: Dynamic = resolveUiDesignSystemValue2(
+  BOTTOM_SHEET_SCRIM_CLASS,
+  `backdrop-blur-none duration-sheet starting:opacity-0`,
+);
+var ENTER_GUARD_MS: number = 500;
+var SHEET_OPEN_MS: number = 360;
+var SHEET_CLOSE_MS: number = 200;
+var activeSheets: Dynamic = [];
+function syncSheetClearance(..._extraArguments: unknown[]): undefined {
+  let topSheet: Dynamic = activeSheets.findLast(
+    (activeSheet?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      activeSheet.open,
+  );
+  let clearance: string = topSheet
+    ? `${topSheet.el.offsetHeight + topSheet.lift}px`
+    : ``;
+  let rootStyle: Dynamic = (document as Dynamic).documentElement.style;
+  if (rootStyle.getPropertyValue(`--bottom-sheet-clear`) !== clearance) {
+    if (clearance) {
+      rootStyle.setProperty(BOTTOM_SHEET_CLEAR_PROPERTY, clearance);
+    } else {
+      rootStyle.removeProperty(BOTTOM_SHEET_CLEAR_PROPERTY);
+    }
+  }
 }
+function useSheetClearance(
+  element?: Dynamic,
+  lift?: Dynamic,
+  open?: Dynamic,
+  ..._extraArguments: unknown[]
+): undefined {
+  let sheetStateRef: Dynamic = (0, React.useRef)({
+    lift: lift,
+    open: open,
+  });
+  sheetStateRef.current = {
+    lift: lift,
+    open: open,
+  };
+  let registrationRef: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!element) return;
+      let record: Dynamic = {
+        el: element,
+        ...sheetStateRef.current,
+      };
+      registrationRef.current = record;
+      activeSheets.push(record);
+      syncSheetClearance();
+      let resizeObserver: Dynamic =
+        typeof ResizeObserver === "undefined"
+          ? null
+          : new (ResizeObserver as Dynamic)(syncSheetClearance);
+      resizeObserver?.observe(element);
+      return (..._extraArguments: unknown[]): undefined => {
+        resizeObserver?.disconnect();
+        registrationRef.current = null;
+        activeSheets.splice(activeSheets.indexOf(record), 1);
+        syncSheetClearance();
+      };
+    },
+    [element],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (registrationRef.current) {
+        Object.assign(registrationRef.current, {
+          lift: lift,
+          open: open,
+        });
+        syncSheetClearance();
+      }
+    },
+    [lift, open],
+  );
+}
+var isKeyboardInteraction = (
+  interaction?: Dynamic,
+  ..._extraArguments: unknown[]
+) => interaction === `keyboard`;
+
+var TEXT_FIELD: string = `:is([contenteditable],textarea,input:not([type=checkbox],[type=radio],[type=range]))`;
+var SAFE_AREA_FOOT_CLASS: string = `h-[env(safe-area-inset-bottom)] shrink-0 [[data-bottom-sheet][data-keyboard]:has(:is([contenteditable],textarea,input:not([type=checkbox],[type=radio],[type=range])):focus)_&]:h-0`;
+
 var documentClickStates: Dynamic = new (WeakMap as Dynamic)();
 function getDocumentClickState(
   document2?: Dynamic,
@@ -581,179 +752,7 @@ var PhoneDialogPopup: Dynamic = (0, React.forwardRef)(function (
     </PhonePopupContent>
   );
 });
-function PhonePopupContent(
-  {
-    Ns: Ns,
-    popupRef: popupRef,
-    portalClassName: portalClassName,
-    backdropClassName: backdropClassName,
-    touchActions: touchActions,
-    rest: rest,
-    children: children,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let popupRef2: Dynamic = (0, React.useRef)(null);
-  let [popupElement, setPopupElement]: Dynamic = (0, React.useState)(null);
-  useSheetClearance(popupElement, 0, true);
-  usePreventFocusScroll(popupElement);
-  let closeButtonRef: Dynamic = (0, React.useRef)(null);
-  let dragHandlers: Dynamic = useSwipeToClose(
-    popupRef2,
-    (0, React.useCallback)(
-      (..._extraArguments: unknown[]): boolean => (
-        closeButtonRef.current?.click(),
-        true
-      ),
-      [],
-    ),
-  );
-  let setPopupRef: Dynamic = (0, React.useCallback)(
-    (phonePopupContent?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      popupRef2.current = phonePopupContent;
-      setPopupElement(phonePopupContent);
-      if (typeof popupRef == `function`) {
-        popupRef(phonePopupContent);
-      } else {
-        if (popupRef) {
-          popupRef.current = phonePopupContent;
-        }
-      }
-    },
-    [popupRef],
-  );
-  return (
-    <Ns.Popup
-      {...rest}
-      ref={setPopupRef}
-      unstyled={true}
-      surface={`surface-3`}
-      data-bottom-sheet={``}
-      portalClassName={portalClassName}
-      backdropClassName={resolveUiDesignSystemValue2(SHEET_BACKDROP_CLASS, backdropClassName)}
-      className={SHEET_POPUP_CLASS}
-    >{<SheetDragStrip drag={dragHandlers} />}{<div className={resolveUiDesignSystemValue2(`isolate flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[inherit] px-xl pt-sm pb-xl`, touchActions && `[&_[data-cds=Button]:not([data-cds-icon-only])]:min-h-11`)}>
-            {children}
-          </div>}{<Ns.Close ref={closeButtonRef} hidden={true} tabIndex={-1} aria-hidden={true} />}{<SheetSafeAreaFoot />}</Ns.Popup>
-  );
-}
-function PhoneConfirmationDialog(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let phone: Dynamic = resolvePlatformSyncAndRoutingValue10();
-  let [pending, setPending]: Dynamic = (0, React.useState)(false);
-  let confirmRef: Dynamic = (0, React.useRef)(null);
-  let cancelRef: Dynamic = (0, React.useRef)(null);
-  let confirmedRef: Dynamic = (0, React.useRef)(false);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (props.open) {
-        confirmedRef.current = false;
-      }
-    },
-    [props.open],
-  );
-  if (!phone)
-    return (
-      <UiDialogsOpen {...props} />
-    );
-  let {
-    open: props2,
-    onOpenChange: props3,
-    title: props4,
-    description: props5,
-    confirmLabel: props9 = `Confirm`,
-    cancelLabel: props10 = `Cancel`,
-    confirmVariant: props11 = `primary`,
-    initialFocus: props12 = `confirm`,
-    disabled: props13 = false,
-    portalClassName: props6,
-    onConfirm: props7,
-    closeOnConfirm: props14 = false,
-    children: props8,
-  }: Dynamic = props;
-  let confirm = async (..._extraArguments: unknown[]): Promise<undefined> => {
-    if (pending || props13 || !props2 || confirmedRef.current) return;
-    let phoneConfirmationDialogResult: Dynamic;
-    try {
-      phoneConfirmationDialogResult = Promise.resolve(props7());
-    } catch (phoneConfirmationDialogResult2: Dynamic) {
-      phoneConfirmationDialogResult = Promise.reject(
-        phoneConfirmationDialogResult2,
-      );
-    }
-    if (props14) {
-      confirmedRef.current = true;
-      props3(false, {
-        reason: `confirm`,
-      });
-      return;
-    }
-    setPending(true);
-    try {
-      await phoneConfirmationDialogResult;
-    } finally {
-      setPending(false);
-    }
-  };
-  return (
-    <UiDialogsRoot2.Root
-      open={props2}
-      onOpenChange={(
-        phoneConfirmationDialog?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (!(pending || !props2)) {
-          props3(phoneConfirmationDialog, {
-            reason: `dismiss`,
-          });
-        }
-      }}
-    >
-      <PhoneDialogPopup
-        kind={`alert`}
-        portalClassName={props6}
-        initialFocus={props12 === `cancel` ? confirmRef : cancelRef}
-        data-testid={`phone-confirmation-sheet`}
-      >
-        <UiDialogsRoot2.Header showClose={false} description={props5}>
-          {props4}
-        </UiDialogsRoot2.Header>
-        {props8}
-        <UiDialogsRoot2.Footer align={`end`}>
-          <UiDialogsRoot2.Close
-            ref={confirmRef}
-            disabled={pending}
-            render={<Button>{props10}</Button>}
-          />
-          <Button
-            ref={cancelRef}
-            variant={props11}
-            busy={pending}
-            disabled={props13}
-            onClick={(..._extraArguments: unknown[]): undefined =>
-              void confirm()
-            }
-            onKeyDown={(
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              if (
-                event.repeat &&
-                (event.key === `Enter` || event.key === ` `)
-              ) {
-                event.preventDefault();
-              }
-            }}
-          >
-            {props9}
-          </Button>
-        </UiDialogsRoot2.Footer>
-      </PhoneDialogPopup>
-    </UiDialogsRoot2.Root>
-  );
-}
+
 var SWIPE_CLOSE_PX: number = 80;
 var SWIPE_START_PX: number = 16;
 var SWIPE_SPEED_PX_PER_MS: number = 0.5;
@@ -850,15 +849,4 @@ function useSwipeToClose(
     onLostPointerCapture: onPointerCancel,
   };
 }
-export {
-  BOTTOM_SHEET_SCRIM_CLASS,
-  BottomSheet,
-  ENTER_GUARD_MS,
-  ON_KEYBOARD_CLASS,
-  PhoneConfirmationDialog,
-  PhoneDialogPopup,
-  SAFE_AREA_FOOT_CLASS,
-  SHEET_CONTROL_CLASS,
-  SWIPE_CLOSE_PX,
-  TEXT_FIELD,
-};
+export { BOTTOM_SHEET_SCRIM_CLASS, ENTER_GUARD_MS, ON_KEYBOARD_CLASS, PhoneDialogPopup, SAFE_AREA_FOOT_CLASS, SHEET_CONTROL_CLASS, SWIPE_CLOSE_PX, TEXT_FIELD };

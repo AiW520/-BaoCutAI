@@ -38,6 +38,226 @@ import {
   TEXT_FONT_PROPERTY,
   isFontSettingsObject,
 } from "./run-review";
+import type * as ReactComponentTypes from "react";
+
+export const KeyboardHelpDialog: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let versionHistoryV2: Dynamic = resolvePlatformSyncAndRoutingValue22();
+  let historyRestore: Dynamic = resolvePlatformSyncAndRoutingRestoreOffers2();
+  let docDisplay: Dynamic =
+    usePlatformFeatureFlagsUseSyncExternalStore(DOC_FONTS_FEATURE);
+  let tabsOnLeft: Dynamic = PlatformSyncAndRoutingCanRename(
+    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      keyboardHelpDialog.onLeft,
+  );
+  let tabsCanRename: Dynamic = PlatformSyncAndRoutingCanRename(
+    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      keyboardHelpDialog.canRename,
+  );
+  let tabsPanelHeadings: Dynamic = PlatformSyncAndRoutingCanRename(
+    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      keyboardHelpDialog.panelHeadings,
+  );
+  let open: Dynamic = useKeyboardHelpStore(
+    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      keyboardHelpDialog.open,
+  );
+  let onOpenChange: Dynamic = useKeyboardHelpStore(
+    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      keyboardHelpDialog.set,
+  );
+  let current: Dynamic = useKeyboardHelpStore(
+    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      keyboardHelpDialog.returnTo,
+  );
+  let finalFocus: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      current === null
+        ? undefined
+        : {
+            current: current,
+          },
+    [current],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => (
+      useKeyboardHelpStore.setState(
+        (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+          mounted: keyboardHelpDialog.mounted + 1,
+        }),
+      ),
+      window.addEventListener(`keydown`, handleKeyboardHelpShortcut),
+      (..._extraArguments: unknown[]): undefined => {
+        window.removeEventListener(`keydown`, handleKeyboardHelpShortcut);
+        useKeyboardHelpStore.setState(
+          (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]) => ({
+            mounted: Math.max(0, keyboardHelpDialog.mounted - 1),
+            open: false,
+            returnTo: null,
+          }),
+        );
+      }
+    ),
+    [],
+  );
+  return (
+    <UiDialogsRoot.Root open={open} onOpenChange={onOpenChange}>
+      <UiDialogsRoot.Popup
+        size={`2xl`}
+        data-testid={`shortcut-sheet`}
+        finalFocus={finalFocus}
+      >
+        <UiDialogsRoot.Header
+          showClose={true}
+        >{`Keyboard shortcuts`}</UiDialogsRoot.Header>
+        <div className={`min-h-0 overflow-auto sm:columns-2 gap-x-xl`}>
+          {filterKeyboardShortcuts({
+            versionHistoryV2: versionHistoryV2,
+            historyRestore: historyRestore,
+            docDisplay: docDisplay,
+            tabsOnLeft: tabsOnLeft,
+            tabsCanRename: tabsCanRename,
+            tabsPanelHeadings: tabsPanelHeadings,
+          }).map(
+            (
+              filterKeyboardShortcut?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): Dynamic => (
+              <section
+                aria-labelledby={`shortcut-sheet-${filterKeyboardShortcut.group}`}
+                className={`mb-lg`}
+                key={filterKeyboardShortcut.group}
+              >
+                {
+                  <h3
+                    id={`shortcut-sheet-${filterKeyboardShortcut.group}`}
+                    className={`text-muted text-caption mb-sm break-after-avoid`}
+                  >
+                    {filterKeyboardShortcut.title}
+                  </h3>
+                }
+                {
+                  <ul>
+                    {filterKeyboardShortcut.rows.map(
+                      (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
+                        <li
+                          data-chord={event.id}
+                          className={`flex flex-wrap break-inside-avoid items-center justify-between gap-x-md gap-y-0 py-1`}
+                          key={event.id}
+                        >
+                          {
+                            <span className={`text-body flex-1`}>
+                              {event.label}
+                              {PlatformKeyboardAndSaveStatusText[event.scope] !==
+                                undefined && (
+                                <span className={`text-secondary`}>
+                                  {` · `}
+                                  {PlatformKeyboardAndSaveStatusText[event.scope]}
+                                </span>
+                              )}
+                            </span>
+                          }
+                          {
+                            <span className={`ml-auto flex shrink-0 items-center gap-sm`}>
+                              {[event.key, ...(event.also ?? [])].map(
+                                (
+                                  item?: Dynamic,
+                                  index?: Dynamic,
+                                  ..._extraArguments: unknown[]
+                                ): Dynamic => (
+                                  <span className={`flex items-center gap-sm`} key={item}>
+                                    {index > 0 && (
+                                      <span
+                                        className={`text-muted text-caption`}
+                                      >{`or`}</span>
+                                    )}
+                                    {
+                                      <UiShortcutsAndSizingKeys
+                                        keys={collectPlatformKeyboardAndSaveStatusMods(
+                                          item,
+                                        )}
+                                      />
+                                    }
+                                  </span>
+                                ),
+                              )}
+                            </span>
+                          }
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                }
+              </section>
+            ),
+          )}
+        </div>
+      </UiDialogsRoot.Popup>
+    </UiDialogsRoot.Root>
+  );
+};
+
+export const ProjectDoorProvider: ReactComponentTypes.FC<Dynamic> = ({
+  pid: pid,
+  children: children,
+}) => {
+  let memoized: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (pid === undefined || pid === ``) return;
+      let ambient: Dynamic = {
+        kind: `project`,
+        id: pid,
+      };
+      return {
+        door: liveDoor(pid),
+        ambient: ambient,
+      };
+    },
+    [pid],
+  );
+  return (
+    <PlatformSyncAndRoutingDoor door={memoized?.door} ambient={memoized?.ambient}>
+      {children}
+    </PlatformSyncAndRoutingDoor>
+  );
+};
+
+export const PageSkillBulbGate: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  chrome: chrome,
+}) => {
+  return !usePlatformFeatureFlagsUseSyncExternalStore(`swimming`) ||
+    seat === null ? null : (
+    <React.Suspense fallback={null}>
+      <LazyPageSkillBulb seat={seat} chrome={chrome} />
+    </React.Suspense>
+  );
+};
+
+export const DocFontControlGate: ReactComponentTypes.FC<Dynamic> = ({ seat: seat }) => {
+  return !usePlatformFeatureFlagsUseSyncExternalStore(`docFonts`) ||
+    seat === null ||
+    seat.post === undefined ? null : (
+    <RouteErrorBoundary component={`docfont`} fallback={null}>
+      <React.Suspense fallback={null}>
+        <LazyDocFontControl seat={seat} />
+      </React.Suspense>
+    </RouteErrorBoundary>
+  );
+};
+
+export const DocLayoutControlGate: ReactComponentTypes.FC<Dynamic> = ({ seat: seat }) => {
+  return !usePlatformFeatureFlagsUseSyncExternalStore(`docFonts`) ||
+    seat === null ||
+    seat.post === undefined ? null : (
+    <RouteErrorBoundary component={`doclayout`} fallback={null}>
+      <React.Suspense fallback={null}>
+        <LazyDocLayoutControl seat={seat} />
+      </React.Suspense>
+    </RouteErrorBoundary>
+  );
+};
 
 function readDisplaySettings(displaySettings: unknown): DisplayRecord | null {
   if (!isFontSettingsObject(displaySettings)) return null;
@@ -425,142 +645,6 @@ function handleKeyboardHelpShortcut(
   }
 }
 
-function KeyboardHelpDialog(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-): Dynamic {
-  let versionHistoryV2: Dynamic = resolvePlatformSyncAndRoutingValue22();
-  let historyRestore: Dynamic = resolvePlatformSyncAndRoutingRestoreOffers2();
-  let docDisplay: Dynamic =
-    usePlatformFeatureFlagsUseSyncExternalStore(DOC_FONTS_FEATURE);
-  let tabsOnLeft: Dynamic = PlatformSyncAndRoutingCanRename(
-    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      keyboardHelpDialog.onLeft,
-  );
-  let tabsCanRename: Dynamic = PlatformSyncAndRoutingCanRename(
-    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      keyboardHelpDialog.canRename,
-  );
-  let tabsPanelHeadings: Dynamic = PlatformSyncAndRoutingCanRename(
-    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      keyboardHelpDialog.panelHeadings,
-  );
-  let open: Dynamic = useKeyboardHelpStore(
-    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      keyboardHelpDialog.open,
-  );
-  let onOpenChange: Dynamic = useKeyboardHelpStore(
-    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      keyboardHelpDialog.set,
-  );
-  let current: Dynamic = useKeyboardHelpStore(
-    (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      keyboardHelpDialog.returnTo,
-  );
-  let finalFocus: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      current === null
-        ? undefined
-        : {
-            current: current,
-          },
-    [current],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => (
-      useKeyboardHelpStore.setState(
-        (
-          keyboardHelpDialog?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic => ({
-          mounted: keyboardHelpDialog.mounted + 1,
-        }),
-      ),
-      window.addEventListener(`keydown`, handleKeyboardHelpShortcut),
-      (..._extraArguments: unknown[]): undefined => {
-        window.removeEventListener(`keydown`, handleKeyboardHelpShortcut);
-        useKeyboardHelpStore.setState(
-          (keyboardHelpDialog?: Dynamic, ..._extraArguments: unknown[]) => ({
-            mounted: Math.max(0, keyboardHelpDialog.mounted - 1),
-            open: false,
-            returnTo: null,
-          }),
-        );
-      }
-    ),
-    [],
-  );
-  return (
-    <UiDialogsRoot.Root open={open} onOpenChange={onOpenChange}>
-      <UiDialogsRoot.Popup
-        size={`2xl`}
-        data-testid={`shortcut-sheet`}
-        finalFocus={finalFocus}
-      >
-        <UiDialogsRoot.Header
-          showClose={true}
-        >{`Keyboard shortcuts`}</UiDialogsRoot.Header>
-        <div className={`min-h-0 overflow-auto sm:columns-2 gap-x-xl`}>
-          {filterKeyboardShortcuts({
-            versionHistoryV2: versionHistoryV2,
-            historyRestore: historyRestore,
-            docDisplay: docDisplay,
-            tabsOnLeft: tabsOnLeft,
-            tabsCanRename: tabsCanRename,
-            tabsPanelHeadings: tabsPanelHeadings,
-          }).map(
-            (
-              filterKeyboardShortcut?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => (
-              <section aria-labelledby={`shortcut-sheet-${filterKeyboardShortcut.group}`} className={`mb-lg`} key={filterKeyboardShortcut.group}>{<h3 id={`shortcut-sheet-${filterKeyboardShortcut.group}`} className={`text-muted text-caption mb-sm break-after-avoid`}>
-                        {filterKeyboardShortcut.title}
-                      </h3>}{<ul>
-                        {filterKeyboardShortcut.rows.map((event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <li data-chord={event.id} className={`flex flex-wrap break-inside-avoid items-center justify-between gap-x-md gap-y-0 py-1`} key={event.id}>{<span className={`text-body flex-1`}>
-                                      {event.label}
-                                      {PlatformKeyboardAndSaveStatusText[event.scope] !== undefined && <span className={`text-secondary`}>
-                                          {` · `}
-                                          {PlatformKeyboardAndSaveStatusText[event.scope]}
-                                        </span>}
-                                    </span>}{<span className={`ml-auto flex shrink-0 items-center gap-sm`}>
-                                      {[event.key, ...(event.also ?? [])].map((item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <span className={`flex items-center gap-sm`} key={item}>{index > 0 && <span className={`text-muted text-caption`}>{`or`}</span>}{<UiShortcutsAndSizingKeys keys={collectPlatformKeyboardAndSaveStatusMods(item)} />}</span>)}
-                                    </span>}</li>)}
-                      </ul>}</section>
-            ),
-          )}
-        </div>
-      </UiDialogsRoot.Popup>
-    </UiDialogsRoot.Root>
-  );
-}
-
-function ProjectDoorProvider(
-  { pid: pid, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let memoized: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (pid === undefined || pid === ``) return;
-      let ambient: Dynamic = {
-        kind: `project`,
-        id: pid,
-      };
-      return {
-        door: liveDoor(pid),
-        ambient: ambient,
-      };
-    },
-    [pid],
-  );
-  return (
-    <PlatformSyncAndRoutingDoor
-      door={memoized?.door}
-      ambient={memoized?.ambient}
-    >
-      {children}
-    </PlatformSyncAndRoutingDoor>
-  );
-}
-
 var SKILL_PROPERTY: string;
 
 function withoutSkillPost(
@@ -596,34 +680,7 @@ var skillSettingsKey: Dynamic;
 
 var LazyPageSkillBulb: Dynamic;
 
-function PageSkillBulbGate(
-  { seat: seat, chrome: chrome }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return !usePlatformFeatureFlagsUseSyncExternalStore(`swimming`) ||
-    seat === null ? null : (
-    <React.Suspense fallback={null}>
-      <LazyPageSkillBulb seat={seat} chrome={chrome} />
-    </React.Suspense>
-  );
-}
-
 var LazyDocFontControl: Dynamic;
-
-function DocFontControlGate(
-  { seat: seat }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return !usePlatformFeatureFlagsUseSyncExternalStore(`docFonts`) ||
-    seat === null ||
-    seat.post === undefined ? null : (
-    <RouteErrorBoundary component={`docfont`} fallback={null}>
-      <React.Suspense fallback={null}>
-        <LazyDocFontControl seat={seat} />
-      </React.Suspense>
-    </RouteErrorBoundary>
-  );
-}
 
 var DOCUMENT_LANGUAGE_FEATURE: string;
 
@@ -1245,21 +1302,6 @@ function useDocumentLayout(
 
 var LazyDocLayoutControl: Dynamic;
 
-function DocLayoutControlGate(
-  { seat: seat }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return !usePlatformFeatureFlagsUseSyncExternalStore(`docFonts`) ||
-    seat === null ||
-    seat.post === undefined ? null : (
-    <RouteErrorBoundary component={`doclayout`} fallback={null}>
-      <React.Suspense fallback={null}>
-        <LazyDocLayoutControl seat={seat} />
-      </React.Suspense>
-    </RouteErrorBoundary>
-  );
-}
-
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializeDocumentDisplayStep1(): void {
   (fontSettingsKey = (fontSettingsKey2: unknown): string | undefined =>
@@ -1523,57 +1565,4 @@ export function initializeDocumentDisplayStep1(): void {
   ));
 }
 
-export {
-  DOCUMENT_LANGUAGE_COPY,
-  DOCUMENT_LANGUAGE_FEATURE,
-  DocFontControlGate,
-  DocLayoutControlGate,
-  KeyboardHelpDialog,
-  PAGE_WIDTH_PROPERTY,
-  PageSkillBulbGate,
-  ProjectDoorProvider,
-  SKILL_PROPERTY,
-  applyDocumentFontsIfCurrent,
-  applyDocumentLayoutIfCurrent,
-  canReleasePeekFocus,
-  classifyFrameFocusReturn,
-  classifyTitleClick,
-  classifyTitleEscape,
-  classifyTitleFocusRequest,
-  clearDocumentLayoutPickIfCurrent,
-  documentDisplayPostState,
-  documentFontsPostState,
-  documentLanguageAttributes,
-  equalDocumentFonts,
-  equalDocumentLayouts,
-  fontSettingsKey,
-  getDocumentDisplayGeneration,
-  getDocumentFontGeneration,
-  getDocumentFonts,
-  hasKeyboardFrameFocus,
-  openKeyboardHelp,
-  parseDocumentFonts,
-  parseDocumentLayout,
-  pickDocumentLayout,
-  readDisplaySettings,
-  readDocumentLanguage,
-  readPageSkillSettings,
-  reduceKeyboardHelpVisibility,
-  serializeDocumentFonts,
-  serializeDocumentLayout,
-  setDocumentFonts,
-  skillSettingsKey,
-  subscribeDocumentFonts,
-  useDocumentDisplay,
-  useDocumentDisplayFeed,
-  useDocumentFontFeed,
-  useDocumentFonts,
-  useDocumentLanguage,
-  useDocumentLanguageFeed,
-  useDocumentLayout,
-  useKeyboardHelpStore,
-  withoutLanguagePost,
-  withoutSkillPost,
-  withoutTypographyPost,
-  writeDocumentLanguage,
-};
+export { DOCUMENT_LANGUAGE_COPY, DOCUMENT_LANGUAGE_FEATURE, PAGE_WIDTH_PROPERTY, SKILL_PROPERTY, applyDocumentFontsIfCurrent, applyDocumentLayoutIfCurrent, canReleasePeekFocus, classifyFrameFocusReturn, classifyTitleClick, classifyTitleEscape, classifyTitleFocusRequest, clearDocumentLayoutPickIfCurrent, documentDisplayPostState, documentFontsPostState, documentLanguageAttributes, equalDocumentFonts, equalDocumentLayouts, fontSettingsKey, getDocumentDisplayGeneration, getDocumentFontGeneration, getDocumentFonts, hasKeyboardFrameFocus, openKeyboardHelp, parseDocumentFonts, parseDocumentLayout, pickDocumentLayout, readDisplaySettings, readDocumentLanguage, readPageSkillSettings, reduceKeyboardHelpVisibility, serializeDocumentFonts, serializeDocumentLayout, setDocumentFonts, skillSettingsKey, subscribeDocumentFonts, useDocumentDisplay, useDocumentDisplayFeed, useDocumentFontFeed, useDocumentFonts, useDocumentLanguage, useDocumentLanguageFeed, useDocumentLayout, useKeyboardHelpStore, withoutLanguagePost, withoutSkillPost, withoutTypographyPost, writeDocumentLanguage };

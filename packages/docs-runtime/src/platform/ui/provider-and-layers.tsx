@@ -31,6 +31,270 @@ import {
   resolveUiVendorAdaptersValue2,
   resolveUiVendorAdaptersValue3,
 } from "./vendor-adapters";
+import type * as ReactComponentTypes from "react";
+
+export const UiProviderAndLayersDensity: ReactComponentTypes.FC<Dynamic> = ({
+  density: density,
+  mode: mode,
+  platform: platform,
+  font: font,
+  fontMono: fontMono,
+  pageBackground: pageBackground,
+  locale: locale,
+  router: router,
+  labels: labels,
+  experimental: experimental,
+  render: render,
+  className: className,
+  children: children,
+}) => {
+  let inheritedDensity: Dynamic = (0, React.useContext)(UiProviderAndLayersComfortable);
+  let inheritedPlatform: Dynamic = (0, React.useContext)(
+    UiProviderAndLayersCreateContext2,
+  );
+  let inheritedFont: Dynamic = (0, React.useContext)(UiProviderAndLayersCreateContext3);
+  let inheritedPageBackground: Dynamic = (0, React.useContext)(
+    UiProviderAndLayersCreateContext5,
+  );
+  let inheritedRouter: Dynamic = resolveUiLinksAndFoundationUseContext();
+  let inheritedLabels: Dynamic = (0, React.useContext)(
+    UiLinksAndFoundationCreateContext3,
+  );
+  let inheritedDensityOverride: Dynamic = (0, React.useContext)(
+    UiProviderAndLayersCreateContext7,
+  );
+  let densityOverride: Dynamic =
+    experimental?.densityOverride ?? inheritedDensityOverride;
+  let coarsePointer: Dynamic = (0, React.useSyncExternalStore)(
+    resolveUiVendorAdaptersValue3,
+    isUiLinksAndFoundationSource,
+    isUiVendorAdaptersValue,
+  );
+  let resolvedDensity: Dynamic =
+    densityOverride ?? (coarsePointer ? `comfortable` : (density ?? inheritedDensity));
+  let resolvedRouter: Dynamic = router ?? inheritedRouter;
+  let resolvedLabels: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      labels && inheritedLabels
+        ? (
+            uiProviderAndLayersDensity?: Dynamic,
+            options?: Dynamic,
+            context?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): Dynamic =>
+            labels(uiProviderAndLayersDensity, options, context) ||
+            inheritedLabels(uiProviderAndLayersDensity, options, context)
+        : (labels ?? inheritedLabels),
+    [labels, inheritedLabels],
+  );
+  let inheritedImageTiles: Dynamic = (0, React.useContext)(
+    UiProviderAndLayersCreateContext6,
+  );
+  let naturalImageTiles: Dynamic = experimental?.naturalImageTiles ?? inheritedImageTiles;
+  let fizzyLakeParts: Dynamic = resolveUiLinksAndFoundationJoin(
+    (0, React.useContext)(UiLinksAndFoundationCreateContext2),
+    experimental?.fizzyLake?.parts,
+  );
+  useUiLinksAndFoundationState(
+    inheritedFont === undefined,
+    resolveUiProviderAndLayersUseContext10(),
+  );
+  let inheritedMonoFont: Dynamic = (0, React.useContext)(
+    UiProviderAndLayersCreateContext4,
+  );
+  let resolvedMonoFont: Dynamic =
+    fontMono === null
+      ? null
+      : ((fontMono?.trim() ? fontMono.trim() : undefined) ?? inheritedMonoFont);
+  let resolvedPageBackground: Dynamic = pageBackground ?? inheritedPageBackground;
+  let inheritedSurfaceBackground: Dynamic = (0, React.useContext)(
+    UiProviderAndLayersCreateContext8,
+  );
+  let resolvedSurfaceBackground: Dynamic = pageBackground ?? inheritedSurfaceBackground;
+  let inheritedLocale: Dynamic = (0, React.useContext)(UiProviderAndLayersCreateContext9);
+  let explicitLocale: Dynamic = locale?.trim() ? locale.trim() : undefined;
+  let resolvedLocale: Dynamic = explicitLocale ?? inheritedLocale;
+  let detectedPlatform: Dynamic = (0, React.useSyncExternalStore)(
+    resolveUiVendorAdaptersValue,
+    resolveUiLinksAndFoundationDesktop,
+    resolveUiVendorAdaptersValue2,
+  );
+  let resolvedPlatform: Dynamic = platform ?? inheritedPlatform ?? detectedPlatform;
+  let rootRef: Dynamic = (0, React.useRef)(null);
+  let inheritedTheme: Dynamic = (0, React.useContext)(UiProviderAndLayersCreateContext);
+  let ownThemeScope = mode !== undefined || inheritedTheme === undefined;
+  let [themeState, setThemeState]: Dynamic = (0, React.useState)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      ownThemeScope
+        ? {
+            mode: mode,
+            scope: clearUiProviderAndLayersAttributes(mode),
+          }
+        : null,
+  );
+  let parentTheme: Dynamic = ownThemeScope ? undefined : inheritedTheme;
+  let themeStore: Dynamic;
+  if (parentTheme === undefined) {
+    if (themeState !== null && themeState.mode === mode) {
+      themeStore = themeState.scope;
+    } else {
+      themeStore = clearUiProviderAndLayersAttributes(mode);
+      setThemeState({
+        mode: mode,
+        scope: themeStore,
+      });
+    }
+  } else {
+    themeStore = parentTheme;
+  }
+  UiDesignSystemUseLayoutEffect((..._extraArguments: unknown[]): undefined => {
+    updateUiLinksAndFoundationObservedInput(rootRef.current?.ownerDocument);
+  }, []);
+  UiDesignSystemUseLayoutEffect(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (ownThemeScope) {
+        themeStore.setElement(rootRef.current);
+        return (..._extraArguments: unknown[]): Dynamic => themeStore.setElement(null);
+      }
+    },
+    [ownThemeScope, themeStore],
+  );
+  let themeOverrides: Dynamic = useUiDesignSystemTheme(experimental?.theme, rootRef);
+  let themeMode: Dynamic = (0, React.useSyncExternalStore)(
+    themeStore.subscribe,
+    ownThemeScope ? themeStore.getAttrSnapshot : themeStore.getSnapshot,
+    ownThemeScope ? themeStore.getServerAttrSnapshot : themeStore.getServerSnapshot,
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {},
+    [explicitLocale],
+  );
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {}, [false]);
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {}, []);
+  let renderElement: Dynamic = render;
+  if (
+    typeof renderElement == `object` &&
+    renderElement &&
+    renderElement.$$typeof === Symbol.for(`react.lazy`)
+  ) {
+    renderElement = React.Children.toArray(renderElement)[0];
+  }
+  let isHtmlRoot: Dynamic =
+    (0, React.isValidElement)(renderElement) && renderElement.type === `html`;
+  let defaultFont: Dynamic = useUiLinksAndFoundationUseSyncExternalStore2(
+    font === undefined && inheritedFont === undefined && !isHtmlRoot,
+  );
+  let resolvedFont: Dynamic = font ?? inheritedFont ?? defaultFont ?? `anthropic`;
+  let providerElement: Dynamic = useRender({
+    render: renderElement,
+    defaultTagName: `div`,
+    ref: rootRef,
+    props: {
+      className: resolveUiDesignSystemValue2(`cds-root text-primary`, className),
+      "data-density": resolvedDensity,
+      "data-mode": themeMode,
+      "data-platform": resolvedPlatform,
+      "data-font": resolvedFont,
+      "data-cds-fizzy-lake": fizzyLakeParts,
+      "data-page-bg": resolvedPageBackground,
+      style: {
+        ...(!isHtmlRoot && {
+          fontSize: `var(--cds-font-size-body)`,
+        }),
+        ...resolveUiProviderAndLayersCdsPageBg(resolvedSurfaceBackground),
+        ...resolveUiProviderAndLayersCdsFontMonoOverride(resolvedMonoFont),
+      },
+      children: children,
+    },
+  });
+  return (
+    <UiProviderAndLayersComfortable.Provider value={resolvedDensity}>
+      <UiProviderAndLayersCreateContext.Provider value={themeStore}>
+        <UiProviderAndLayersCreateContext2.Provider value={resolvedPlatform}>
+          <UiProviderAndLayersCreateContext3.Provider value={resolvedFont}>
+            <UiProviderAndLayersCreateContext4.Provider value={resolvedMonoFont}>
+              <UiProviderAndLayersCreateContext5.Provider value={resolvedPageBackground}>
+                <UiProviderAndLayersCreateContext8.Provider
+                  value={resolvedSurfaceBackground}
+                >
+                  <UiProviderAndLayersCreateContext9.Provider value={resolvedLocale}>
+                    <UiLinksAndFoundationCreateContext.Provider value={resolvedRouter}>
+                      <UiLinksAndFoundationCreateContext3.Provider value={resolvedLabels}>
+                        <UiProviderAndLayersCreateContext6.Provider
+                          value={naturalImageTiles}
+                        >
+                          <UiProviderAndLayersCreateContext7.Provider
+                            value={densityOverride}
+                          >
+                            <UiDesignSystemCreateContext.Provider value={themeOverrides}>
+                              <UiLinksAndFoundationCreateContext2.Provider
+                                value={fizzyLakeParts}
+                              >
+                                {providerElement}
+                              </UiLinksAndFoundationCreateContext2.Provider>
+                            </UiDesignSystemCreateContext.Provider>
+                          </UiProviderAndLayersCreateContext7.Provider>
+                        </UiProviderAndLayersCreateContext6.Provider>
+                      </UiLinksAndFoundationCreateContext3.Provider>
+                    </UiLinksAndFoundationCreateContext.Provider>
+                  </UiProviderAndLayersCreateContext9.Provider>
+                </UiProviderAndLayersCreateContext8.Provider>
+              </UiProviderAndLayersCreateContext5.Provider>
+            </UiProviderAndLayersCreateContext4.Provider>
+          </UiProviderAndLayersCreateContext3.Provider>
+        </UiProviderAndLayersCreateContext2.Provider>
+      </UiProviderAndLayersCreateContext.Provider>
+    </UiProviderAndLayersComfortable.Provider>
+  );
+};
+
+export const CdsLayer: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+  base: base,
+  render: render,
+}) => {
+  let useContext: Dynamic = (0, React.useContext)(UiProviderAndLayersCreateContext13);
+  let zIndex: Dynamic = base ?? useContext + uiProviderAndLayersValue100;
+  let cloneElement: Dynamic =
+    render === undefined
+      ? null
+      : (0, React.cloneElement)(
+          render,
+          {
+            "data-cds": render.props[`data-cds`] ?? `CdsLayer`,
+            style: {
+              ...render.props.style,
+              zIndex: zIndex,
+              "--cds-layer-base": zIndex,
+            },
+          },
+          children,
+        );
+  return (
+    <UiProviderAndLayersCreateContext13.Provider value={zIndex}>
+      {cloneElement ?? children}
+    </UiProviderAndLayersCreateContext13.Provider>
+  );
+};
+
+export const CdsLayerVarBridge: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+  className: className,
+}) => {
+  let cdsLayerBase: Dynamic = (0, React.useContext)(UiProviderAndLayersCreateContext13);
+  return (
+    <div
+      className={resolveUiDesignSystemValue2(`contents`, className)}
+      data-cds={`CdsLayerVarBridge`}
+      data-cds-layer-var-bridge={``}
+      style={{
+        "--cds-layer-base": cdsLayerBase,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 function resolveUiProviderAndLayersDataSize(
   dataSize?: Dynamic,
@@ -480,262 +744,6 @@ function resolveUiProviderAndLayersUseContext10(
   );
 }
 
-function UiProviderAndLayersDensity(
-  {
-    density: density,
-    mode: mode,
-    platform: platform,
-    font: font,
-    fontMono: fontMono,
-    pageBackground: pageBackground,
-    locale: locale,
-    router: router,
-    labels: labels,
-    experimental: experimental,
-    render: render,
-    className: className,
-    children: children,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let inheritedDensity: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersComfortable,
-  );
-  let inheritedPlatform: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext2,
-  );
-  let inheritedFont: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext3,
-  );
-  let inheritedPageBackground: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext5,
-  );
-  let inheritedRouter: Dynamic = resolveUiLinksAndFoundationUseContext();
-  let inheritedLabels: Dynamic = (0, React.useContext)(
-    UiLinksAndFoundationCreateContext3,
-  );
-  let inheritedDensityOverride: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext7,
-  );
-  let densityOverride: Dynamic =
-    experimental?.densityOverride ?? inheritedDensityOverride;
-  let coarsePointer: Dynamic = (0, React.useSyncExternalStore)(
-    resolveUiVendorAdaptersValue3,
-    isUiLinksAndFoundationSource,
-    isUiVendorAdaptersValue,
-  );
-  let resolvedDensity: Dynamic =
-    densityOverride ??
-    (coarsePointer ? `comfortable` : (density ?? inheritedDensity));
-  let resolvedRouter: Dynamic = router ?? inheritedRouter;
-  let resolvedLabels: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      labels && inheritedLabels
-        ? (
-            uiProviderAndLayersDensity?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic =>
-            labels(uiProviderAndLayersDensity, options, context) ||
-            inheritedLabels(uiProviderAndLayersDensity, options, context)
-        : (labels ?? inheritedLabels),
-    [labels, inheritedLabels],
-  );
-  let inheritedImageTiles: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext6,
-  );
-  let naturalImageTiles: Dynamic =
-    experimental?.naturalImageTiles ?? inheritedImageTiles;
-  let fizzyLakeParts: Dynamic = resolveUiLinksAndFoundationJoin(
-    (0, React.useContext)(UiLinksAndFoundationCreateContext2),
-    experimental?.fizzyLake?.parts,
-  );
-  useUiLinksAndFoundationState(
-    inheritedFont === undefined,
-    resolveUiProviderAndLayersUseContext10(),
-  );
-  let inheritedMonoFont: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext4,
-  );
-  let resolvedMonoFont: Dynamic =
-    fontMono === null
-      ? null
-      : ((fontMono?.trim() ? fontMono.trim() : undefined) ?? inheritedMonoFont);
-  let resolvedPageBackground: Dynamic =
-    pageBackground ?? inheritedPageBackground;
-  let inheritedSurfaceBackground: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext8,
-  );
-  let resolvedSurfaceBackground: Dynamic =
-    pageBackground ?? inheritedSurfaceBackground;
-  let inheritedLocale: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext9,
-  );
-  let explicitLocale: Dynamic = locale?.trim() ? locale.trim() : undefined;
-  let resolvedLocale: Dynamic = explicitLocale ?? inheritedLocale;
-  let detectedPlatform: Dynamic = (0, React.useSyncExternalStore)(
-    resolveUiVendorAdaptersValue,
-    resolveUiLinksAndFoundationDesktop,
-    resolveUiVendorAdaptersValue2,
-  );
-  let resolvedPlatform: Dynamic =
-    platform ?? inheritedPlatform ?? detectedPlatform;
-  let rootRef: Dynamic = (0, React.useRef)(null);
-  let inheritedTheme: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext,
-  );
-  let ownThemeScope = mode !== undefined || inheritedTheme === undefined;
-  let [themeState, setThemeState]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      ownThemeScope
-        ? {
-            mode: mode,
-            scope: clearUiProviderAndLayersAttributes(mode),
-          }
-        : null,
-  );
-  let parentTheme: Dynamic = ownThemeScope ? undefined : inheritedTheme;
-  let themeStore: Dynamic;
-  if (parentTheme === undefined) {
-    if (themeState !== null && themeState.mode === mode) {
-      themeStore = themeState.scope;
-    } else {
-      themeStore = clearUiProviderAndLayersAttributes(mode);
-      setThemeState({
-        mode: mode,
-        scope: themeStore,
-      });
-    }
-  } else {
-    themeStore = parentTheme;
-  }
-  UiDesignSystemUseLayoutEffect((..._extraArguments: unknown[]): undefined => {
-    updateUiLinksAndFoundationObservedInput(rootRef.current?.ownerDocument);
-  }, []);
-  UiDesignSystemUseLayoutEffect(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (ownThemeScope) {
-        themeStore.setElement(rootRef.current);
-        return (..._extraArguments: unknown[]): Dynamic =>
-          themeStore.setElement(null);
-      }
-    },
-    [ownThemeScope, themeStore],
-  );
-  let themeOverrides: Dynamic = useUiDesignSystemTheme(
-    experimental?.theme,
-    rootRef,
-  );
-  let themeMode: Dynamic = (0, React.useSyncExternalStore)(
-    themeStore.subscribe,
-    ownThemeScope ? themeStore.getAttrSnapshot : themeStore.getSnapshot,
-    ownThemeScope
-      ? themeStore.getServerAttrSnapshot
-      : themeStore.getServerSnapshot,
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {},
-    [explicitLocale],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {},
-    [false],
-  );
-  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {}, []);
-  let renderElement: Dynamic = render;
-  if (
-    typeof renderElement == `object` &&
-    renderElement &&
-    renderElement.$$typeof === Symbol.for(`react.lazy`)
-  ) {
-    renderElement = React.Children.toArray(renderElement)[0];
-  }
-  let isHtmlRoot: Dynamic =
-    (0, React.isValidElement)(renderElement) && renderElement.type === `html`;
-  let defaultFont: Dynamic = useUiLinksAndFoundationUseSyncExternalStore2(
-    font === undefined && inheritedFont === undefined && !isHtmlRoot,
-  );
-  let resolvedFont: Dynamic =
-    font ?? inheritedFont ?? defaultFont ?? `anthropic`;
-  let providerElement: Dynamic = useRender({
-    render: renderElement,
-    defaultTagName: `div`,
-    ref: rootRef,
-    props: {
-      className: resolveUiDesignSystemValue2(
-        `cds-root text-primary`,
-        className,
-      ),
-      "data-density": resolvedDensity,
-      "data-mode": themeMode,
-      "data-platform": resolvedPlatform,
-      "data-font": resolvedFont,
-      "data-cds-fizzy-lake": fizzyLakeParts,
-      "data-page-bg": resolvedPageBackground,
-      style: {
-        ...(!isHtmlRoot && {
-          fontSize: `var(--cds-font-size-body)`,
-        }),
-        ...resolveUiProviderAndLayersCdsPageBg(resolvedSurfaceBackground),
-        ...resolveUiProviderAndLayersCdsFontMonoOverride(resolvedMonoFont),
-      },
-      children: children,
-    },
-  });
-  return (
-    <UiProviderAndLayersComfortable.Provider value={resolvedDensity}>
-      <UiProviderAndLayersCreateContext.Provider value={themeStore}>
-        <UiProviderAndLayersCreateContext2.Provider value={resolvedPlatform}>
-          <UiProviderAndLayersCreateContext3.Provider value={resolvedFont}>
-            <UiProviderAndLayersCreateContext4.Provider
-              value={resolvedMonoFont}
-            >
-              <UiProviderAndLayersCreateContext5.Provider
-                value={resolvedPageBackground}
-              >
-                <UiProviderAndLayersCreateContext8.Provider
-                  value={resolvedSurfaceBackground}
-                >
-                  <UiProviderAndLayersCreateContext9.Provider
-                    value={resolvedLocale}
-                  >
-                    <UiLinksAndFoundationCreateContext.Provider
-                      value={resolvedRouter}
-                    >
-                      <UiLinksAndFoundationCreateContext3.Provider
-                        value={resolvedLabels}
-                      >
-                        <UiProviderAndLayersCreateContext6.Provider
-                          value={naturalImageTiles}
-                        >
-                          <UiProviderAndLayersCreateContext7.Provider
-                            value={densityOverride}
-                          >
-                            <UiDesignSystemCreateContext.Provider
-                              value={themeOverrides}
-                            >
-                              <UiLinksAndFoundationCreateContext2.Provider
-                                value={fizzyLakeParts}
-                              >
-                                {providerElement}
-                              </UiLinksAndFoundationCreateContext2.Provider>
-                            </UiDesignSystemCreateContext.Provider>
-                          </UiProviderAndLayersCreateContext7.Provider>
-                        </UiProviderAndLayersCreateContext6.Provider>
-                      </UiLinksAndFoundationCreateContext3.Provider>
-                    </UiLinksAndFoundationCreateContext.Provider>
-                  </UiProviderAndLayersCreateContext9.Provider>
-                </UiProviderAndLayersCreateContext8.Provider>
-              </UiProviderAndLayersCreateContext5.Provider>
-            </UiProviderAndLayersCreateContext4.Provider>
-          </UiProviderAndLayersCreateContext3.Provider>
-        </UiProviderAndLayersCreateContext2.Provider>
-      </UiProviderAndLayersCreateContext.Provider>
-    </UiProviderAndLayersComfortable.Provider>
-  );
-}
-
 function resolveUiProviderAndLayersValue2(
   uiProviderAndLayersValue2?: Dynamic,
   ..._extraArguments: unknown[]
@@ -750,36 +758,6 @@ var uiProviderAndLayersValue100: number;
 var uiProviderAndLayersValue9000: number;
 
 var UiProviderAndLayersCreateContext13: Dynamic;
-
-function CdsLayer(
-  { children: children, base: base, render: render }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let useContext: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext13,
-  );
-  let zIndex: Dynamic = base ?? useContext + uiProviderAndLayersValue100;
-  let cloneElement: Dynamic =
-    render === undefined
-      ? null
-      : (0, React.cloneElement)(
-          render,
-          {
-            "data-cds": render.props[`data-cds`] ?? `CdsLayer`,
-            style: {
-              ...render.props.style,
-              zIndex: zIndex,
-              "--cds-layer-base": zIndex,
-            },
-          },
-          children,
-        );
-  return (
-    <UiProviderAndLayersCreateContext13.Provider value={zIndex}>
-      {cloneElement ?? children}
-    </UiProviderAndLayersCreateContext13.Provider>
-  );
-}
 
 var UiProviderAndLayersModal: Dynamic;
 
@@ -862,27 +840,6 @@ function resolveUiProviderAndLayersUseContext11(
     uiProviderAndLayersUseContext11,
   );
   return useContext + uiProviderAndLayersUseContext11;
-}
-
-function CdsLayerVarBridge(
-  { children: children, className: className }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let cdsLayerBase: Dynamic = (0, React.useContext)(
-    UiProviderAndLayersCreateContext13,
-  );
-  return (
-    <div
-      className={resolveUiDesignSystemValue2(`contents`, className)}
-      data-cds={`CdsLayerVarBridge`}
-      data-cds-layer-var-bridge={``}
-      style={{
-        "--cds-layer-base": cdsLayerBase,
-      }}
-    >
-      {children}
-    </div>
-  );
 }
 
 // BaoCut: called by platform-core-initialize in the recovered source order.
@@ -997,33 +954,4 @@ export function initializeUiProviderAndLayersStep1(): void {
   (CdsLayerVarBridge as Dynamic).displayName = `CdsLayerVarBridge`;
 }
 
-export {
-  CdsLayer,
-  UiProviderAndLayersCreateContext12,
-  UiProviderAndLayersCreateContext13,
-  UiProviderAndLayersCreateContext8,
-  UiProviderAndLayersDensity,
-  UiProviderAndLayersState,
-  resolveUiProviderAndLayersBase,
-  resolveUiProviderAndLayersBase2,
-  resolveUiProviderAndLayersCdsFontMonoOverride,
-  resolveUiProviderAndLayersCdsPageBg,
-  resolveUiProviderAndLayersDataSize,
-  resolveUiProviderAndLayersLight,
-  resolveUiProviderAndLayersUseContext,
-  resolveUiProviderAndLayersUseContext10,
-  resolveUiProviderAndLayersUseContext11,
-  resolveUiProviderAndLayersUseContext2,
-  resolveUiProviderAndLayersUseContext3,
-  resolveUiProviderAndLayersUseContext4,
-  resolveUiProviderAndLayersUseContext5,
-  resolveUiProviderAndLayersUseContext6,
-  resolveUiProviderAndLayersUseContext7,
-  resolveUiProviderAndLayersUseContext8,
-  resolveUiProviderAndLayersUseContext9,
-  resolveUiProviderAndLayersValue2,
-  resolveUiProviderAndLayersValue3,
-  uiProviderAndLayersValue9000,
-  useUiProviderAndLayersComfortable,
-  useUiProviderAndLayersUseContext,
-};
+export { UiProviderAndLayersCreateContext12, UiProviderAndLayersCreateContext13, UiProviderAndLayersCreateContext8, UiProviderAndLayersState, resolveUiProviderAndLayersBase, resolveUiProviderAndLayersBase2, resolveUiProviderAndLayersCdsFontMonoOverride, resolveUiProviderAndLayersCdsPageBg, resolveUiProviderAndLayersDataSize, resolveUiProviderAndLayersLight, resolveUiProviderAndLayersUseContext, resolveUiProviderAndLayersUseContext10, resolveUiProviderAndLayersUseContext11, resolveUiProviderAndLayersUseContext2, resolveUiProviderAndLayersUseContext3, resolveUiProviderAndLayersUseContext4, resolveUiProviderAndLayersUseContext5, resolveUiProviderAndLayersUseContext6, resolveUiProviderAndLayersUseContext7, resolveUiProviderAndLayersUseContext8, resolveUiProviderAndLayersUseContext9, resolveUiProviderAndLayersValue2, resolveUiProviderAndLayersValue3, uiProviderAndLayersValue9000, useUiProviderAndLayersComfortable, useUiProviderAndLayersUseContext };

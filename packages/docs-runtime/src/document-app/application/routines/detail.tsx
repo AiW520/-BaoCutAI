@@ -18,18 +18,9 @@ import { resolveApplicationRoutesRuns } from "../routes-filmed-prose-page";
 import { RoutineDefinitionPanel } from "./definition-panel";
 import { RoutineDetailHeader } from "./detail-header";
 import { RoutineDetailMetadata } from "./detail-metadata";
-interface RoutineDetailProps {
-  pid: string;
-  version?: string;
-  row: RoutineRow;
-  slug?: string;
-  nowMs: number;
-  knownNames: ReadonlySet<string>;
-  onVisualize?: VisualizeRoutine;
-  closeModal: () => void;
-  onSelectRoutine: (name: string) => void;
-}
-function RoutineDetail({
+import type * as React from "react";
+
+export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   pid,
   version,
   row,
@@ -39,7 +30,7 @@ function RoutineDetail({
   onVisualize,
   closeModal,
   onSelectRoutine,
-}: RoutineDetailProps) {
+}) => {
   const [definition, setDefinition] = useState<LoadState<RoutineDefinition>>(`loading`);
   useEffect(() => {
     if (slug === undefined) {
@@ -108,8 +99,20 @@ function RoutineDetail({
       <RoutineDefinitionPanel definition={definition} runs={row.runs ?? []} />
     </div>
   );
+};
+
+interface RoutineDetailProps {
+  pid: string;
+  version?: string;
+  row: RoutineRow;
+  slug?: string;
+  nowMs: number;
+  knownNames: ReadonlySet<string>;
+  onVisualize?: VisualizeRoutine;
+  closeModal: () => void;
+  onSelectRoutine: (name: string) => void;
 }
-export { RoutineDetail };
+
 async function loadRoutineDefinition(
   slug: string,
   name: string,

@@ -6,17 +6,14 @@ import {
 } from "../../dependencies";
 import { resolveDocumentPreviewValue3 } from "../../document-preview/roomview-frame-toolbar";
 import type { RoutineRow, VisualizeRoutine } from "../project-contracts";
-export function RoutineDetailHeader({
-  row,
-  href,
-  onVisualize,
-  closeModal,
-}: {
+import type * as React from "react";
+
+export const RoutineDetailHeader: React.FC<{
   row: RoutineRow;
   href?: string;
   onVisualize?: VisualizeRoutine;
   closeModal: () => void;
-}) {
+}> = ({ row, href, onVisualize, closeModal }) => {
   return (
     <div className={`flex items-center gap-1 pr-8`}>
       <div className={`text-primary text-heading min-w-0 flex-1 truncate font-medium`}>
@@ -57,4 +54,4 @@ export function RoutineDetailHeader({
       )}
     </div>
   );
-}
+};

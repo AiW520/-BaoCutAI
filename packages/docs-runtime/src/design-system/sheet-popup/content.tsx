@@ -28,15 +28,11 @@ import {
 import { SheetPopupLeading } from "./layout";
 import { SheetPopupHost } from "./host";
 import { MenuSheetPopup } from "./menu";
+import type * as ReactComponentTypes from "react";
 
-function SheetBackMenuItem(
-  { nested: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const SheetBackMenuItem: ReactComponentTypes.FC<Dynamic> = ({ nested: input }) => {
   let value: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext);
-  let { label: value2 }: Dynamic = (0, React.useContext)(
-    MenuInteractionsCreateContext2,
-  );
+  let { label: value2 }: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext2);
   let value3: Dynamic = (0, React.useContext)(MenuInteractionsSheetTitle);
   let value4: Dynamic = resolveUiLinksAndFoundationUseContext3(`back`, `Back`);
   let value5: Dynamic = value3.backLabel ?? value4;
@@ -71,16 +67,13 @@ function SheetBackMenuItem(
       }
     />
   );
-}
+};
 
-function SheetCloseMenuItem(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-): Dynamic {
+export const SheetCloseMenuItem: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   let value: Dynamic = (0, React.useContext)(SheetsCreateContext);
-  let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `close`,
-    `Close`,
-  );
+  let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(`close`, `Close`);
   let value3: Dynamic =
     (0, React.useContext)(MenuInteractionsSheetTitle).closeLabel ?? value2;
   return (
@@ -105,36 +98,30 @@ function SheetCloseMenuItem(
       </span>
     </BaseMenuItem>
   );
-}
+};
 
-function PopoverSheetBackdrop(
-  { sheetPopup: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const PopoverSheetBackdrop: ReactComponentTypes.FC<Dynamic> = ({
+  sheetPopup: input,
+}) => {
   return (
     <BasePopoverBackdrop
       data-presentation={`sheet`}
       data-sheet-scrim={input.frame?.treeId}
       className={
-        input.state.depth > 0
-          ? SheetsDraggableNoneFixedInset0BgTransparent
-          : SheetsState7
+        input.state.depth > 0 ? SheetsDraggableNoneFixedInset0BgTransparent : SheetsState7
       }
     />
   );
-}
+};
 
-function PopoverSheetContent(
-  {
-    sheetPopup: input,
-    className: input2,
-    bodyRef: input3,
-    bodyClassName: input4,
-    closeLabel: input5,
-    children: input6,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const PopoverSheetContent: ReactComponentTypes.FC<Dynamic> = ({
+  sheetPopup: input,
+  className: input2,
+  bodyRef: input3,
+  bodyClassName: input4,
+  closeLabel: input5,
+  children: input6,
+}) => {
   let { chrome: value }: Dynamic = input;
   return (
     <SheetsCreateContext2.Provider value={input.stack}>
@@ -145,31 +132,36 @@ function PopoverSheetContent(
           `h-auto max-h-none min-h-0 w-full min-w-0 max-w-none flex-auto`,
         )}
       >
-        <div ref={input3} tabIndex={-1} data-cds-popover-body={``} {...{
-  [SheetsDataCdsSheetScroll]: ``
-}} className={input4}>{input6}</div>
+        <div
+          ref={input3}
+          tabIndex={-1}
+          data-cds-popover-body={``}
+          {...{
+            [SheetsDataCdsSheetScroll]: ``,
+          }}
+          className={input4}
+        >
+          {input6}
+        </div>
         <value.DismissButton as={BasePopoverClose} label={input5} />
       </value.Body>
     </SheetsCreateContext2.Provider>
   );
-}
+};
 
-function ComboboxSheetBackdrop(
-  { sheetPopup: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ComboboxSheetBackdrop: ReactComponentTypes.FC<Dynamic> = ({
+  sheetPopup: input,
+}) => {
   return (
     <BaseComboboxBackdrop
       data-presentation={`sheet`}
       data-sheet-scrim={input.frame?.treeId}
       className={
-        input.state.depth > 0
-          ? SheetsDraggableNoneFixedInset0BgTransparent
-          : SheetsState7
+        input.state.depth > 0 ? SheetsDraggableNoneFixedInset0BgTransparent : SheetsState7
       }
     />
   );
-}
+};
 
 var sheetPopupModule: Dynamic;
 
@@ -187,4 +179,4 @@ export function initializeSheetPopupContentStep1(): void {
   });
 }
 
-export { SheetBackMenuItem, SheetCloseMenuItem, sheetPopupModule };
+export { sheetPopupModule };

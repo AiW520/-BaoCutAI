@@ -25,42 +25,9 @@ import {
 } from "../index";
 import { PropertyRow } from "../../design-system/property-row";
 import { enqueueStyleWrite } from "../../document/style-write-chain";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-function readDocumentFontChoice(
-  choice?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let style: Dynamic = serializeDocumentFonts(choice);
-  return {
-    headingFont: style.headingFont,
-    textFont: style.textFont,
-  };
-}
-var FONT_COPY: Dynamic = {
-  button: `Font`,
-  headings: `Headings`,
-  text: `Text`,
-  headingsName: `Headings font`,
-  textName: `Text font`,
-  serif: `Serif`,
-  sans: `Sans`,
-  refused: `Couldn’t save the font choice. The document is back to its saved fonts.`,
-  notSent: `Couldn’t save the font choice. The document is back to its saved fonts. Try again.`,
-};
-var FONT_FAILURE_TOAST_KEY: string = `doc-font-failed`;
-var fontOption: Dynamic = (
-  font?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic => ({
-  value: font,
-  label: FONT_COPY[font],
-});
-var FONT_OPTIONS: Dynamic = [fontOption(`serif`), fontOption(`sans`)];
-function DocFontControl(
-  { seat: seat }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const DocFontControl: ReactComponentTypes.FC<Dynamic> = ({ seat: seat }) => {
   let [open, setOpen]: Dynamic = (0, React.useState)(false);
   let openRef: Dynamic = (0, React.useRef)(open);
   openRef.current = open;
@@ -68,14 +35,10 @@ function DocFontControl(
   let popupRef: Dynamic = (0, React.useRef)(null);
   let finalFocus: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
-      resolvePlatformFeatureFlagsHasFocus(
-        canClosePagebarOnFocusLeave(popupRef),
-      ),
+      resolvePlatformFeatureFlagsHasFocus(canClosePagebarOnFocusLeave(popupRef)),
     [],
   );
-  let [optimisticChoice, setOptimisticChoice]: Dynamic = (0, React.useState)(
-    null,
-  );
+  let [optimisticChoice, setOptimisticChoice]: Dynamic = (0, React.useState)(null);
   let [failure, setFailure]: Dynamic = (0, React.useState)(null);
   let [failureIsQuiet, setFailureIsQuiet]: Dynamic = (0, React.useState)(true);
   let failureWasShown: Dynamic = (0, React.useRef)(false);
@@ -124,10 +87,7 @@ function DocFontControl(
       let seat2: Dynamic = seatRef.current;
       if (
         seat2.post === undefined ||
-        equalDocumentFonts(
-          docFontControl,
-          pendingChoice.current ?? choiceRef.current,
-        )
+        equalDocumentFonts(docFontControl, pendingChoice.current ?? choiceRef.current)
       )
         return;
       pendingChoice.current = docFontControl;
@@ -239,10 +199,44 @@ function DocFontControl(
             className={`text-footnote text-danger pt-1`}
             data-testid={`doc-font-error`}
             key={(announceFailure ? `alert:` : `quiet:`) + failure}
-          >{FONT_COPY[failure]}</p>
+          >
+            {FONT_COPY[failure]}
+          </p>
         ) : null}
       </Popover.Popup>
     </Popover.Root>
   );
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+function readDocumentFontChoice(
+  choice?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let style: Dynamic = serializeDocumentFonts(choice);
+  return {
+    headingFont: style.headingFont,
+    textFont: style.textFont,
+  };
 }
-export { DocFontControl };
+var FONT_COPY: Dynamic = {
+  button: `Font`,
+  headings: `Headings`,
+  text: `Text`,
+  headingsName: `Headings font`,
+  textName: `Text font`,
+  serif: `Serif`,
+  sans: `Sans`,
+  refused: `Couldn’t save the font choice. The document is back to its saved fonts.`,
+  notSent: `Couldn’t save the font choice. The document is back to its saved fonts. Try again.`,
+};
+var FONT_FAILURE_TOAST_KEY: string = `doc-font-failed`;
+var fontOption: Dynamic = (
+  font?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic => ({
+  value: font,
+  label: FONT_COPY[font],
+});
+var FONT_OPTIONS: Dynamic = [fontOption(`serif`), fontOption(`sans`)];

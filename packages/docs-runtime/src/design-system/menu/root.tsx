@@ -48,6 +48,220 @@ import {
   MenuPopupsIcon2,
   MenuPopupsView,
 } from "./items";
+import type * as ReactComponentTypes from "react";
+
+export const MenuPopupsTriggerRef: ReactComponentTypes.FC<Dynamic> = (input) => {
+  let value: Dynamic = resolveSheetsUseContext4();
+  let value2: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
+  let value3: Dynamic = useMenuInteractionsCurrent();
+  let onOpenChange: Dynamic = input.onOpenChange;
+  let { onOpenChange: value4, triggerRef: value5 }: Dynamic = useMenuPopupsTriggerRef(
+    (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      onOpenChange?.(input2, options);
+      updateMenuInteractionsIsCanceled(value3, input2, options);
+    },
+    value2,
+  );
+  let value6: Dynamic = resolveUiProviderAndLayersUseContext9();
+  return value ? (
+    <MenuPopupsOpen {...input} />
+  ) : (
+    MenuPopupsItems(input, value6, {
+      triggerRef: value5,
+      onOpenChange: value4,
+      actionsRef: value3,
+      contextMenuOnOpenChange: value4,
+      inMenuBar: value2,
+    })
+  );
+};
+
+export const MenuPopupsOpen: ReactComponentTypes.FC<Dynamic> = (input) => {
+  let {
+    open: value,
+    sheetTitle: value2,
+    backLabel: value3,
+    closeLabel: value4,
+  }: Dynamic = input;
+  let value5: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => ({
+      sheetTitle: value2,
+      backLabel: value3,
+      closeLabel: value4,
+    }),
+    [value2, value3, value4],
+  );
+  let value6: Dynamic = resolveUiProviderAndLayersUseContext9();
+  let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
+  let { onOpenChange: value8, triggerRef: value9 }: Dynamic = useMenuPopupsTriggerRef(
+    input.onOpenChange,
+    value7,
+  );
+  let value10: Dynamic = useSheetsOpen2({
+    open: value,
+    onOpenChange: value8,
+  });
+  let open: Dynamic = value10.open;
+  let value11: Dynamic = useSheetsOpen({
+    open: open,
+    onOpenChange: value10.onOpenChange,
+    closable: !(value !== undefined && input.onOpenChange === undefined),
+    refuseClose: resolveMenuPopupsValue9,
+  });
+  let value12: Dynamic = MenuPopupsItems(input, value6, {
+    triggerRef: value9,
+    onOpenChange: value11.onOpenChange,
+    onOpenChangeComplete: value11.onOpenChangeComplete,
+    actionsRef: value11.actionsRef,
+    sheetCapable: true,
+    inMenuBar: value7,
+  });
+  return (
+    <SheetsValue2 value={value11}>
+      <MenuInteractionsSheetTitle.Provider value={value5}>
+        {value12}
+      </MenuInteractionsSheetTitle.Provider>
+    </SheetsValue2>
+  );
+};
+
+export const MenuPopupsSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) => {
+  let {
+    children: value,
+    sheetTitle: value2,
+    backLabel: value3,
+    closeLabel: value4,
+    ...value5
+  }: Dynamic = input;
+  let value6: Dynamic = resolveSheetsUseContext4();
+  let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
+  let { onOpenChange: value8, triggerRef: value9 }: Dynamic = useMenuPopupsTriggerRef(
+    value5.onOpenChange,
+    value7,
+  );
+  let value10: Dynamic = useMenuPopupsRenderedWith(value8, value5.open, !value7);
+  let value11: Dynamic = useMenuInteractionsCurrent();
+  resolveUiTooltipsAndControlsClose(value11, value5.actionsRef);
+  return value6 ? (
+    <UiOverlaysAndIconsActionsRef actionsRef={value11}>
+      <MenuPopupsSheetTitle2 {...input} actionsRef={value11} />
+    </UiOverlaysAndIconsActionsRef>
+  ) : (
+    <MenuPopupsProvider value={value9}>
+      <UiOverlaysAndIconsActionsRef actionsRef={value11}>
+        <BaseMenuRoot
+          {...value5}
+          modal={value7 ? undefined : value5.modal}
+          actionsRef={value11}
+          onOpenChange={value10.onOpenChange}
+        >
+          {typeof value == `function`
+            ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                MenuPopupsValue(value(input2), value10.cell, value11)
+            : MenuPopupsValue(value, value10.cell, value11)}
+        </BaseMenuRoot>
+      </UiOverlaysAndIconsActionsRef>
+    </MenuPopupsProvider>
+  );
+};
+
+export const MenuPopupsSheetTitle2: ReactComponentTypes.FC<Dynamic> = (input) => {
+  let {
+    children: value,
+    sheetTitle: value2,
+    backLabel: value3,
+    closeLabel: value4,
+    ...value5
+  }: Dynamic = input;
+  let value6: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => ({
+      sheetTitle: value2,
+      backLabel: value3,
+      closeLabel: value4,
+    }),
+    [value2, value3, value4],
+  );
+  let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
+  let { onOpenChange: value8, triggerRef: value9 }: Dynamic = useMenuPopupsTriggerRef(
+    input.onOpenChange,
+    value7,
+  );
+  let value10: Dynamic = useMenuPopupsRenderedWith(value8, input.open, !value7);
+  let value11: Dynamic = useSheetsOpen2({
+    ...input,
+    onOpenChange: value10.onOpenChange,
+  });
+  let value12: Dynamic = useSheetsWasOpen(
+    value11.open,
+    (..._extraArguments: unknown[]) => value10.cell.getLevel() === `declared`,
+    false,
+  );
+  let value13: Dynamic = useSheetsOpen({
+    open: value11.open,
+    actionsRef: input.actionsRef,
+    onOpenChange: value11.onOpenChange,
+    onOpenChangeComplete: input.onOpenChangeComplete,
+    structurallyAnchored: value12,
+    closable: !(input.open !== undefined && input.onOpenChange === undefined),
+    refuseClose: resolveMenuPopupsValue9,
+  });
+  return (
+    <MenuPopupsProvider value={value9}>
+      <SheetsValue2 value={value13}>
+        <MenuInteractionsSheetTitle.Provider value={value6}>
+          <BaseMenuRoot
+            {...value5}
+            modal={value7 ? undefined : (value13.modal ?? value5.modal)}
+            actionsRef={value13.actionsRef}
+            onOpenChange={value13.onOpenChange}
+            onOpenChangeComplete={value13.onOpenChangeComplete}
+          >
+            {typeof value == `function`
+              ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                  MenuPopupsValue(value(input2), value10.cell, value13.actionsRef)
+              : MenuPopupsValue(value, value10.cell, value13.actionsRef)}
+          </BaseMenuRoot>
+        </MenuInteractionsSheetTitle.Provider>
+      </SheetsValue2>
+    </MenuPopupsProvider>
+  );
+};
+
+export const MenuPopupsPart: ReactComponentTypes.FC<Dynamic> = ({ size: input }) => {
+  let value: Dynamic = resolveUiProviderAndLayersUseContext2();
+  let value2: Dynamic = resolveUiTooltipsAndControlsUseContext2();
+  return (
+    <UiOverlaysAndIconsCustomIcon
+      name={`CaretDown`}
+      size={resolveMenuPopupsValue8(value, input ?? value2?.size)}
+      data-cds-part={`menu-caret`}
+      className={`shrink-0 opacity-60`}
+    />
+  );
+};
+
+export const MenuPopupsSide2: ReactComponentTypes.FC<Dynamic> = ({
+  side: input,
+  align: input2,
+  sideOffset: input3,
+  collisionPadding: input4,
+  finalFocus: input5,
+  dataCds: input6,
+  items: input7,
+}) => {
+  return (
+    <MenuPopupsAnchor
+      side={input}
+      align={input2}
+      sideOffset={input3}
+      collisionPadding={input4}
+      finalFocus={input5}
+      data-cds={input6 ?? `Menu`}
+    >
+      {renderMenuItems(input7)}
+    </MenuPopupsAnchor>
+  );
+};
 
 function resolveMenuPopupsValue7(
   input?: Dynamic,
@@ -115,132 +329,6 @@ function resolveMenuPopupsValue8(
   ..._extraArguments: unknown[]
 ) {
   return resolveUiProviderAndLayersBase(input, options) >= 4 ? `sm` : `xs`;
-}
-
-function MenuPopupsPart(
-  { size: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveUiProviderAndLayersUseContext2();
-  let value2: Dynamic = resolveUiTooltipsAndControlsUseContext2();
-  return (
-    <UiOverlaysAndIconsCustomIcon
-      name={`CaretDown`}
-      size={resolveMenuPopupsValue8(value, input ?? value2?.size)}
-      data-cds-part={`menu-caret`}
-      className={`shrink-0 opacity-60`}
-    />
-  );
-}
-
-function MenuPopupsSide2(
-  {
-    side: input,
-    align: input2,
-    sideOffset: input3,
-    collisionPadding: input4,
-    finalFocus: input5,
-    dataCds: input6,
-    items: input7,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <MenuPopupsAnchor
-      side={input}
-      align={input2}
-      sideOffset={input3}
-      collisionPadding={input4}
-      finalFocus={input5}
-      data-cds={input6 ?? `Menu`}
-    >
-      {renderMenuItems(input7)}
-    </MenuPopupsAnchor>
-  );
-}
-
-function MenuPopupsTriggerRef(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveSheetsUseContext4();
-  let value2: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
-  let value3: Dynamic = useMenuInteractionsCurrent();
-  let onOpenChange: Dynamic = input.onOpenChange;
-  let { onOpenChange: value4, triggerRef: value5 }: Dynamic =
-    useMenuPopupsTriggerRef(
-      (
-        input2?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        onOpenChange?.(input2, options);
-        updateMenuInteractionsIsCanceled(value3, input2, options);
-      },
-      value2,
-    );
-  let value6: Dynamic = resolveUiProviderAndLayersUseContext9();
-  return value ? (
-    <MenuPopupsOpen {...input} />
-  ) : (
-    MenuPopupsItems(input, value6, {
-      triggerRef: value5,
-      onOpenChange: value4,
-      actionsRef: value3,
-      contextMenuOnOpenChange: value4,
-      inMenuBar: value2,
-    })
-  );
-}
-
-function MenuPopupsOpen(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let {
-    open: value,
-    sheetTitle: value2,
-    backLabel: value3,
-    closeLabel: value4,
-  }: Dynamic = input;
-  let value5: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => ({
-      sheetTitle: value2,
-      backLabel: value3,
-      closeLabel: value4,
-    }),
-    [value2, value3, value4],
-  );
-  let value6: Dynamic = resolveUiProviderAndLayersUseContext9();
-  let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
-  let { onOpenChange: value8, triggerRef: value9 }: Dynamic =
-    useMenuPopupsTriggerRef(input.onOpenChange, value7);
-  let value10: Dynamic = useSheetsOpen2({
-    open: value,
-    onOpenChange: value8,
-  });
-  let open: Dynamic = value10.open;
-  let value11: Dynamic = useSheetsOpen({
-    open: open,
-    onOpenChange: value10.onOpenChange,
-    closable: !(value !== undefined && input.onOpenChange === undefined),
-    refuseClose: resolveMenuPopupsValue9,
-  });
-  let value12: Dynamic = MenuPopupsItems(input, value6, {
-    triggerRef: value9,
-    onOpenChange: value11.onOpenChange,
-    onOpenChangeComplete: value11.onOpenChangeComplete,
-    actionsRef: value11.actionsRef,
-    sheetCapable: true,
-    inMenuBar: value7,
-  });
-  return (
-    <SheetsValue2 value={value11}>
-      <MenuInteractionsSheetTitle.Provider value={value5}>
-        {value12}
-      </MenuInteractionsSheetTitle.Provider>
-    </SheetsValue2>
-  );
 }
 
 function MenuPopupsItems(
@@ -435,99 +523,6 @@ function resolveMenuPopupsValue9(
   return isMenuPopupsReason(false, input, options);
 }
 
-function MenuPopupsSheetTitle(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let {
-    children: value,
-    sheetTitle: value2,
-    backLabel: value3,
-    closeLabel: value4,
-    ...value5
-  }: Dynamic = input;
-  let value6: Dynamic = resolveSheetsUseContext4();
-  let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
-  let { onOpenChange: value8, triggerRef: value9 }: Dynamic =
-    useMenuPopupsTriggerRef(value5.onOpenChange, value7);
-  let value10: Dynamic = useMenuPopupsRenderedWith(
-    value8,
-    value5.open,
-    !value7,
-  );
-  let value11: Dynamic = useMenuInteractionsCurrent();
-  resolveUiTooltipsAndControlsClose(value11, value5.actionsRef);
-  return value6 ? (
-    <UiOverlaysAndIconsActionsRef actionsRef={value11}>
-      <MenuPopupsSheetTitle2 {...input} actionsRef={value11} />
-    </UiOverlaysAndIconsActionsRef>
-  ) : (
-    <MenuPopupsProvider value={value9}>
-      <UiOverlaysAndIconsActionsRef actionsRef={value11}>
-        <BaseMenuRoot {...value5} modal={value7 ? undefined : value5.modal} actionsRef={value11} onOpenChange={value10.onOpenChange}>{typeof value == `function` ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => MenuPopupsValue(value(input2), value10.cell, value11) : MenuPopupsValue(value, value10.cell, value11)}</BaseMenuRoot>
-      </UiOverlaysAndIconsActionsRef>
-    </MenuPopupsProvider>
-  );
-}
-
-function MenuPopupsSheetTitle2(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let {
-    children: value,
-    sheetTitle: value2,
-    backLabel: value3,
-    closeLabel: value4,
-    ...value5
-  }: Dynamic = input;
-  let value6: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => ({
-      sheetTitle: value2,
-      backLabel: value3,
-      closeLabel: value4,
-    }),
-    [value2, value3, value4],
-  );
-  let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
-  let { onOpenChange: value8, triggerRef: value9 }: Dynamic =
-    useMenuPopupsTriggerRef(input.onOpenChange, value7);
-  let value10: Dynamic = useMenuPopupsRenderedWith(value8, input.open, !value7);
-  let value11: Dynamic = useSheetsOpen2({
-    ...input,
-    onOpenChange: value10.onOpenChange,
-  });
-  let value12: Dynamic = useSheetsWasOpen(
-    value11.open,
-    (..._extraArguments: unknown[]) => value10.cell.getLevel() === `declared`,
-    false,
-  );
-  let value13: Dynamic = useSheetsOpen({
-    open: value11.open,
-    actionsRef: input.actionsRef,
-    onOpenChange: value11.onOpenChange,
-    onOpenChangeComplete: input.onOpenChangeComplete,
-    structurallyAnchored: value12,
-    closable: !(input.open !== undefined && input.onOpenChange === undefined),
-    refuseClose: resolveMenuPopupsValue9,
-  });
-  return (
-    <MenuPopupsProvider value={value9}>
-      <SheetsValue2 value={value13}>
-        <MenuInteractionsSheetTitle.Provider value={value6}>
-          <BaseMenuRoot
-            {...value5}
-            modal={value7 ? undefined : value13.modal ?? value5.modal}
-            actionsRef={value13.actionsRef}
-            onOpenChange={value13.onOpenChange}
-            onOpenChangeComplete={value13.onOpenChangeComplete}
-          >{typeof value == `function` ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => MenuPopupsValue(value(input2), value10.cell, value13.actionsRef) : MenuPopupsValue(value, value10.cell, value13.actionsRef)}</BaseMenuRoot>
-        </MenuInteractionsSheetTitle.Provider>
-      </SheetsValue2>
-    </MenuPopupsProvider>
-  );
-}
-
 var MenuPopupsDisabled: Dynamic;
 
 // BaoCut: called by cds-initialize in the recovered source order.
@@ -554,4 +549,4 @@ export function initializeMenuRootStep1(): void {
   MenuPopupsDisabled.displayName = `Menu.TriggerButton`;
 }
 
-export { MenuPopupsDisabled, MenuPopupsSheetTitle, MenuPopupsTriggerRef, renderMenuItems };
+export { MenuPopupsDisabled, renderMenuItems };

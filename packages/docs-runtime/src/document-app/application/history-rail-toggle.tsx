@@ -11,6 +11,23 @@ import {
   SessionNavigationPanel,
   SessionNavigationState4,
 } from "../session-navigation/ldoc-comments-btn";
+import type * as React from "react";
+
+export const HistoryRailToggle: React.FC = () => {
+  return (
+    <Tooltip content={`History`}>
+      <IconButton
+        data-testid={`history-rail-toggle`}
+        aria-label={`History`}
+        variant={`default`}
+        size={28}
+        onClick={toggleHistoryRail}
+        icon={<SessionNavigationState4 size={14} />}
+      />
+    </Tooltip>
+  );
+};
+
 function toggleHistoryRail(): undefined {
   const storeState: {
     value: boolean;
@@ -34,18 +51,5 @@ function toggleHistoryRail(): undefined {
     SessionNavigationPanel.getState().close();
   } else PlatformSyncAndRoutingAssign2.getState().clear();
 }
-function HistoryRailToggle() {
-  return (
-    <Tooltip content={`History`}>
-      <IconButton
-        data-testid={`history-rail-toggle`}
-        aria-label={`History`}
-        variant={`default`}
-        size={28}
-        onClick={toggleHistoryRail}
-        icon={<SessionNavigationState4 size={14} />}
-      />
-    </Tooltip>
-  );
-}
-export { HistoryRailToggle, toggleHistoryRail };
+
+export { toggleHistoryRail };

@@ -15,18 +15,20 @@ import {
   MAX_SOURCE_PREVIEW_ROWS,
   sourceCellLabel,
 } from "./target-source-popover";
+import type * as ReactComponentTypes from "react";
 
-function TargetDataRows(
-  { rows: rows, pin: pin, note: note, total: total, locale: locale }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const TargetDataRows: ReactComponentTypes.FC<Dynamic> = ({
+  rows: rows,
+  pin: pin,
+  note: note,
+  total: total,
+  locale: locale,
+}) => {
   let targetDataRowsResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
   let items: Dynamic = ((..._extraArguments: unknown[]): Dynamic => {
     let items2: Dynamic = [];
     for (let targetDataRowsResult2 of rows as Dynamic)
-      for (let targetDataRowsResult3 of Object.keys(
-        targetDataRowsResult2,
-      ) as Dynamic)
+      for (let targetDataRowsResult3 of Object.keys(targetDataRowsResult2) as Dynamic)
         if (!items2.includes(targetDataRowsResult3)) {
           items2.push(targetDataRowsResult3);
         }
@@ -39,8 +41,7 @@ function TargetDataRows(
     hiRow !== null && hiRow < rows.length
       ? Math.floor(hiRow / MAX_SOURCE_PREVIEW_ROWS)
       : 0;
-  let [targetDataRowsState, setTargetDataRowsState]: Dynamic = (0,
-  React.useState)(null);
+  let [targetDataRowsState, setTargetDataRowsState]: Dynamic = (0, React.useState)(null);
   let page2: Dynamic =
     targetDataRowsState !== null &&
     targetDataRowsState.rows === rows &&
@@ -80,13 +81,10 @@ function TargetDataRows(
     ..._extraArguments: unknown[]
   ): Dynamic => targetDataRows.toLocaleString(locale);
   let matchesMax = max > 1;
-  let total2: Dynamic =
-    total !== undefined && total > rows.length ? total : null;
+  let total2: Dynamic = total !== undefined && total > rows.length ? total : null;
   let total3 = matchesMax
     ? `rows ${toLocaleString(amount + 1)}–${toLocaleString(min)} of ${toLocaleString(rows.length)}` +
-      (total2 === null
-        ? ``
-        : ` loaded · ${toLocaleString(total2)} in the source`)
+      (total2 === null ? `` : ` loaded · ${toLocaleString(total2)} in the source`)
     : total2 === null
       ? `${toLocaleString(rows.length)} row${rows.length === 1 ? `` : `s`}`
       : `showing ${toLocaleString(rows.length)} of ${toLocaleString(total2)} rows`;
@@ -134,7 +132,12 @@ function TargetDataRows(
             <thead className={`bg-surface-popover sticky top-0 z-10`}>
               <tr className={`bg-alpha-1`}>
                 {items.map((item?: Dynamic, ..._extraArguments: unknown[]) => (
-                  <th className={`text-footnote border-b px-3 py-2 text-left font-medium ${item === column ? `text-primary` : `text-secondary`}`} key={item}>{item}</th>
+                  <th
+                    className={`text-footnote border-b px-3 py-2 text-left font-medium ${item === column ? `text-primary` : `text-secondary`}`}
+                    key={item}
+                  >
+                    {item}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -155,14 +158,22 @@ function TargetDataRows(
                         className={`border-b last:border-0 ${matchesTotal ? `bg-alpha-2` : ``}`}
                         data-pinned-row={matchesTotal ? `` : undefined}
                         key={total4}
-                      >{items.map((item?: Dynamic, ..._extraArguments: unknown[]) => {
-    let matchesTotal2 = matchesTotal && item === column;
-    return <td
-      data-pinned-cell={matchesTotal2 ? `` : undefined}
-      className={`px-3 py-1.5 ${typeof resolveDataModelSchemasHasOwn(itemsSlice, item) == `number` ? `text-right tabular-nums` : ``} ${matchesTotal2 ? `bg-accent text-accent font-medium` : matchesTotal ? `text-primary` : `text-secondary`}`}
-      key={item}
-    >{sourceCellLabel(resolveDataModelSchemasHasOwn(itemsSlice, item))}</td>;
-  })}</tr>
+                      >
+                        {items.map((item?: Dynamic, ..._extraArguments: unknown[]) => {
+                          let matchesTotal2 = matchesTotal && item === column;
+                          return (
+                            <td
+                              data-pinned-cell={matchesTotal2 ? `` : undefined}
+                              className={`px-3 py-1.5 ${typeof resolveDataModelSchemasHasOwn(itemsSlice, item) == `number` ? `text-right tabular-nums` : ``} ${matchesTotal2 ? `bg-accent text-accent font-medium` : matchesTotal ? `text-primary` : `text-secondary`}`}
+                              key={item}
+                            >
+                              {sourceCellLabel(
+                                resolveDataModelSchemasHasOwn(itemsSlice, item),
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
                     );
                   },
                 )}
@@ -170,9 +181,7 @@ function TargetDataRows(
           </table>
         </div>
       </div>
-      <div
-        className={`mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1`}
-      >
+      <div className={`mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1`}>
         <div
           data-testid={`target-rows-footer`}
           className={`text-secondary text-footnote`}
@@ -233,12 +242,13 @@ function TargetDataRows(
       </div>
     </jsxRuntime.Fragment>
   );
-}
+};
 
-function SourceValuePreview(
-  { value: value, path: path, testimony: testimony }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const SourceValuePreview: ReactComponentTypes.FC<Dynamic> = ({
+  value: value,
+  path: path,
+  testimony: testimony,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   let memoized: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
@@ -276,8 +286,7 @@ function SourceValuePreview(
           {`The pinned path `}
           <span className={`font-mono`}>{memoized.unresolved.pointer}</span>
           {` no longer resolves in this value — showing it without a highlight.`}
-          {testimony != null &&
-            ` The pin recorded ${sourceCellLabel(testimony)} here.`}
+          {testimony != null && ` The pin recorded ${sourceCellLabel(testimony)} here.`}
         </div>
       )}
       {memoized.truncated !== undefined && (
@@ -317,6 +326,4 @@ function SourceValuePreview(
       </pre>
     </jsxRuntime.Fragment>
   );
-}
-
-export { SourceValuePreview, TargetDataRows };
+};

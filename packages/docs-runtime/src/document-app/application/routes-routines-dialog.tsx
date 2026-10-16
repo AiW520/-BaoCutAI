@@ -80,20 +80,17 @@ import { DisabledMenuItem } from "./disabled-menu-item";
 import { DetailMessage } from "./detail-message";
 import { loadRoutineList, loadDatabaseList, isDatabaseFeedUpdate } from "./project-data";
 import { toggleHistoryRail } from "./history-rail-toggle";
+import type * as ReactComponentTypes from "react";
 
-function VersionPicker(
-  {
-    pid: pid,
-    door: door,
-    version: version,
-    fileId: fileId,
-    routineId: routineId,
-    navigate: navigate,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [versionPickerState, setVersionPickerState]: Dynamic = (0,
-  React.useState)(null);
+export const VersionPicker: ReactComponentTypes.FC<Dynamic> = ({
+  pid: pid,
+  door: door,
+  version: version,
+  fileId: fileId,
+  routineId: routineId,
+  navigate: navigate,
+}) => {
+  let [versionPickerState, setVersionPickerState]: Dynamic = (0, React.useState)(null);
   let [labelState, setLabelState]: Dynamic = (0, React.useState)(``);
   let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
   let countRef: Dynamic = (0, React.useRef)(0);
@@ -119,8 +116,7 @@ function VersionPicker(
             ...result,
           }),
         (..._extraArguments: unknown[]): Dynamic =>
-          versionPickerResult2 === countRef.current &&
-          setVersionPickerState(`err`),
+          versionPickerResult2 === countRef.current && setVersionPickerState(`err`),
       );
       return (..._extraArguments: unknown[]): undefined => {
         countRef.current++;
@@ -129,9 +125,7 @@ function VersionPicker(
     [pid],
   );
   let versionPickerState2: Dynamic =
-    versionPickerState &&
-    versionPickerState !== `err` &&
-    versionPickerState.pid === pid
+    versionPickerState && versionPickerState !== `err` && versionPickerState.pid === pid
       ? versionPickerState
       : undefined;
   let toSorted: Dynamic = versionPickerState2?.lines
@@ -148,18 +142,14 @@ function VersionPicker(
       ): number => (options.bornAtSeq ?? 0) - (versionPicker.bornAtSeq ?? 0),
     );
   let checked: Dynamic =
-    !version ||
-    (versionPickerState2 && version === versionPickerState2.defaultVersionId);
+    !version || (versionPickerState2 && version === versionPickerState2.defaultVersionId);
   if (checked && toSorted?.length === 0) return null;
   let line: Dynamic = versionPickerState2?.lines.find(
     (versionPicker?: Dynamic, ..._extraArguments: unknown[]) =>
       versionPicker.id === version,
   );
   let label: Dynamic = checked ? `Live` : (line?.name ?? version);
-  let navigate2 = (
-    version2?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let navigate2 = (version2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     let container: Dynamic = {
       kind: `project`,
       id: pid,
@@ -189,9 +179,7 @@ function VersionPicker(
           : resolveDataContentAndReferencesKind2(container),
     );
   };
-  let setEnabledState2 = async (
-    ..._extraArguments: unknown[]
-  ): Promise<undefined> => {
+  let setEnabledState2 = async (..._extraArguments: unknown[]): Promise<undefined> => {
     let trimmedLabelState: Dynamic = labelState.trim();
     if (!trimmedLabelState || enabledState || !door) return;
     let pid2: Dynamic = pid;
@@ -199,8 +187,7 @@ function VersionPicker(
     let uniqueItems: Dynamic = versionPickerState2
       ? new (Set as Dynamic)(
           versionPickerState2.lines.map(
-            (line2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              line2.id,
+            (line2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => line2.id,
           ),
         )
       : undefined;
@@ -211,19 +198,14 @@ function VersionPicker(
       if (countRef.current === count) {
         setEnabledState(false);
       }
-      toast.error(
-        error instanceof Error ? error.message : `create draft failed`,
-      );
+      toast.error(error instanceof Error ? error.message : `create draft failed`);
       return;
     }
     if (countRef.current === count) {
       setLabelState(``);
       try {
         let versionPickerResult2: Dynamic =
-          await loadPlatformSessionAndSourcesFrameVersionTable(
-            pid2,
-            apiFetcher,
-          );
+          await loadPlatformSessionAndSourcesFrameVersionTable(pid2, apiFetcher);
         if (countRef.current !== count) return;
         countRef.current++;
         setVersionPickerState({
@@ -286,10 +268,7 @@ function VersionPicker(
               className={`${ApplicationRoutes_Styles} max-w-[10rem]`}
             >
               <span className={`truncate`}>{label}</span>
-              <UiOverlaysAndIconsCustomIcon
-                name={`CaretDown`}
-                customSize={12}
-              />
+              <UiOverlaysAndIconsCustomIcon name={`CaretDown`} customSize={12} />
             </button>
           }
         />
@@ -302,42 +281,41 @@ function VersionPicker(
           {toSorted && toSorted.length > 0 && <Menu.Separator />}
           {toSorted && toSorted.length > 0 && (
             <div className={`max-h-[40vh] overflow-y-auto`}>
-              {toSorted.map(
-                (toSorted2?: Dynamic, ..._extraArguments: unknown[]) => (
-                  <Menu.Item
-                    onClick={(..._extraArguments: unknown[]) => navigate2(toSorted2.id)}
-                    checked={toSorted2.id === version}
-                    checkedRole={`radio`}
-                    key={toSorted2.id}
-                  >{<div className={`flex min-w-0 flex-1 flex-col leading-tight`}>
-                            <span className={`truncate`}>
-                              {toSorted2.name ?? toSorted2.id}
-                            </span>
-                            {toSorted2.bornAt && <span className={`text-secondary text-caption truncate`}>
-                                {resolvePlatformSessionAndSourcesWeekday(toSorted2.bornAt, versionPickerResult)}
-                              </span>}
-                          </div>}</Menu.Item>
-                ),
-              )}
+              {toSorted.map((toSorted2?: Dynamic, ..._extraArguments: unknown[]) => (
+                <Menu.Item
+                  onClick={(..._extraArguments: unknown[]) => navigate2(toSorted2.id)}
+                  checked={toSorted2.id === version}
+                  checkedRole={`radio`}
+                  key={toSorted2.id}
+                >
+                  {
+                    <div className={`flex min-w-0 flex-1 flex-col leading-tight`}>
+                      <span className={`truncate`}>{toSorted2.name ?? toSorted2.id}</span>
+                      {toSorted2.bornAt && (
+                        <span className={`text-secondary text-caption truncate`}>
+                          {resolvePlatformSessionAndSourcesWeekday(
+                            toSorted2.bornAt,
+                            versionPickerResult,
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  }
+                </Menu.Item>
+              ))}
             </div>
           )}
           <Menu.Separator />
           <div className={`px-2 py-1`}>
             <input
               data-testid={`new-draft-name`}
-              placeholder={
-                door ? `Name new draft` : `Name new draft (no write access)`
-              }
+              placeholder={door ? `Name new draft` : `Name new draft (no write access)`}
               disabled={enabledState || !door}
               value={labelState}
-              onChange={(
-                event?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => setLabelState(event.target.value)}
-              onKeyDown={(
-                event?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): undefined => {
+              onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                setLabelState(event.target.value)
+              }
+              onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
                 if (event.key === `Escape`) {
                   setLabelState(``);
                   return;
@@ -354,27 +332,22 @@ function VersionPicker(
       </Menu.Root>
     </jsxRuntime.Fragment>
   );
-}
+};
 
-var ApplicationRoutes_Styles2: string;
-
-function HeaderPath(
-  {
-    pid: pid,
-    door: door,
-    projectName: projectName2,
-    fileId: fileId,
-    proseSurface: proseSurface,
-    routineId: routineId,
-    onRenamed: onRenamed,
-    version: version,
-    navigate: navigate,
-    onOpenSources: onOpenSources,
-    embed = false,
-    historyOffered = true,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const HeaderPath: ReactComponentTypes.FC<Dynamic> = ({
+  pid: pid,
+  door: door,
+  projectName: projectName2,
+  fileId: fileId,
+  proseSurface: proseSurface,
+  routineId: routineId,
+  onRenamed: onRenamed,
+  version: version,
+  navigate: navigate,
+  onOpenSources: onOpenSources,
+  embed = false,
+  historyOffered = true,
+}) => {
   let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
   let enabledRef: Dynamic = (0, React.useRef)(false);
   let setEnabledState2 = (..._extraArguments: unknown[]): undefined => {
@@ -423,8 +396,7 @@ function HeaderPath(
     },
     [pid],
   );
-  let [headerPathResult2, set]: Dynamic =
-    updateCommentsActionsAndSelectionValue2();
+  let [headerPathResult2, set]: Dynamic = updateCommentsActionsAndSelectionValue2();
   let headerPathResult3: Dynamic = PlatformSyncAndRoutingAssign2(
     (headerPath?: Dynamic, ..._extraArguments: unknown[]) =>
       headerPath.preview?.upto !== undefined,
@@ -433,43 +405,33 @@ function HeaderPath(
   let label = `project/${pid}`;
   let hasLabel: Dynamic = headerPathResult2.has(label);
   let checked: Dynamic = EditorSelectionAndTablesState6(
-    (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      headerPath.value,
+    (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic => headerPath.value,
   );
   let checked2: Dynamic = EditorSelectionAndTablesState7(
-    (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      headerPath.value,
+    (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic => headerPath.value,
   );
   let headerPathResult4 = resolveEditorHostIsFinite2(
     PlatformSyncAndRoutingState5(
-      (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        headerPath.value,
+      (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic => headerPath.value,
     ),
   );
   let checked3: Dynamic = PlatformSyncAndRoutingState4(
-    (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      headerPath.value,
+    (headerPath?: Dynamic, ..._extraArguments: unknown[]): Dynamic => headerPath.value,
   );
   let [open3, onOpenChange3]: Dynamic = (0, React.useState)(false);
   let elementRef: Dynamic = (0, React.useRef)(null);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
       if (!open3) return;
-      let closest = (
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        let target: Dynamic =
-          event.target instanceof Element ? event.target : null;
+      let closest = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let target: Dynamic = event.target instanceof Element ? event.target : null;
         if (target) {
           if (target.closest(`[data-base-ui-inert]`)) {
             onOpenChange3(false);
             return;
           }
           if (
-            !target.closest(
-              `[data-base-ui-portal],[data-testid=project-menu-trigger]`,
-            )
+            !target.closest(`[data-base-ui-portal],[data-testid=project-menu-trigger]`)
           ) {
             onOpenChange3(false);
           }
@@ -502,10 +464,7 @@ function HeaderPath(
       );
     onRenamed();
   };
-  let trim = (
-    headerPath?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let trim = (headerPath?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     if (!enabledRef.current) return;
     setEnabledState3();
     let headerPathResult5: Dynamic =
@@ -530,10 +489,7 @@ function HeaderPath(
   let embed2: Dynamic = embed && historyOffered;
   let matchesFileId2 = fileId !== undefined && proseSurface === true;
   return (
-    <div
-      data-testid={`header-path`}
-      className={`-ml-1 flex min-w-0 items-center`}
-    >
+    <div data-testid={`header-path`} className={`-ml-1 flex min-w-0 items-center`}>
       {enabledState ? (
         <input
           autoFocus={true}
@@ -544,10 +500,7 @@ function HeaderPath(
           onBlur={(event?: Dynamic, ..._extraArguments: unknown[]) =>
             trim(event.currentTarget.value)
           }
-          onKeyDown={(
-            event?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
+          onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
             if (event.key === `Enter`) {
               trim(event.currentTarget.value);
             } else {
@@ -580,10 +533,7 @@ function HeaderPath(
                   <span className={`truncate`}>{projectName2}</span>
                 )}
                 {embed && (
-                  <UiOverlaysAndIconsCustomIcon
-                    name={`CaretDown`}
-                    customSize={12}
-                  />
+                  <UiOverlaysAndIconsCustomIcon name={`CaretDown`} customSize={12} />
                 )}
               </button>
             }
@@ -596,9 +546,7 @@ function HeaderPath(
             >{`Rename`}</Menu.Item>
             {!embed && (
               <Menu.Item
-                onClick={(..._extraArguments: unknown[]): Dynamic =>
-                  onOpenChange2(true)
-                }
+                onClick={(..._extraArguments: unknown[]): Dynamic => onOpenChange2(true)}
                 icon={`Copy`}
                 disabled={!door || projectName2 === undefined}
               >{`Duplicate`}</Menu.Item>
@@ -620,8 +568,7 @@ function HeaderPath(
                 <Menu.Item
                   icon={`CheckCircle`}
                   onClick={(..._extraArguments: unknown[]): Dynamic =>
-                    fileId &&
-                    EditorSelectionAndTablesRequested.getState().request(fileId)
+                    fileId && EditorSelectionAndTablesRequested.getState().request(fileId)
                   }
                 >{`Check and resolve errors`}</Menu.Item>
                 <Menu.Separator />
@@ -653,9 +600,7 @@ function HeaderPath(
                     onPick={(
                       headerPath?: Dynamic,
                       ..._extraArguments: unknown[]
-                    ): Dynamic =>
-                      PlatformSyncAndRoutingState5.getState().set(headerPath)
-                    }
+                    ): Dynamic => PlatformSyncAndRoutingState5.getState().set(headerPath)}
                     testid={`menu-zoom`}
                   />
                 </Menu.Popup>
@@ -675,9 +620,7 @@ function HeaderPath(
             )}
             <DisabledMenuItem
               data-testid={`more-comments-btn`}
-              disabled={
-                matchesFileId || (fileId !== undefined && !proseSurface)
-              }
+              disabled={matchesFileId || (fileId !== undefined && !proseSurface)}
               reason={`Comments aren't available for this view`}
               icon={`Chats`}
               onSelect={(
@@ -715,34 +658,21 @@ function HeaderPath(
                 })
               }
             >{`Keyboard shortcuts`}</Menu.Item>
-            <Menu.Item
-              data-testid={`menu-support-code`}
-              icon={`Copy`}
-              onClick={onClick}
-            >
+            <Menu.Item data-testid={`menu-support-code`} icon={`Copy`} onClick={onClick}>
               {`Copy support code (`}
-              {resolveObservabilityBrowserAndOperationEventsJoin(
-                liveSupportCode(),
-              )}
+              {resolveObservabilityBrowserAndOperationEventsJoin(liveSupportCode())}
               {`)`}
             </Menu.Item>
             {headerPathResult ? (
               <Menu.Item
                 data-testid={`menu-debug-report`}
-                icon={
-                  <UiOverlaysAndIconsCustomIcon
-                    customIcon={BUG_ICON}
-                    size={`sm`}
-                  />
-                }
+                icon={<UiOverlaysAndIconsCustomIcon customIcon={BUG_ICON} size={`sm`} />}
                 onClick={openDebugReportDialog}
               >{`Debug report…`}</Menu.Item>
             ) : null}
             <Menu.Separator />
             <Menu.Item
-              onClick={(..._extraArguments: unknown[]): Dynamic =>
-                onOpenChange(true)
-              }
+              onClick={(..._extraArguments: unknown[]): Dynamic => onOpenChange(true)}
               icon={`Bullhorn`}
             >{`Send feedback`}</Menu.Item>
           </Menu.Popup>
@@ -772,52 +702,35 @@ function HeaderPath(
       />
     </div>
   );
-}
+};
 
-var ApplicationRoutesPrompt: Dynamic;
-
-function useApplicationRoutesAriaLabel(..._extraArguments: unknown[]) {
-  return (
-    <button
-      type={`button`}
-      aria-label={`Close`}
-      className={`text-muted hover:text-primary hover:bg-alpha-1 flex size-6 shrink-0 items-center justify-center rounded`}
-    >
-      <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
-    </button>
-  );
-}
-
-function RoutinesDialog(
-  {
-    open: open,
-    onOpenChange: onOpenChange,
-    pid: pid,
-    version: version,
-    drill: drill,
-    drillSeq: drillSeq,
-    onDrillChange: onDrillChange,
-    onVisualize: onVisualize,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const RoutinesDialog: ReactComponentTypes.FC<Dynamic> = ({
+  open: open,
+  onOpenChange: onOpenChange,
+  pid: pid,
+  version: version,
+  drill: drill,
+  drillSeq: drillSeq,
+  onDrillChange: onDrillChange,
+  onVisualize: onVisualize,
+}) => {
   let routinesDialogResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
   let [rows, setRows]: Dynamic = (0, React.useState)();
   let [slug, setSlug]: Dynamic = (0, React.useState)();
-  let [routinesDialogState, setRoutinesDialogState]: Dynamic = (0,
-  React.useState)(null);
-  let [routinesDialogState2, setRoutinesDialogState2]: Dynamic = (0,
-  React.useState)();
-  let [routinesDialogState3, setRoutinesDialogState3]: Dynamic = (0,
-  React.useState)(null);
-  let [routinesDialogState4, setRoutinesDialogState4]: Dynamic = (0,
-  React.useState)(null);
+  let [routinesDialogState, setRoutinesDialogState]: Dynamic = (0, React.useState)(null);
+  let [routinesDialogState2, setRoutinesDialogState2]: Dynamic = (0, React.useState)();
+  let [routinesDialogState3, setRoutinesDialogState3]: Dynamic = (0, React.useState)(
+    null,
+  );
+  let [routinesDialogState4, setRoutinesDialogState4]: Dynamic = (0, React.useState)(
+    null,
+  );
   let [countState, setCountState]: Dynamic = (0, React.useState)(0);
   let nowMs: Dynamic = resolveCommentsEditorUseContext4();
-  let [routinesDialogState5, setRoutinesDialogState5]: Dynamic = (0,
-  React.useState)();
-  let [routinesDialogState6, setRoutinesDialogState6]: Dynamic = (0,
-  React.useState)(null);
+  let [routinesDialogState5, setRoutinesDialogState5]: Dynamic = (0, React.useState)();
+  let [routinesDialogState6, setRoutinesDialogState6]: Dynamic = (0, React.useState)(
+    null,
+  );
   let elementRef: Dynamic = (0, React.useRef)(null);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
@@ -855,9 +768,7 @@ function RoutinesDialog(
               enabled &&
               !enabled2 &&
               setRoutinesDialogState(
-                error2 instanceof Error
-                  ? error2.message
-                  : `routines read failed`,
+                error2 instanceof Error ? error2.message : `routines read failed`,
               ),
           )
           .finally((..._extraArguments: unknown[]): undefined => {
@@ -871,10 +782,7 @@ function RoutinesDialog(
       result();
       let routinesDialogResult2: Dynamic = subscribeProjectFeed(
         pid,
-        (
-          routinesDialog?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
+        (routinesDialog?: Dynamic, ..._extraArguments: unknown[]): undefined => {
           if (resolveApplicationRoutesKind(routinesDialog)) {
             result();
           }
@@ -923,9 +831,7 @@ function RoutinesDialog(
               enabled &&
               !enabled2 &&
               setRoutinesDialogState6(
-                error2 instanceof Error
-                  ? error2.message
-                  : `databases read failed`,
+                error2 instanceof Error ? error2.message : `databases read failed`,
               ),
           )
           .finally((..._extraArguments: unknown[]): undefined => {
@@ -939,10 +845,7 @@ function RoutinesDialog(
       result();
       let routinesDialogResult2: Dynamic = subscribeProjectFeed(
         pid,
-        (
-          routinesDialog?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
+        (routinesDialog?: Dynamic, ..._extraArguments: unknown[]): undefined => {
           if (isDatabaseFeedUpdate(routinesDialog)) {
             result();
           }
@@ -964,8 +867,7 @@ function RoutinesDialog(
         let response: Dynamic = await apiFetcher(
           `/api/v3/project/${encodeURIComponent(pid)}/staged-runs`,
         );
-        if (!response.ok)
-          throw Error(`staged-runs read failed (${response.status})`);
+        if (!response.ok) throw Error(`staged-runs read failed (${response.status})`);
         return (await response.json()).rows;
       })().then(
         (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -979,8 +881,9 @@ function RoutinesDialog(
     },
     [open, pid, countState],
   );
-  let [routinesDialogState7, setRoutinesDialogState7]: Dynamic = (0,
-  React.useState)(null);
+  let [routinesDialogState7, setRoutinesDialogState7]: Dynamic = (0, React.useState)(
+    null,
+  );
   let elementRef3: Dynamic = (0, React.useRef)(null);
   let [kind, setKind]: Dynamic = (0, React.useState)(null);
   (0, React.useEffect)(
@@ -1014,11 +917,7 @@ function RoutinesDialog(
             });
           }
         } else {
-          if (
-            routinesDialogState5 === undefined &&
-            routinesDialogState6 === null
-          )
-            return;
+          if (routinesDialogState5 === undefined && routinesDialogState6 === null) return;
           setKind(null);
           let routinesDialogStateItem: Dynamic = routinesDialogState5?.[0];
           if (routinesDialogStateItem !== undefined) {
@@ -1029,14 +928,7 @@ function RoutinesDialog(
           }
         }
     },
-    [
-      open,
-      kind,
-      rows,
-      routinesDialogState,
-      routinesDialogState5,
-      routinesDialogState6,
-    ],
+    [open, kind, rows, routinesDialogState, routinesDialogState5, routinesDialogState6],
   );
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
@@ -1059,8 +951,7 @@ function RoutinesDialog(
   );
   let row: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => {
-      if (routinesDialogState7?.kind !== `routine` || rows === undefined)
-        return;
+      if (routinesDialogState7?.kind !== `routine` || rows === undefined) return;
       let row2: Dynamic = rows.find(
         (row3?: Dynamic, ..._extraArguments: unknown[]) =>
           row3.id === routinesDialogState7.ref,
@@ -1077,10 +968,7 @@ function RoutinesDialog(
   let memoized: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => {
       if (
-        !(
-          routinesDialogState7?.kind !== `database` ||
-          routinesDialogState5 === undefined
-        )
+        !(routinesDialogState7?.kind !== `database` || routinesDialogState5 === undefined)
       )
         return routinesDialogState5.find(
           (routinesDialogState8?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -1107,13 +995,10 @@ function RoutinesDialog(
         let runClientPlaneHash: Dynamic =
           routinesDialog.pinnedPlane === undefined
             ? routinesDialog.runClientPlaneHash
-            : resolvePlatformLiveDocumentAndHistoryEncode(
-                routinesDialog.pinnedPlane,
-              );
+            : resolvePlatformLiveDocumentAndHistoryEncode(routinesDialog.pinnedPlane);
         let identityHash: Dynamic =
           routinesDialog.routine?.connector?.identityHash ?? undefined;
-        let parametersHash: Dynamic =
-          routinesDialog.routine?.parametersHash ?? undefined;
+        let parametersHash: Dynamic = routinesDialog.routine?.parametersHash ?? undefined;
         await loadPlatformLiveDocumentAndHistoryContainer2(
           {
             home: routinesDialog.home,
@@ -1164,8 +1049,7 @@ function RoutinesDialog(
     },
     [open],
   );
-  let closeModal: Dynamic = (..._extraArguments: unknown[]) =>
-    onOpenChange2(false);
+  let closeModal: Dynamic = (..._extraArguments: unknown[]) => onOpenChange2(false);
   let routinesDialogHandler2 = (
     routinesDialog?: Dynamic,
     ..._extraArguments: unknown[]
@@ -1195,34 +1079,50 @@ function RoutinesDialog(
               >{`Routines`}</div>
               {routinesDialogState === null ? (
                 rows === undefined ? (
-                  <div
-                    className={`text-muted text-footnote px-2 py-1`}
-                  >{`loading…`}</div>
+                  <div className={`text-muted text-footnote px-2 py-1`}>{`loading…`}</div>
                 ) : rows.length === 0 ? (
                   <div
                     className={`text-secondary text-footnote px-2 py-1`}
                   >{`No routines yet. Define one in chat.`}</div>
                 ) : (
-                  rows.map(
-                    (
-                      row2?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ): Dynamic => {
-                      let run: Dynamic = resolveApplicationRoutesRuns(row2);
-                      return (
-                        <button type={`button`} data-testid={`routine-row`} ref={row !== undefined && row2 === row ? elementRef3 : undefined} onClick={(..._extraArguments: unknown[]): Dynamic => onDrillChange({
-  kind: `routine`,
-  ref: row2.id ?? row2.name
-})} className={routinesDialogHandler2(row !== undefined && row2 === row)} key={row2.id ?? row2.name}>{<UiOverlaysAndIconsCustomIcon
-  name={ApplicationRoutesPrompt[row2.type] ?? `Lightning`}
-  customSize={14}
-  className={`text-secondary shrink-0`}
-/>}{<span className={`text-primary text-footnote min-w-0 flex-1 truncate`}>
-                                  {resolveDataContentAndReferencesReplace2(row2.label ?? row2.name)}
-                                </span>}{run !== undefined && <RoutineInflightChip run={run} />}</button>
-                      );
-                    },
-                  )
+                  rows.map((row2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+                    let run: Dynamic = resolveApplicationRoutesRuns(row2);
+                    return (
+                      <button
+                        type={`button`}
+                        data-testid={`routine-row`}
+                        ref={row !== undefined && row2 === row ? elementRef3 : undefined}
+                        onClick={(..._extraArguments: unknown[]): Dynamic =>
+                          onDrillChange({
+                            kind: `routine`,
+                            ref: row2.id ?? row2.name,
+                          })
+                        }
+                        className={routinesDialogHandler2(
+                          row !== undefined && row2 === row,
+                        )}
+                        key={row2.id ?? row2.name}
+                      >
+                        {
+                          <UiOverlaysAndIconsCustomIcon
+                            name={ApplicationRoutesPrompt[row2.type] ?? `Lightning`}
+                            customSize={14}
+                            className={`text-secondary shrink-0`}
+                          />
+                        }
+                        {
+                          <span
+                            className={`text-primary text-footnote min-w-0 flex-1 truncate`}
+                          >
+                            {resolveDataContentAndReferencesReplace2(
+                              row2.label ?? row2.name,
+                            )}
+                          </span>
+                        }
+                        {run !== undefined && <RoutineInflightChip run={run} />}
+                      </button>
+                    );
+                  })
                 )
               ) : (
                 <div className={`text-danger text-footnote px-2 py-2`}>
@@ -1234,152 +1134,223 @@ function RoutinesDialog(
               >{`Databases`}</div>
               {routinesDialogState6 === null ? (
                 routinesDialogState5 === undefined ? (
-                  <div
-                    className={`text-muted text-footnote px-2 py-1`}
-                  >{`loading…`}</div>
+                  <div className={`text-muted text-footnote px-2 py-1`}>{`loading…`}</div>
                 ) : routinesDialogState5.length === 0 ? (
                   <div
                     className={`text-secondary text-footnote px-2 py-1`}
                   >{`No databases yet. Ask in chat to create one.`}</div>
                 ) : (
                   routinesDialogState5.map(
-                    (
-                      routinesDialogState8?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ) => (
-                      <button type={`button`} data-testid={`database-row`} ref={memoized !== undefined && routinesDialogState8 === memoized ? elementRef3 : undefined} onClick={(..._extraArguments: unknown[]): Dynamic => onDrillChange({
-  kind: `database`,
-  ref: routinesDialogState8.id
-})} className={routinesDialogHandler2(memoized !== undefined && routinesDialogState8 === memoized)} key={routinesDialogState8.id}>{<UiOverlaysAndIconsCustomIcon name={`Database`} customSize={14} className={`text-secondary shrink-0`} />}{<span className={`text-primary text-footnote min-w-0 flex-1 truncate`}>
-                                {resolveDataContentAndReferencesReplace2(routinesDialogState8.name)}
-                              </span>}{<span className={`text-muted text-caption shrink-0 tabular-nums`}>
-                                {routinesDialogState8.totalRows}
-                              </span>}</button>
+                    (routinesDialogState8?: Dynamic, ..._extraArguments: unknown[]) => (
+                      <button
+                        type={`button`}
+                        data-testid={`database-row`}
+                        ref={
+                          memoized !== undefined && routinesDialogState8 === memoized
+                            ? elementRef3
+                            : undefined
+                        }
+                        onClick={(..._extraArguments: unknown[]): Dynamic =>
+                          onDrillChange({
+                            kind: `database`,
+                            ref: routinesDialogState8.id,
+                          })
+                        }
+                        className={routinesDialogHandler2(
+                          memoized !== undefined && routinesDialogState8 === memoized,
+                        )}
+                        key={routinesDialogState8.id}
+                      >
+                        {
+                          <UiOverlaysAndIconsCustomIcon
+                            name={`Database`}
+                            customSize={14}
+                            className={`text-secondary shrink-0`}
+                          />
+                        }
+                        {
+                          <span
+                            className={`text-primary text-footnote min-w-0 flex-1 truncate`}
+                          >
+                            {resolveDataContentAndReferencesReplace2(
+                              routinesDialogState8.name,
+                            )}
+                          </span>
+                        }
+                        {
+                          <span
+                            className={`text-muted text-caption shrink-0 tabular-nums`}
+                          >
+                            {routinesDialogState8.totalRows}
+                          </span>
+                        }
+                      </button>
                     ),
                   )
                 )
               ) : (
                 <div className={`text-danger text-footnote px-2 py-2`}>
-                  {resolveDataContentAndReferencesReplace2(
-                    routinesDialogState6,
-                  )}
+                  {resolveDataContentAndReferencesReplace2(routinesDialogState6)}
                 </div>
               )}
             </aside>
             <div className={`flex min-w-0 flex-1 flex-col overflow-y-auto p-4`}>
-              {routinesDialogState2 !== undefined &&
-                routinesDialogState2.length > 0 && (
-                  <div className={`mb-2`} data-testid={`staged-runs-section`}>
-                    <div
-                      className={`text-secondary px-1 pt-1 pb-1.5 text-[11px] font-medium`}
-                    >{`Awaiting review`}</div>
-                    {routinesDialogState2.map(
-                      (entry?: Dynamic, ..._extraArguments: unknown[]) => {
-                        let mappedItem = [
-                          entry.pinnedPlane?.prompt,
-                          entry.pinnedPlane?.body,
-                        ]
-                          .map(
-                            (item?: unknown, ..._extraArguments: unknown[]) =>
-                              typeof item == `string` ? item.trim() : ``,
-                          )
-                          .find(
-                            (
-                              mappedItem2?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ) => mappedItem2 !== ``,
-                          );
-                        let runId: Dynamic =
-                          entry.routine?.name !== undefined &&
-                          entry.routine.name !== null
-                            ? resolveDataContentAndReferencesReplace2(
-                                entry.routine.name,
-                              )
-                            : mappedItem === undefined
-                              ? entry.runId
-                              : resolveDataContentAndReferencesReplace2(
-                                  mappedItem,
-                                );
-                        return (
-                          <div
-                            data-testid={`staged-run-row`}
-                            className={`border-strong flex items-center gap-3 border-b px-1 py-2.5 last:border-0`}
-                            key={entry.runId}
-                          >{<span className={`bg-alpha-1 text-secondary flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px]`}>
-                                    <UiOverlaysAndIconsCustomIcon name={`Lightning`} customSize={10} />
-                                    {`staged`}
-                                  </span>}{<div className={`min-w-0 flex-1`}>
-                                    <div className={`text-primary truncate text-[13px]`}>
-                                      {runId}
-                                    </div>
-                                    <div className={`text-secondary flex items-center gap-1.5 text-[11px]`}>
-                                      <span
-                                        className={`min-w-0 truncate`}
-                                        title={(entry.provenance === undefined ? undefined : resolvePlatformSyncAndRoutingScheduled2(entry.provenance)) || undefined}
-                                      >
-                                        {entry.kind ?? `run`}
-                                        {` · staged by`}
-                                        {` `}
-                                        {resolveDataContentAndReferencesReplace2(entry.provenance === undefined ? entry.user : resolvePlatformSyncAndRoutingScheduled(entry.provenance))}
-                                        {entry.createdAt === `` ? `` : ` · ${resolvePlatformSessionAndSourcesWeekday(entry.createdAt, nowMs)}`}
-                                      </span>
-                                      {entry.source != null && <RunSourceChip source={entry.source} />}
-                                    </div>
-                                  </div>}{<span className={`flex shrink-0 gap-1`}>
-                                    <Button
-                                      size={routinesDialogResult(`xs`)}
-                                      variant={`primary`}
-                                      data-testid={`staged-run-approve`}
-                                      disabled={routinesDialogState3 !== null}
-                                      onClick={(..._extraArguments: unknown[]): Dynamic => setRoutinesDialogState4(entry)}
-                                    >{`Approve…`}</Button>
-                                    <Button
-                                      size={routinesDialogResult(`xs`)}
-                                      variant={`ghost`}
-                                      data-testid={`staged-run-dismiss`}
-                                      busy={routinesDialogState3 === entry.runId + `:dismiss`}
-                                      disabled={routinesDialogState3 !== null}
-                                      onClick={(..._extraArguments: unknown[]): undefined => void error(entry, `dismiss`)}
-                                    >{`Dismiss`}</Button>
-                                  </span>}</div>
+              {routinesDialogState2 !== undefined && routinesDialogState2.length > 0 && (
+                <div className={`mb-2`} data-testid={`staged-runs-section`}>
+                  <div
+                    className={`text-secondary px-1 pt-1 pb-1.5 text-[11px] font-medium`}
+                  >{`Awaiting review`}</div>
+                  {routinesDialogState2.map(
+                    (entry?: Dynamic, ..._extraArguments: unknown[]) => {
+                      let mappedItem = [
+                        entry.pinnedPlane?.prompt,
+                        entry.pinnedPlane?.body,
+                      ]
+                        .map((item?: unknown, ..._extraArguments: unknown[]) =>
+                          typeof item == `string` ? item.trim() : ``,
+                        )
+                        .find(
+                          (mappedItem2?: Dynamic, ..._extraArguments: unknown[]) =>
+                            mappedItem2 !== ``,
                         );
-                      },
-                    )}
-                  </div>
-                )}
+                      let runId: Dynamic =
+                        entry.routine?.name !== undefined && entry.routine.name !== null
+                          ? resolveDataContentAndReferencesReplace2(entry.routine.name)
+                          : mappedItem === undefined
+                            ? entry.runId
+                            : resolveDataContentAndReferencesReplace2(mappedItem);
+                      return (
+                        <div
+                          data-testid={`staged-run-row`}
+                          className={`border-strong flex items-center gap-3 border-b px-1 py-2.5 last:border-0`}
+                          key={entry.runId}
+                        >
+                          {
+                            <span
+                              className={`bg-alpha-1 text-secondary flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px]`}
+                            >
+                              <UiOverlaysAndIconsCustomIcon
+                                name={`Lightning`}
+                                customSize={10}
+                              />
+                              {`staged`}
+                            </span>
+                          }
+                          {
+                            <div className={`min-w-0 flex-1`}>
+                              <div className={`text-primary truncate text-[13px]`}>
+                                {runId}
+                              </div>
+                              <div
+                                className={`text-secondary flex items-center gap-1.5 text-[11px]`}
+                              >
+                                <span
+                                  className={`min-w-0 truncate`}
+                                  title={
+                                    (entry.provenance === undefined
+                                      ? undefined
+                                      : resolvePlatformSyncAndRoutingScheduled2(
+                                          entry.provenance,
+                                        )) || undefined
+                                  }
+                                >
+                                  {entry.kind ?? `run`}
+                                  {` · staged by`}
+                                  {` `}
+                                  {resolveDataContentAndReferencesReplace2(
+                                    entry.provenance === undefined
+                                      ? entry.user
+                                      : resolvePlatformSyncAndRoutingScheduled(
+                                          entry.provenance,
+                                        ),
+                                  )}
+                                  {entry.createdAt === ``
+                                    ? ``
+                                    : ` · ${resolvePlatformSessionAndSourcesWeekday(entry.createdAt, nowMs)}`}
+                                </span>
+                                {entry.source != null && (
+                                  <RunSourceChip source={entry.source} />
+                                )}
+                              </div>
+                            </div>
+                          }
+                          {
+                            <span className={`flex shrink-0 gap-1`}>
+                              <Button
+                                size={routinesDialogResult(`xs`)}
+                                variant={`primary`}
+                                data-testid={`staged-run-approve`}
+                                disabled={routinesDialogState3 !== null}
+                                onClick={(..._extraArguments: unknown[]): Dynamic =>
+                                  setRoutinesDialogState4(entry)
+                                }
+                              >{`Approve…`}</Button>
+                              <Button
+                                size={routinesDialogResult(`xs`)}
+                                variant={`ghost`}
+                                data-testid={`staged-run-dismiss`}
+                                busy={routinesDialogState3 === entry.runId + `:dismiss`}
+                                disabled={routinesDialogState3 !== null}
+                                onClick={(..._extraArguments: unknown[]): undefined =>
+                                  void error(entry, `dismiss`)
+                                }
+                              >{`Dismiss`}</Button>
+                            </span>
+                          }
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              )}
               {routinesDialogState7?.kind === `routine` ? (
                 rows === undefined ? (
                   <DetailMessage
                     text={
                       routinesDialogState === null
                         ? `loading…`
-                        : resolveDataContentAndReferencesReplace2(
-                            routinesDialogState,
-                          )
+                        : resolveDataContentAndReferencesReplace2(routinesDialogState)
                     }
                   />
                 ) : row === undefined ? (
-                  <DetailMessage
-                    text={`That routine isn't available in this project`}
-                  />
+                  <DetailMessage text={`That routine isn't available in this project`} />
                 ) : (
-                  <RoutineDetail pid={pid} version={version} row={row} slug={slug} nowMs={nowMs} knownNames={knownNames} onVisualize={onVisualize} closeModal={closeModal} onSelectRoutine={(routinesDialog?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  let filteredRows: Dynamic = (rows ?? []).filter((row2?: Dynamic, ..._extraArguments: unknown[]) => row2.name === routinesDialog);
-  onDrillChange({
-    kind: `routine`,
-    ref: (filteredRows.length === 1 ? filteredRows[0] : undefined)?.id ?? routinesDialog
-  });
-}} key={row.id ?? row.name} />
+                  <RoutineDetail
+                    pid={pid}
+                    version={version}
+                    row={row}
+                    slug={slug}
+                    nowMs={nowMs}
+                    knownNames={knownNames}
+                    onVisualize={onVisualize}
+                    closeModal={closeModal}
+                    onSelectRoutine={(
+                      routinesDialog?: Dynamic,
+                      ..._extraArguments: unknown[]
+                    ): undefined => {
+                      let filteredRows: Dynamic = (rows ?? []).filter(
+                        (row2?: Dynamic, ..._extraArguments: unknown[]) =>
+                          row2.name === routinesDialog,
+                      );
+                      onDrillChange({
+                        kind: `routine`,
+                        ref:
+                          (filteredRows.length === 1 ? filteredRows[0] : undefined)?.id ??
+                          routinesDialog,
+                      });
+                    }}
+                    key={row.id ?? row.name}
+                  />
                 )
               ) : routinesDialogState7?.kind === `database` ? (
-                <DatabaseDetail pid={pid} dbId={routinesDialogState7.ref} key={routinesDialogState7.ref} />
+                <DatabaseDetail
+                  pid={pid}
+                  dbId={routinesDialogState7.ref}
+                  key={routinesDialogState7.ref}
+                />
               ) : (
                 <DetailMessage
-                  text={
-                    kind === null
-                      ? `Select a routine or data source`
-                      : `loading…`
-                  }
+                  text={kind === null ? `Select a routine or data source` : `loading…`}
                 />
               )}
             </div>
@@ -1401,13 +1372,28 @@ function RoutinesDialog(
             setRoutinesDialogState4(null)
           }
           onApprove={(..._extraArguments: unknown[]) =>
-            routinesDialogState4 !== null &&
-            void error(routinesDialogState4, `approve`)
+            routinesDialogState4 !== null && void error(routinesDialogState4, `approve`)
           }
           portalClassName={`z-popover`}
         />
       </React.Suspense>
     </jsxRuntime.Fragment>
+  );
+};
+
+var ApplicationRoutes_Styles2: string;
+
+var ApplicationRoutesPrompt: Dynamic;
+
+function useApplicationRoutesAriaLabel(..._extraArguments: unknown[]) {
+  return (
+    <button
+      type={`button`}
+      aria-label={`Close`}
+      className={`text-muted hover:text-primary hover:bg-alpha-1 flex size-6 shrink-0 items-center justify-center rounded`}
+    >
+      <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
+    </button>
   );
 }
 
@@ -1421,4 +1407,4 @@ export function initializeApplicationRoutesRoutinesDialogStep1(): void {
   });
 }
 
-export { HeaderPath, RoutinesDialog, useApplicationRoutesAriaLabel };
+export { useApplicationRoutesAriaLabel };

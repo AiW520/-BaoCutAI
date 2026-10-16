@@ -19,6 +19,149 @@ import {
 import {
   resolveUiOverlaysAndIconsValue4,
 } from "./overlays-and-icons";
+import type * as ReactComponentTypes from "react";
+
+export const UiShortcutsAndSizingKeys: ReactComponentTypes.FC<Dynamic> = ({
+  keys: keys,
+  variant = `keycap`,
+  onFill = false,
+  className: className,
+  ...uiShortcutsAndSizingKeys
+}) => {
+  let useUiShortcutsAndSizingUseSyncExternalStore3: Dynamic =
+    useUiShortcutsAndSizingUseSyncExternalStore();
+  let uiLinksAndFoundationUseContext3: Dynamic = resolveUiLinksAndFoundationUseContext3(
+    `sequenceThen`,
+    UiShortcutsAndSizingThen,
+  );
+  let mappedUiShortcutsAndSizingReplace: Dynamic = resolveUiShortcutsAndSizingReplace(
+    keys,
+  ).map(
+    (uiShortcutsAndSizingReplace?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      collectUiShortcutsAndSizingModifiers(
+        uiShortcutsAndSizingReplace,
+        useUiShortcutsAndSizingUseSyncExternalStore3,
+      ),
+  );
+  let matchesVariant: boolean =
+    variant === `text` && !useUiShortcutsAndSizingUseSyncExternalStore3;
+  return (
+    <span
+      {...uiShortcutsAndSizingKeys}
+      data-cds={`Shortcut`}
+      data-variant={variant}
+      className={resolveUiDesignSystemValue2(
+        UiShortcutsAndSizingKeycap[variant],
+        onFill && `[--cds-shortcut-cap-ink:currentColor]`,
+        className,
+      )}
+    >
+      {mappedUiShortcutsAndSizingReplace.map(
+        (
+          mappedUiShortcutsAndSizingReplace2?: Dynamic,
+          index?: Dynamic,
+          ..._extraArguments: unknown[]
+        ): Dynamic => (
+          <React.Fragment key={index}>
+            {index > 0 && (
+              <span className={`px-[2px] [color:var(--cds-shortcut-cap-ink)]`}>
+                {uiLinksAndFoundationUseContext3}
+              </span>
+            )}
+            {mappedUiShortcutsAndSizingReplace2.map(
+              (
+                { label: label, spoken: spoken }: Dynamic,
+                index2?: Dynamic,
+                ..._extraArguments: unknown[]
+              ): Dynamic => (
+                <React.Fragment key={index2}>
+                  {matchesVariant && index2 > 0 && (
+                    <span className={`mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]`}>
+                      {UiShortcutsAndSizingMessage}
+                    </span>
+                  )}
+                  {
+                    <kbd
+                      className={
+                        variant === `text`
+                          ? UiShortcutsAndSizingStyles4
+                          : resolveUiShortcutsAndSizingFrom(label)
+                      }
+                    >
+                      {spoken === undefined ? (
+                        label
+                      ) : matchesVariant ? (
+                        spoken
+                      ) : (
+                        <jsxRuntime.Fragment>
+                          <span aria-hidden={`true`}>{label}</span>
+                          <span className={`sr-only select-none`}>{spoken}</span>
+                        </jsxRuntime.Fragment>
+                      )}
+                    </kbd>
+                  }
+                </React.Fragment>
+              ),
+            )}
+          </React.Fragment>
+        ),
+      )}
+    </span>
+  );
+};
+
+export const UiShortcutsAndSizingOverride: ReactComponentTypes.FC<Dynamic> = ({
+  override: override,
+  container: container,
+  provideInherit = false,
+  children: children,
+}) => {
+  let collisionPadding: Dynamic = resolveUiShortcutsAndSizingTop(override, container);
+  let memoized: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => ({
+      collisionPadding: collisionPadding,
+    }),
+    [collisionPadding],
+  );
+  let children2: Dynamic = children(collisionPadding);
+  return provideInherit ? (
+    <UiShortcutsAndSizingCreateContext3.Provider value={memoized}>
+      {children2}
+    </UiShortcutsAndSizingCreateContext3.Provider>
+  ) : (
+    children2
+  );
+};
+
+export const UiShortcutsAndSizingReason: ReactComponentTypes.FC<Dynamic> = ({
+  id: id,
+  reason: reason,
+}) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {}, [reason]);
+  return (
+    <span
+      ref={elementRef}
+      id={id}
+      hidden={true}
+      {...{
+        [UiShortcutsAndSizingDataCdsDisabledReason]: ``,
+      }}
+    >
+      {isUiShortcutsAndSizingValue(reason) ? reason : null}
+    </span>
+  );
+};
+
+export const UiShortcutsAndSizingDataMode: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+}) => {
+  return (
+    <div className={`cds-dark-scope contents`} data-mode={`dark`}>
+      {children}
+    </div>
+  );
+};
 
 var UiShortcutsAndSizingStyles: string;
 
@@ -40,60 +183,6 @@ var UiShortcutsAndSizingKeycap: Dynamic;
 var UiShortcutsAndSizingThen: string;
 
 var UiShortcutsAndSizingMessage: string;
-
-function UiShortcutsAndSizingKeys(
-  {
-    keys: keys,
-    variant = `keycap`,
-    onFill = false,
-    className: className,
-    ...uiShortcutsAndSizingKeys
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let useUiShortcutsAndSizingUseSyncExternalStore3: Dynamic =
-    useUiShortcutsAndSizingUseSyncExternalStore();
-  let uiLinksAndFoundationUseContext3: Dynamic =
-    resolveUiLinksAndFoundationUseContext3(
-      `sequenceThen`,
-      UiShortcutsAndSizingThen,
-    );
-  let mappedUiShortcutsAndSizingReplace: Dynamic =
-    resolveUiShortcutsAndSizingReplace(keys).map(
-      (
-        uiShortcutsAndSizingReplace?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic =>
-        collectUiShortcutsAndSizingModifiers(
-          uiShortcutsAndSizingReplace,
-          useUiShortcutsAndSizingUseSyncExternalStore3,
-        ),
-    );
-  let matchesVariant: boolean =
-    variant === `text` && !useUiShortcutsAndSizingUseSyncExternalStore3;
-  return (
-    <span
-      {...uiShortcutsAndSizingKeys}
-      data-cds={`Shortcut`}
-      data-variant={variant}
-      className={resolveUiDesignSystemValue2(UiShortcutsAndSizingKeycap[variant], onFill && `[--cds-shortcut-cap-ink:currentColor]`, className)}
-    >{mappedUiShortcutsAndSizingReplace.map((mappedUiShortcutsAndSizingReplace2?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <React.Fragment key={index}>{index > 0 && <span className={`px-[2px] [color:var(--cds-shortcut-cap-ink)]`}>
-                        {uiLinksAndFoundationUseContext3}
-                      </span>}{mappedUiShortcutsAndSizingReplace2.map(({
-      label: label,
-      spoken: spoken
-    }: Dynamic, index2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <React.Fragment key={index2}>{matchesVariant && index2 > 0 && <span className={`mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]`}>
-                                    {UiShortcutsAndSizingMessage}
-                                  </span>}{<kbd className={variant === `text` ? UiShortcutsAndSizingStyles4 : resolveUiShortcutsAndSizingFrom(label)}>
-                                  {spoken === undefined ? label : matchesVariant ? spoken : <jsxRuntime.Fragment>
-                                      <span aria-hidden={`true`}>{label}</span>
-                                      <span className={`sr-only select-none`}>
-                                        {spoken}
-                                      </span>
-                                    </jsxRuntime.Fragment>}
-                                </kbd>}</React.Fragment>)}</React.Fragment>)}</span>
-  );
-}
 
 var uiShortcutsAndSizingPattern: RegExp;
 
@@ -1799,35 +1888,6 @@ function resolveUiShortcutsAndSizingTop(
 
 var UiShortcutsAndSizingCreateContext3: Dynamic;
 
-function UiShortcutsAndSizingOverride(
-  {
-    override: override,
-    container: container,
-    provideInherit = false,
-    children: children,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let collisionPadding: Dynamic = resolveUiShortcutsAndSizingTop(
-    override,
-    container,
-  );
-  let memoized: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => ({
-      collisionPadding: collisionPadding,
-    }),
-    [collisionPadding],
-  );
-  let children2: Dynamic = children(collisionPadding);
-  return provideInherit ? (
-    <UiShortcutsAndSizingCreateContext3.Provider value={memoized}>
-      {children2}
-    </UiShortcutsAndSizingCreateContext3.Provider>
-  ) : (
-    children2
-  );
-}
-
 var uiShortcutsAndSizingWeakMap7: Dynamic;
 
 function isUiShortcutsAndSizingOwnerDocument(
@@ -1954,22 +2014,6 @@ function isUiShortcutsAndSizingValue(
 
 var UiShortcutsAndSizingDataCdsDisabledReason: string;
 
-function UiShortcutsAndSizingReason(
-  { id: id, reason: reason }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {},
-    [reason],
-  );
-  return (
-    <span ref={elementRef} id={id} hidden={true} {...{
-  [UiShortcutsAndSizingDataCdsDisabledReason]: ``
-}}>{isUiShortcutsAndSizingValue(reason) ? reason : null}</span>
-  );
-}
-
 var UiShortcutsAndSizingStyles12: string;
 
 var UiShortcutsAndSizingState2: string;
@@ -1983,17 +2027,6 @@ var UiShortcutsAndSizingState3: string;
 var UiShortcutsAndSizingPx2Py15: string;
 
 var UiShortcutsAndSizingMinW0BreakWords: string;
-
-function UiShortcutsAndSizingDataMode(
-  { children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div className={`cds-dark-scope contents`} data-mode={`dark`}>
-      {children}
-    </div>
-  );
-}
 
 // BaoCut: called by platform-core-initialize in the recovered source order.
 export function initializeUiShortcutsAndSizingStep1(): void {
@@ -2219,34 +2252,4 @@ export function initializeUiShortcutsAndSizingStep1(): void {
   (UiShortcutsAndSizingMinW0BreakWords = `min-w-0 break-words`);
 }
 
-export {
-  UiShortcutsAndSizingCreateContext,
-  UiShortcutsAndSizingCreateContext2,
-  UiShortcutsAndSizingCreateContext3,
-  UiShortcutsAndSizingDataMode,
-  UiShortcutsAndSizingGroupAriaPressedBtnBgAccentGroupHoverBtnGroupAriaPressedBtnBgAccent,
-  UiShortcutsAndSizingKeys,
-  UiShortcutsAndSizingMinW0BreakWords,
-  UiShortcutsAndSizingOverride,
-  UiShortcutsAndSizingPx2Py15,
-  UiShortcutsAndSizingReason,
-  UiShortcutsAndSizingState2,
-  UiShortcutsAndSizingState3,
-  UiShortcutsAndSizingStyles10,
-  UiShortcutsAndSizingStyles12,
-  UiShortcutsAndSizingStyles13,
-  UiShortcutsAndSizingStyles14,
-  UiShortcutsAndSizingStyles6,
-  UiShortcutsAndSizingStyles7,
-  UiShortcutsAndSizingStyles8,
-  UiShortcutsAndSizingStyles9,
-  collectUiShortcutsAndSizingModifiers2,
-  isUiShortcutsAndSizingOwnerDocument,
-  isUiShortcutsAndSizingValue,
-  resolveUiShortcutsAndSizingJoined,
-  resolveUiShortcutsAndSizingTabIndex,
-  useTooltipTrigger,
-  useUiShortcutsAndSizingEnabled,
-  useUiShortcutsAndSizingStart,
-  useUiShortcutsAndSizingUseSyncExternalStore,
-};
+export { UiShortcutsAndSizingCreateContext, UiShortcutsAndSizingCreateContext2, UiShortcutsAndSizingCreateContext3, UiShortcutsAndSizingGroupAriaPressedBtnBgAccentGroupHoverBtnGroupAriaPressedBtnBgAccent, UiShortcutsAndSizingMinW0BreakWords, UiShortcutsAndSizingPx2Py15, UiShortcutsAndSizingState2, UiShortcutsAndSizingState3, UiShortcutsAndSizingStyles10, UiShortcutsAndSizingStyles12, UiShortcutsAndSizingStyles13, UiShortcutsAndSizingStyles14, UiShortcutsAndSizingStyles6, UiShortcutsAndSizingStyles7, UiShortcutsAndSizingStyles8, UiShortcutsAndSizingStyles9, collectUiShortcutsAndSizingModifiers2, isUiShortcutsAndSizingOwnerDocument, isUiShortcutsAndSizingValue, resolveUiShortcutsAndSizingJoined, resolveUiShortcutsAndSizingTabIndex, useTooltipTrigger, useUiShortcutsAndSizingEnabled, useUiShortcutsAndSizingStart, useUiShortcutsAndSizingUseSyncExternalStore };

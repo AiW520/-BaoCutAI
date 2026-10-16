@@ -9,7 +9,9 @@ import {
   resolvePlatformSyncAndRoutingCompact,
 } from "../dependencies";
 import { SessionNavigationTitle } from "../session-navigation/create-file-placement-waiter";
-function RoomTabUnbound({ fileId }: { fileId?: string }) {
+import type * as React from "react";
+
+export const RoomTabUnbound: React.FC<{ fileId?: string }> = ({ fileId }) => {
   return (
     <div
       role={`status`}
@@ -30,18 +32,14 @@ function RoomTabUnbound({ fileId }: { fileId?: string }) {
       {false}
     </div>
   );
-}
-function DocumentConnectionError({
-  onRetry,
-  message,
-  frame = false,
-  supportCode,
-}: {
+};
+
+export const DocumentConnectionError: React.FC<{
   onRetry: () => void;
   message?: string;
   frame?: boolean;
   supportCode?: string;
-}) {
+}> = ({ onRetry, message, frame = false, supportCode }) => {
   const controlSize: (size: "sm") => string = resolvePlatformSyncAndRoutingCompact();
   const [reason] = useState((): null | string =>
     frame ? resolvePlatformLiveDocumentAndHistoryReason4().reason : null,
@@ -89,8 +87,9 @@ function DocumentConnectionError({
       {false}
     </div>
   );
-}
-function EmptyDocumentView({ hasFiles }: { hasFiles: boolean }) {
+};
+
+export const EmptyDocumentView: React.FC<{ hasFiles: boolean }> = ({ hasFiles }) => {
   return (
     <div className={`text-body text-secondary flex h-full items-center justify-center`}>
       {hasFiles
@@ -98,5 +97,4 @@ function EmptyDocumentView({ hasFiles }: { hasFiles: boolean }) {
         : `No tabs yet. Create one from the tabs menu.`}
     </div>
   );
-}
-export { DocumentConnectionError, EmptyDocumentView, RoomTabUnbound };
+};

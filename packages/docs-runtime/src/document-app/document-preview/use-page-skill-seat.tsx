@@ -61,33 +61,26 @@ import {
 import {
   DocumentCommentsHeadless,
 } from "../room-document-page/document-comments-headless";
+import type * as ReactComponentTypes from "react";
 
-function DocumentUnavailablePage(
-  {
-    dir: dir,
-    path: path,
-    title: title,
-    language: language,
-    reason: reason,
-    container: container,
-    version: version,
-    fsEntryId: fsEntryId,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [documentUnavailablePageState, setDocumentUnavailablePageState]: Dynamic =
-    (0, React.useState)(null);
-  let [
-    documentUnavailablePageState2,
-    setDocumentUnavailablePageState2,
-  ]: Dynamic = (0, React.useState)(null);
+export const DocumentUnavailablePage: ReactComponentTypes.FC<Dynamic> = ({
+  dir: dir,
+  path: path,
+  title: title,
+  language: language,
+  reason: reason,
+  container: container,
+  version: version,
+  fsEntryId: fsEntryId,
+}) => {
+  let [documentUnavailablePageState, setDocumentUnavailablePageState]: Dynamic = (0,
+  React.useState)(null);
+  let [documentUnavailablePageState2, setDocumentUnavailablePageState2]: Dynamic = (0,
+  React.useState)(null);
   let elementRef: Dynamic = (0, React.useRef)(null);
   elementRef.current = documentUnavailablePageState;
   let nodeName: Dynamic = (0, React.useCallback)(
-    (
-      documentUnavailablePage?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic =>
+    (documentUnavailablePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       resolveEditorSelectionAndTablesValue6(
         elementRef.current?.nodes,
         documentUnavailablePage,
@@ -109,10 +102,8 @@ function DocumentUnavailablePage(
   let mode: Dynamic = usePlatformSyncAndRoutingFramed();
   let zoom = resolvePlatformSyncAndRoutingValue15(
     PlatformSyncAndRoutingState5(
-      (
-        documentUnavailablePage?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => documentUnavailablePage.value,
+      (documentUnavailablePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        documentUnavailablePage.value,
     ),
   );
   (0, React.useEffect)(
@@ -121,23 +112,19 @@ function DocumentUnavailablePage(
       setDocumentUnavailablePageState(null);
       setDocumentUnavailablePageState2(null);
       (async (..._extraArguments: unknown[]): Promise<undefined> => {
-        let response = await fetch(
-          collectPlatformApiAndAuthJoin2(`${dir}/${path}`),
-        );
+        let response = await fetch(collectPlatformApiAndAuthJoin2(`${dir}/${path}`));
         if (!response.ok) throw Error(String(response.status));
         let parse: Dynamic = JSON.parse(await response.text());
         if (enabled) {
           setDocumentUnavailablePageState(parse);
         }
-      })().catch(
-        (error?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          if (enabled) {
-            setDocumentUnavailablePageState2(
-              error instanceof Error ? error.message : String(error),
-            );
-          }
-        },
-      );
+      })().catch((error?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (enabled) {
+          setDocumentUnavailablePageState2(
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      });
       return (..._extraArguments: unknown[]): undefined => {
         enabled = false;
       };
@@ -216,13 +203,8 @@ function DocumentUnavailablePage(
     );
   }
   return (
-    <div
-      className={`@container relative flex h-full`}
-      data-testid={`ldoc-tier0`}
-    >
-      <div className={`relative min-w-0 flex-1`}>
-        {documentUnavailablePageResult}
-      </div>
+    <div className={`@container relative flex h-full`} data-testid={`ldoc-tier0`}>
+      <div className={`relative min-w-0 flex-1`}>{documentUnavailablePageResult}</div>
       <DocumentCommentsHeadless
         container={container}
         version={version}
@@ -234,9 +216,9 @@ function DocumentUnavailablePage(
       />
     </div>
   );
-}
+};
 
-function PdfPreview({ src: src }: Dynamic, ..._extraArguments: unknown[]) {
+export const PdfPreview: ReactComponentTypes.FC<Dynamic> = ({ src: src }) => {
   let [src2, setSrc]: Dynamic = (0, React.useState)();
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
@@ -267,20 +249,177 @@ function PdfPreview({ src: src }: Dynamic, ..._extraArguments: unknown[]) {
   ) : (
     <div className={`bg-alpha-0 h-full w-full animate-pulse`} />
   );
-}
+};
 
-var DocumentPreview_Message: string;
+export const UseDocumentPreviewSlotEl2Component: ReactComponentTypes.FC<Dynamic> = ({
+  slotEl: slotEl,
+  inSlot: inSlot,
+  onInSlot: onInSlot,
+  ...documentPreviewSlotEl2
+}) => {
+  let slotEl2: Dynamic = inSlot ? slotEl : null;
+  let [metadataState]: Dynamic = (0, React.useState)(
+    (..._extraArguments: unknown[]): Dynamic => new (WeakMap as Dynamic)(),
+  );
+  let [useDocumentPreviewSlotEl2State]: Dynamic = (0, React.useState)(
+    (..._extraArguments: unknown[]) => {
+      let element = document.createElement(`div`);
+      element.style.display = `contents`;
+      element.addEventListener(
+        `scroll`,
+        (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+          metadataState.set(event.target, event.target.scrollTop),
+        {
+          capture: true,
+          passive: true,
+        },
+      );
+      return element;
+    },
+  );
+  let slotElRef: Dynamic = (0, React.useRef)(slotEl2);
+  slotElRef.current = slotEl2;
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let appendChild: Dynamic = (0, React.useCallback)(
+    (documentPreviewSlotEl22?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      elementRef.current = documentPreviewSlotEl22;
+      if (documentPreviewSlotEl22 && !useDocumentPreviewSlotEl2State.parentNode) {
+        (slotElRef.current ?? documentPreviewSlotEl22).appendChild(
+          useDocumentPreviewSlotEl2State,
+        );
+      }
+    },
+    [useDocumentPreviewSlotEl2State],
+  );
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      let slotEl3: Dynamic = slotEl2 ?? elementRef.current;
+      if (!slotEl3 || useDocumentPreviewSlotEl2State.parentNode === slotEl3) return;
+      let activeElement = useDocumentPreviewSlotEl2State.contains(document.activeElement)
+        ? document.activeElement
+        : null;
+      slotEl3.appendChild(useDocumentPreviewSlotEl2State);
+      for (let useDocumentPreviewSlotEl2Result of useDocumentPreviewSlotEl2State.querySelectorAll(
+        `*`,
+      ) as Dynamic) {
+        let metadataStateEntry: Dynamic = metadataState.get(
+          useDocumentPreviewSlotEl2Result,
+        );
+        if (metadataStateEntry) {
+          useDocumentPreviewSlotEl2Result.scrollTop = metadataStateEntry;
+        }
+      }
+      if (activeElement instanceof HTMLElement) {
+        activeElement.focus({
+          preventScroll: true,
+        });
+      }
+    },
+    [slotEl2, useDocumentPreviewSlotEl2State, metadataState],
+  );
+  let matchesSlotEl = slotEl2 !== null;
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): Dynamic => (
+      onInSlot?.(matchesSlotEl),
+      (..._extraArguments: unknown[]): Dynamic => onInSlot?.(false)
+    ),
+    [matchesSlotEl, onInSlot],
+  );
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): Dynamic =>
+        useDocumentPreviewSlotEl2State.remove(),
+    [useDocumentPreviewSlotEl2State],
+  );
+  return (
+    <jsxRuntime.Fragment>
+      <div ref={appendChild} className={`contents`} />
+      {(0, ReactDom.createPortal)(
+        <div {...documentPreviewSlotEl2} />,
+        useDocumentPreviewSlotEl2State,
+      )}
+    </jsxRuntime.Fragment>
+  );
+};
 
-function UseDocumentPreviewStatusComponent(
-  { status: status, running: running }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const UseDocumentPreviewStatusComponent: ReactComponentTypes.FC<Dynamic> = ({
+  status: status,
+  running: running,
+}) => {
   return (
     <span
       className={`mr-0.5 inline-block size-1.5 shrink-0 rounded-full ${running ? `bg-fill-accent animate-pulse` : status === `error` ? `bg-fill-danger` : status === `warning` ? `bg-fill-warning` : status === undefined ? `bg-fill-tertiary` : `bg-fill-success`}`}
     />
   );
-}
+};
+
+export const PageLoadingFace: ReactComponentTypes.FC<Dynamic> = ({
+  matchShell: matchShell,
+  caption: caption,
+  captionTestId: captionTestId,
+  hint: hint,
+}) => {
+  let jsx = (
+    <div
+      className={`animate-shell-ring size-5 shrink-0 rounded-full border-2 border-transparent motion-reduce:animate-none`}
+      style={DocumentPreviewBackground}
+    />
+  );
+  return (
+    <div
+      role={`status`}
+      aria-label={[caption, hint].filter(Boolean).join(` `) || `Loading`}
+      data-testid={`page-loading-face`}
+      className={`${DOCUMENT_PREVIEW_POPOVER_CLASS} absolute inset-0 z-10`}
+    >
+      <div
+        className={`${matchShell ? `fixed` : `absolute`} gap-sm px-lg inset-x-0 top-1/2 flex -translate-y-2.5 flex-col items-center`}
+      >
+        {jsx}
+        <p
+          className={`text-footnote text-secondary flex min-h-5 items-center text-center`}
+          data-testid={caption ? captionTestId : undefined}
+        >
+          {caption ?? ``}
+        </p>
+        {hint && (
+          <p
+            className={`text-footnote text-secondary max-w-md text-center`}
+            data-testid={`frame-setting-up-long`}
+          >
+            {hint}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const UseDocumentPreviewSlotElComponent: ReactComponentTypes.FC<Dynamic> = ({
+  slotEl: slotEl,
+  inSlot: inSlot,
+  onInSlot: onInSlot,
+  ...documentPreviewSlotEl
+}) => {
+  let [matchesSlotElState, setMatchesSlotElState]: Dynamic = (0, React.useState)(
+    slotEl !== null,
+  );
+  if (slotEl !== null && !matchesSlotElState) {
+    setMatchesSlotElState(true);
+  }
+  return matchesSlotElState ? (
+    <UseDocumentPreviewSlotEl2Component
+      slotEl={slotEl}
+      inSlot={inSlot}
+      onInSlot={onInSlot}
+      {...documentPreviewSlotEl}
+    />
+  ) : (
+    <div {...documentPreviewSlotEl} />
+  );
+};
+
+var DocumentPreview_Message: string;
 
 function resolveDocumentPreviewFailed(
   documentPreviewFailed?: Dynamic,
@@ -653,51 +792,6 @@ var DocumentPreviewBackground: {
     WebkitMask: string;
     mask: string;
 };
-
-function PageLoadingFace(
-  {
-    matchShell: matchShell,
-    caption: caption,
-    captionTestId: captionTestId,
-    hint: hint,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let jsx = (
-    <div
-      className={`animate-shell-ring size-5 shrink-0 rounded-full border-2 border-transparent motion-reduce:animate-none`}
-      style={DocumentPreviewBackground}
-    />
-  );
-  return (
-    <div
-      role={`status`}
-      aria-label={[caption, hint].filter(Boolean).join(` `) || `Loading`}
-      data-testid={`page-loading-face`}
-      className={`${DOCUMENT_PREVIEW_POPOVER_CLASS} absolute inset-0 z-10`}
-    >
-      <div
-        className={`${matchShell ? `fixed` : `absolute`} gap-sm px-lg inset-x-0 top-1/2 flex -translate-y-2.5 flex-col items-center`}
-      >
-        {jsx}
-        <p
-          className={`text-footnote text-secondary flex min-h-5 items-center text-center`}
-          data-testid={caption ? captionTestId : undefined}
-        >
-          {caption ?? ``}
-        </p>
-        {hint && (
-          <p
-            className={`text-footnote text-secondary max-w-md text-center`}
-            data-testid={`frame-setting-up-long`}
-          >
-            {hint}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 var resolveDocumentPreviewValue2: Dynamic;
 
@@ -1314,130 +1408,6 @@ function resolveDocumentPreviewRailOverlay(
   });
 }
 
-function UseDocumentPreviewSlotElComponent(
-  {
-    slotEl: slotEl,
-    inSlot: inSlot,
-    onInSlot: onInSlot,
-    ...documentPreviewSlotEl
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [matchesSlotElState, setMatchesSlotElState]: Dynamic = (0,
-  React.useState)(slotEl !== null);
-  if (slotEl !== null && !matchesSlotElState) {
-    setMatchesSlotElState(true);
-  }
-  return matchesSlotElState ? (
-    <UseDocumentPreviewSlotEl2Component slotEl={slotEl} inSlot={inSlot} onInSlot={onInSlot} {...documentPreviewSlotEl} />
-  ) : (
-    <div {...documentPreviewSlotEl} />
-  );
-}
-
-function UseDocumentPreviewSlotEl2Component(
-  {
-    slotEl: slotEl,
-    inSlot: inSlot,
-    onInSlot: onInSlot,
-    ...documentPreviewSlotEl2
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let slotEl2: Dynamic = inSlot ? slotEl : null;
-  let [metadataState]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic => new (WeakMap as Dynamic)(),
-  );
-  let [useDocumentPreviewSlotEl2State]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]) => {
-      let element = document.createElement(`div`);
-      element.style.display = `contents`;
-      element.addEventListener(
-        `scroll`,
-        (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          metadataState.set(event.target, event.target.scrollTop),
-        {
-          capture: true,
-          passive: true,
-        },
-      );
-      return element;
-    },
-  );
-  let slotElRef: Dynamic = (0, React.useRef)(slotEl2);
-  slotElRef.current = slotEl2;
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let appendChild: Dynamic = (0, React.useCallback)(
-    (
-      documentPreviewSlotEl22?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
-      elementRef.current = documentPreviewSlotEl22;
-      if (
-        documentPreviewSlotEl22 &&
-        !useDocumentPreviewSlotEl2State.parentNode
-      ) {
-        (slotElRef.current ?? documentPreviewSlotEl22).appendChild(
-          useDocumentPreviewSlotEl2State,
-        );
-      }
-    },
-    [useDocumentPreviewSlotEl2State],
-  );
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      let slotEl3: Dynamic = slotEl2 ?? elementRef.current;
-      if (!slotEl3 || useDocumentPreviewSlotEl2State.parentNode === slotEl3)
-        return;
-      let activeElement = useDocumentPreviewSlotEl2State.contains(
-        document.activeElement,
-      )
-        ? document.activeElement
-        : null;
-      slotEl3.appendChild(useDocumentPreviewSlotEl2State);
-      for (let useDocumentPreviewSlotEl2Result of useDocumentPreviewSlotEl2State.querySelectorAll(
-        `*`,
-      ) as Dynamic) {
-        let metadataStateEntry: Dynamic = metadataState.get(
-          useDocumentPreviewSlotEl2Result,
-        );
-        if (metadataStateEntry) {
-          useDocumentPreviewSlotEl2Result.scrollTop = metadataStateEntry;
-        }
-      }
-      if (activeElement instanceof HTMLElement) {
-        activeElement.focus({
-          preventScroll: true,
-        });
-      }
-    },
-    [slotEl2, useDocumentPreviewSlotEl2State, metadataState],
-  );
-  let matchesSlotEl = slotEl2 !== null;
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): Dynamic => (
-      onInSlot?.(matchesSlotEl),
-      (..._extraArguments: unknown[]): Dynamic => onInSlot?.(false)
-    ),
-    [matchesSlotEl, onInSlot],
-  );
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): Dynamic =>
-        useDocumentPreviewSlotEl2State.remove(),
-    [useDocumentPreviewSlotEl2State],
-  );
-  return (
-    <jsxRuntime.Fragment>
-      <div ref={appendChild} className={`contents`} />
-      {(0, ReactDom.createPortal)(
-        <div {...documentPreviewSlotEl2} />,
-        useDocumentPreviewSlotEl2State,
-      )}
-    </jsxRuntime.Fragment>
-  );
-}
-
 function isDocumentPreviewHistoryRoad(
   documentPreviewHistoryRoad?: Dynamic,
   ..._extraArguments: unknown[]
@@ -1584,28 +1554,4 @@ export function initializeDocumentPreviewUsePageSkillSeatStep1(): void {
       .trim());
 }
 
-export {
-  DOCUMENT_PREVIEW_POPOVER_CLASS,
-  DocumentUnavailablePage,
-  PageLoadingFace,
-  PdfPreview,
-  UseDocumentPreviewSlotElComponent,
-  UseDocumentPreviewStatusComponent,
-  UseDocumentPreviewUseLayoutEffectComponent,
-  documentPreviewKey,
-  documentPreviewLimit2000,
-  documentPreviewLimit30000,
-  documentPreviewLimit8000,
-  isDocumentPreviewHistoryRoad,
-  isPopupScrollBoundary,
-  resolveDocumentPreviewCaption,
-  resolveDocumentPreviewChromeShown,
-  resolveDocumentPreviewFailed,
-  resolveDocumentPreviewFrame,
-  resolveDocumentPreviewRailOverlay,
-  resolveDocumentPreviewShown,
-  resolveDocumentPreviewTrim,
-  useDocumentPreviewShown,
-  useDocumentPreviewState,
-  usePageSkillSeat,
-};
+export { DOCUMENT_PREVIEW_POPOVER_CLASS, UseDocumentPreviewUseLayoutEffectComponent, documentPreviewKey, documentPreviewLimit2000, documentPreviewLimit30000, documentPreviewLimit8000, isDocumentPreviewHistoryRoad, isPopupScrollBoundary, resolveDocumentPreviewCaption, resolveDocumentPreviewChromeShown, resolveDocumentPreviewFailed, resolveDocumentPreviewFrame, resolveDocumentPreviewRailOverlay, resolveDocumentPreviewShown, resolveDocumentPreviewTrim, useDocumentPreviewShown, useDocumentPreviewState, usePageSkillSeat };

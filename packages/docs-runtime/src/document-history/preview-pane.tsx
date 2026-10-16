@@ -1,156 +1,176 @@
 /** version-preview-pane: restored from VersionPreviewPane-Bo7aPjii.js. */
 
 import type { Dynamic } from "../interop/legacy-dynamic";
-const mapPreloadDependencies: Dynamic = (
-  ..._extraArguments: unknown[]
-): Dynamic => [];
-import { toModuleNamespace } from "../boot/module-runtime";
-import {
-  Button,
-  collectDataModelSchemasBuf,
-  loadJsxRuntime,
-  loadPlatformLiveDocumentAndHistoryContainer,
-  loadPlatformLiveDocumentAndHistoryHtml,
-  loadReact,
-  PlatformLiveDocumentAndHistoryEntries2,
-  platformSessionAndSourcesPattern9,
-  PlatformSyncAndRoutingAssign2,
-  PlatformSyncAndRoutingState4,
-  resolvePlatformApiAndAuthUseContext2,
-  resolvePlatformLiveDocumentAndHistoryBars,
-  resolvePlatformLiveDocumentAndHistoryCompareAsk,
-  resolvePlatformLiveDocumentAndHistoryParams,
-  resolvePlatformLiveDocumentAndHistoryValue32,
-  resolvePlatformSyncAndRoutingCompact,
-  resolvePlatformSyncAndRoutingCompareMode,
-  resolvePlatformSyncAndRoutingCopyOffers2,
-  resolvePlatformSyncAndRoutingHeadDrivenId,
-  resolvePlatformSyncAndRoutingHeadEmbedNodes,
-  resolvePlatformSyncAndRoutingHeadEpoch,
-  resolvePlatformSyncAndRoutingList,
-  resolvePlatformSyncAndRoutingPick,
-  resolvePlatformSyncAndRoutingPreparing,
-  resolvePlatformSyncAndRoutingPreview,
-  resolvePlatformSyncAndRoutingPreview2,
-  resolvePlatformSyncAndRoutingRestoreOffers2,
-  resolvePlatformSyncAndRoutingShowChanges,
-  resolvePlatformSyncAndRoutingStepAsk,
-  resolvePlatformSyncAndRoutingStepAsk2,
-  resolvePlatformSyncAndRoutingStepOffers,
-  resolvePlatformSyncAndRoutingStepOffers2,
-  resolvePlatformSyncAndRoutingValue22,
-  resolvePlatformSyncAndRoutingValue24,
-  resolvePlatformSyncAndRoutingValue26,
-  Tooltip,
-  UiOverlaysAndIconsCustomIcon,
-  updatePlatformLiveDocumentAndHistoryPane,
-  updatePlatformSyncAndRoutingCopyAsk,
-  updatePlatformSyncAndRoutingPhoneView,
-  updatePlatformSyncAndRoutingRestoreAsk,
-  updatePlatformSyncAndRoutingShowChanges,
-  updatePlatformSyncAndRoutingStats,
-  updatePlatformSyncAndRoutingStepAsk,
-  usePlatformSyncAndRoutingFramed,
-} from "../platform/index";
-import { isFrameArtifact } from "../boot/environment";
-import { preloadModule } from "../boot/preload";
-import {
-  SegmentedControl,
-  Switch,
-} from "../design-system/index";
-import {
-  IconButton,
-  UntippedIconButton,
-  useDocumentDisplay,
-  useDocumentFonts,
-  useDocumentLanguage,
-} from "../document-app/index";
-import {
-  clearProjectEnumCache,
-  clearVersionComparisonCache,
-  clearVersionFaceCaches,
-  collectEmbedReferences,
-  compareVersionDocuments,
-  comparisonBaseKey,
-  describeUncheckedDiffs,
-  diffHtml,
-  equalComparisonBases,
-  getCachedVersionComparison,
-  getCachedVersionFace,
-  getVersionReader,
-  isEmbedDiffError,
-  legacyDiffPreviewHtml,
-  loadProjectEnums,
-  loadVersionFace,
-  neighboringVersionRevisions,
-  normalizeComparisonBase,
-  previousVersionRevision,
-  prewarmComparisonBase,
-  prewarmVersionFaces,
-  publishPreviewDiffStats,
-  resolveComparisonBase,
-  restoredVersionDetails,
-  restoredVersionSummary,
-  sanitizePreviewHtml,
-  SIMPLER_COMPARISON_MESSAGE,
-  tryDetailedDiff,
-  versionBlobReader,
-  versionDiffPreviewHtml,
-  versionDiffStatsSummary,
-  versionLoadErrorMessage,
-  withManifestRedline,
-  withVersionPreviewCss,
-} from "../platform/lazy";
-import { changeStatsLabel } from "./groups";
-import { LFileSnapshotView } from "./snapshot-view";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-function StackedPreviewShell(
-  { stacked: stacked, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return stacked ? (
-    <jsxRuntime.Fragment>
-      <PreviewHeader />
-      <div className={`min-h-0 flex-1`}>{children}</div>
-    </jsxRuntime.Fragment>
+import type * as ReactComponentTypes from "react";
+
+export const FrameVersionPreview: ReactComponentTypes.FC<Dynamic> = ({
+  pid: pid,
+  fileId: fileId,
+  upto: upto,
+  stacked = false,
+}) => {
+  let reader: Dynamic = resolvePlatformSyncAndRoutingValue24();
+  let routeContext: Dynamic = resolvePlatformSyncAndRoutingValue22();
+  let language: Dynamic = resolvePlatformSyncAndRoutingCompareMode();
+  let showChanges: Dynamic = resolvePlatformSyncAndRoutingShowChanges();
+  let previewId: Dynamic = PlatformSyncAndRoutingAssign2(
+    (frameVersionPreview?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      frameVersionPreview.preview?.id,
+  );
+  let [slow, setSlow]: Dynamic = (0, React.useState)(false);
+  let [retryTick, setRetryTick]: Dynamic = (0, React.useState)(0);
+  let [result, setResult]: Dynamic = (0, React.useState)(`loading`);
+  let [error, setError]: Dynamic = (0, React.useState)(``);
+  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
+    let enabled: boolean = true;
+    collectDataModelSchemasBuf().then(
+      (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        enabled && setError(result2),
+    );
+    return (..._extraArguments: unknown[]): undefined => {
+      enabled = false;
+    };
+  }, []);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let enabled: boolean = false;
+      setResult(`loading`);
+      setSlow(false);
+      let frameVersionPreviewResult: Dynamic = isFrameArtifact();
+      let frameVersionPreviewHandler: Dynamic = (
+        frameVersionPreview?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic =>
+        frameVersionPreviewResult
+          ? {
+              html: sanitizePreviewHtml(frameVersionPreview.html),
+              prevHtml:
+                frameVersionPreview.prevHtml === null
+                  ? null
+                  : sanitizePreviewHtml(frameVersionPreview.prevHtml),
+            }
+          : frameVersionPreview;
+      let frameVersionPreviewHandler2: Dynamic = (
+        ..._extraArguments: unknown[]
+      ): Dynamic =>
+        loadPlatformLiveDocumentAndHistoryHtml(pid, fileId, upto)
+          .then(
+            (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              !enabled && setResult(frameVersionPreviewHandler(result2)),
+          )
+          .catch(
+            (error2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              !enabled &&
+              setResult({
+                error: versionLoadErrorMessage(error2),
+                raw:
+                  error2 instanceof (Error as Dynamic) ? error2.message : String(error2),
+              }),
+          );
+      if (reader) {
+        tryDetailedDiff(
+          (..._extraArguments: unknown[]): Dynamic =>
+            preloadModule(
+              (..._extraArguments: unknown[]): Dynamic =>
+                import("./preview").then(
+                  (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                    result2.loadV2Preview(pid, fileId, upto, {
+                      compare: language,
+                      showChanges: showChanges,
+                    }),
+                ),
+              mapPreloadDependencies([0, 1, 2, 3, 4, 5, 6, 7]),
+              import.meta.url,
+            ),
+        ).then((envelope?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          if (enabled) return;
+          if (`diff` in envelope) {
+            publishPreviewDiffStats(envelope.diff, previewId);
+            setResult({
+              diff: envelope.diff,
+            });
+            return;
+          }
+          publishPreviewDiffStats(null, previewId);
+          let frameVersionPreviewResult2: Dynamic = versionLoadErrorMessage(
+            envelope.error,
+          );
+          if (frameVersionPreviewResult2.final) {
+            setResult({
+              error: frameVersionPreviewResult2,
+              raw: ``,
+            });
+            return;
+          }
+          setSlow(true);
+          frameVersionPreviewHandler2();
+        });
+      } else {
+        frameVersionPreviewHandler2();
+      }
+      return (..._extraArguments: unknown[]): undefined => {
+        enabled = true;
+      };
+    },
+    [pid, fileId, upto, reader, language, showChanges, previewId, retryTick],
+  );
+  if (result === `loading`) return <PreviewLoading />;
+  if (`error` in result)
+    return (
+      <PreviewFailure
+        flagOn={routeContext}
+        words={result.error}
+        raw={result.raw}
+        onRetry={(..._extraArguments: unknown[]): Dynamic =>
+          setRetryTick(
+            (frameVersionPreview?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              frameVersionPreview + 1,
+          )
+        }
+      />
+    );
+  if (`diff` in result)
+    return <VersionDiffSurface preview={result.diff} fontCss={error} stacked={stacked} />;
+  let html: Dynamic = result.html;
+  if (result.prevHtml !== null) {
+    try {
+      html = diffHtml(result.prevHtml, result.html);
+    } catch {}
+    if (isFrameArtifact()) {
+      html = sanitizePreviewHtml(html);
+    }
+  }
+  let previewHtml: string = legacyDiffPreviewHtml(error, html);
+  return slow ? (
+    <div className={`flex size-full flex-col`}>
+      <div
+        data-testid={`history-preview-v3-simpler`}
+        className={`bg-surface-1 text-secondary text-caption shrink-0 border-b px-2 py-1`}
+      >
+        {SIMPLER_COMPARISON_MESSAGE}
+      </div>
+      <iframe
+        title={`Version preview`}
+        data-testid={`history-preview-v3`}
+        sandbox={``}
+        srcDoc={previewHtml}
+        className={`bg-surface-popover dark:bg-surface-0 min-h-0 w-full flex-1 border-0`}
+      />
+    </div>
   ) : (
-    children
+    <iframe
+      title={`Version preview`}
+      data-testid={`history-preview-v3`}
+      sandbox={``}
+      srcDoc={previewHtml}
+      className={`bg-surface-popover dark:bg-surface-0 size-full border-0`}
+    />
   );
-}
-function formatVersionDateRange(
-  at2?: Dynamic,
-  since?: Dynamic,
-  locale?: Dynamic,
-  timeZone?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let formatOptions: Dynamic = {
-    month: `short`,
-    day: `numeric`,
-    hour: `numeric`,
-    minute: `2-digit`,
-    timeZone: timeZone,
-  };
-  let atDate: Dynamic = new (Date as Dynamic)(at2);
-  let sinceDate: Dynamic =
-    since === undefined ? undefined : new (Date as Dynamic)(since);
-  if (
-    Number.isNaN(atDate.getTime()) ||
-    (sinceDate !== undefined && Number.isNaN(sinceDate.getTime()))
-  )
-    return atDate.toLocaleString(locale, formatOptions);
-  let formatter: Dynamic = new (Intl.DateTimeFormat as Dynamic)(
-    locale,
-    formatOptions,
-  );
-  return sinceDate === undefined || since === at2
-    ? formatter.format(atDate)
-    : formatter.formatRange(sinceDate, atDate);
-}
-function PreviewHeader(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-): Dynamic {
+};
+
+export const PreviewHeader: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   let mode: Dynamic = resolvePlatformApiAndAuthUseContext2();
   let preview: Dynamic = PlatformSyncAndRoutingAssign2(
     (previewHeader?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -207,18 +227,14 @@ function PreviewHeader(
       <Tooltip content={`Back to versions`}>
         <UntippedIconButton
           ref={headerRef}
-          icon={
-            <UiOverlaysAndIconsCustomIcon name={`CaretLeft`} customSize={14} />
-          }
+          icon={<UiOverlaysAndIconsCustomIcon name={`CaretLeft`} customSize={14} />}
           size={22}
           onClick={updatePlatformSyncAndRoutingPhoneView}
           aria-label={`Back to versions`}
         />
       </Tooltip>
       <div className={`min-w-0 flex-1`}>
-        <div className={`text-primary text-body truncate font-medium`}>
-          {dateLabel}
-        </div>
+        <div className={`text-primary text-body truncate font-medium`}>{dateLabel}</div>
         {details !== `` && (
           <div
             className={`text-secondary text-caption truncate`}
@@ -231,9 +247,7 @@ function PreviewHeader(
       {unchecked && stats !== null && stats.total > 0 && (
         <jsxRuntime.Fragment>
           <UntippedIconButton
-            icon={
-              <UiOverlaysAndIconsCustomIcon name={`CaretUp`} customSize={14} />
-            }
+            icon={<UiOverlaysAndIconsCustomIcon name={`CaretUp`} customSize={14} />}
             size={22}
             onClick={(..._extraArguments: unknown[]): Dynamic =>
               updatePlatformSyncAndRoutingStepAsk(-1)
@@ -241,12 +255,7 @@ function PreviewHeader(
             aria-label={`Previous change`}
           />
           <UntippedIconButton
-            icon={
-              <UiOverlaysAndIconsCustomIcon
-                name={`CaretDown`}
-                customSize={14}
-              />
-            }
+            icon={<UiOverlaysAndIconsCustomIcon name={`CaretDown`} customSize={14} />}
             size={22}
             onClick={(..._extraArguments: unknown[]): Dynamic =>
               updatePlatformSyncAndRoutingStepAsk(1)
@@ -274,86 +283,23 @@ function PreviewHeader(
       )}
     </div>
   );
-}
-var EARLIER_VERSION_NOTE: string = `Earlier version · comments hidden`;
-var CURRENT_VERSION_NOTE: string = `Current version · comments hidden`;
-var versionPreviewNote: Dynamic = (
-  isCurrent?: Dynamic,
-  comparedWithFirst?: Dynamic,
-  ..._extraArguments: unknown[]
-): string =>
-  comparedWithFirst
-    ? `${isCurrent ? `Current version` : `Earlier version`} · ${FIRST_SAVED_COMPARISON_NOTE} · comments hidden`
-    : isCurrent
-      ? CURRENT_VERSION_NOTE
-      : EARLIER_VERSION_NOTE;
-var groupPreviewNote = (
-  group?: Dynamic,
-  showFirstSavedNote: Dynamic = true,
-  ..._extraArguments: unknown[]
-) =>
-  `${group.count} versions · ${group.base === `first` && showFirstSavedNote ? `${FIRST_SAVED_COMPARISON_NOTE} · ` : ``}comments hidden`;
-var FIRST_SAVED_COMPARISON_NOTE: string = `compared with the document as first saved`;
-var NO_EARLIER_VERSION_NOTE: string = `No earlier version to compare with`;
-var EARLIER_VERSION_LOAD_FAILED_NOTE: string = `Couldn't load the earlier version to compare`;
-var VERSION_COMPARE_FAILED_NOTE: string = `Couldn't compare these versions`;
-var LOAD_OLDER_VERSIONS_NOTE: string = `Show older versions to compare`;
-var RESTORED_VERSION_MATCH_NOTE: string = `Identical to the restored version`;
-var SHORT_COMPARISON_NOTES: Dynamic = {
-  [NO_EARLIER_VERSION_NOTE]: `Nothing earlier to compare`,
-  [EARLIER_VERSION_LOAD_FAILED_NOTE]: `Couldn't compare`,
-  [VERSION_COMPARE_FAILED_NOTE]: `Couldn't compare`,
-  [RESTORED_VERSION_MATCH_NOTE]: `Matches restored version`,
-  [FIRST_SAVED_COMPARISON_NOTE]: `vs first saved version`,
 };
-var CHECKING_EMBEDDED_CONTENT_NOTE: string = `Checking embedded content…`;
-var CHECKING_EMBEDS_NOTE: string = `Checking embeds…`;
-var shortComparisonNotice: Dynamic = (
-  notice?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic =>
-  notice === null
-    ? null
-    : {
-        short:
-          notice === `Checking embedded content…`
-            ? CHECKING_EMBEDS_NOTE
-            : (SHORT_COMPARISON_NOTES[notice] ?? notice),
-        full: notice,
-        ...(notice === `Identical to the restored version`
-          ? {
-              inPlaceOfNoChanges: true,
-            }
-          : {}),
-      };
-function StructuredVersionPreview(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <StackedPreviewShell stacked={props.stacked && props.upto !== undefined}>
-      <StructuredVersionPreviewBody {...props} />
-    </StackedPreviewShell>
-  );
-}
-function StructuredVersionPreviewBody(
-  {
-    pid: pid,
-    fileId: fileId,
-    upto: upto,
-    previewId: previewId,
-    title: title,
-    envelope: envelope,
-    scrollY: scrollY,
-    uptos: uptos,
-    stacked: stacked,
-    Surface = LFileSnapshotView,
-    reader: reader,
-    diff: diff,
-    embeds: embeds,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+
+export const StructuredVersionPreviewBody: ReactComponentTypes.FC<Dynamic> = ({
+  pid: pid,
+  fileId: fileId,
+  upto: upto,
+  previewId: previewId,
+  title: title,
+  envelope: envelope,
+  scrollY: scrollY,
+  uptos: uptos,
+  stacked: stacked,
+  Surface = LFileSnapshotView,
+  reader: reader,
+  diff: diff,
+  embeds: embeds,
+}) => {
   let typography: Dynamic = useDocumentFonts(pid);
   let style: Dynamic = useDocumentDisplay(pid);
   let language: Dynamic = useDocumentLanguage(pid);
@@ -370,11 +316,8 @@ function StructuredVersionPreviewBody(
           ) ?? null),
   );
   let [comparison, setComparison]: Dynamic = (0, React.useState)(null);
-  let [failedComparisonKey, setFailedComparisonKey]: Dynamic = (0,
-  React.useState)(null);
-  let [comparisonError, setComparisonError]: Dynamic = (0, React.useState)(
-    false,
-  );
+  let [failedComparisonKey, setFailedComparisonKey]: Dynamic = (0, React.useState)(null);
+  let [comparisonError, setComparisonError]: Dynamic = (0, React.useState)(false);
   let [loadState, setLoadState]: Dynamic = (0, React.useState)({
     state: `idle`,
   });
@@ -383,20 +326,14 @@ function StructuredVersionPreviewBody(
   let [previewError, setPreviewError]: Dynamic = (0, React.useState)(null);
   let showChanges: Dynamic = resolvePlatformSyncAndRoutingShowChanges();
   let group: Dynamic = PlatformSyncAndRoutingAssign2(
-    (
-      structuredVersionPreviewBody?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic =>
+    (structuredVersionPreviewBody?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       structuredVersionPreviewBody.preview !== null &&
       structuredVersionPreviewBody.preview.id === previewId
         ? structuredVersionPreviewBody.preview.group
         : undefined,
   );
   let rowBase: Dynamic = PlatformSyncAndRoutingAssign2(
-    (
-      structuredVersionPreviewBody?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic =>
+    (structuredVersionPreviewBody?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       structuredVersionPreviewBody.preview !== null &&
       structuredVersionPreviewBody.preview.id === previewId &&
       structuredVersionPreviewBody.preview.group === undefined
@@ -405,10 +342,7 @@ function StructuredVersionPreviewBody(
   );
   let comparisonBase: Dynamic = group === undefined ? rowBase : group.base;
   let isCurrent: Dynamic = PlatformSyncAndRoutingAssign2(
-    (
-      structuredVersionPreviewBody?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic =>
+    (structuredVersionPreviewBody?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       structuredVersionPreviewBody.preview !== null &&
       structuredVersionPreviewBody.preview.id === previewId &&
       structuredVersionPreviewBody.preview.group === undefined &&
@@ -436,9 +370,7 @@ function StructuredVersionPreviewBody(
       asHead: isCurrent,
     };
   }
-  let headPick: Dynamic = lastPickRef.current.asHead
-    ? lastPickRef.current.pick
-    : null;
+  let headPick: Dynamic = lastPickRef.current.asHead ? lastPickRef.current.pick : null;
   let hideStaleChanges: Dynamic =
     isCurrent &&
     ((lastPickRef.current.pick === previewPick &&
@@ -481,17 +413,14 @@ function StructuredVersionPreviewBody(
     }),
     [envelope?.bodyLid, envelope?.styleSheet],
   );
-  let [keepExistingPreview, setKeepExistingPreview]: Dynamic = (0,
-  React.useState)(false);
+  let [keepExistingPreview, setKeepExistingPreview]: Dynamic = (0, React.useState)(false);
   let uptosRef: Dynamic = (0, React.useRef)(uptos);
   uptosRef.current = uptos;
   let olderUptos: Dynamic = (0, React.useCallback)(
     (..._extraArguments: unknown[]): Dynamic =>
       uptosRef.current?.filter(
-        (
-          structuredVersionPreviewBody?: Dynamic,
-          ..._extraArguments: unknown[]
-        ) => typeof structuredVersionPreviewBody == `number`,
+        (structuredVersionPreviewBody?: Dynamic, ..._extraArguments: unknown[]) =>
+          typeof structuredVersionPreviewBody == `number`,
       ) ??
       resolvePlatformLiveDocumentAndHistoryValue32(pid, fileId)
         .filter(
@@ -575,13 +504,9 @@ function StructuredVersionPreviewBody(
     [pid, fileId, upto, retryTick, currentHeadEpoch],
   );
   let baseAddress: Dynamic =
-    comparisonBase === undefined
-      ? undefined
-      : normalizeComparisonBase(comparisonBase);
+    comparisonBase === undefined ? undefined : normalizeComparisonBase(comparisonBase);
   let cachedBase: Dynamic =
-    comparison !== null &&
-    snapshot !== null &&
-    comparison.upto === snapshot.upto
+    comparison !== null && snapshot !== null && comparison.upto === snapshot.upto
       ? comparison.base
       : undefined;
   let compareRestored: boolean = compareMode === `restored`;
@@ -616,8 +541,10 @@ function StructuredVersionPreviewBody(
           resolvePlatformLiveDocumentAndHistoryParams(history3) === `current`,
       );
       if (history2 !== undefined) {
-        let structuredVersionPreviewBodyResult2: Dynamic =
-          previousVersionRevision([upto, ...olderUptos()], upto);
+        let structuredVersionPreviewBodyResult2: Dynamic = previousVersionRevision(
+          [upto, ...olderUptos()],
+          upto,
+        );
         let baseRev: Dynamic = history2.params.baseRev;
         if (typeof baseRev != `number`)
           return {
@@ -631,8 +558,7 @@ function StructuredVersionPreviewBody(
                 (history4?: Dynamic, ..._extraArguments: unknown[]) =>
                   history4.params.upto === structuredVersionPreviewBodyResult2,
               );
-        let rev: Dynamic =
-          history3 === undefined ? undefined : history3.params.rev;
+        let rev: Dynamic = history3 === undefined ? undefined : history3.params.rev;
         return {
           base:
             structuredVersionPreviewBodyResult2 !== null && rev === baseRev
@@ -650,8 +576,7 @@ function StructuredVersionPreviewBody(
     },
     [history, compareMode, baseAddress, upto, olderUptos],
   );
-  let { base: activeBase, vsRestored: vsRestored }: Dynamic = (0,
-  React.useMemo)(
+  let { base: activeBase, vsRestored: vsRestored }: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
       snapshot === null
         ? {
@@ -669,8 +594,7 @@ function StructuredVersionPreviewBody(
   let baseKey: Dynamic = comparisonBaseKey(activeBase);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
-      if (upto === undefined || !showChanges || requestedBase.vsRestored)
-        return;
+      if (upto === undefined || !showChanges || requestedBase.vsRestored) return;
       let record: Dynamic = {
         pid: pid,
         fileId: fileId,
@@ -710,13 +634,12 @@ function StructuredVersionPreviewBody(
         pid: pid,
         fileId: fileId,
       };
-      let structuredVersionPreviewBodyResult: Dynamic =
-        getCachedVersionComparison(
-          record,
-          snapshot.upto,
-          activeBase,
-          vsRestored,
-        );
+      let structuredVersionPreviewBodyResult: Dynamic = getCachedVersionComparison(
+        record,
+        snapshot.upto,
+        activeBase,
+        vsRestored,
+      );
       if (structuredVersionPreviewBodyResult !== undefined) {
         setComparison(structuredVersionPreviewBodyResult);
         return;
@@ -740,8 +663,7 @@ function StructuredVersionPreviewBody(
                 onProse: (
                   structuredVersionPreviewBody?: Dynamic,
                   ..._extraArguments: unknown[]
-                ): Dynamic =>
-                  enabled && setComparison(structuredVersionPreviewBody),
+                ): Dynamic => enabled && setComparison(structuredVersionPreviewBody),
               }).then(
                 (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                   enabled && setComparison(result),
@@ -759,9 +681,7 @@ function StructuredVersionPreviewBody(
       };
       let requestAnimationFrame: Dynamic =
         typeof (window as Dynamic).requestAnimationFrame == `function`
-          ? (window as Dynamic).requestAnimationFrame(
-              structuredVersionPreviewBodyHandler,
-            )
+          ? (window as Dynamic).requestAnimationFrame(structuredVersionPreviewBodyHandler)
           : (structuredVersionPreviewBodyHandler(), undefined);
       return (..._extraArguments: unknown[]): undefined => {
         enabled = false;
@@ -786,8 +706,7 @@ function StructuredVersionPreviewBody(
         (..._extraArguments: unknown[]): Dynamic => setShowLoading(true),
         150,
       );
-      return (..._extraArguments: unknown[]): void =>
-        clearTimeout(setTimeout2);
+      return (..._extraArguments: unknown[]): void => clearTimeout(setTimeout2);
     },
     [loading, upto, retryTick],
   );
@@ -809,11 +728,7 @@ function StructuredVersionPreviewBody(
         structuredVersionPreviewBodyResult,
         structuredVersionPreviewBodyResult2,
       ] of Object.entries(liveEmbedNodes) as Dynamic) {
-        if (
-          !platformSessionAndSourcesPattern9.test(
-            structuredVersionPreviewBodyResult,
-          )
-        )
+        if (!platformSessionAndSourcesPattern9.test(structuredVersionPreviewBodyResult))
           continue;
         let structuredVersionPreviewBodyResult3: Dynamic =
           structuredVersionPreviewBodyResult2;
@@ -923,25 +838,16 @@ function StructuredVersionPreviewBody(
                 : {}),
             },
           ),
-    [
-      previewFile,
-      snapshot,
-      comparison,
-      comparisonReady,
-      hideStaleChanges,
-      headPick,
-    ],
+    [previewFile, snapshot, comparison, comparisonReady, hideStaleChanges, headPick],
   );
-  let stats: Dynamic =
-    comparisonReady && comparison !== null ? comparison.stats : null;
+  let stats: Dynamic = comparisonReady && comparison !== null ? comparison.stats : null;
   let uncheckedCount: Dynamic =
     comparisonReady && comparison !== null ? comparison.unchecked.length : 0;
   let checkingEmbeds: Dynamic =
     comparisonReady && comparison !== null && comparison.checking;
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
-      if (upto === undefined)
-        return void updatePlatformSyncAndRoutingStats(null);
+      if (upto === undefined) return void updatePlatformSyncAndRoutingStats(null);
       updatePlatformSyncAndRoutingStats(
         stats !== null && snapshot?.upto === upto
           ? uncheckedCount > 0
@@ -960,10 +866,7 @@ function StructuredVersionPreviewBody(
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
       if (upto === undefined || loadedUpto !== upto) return;
-      let filteredItems: Dynamic = neighboringVersionRevisions(
-        olderUptos(),
-        upto,
-      ).filter(
+      let filteredItems: Dynamic = neighboringVersionRevisions(olderUptos(), upto).filter(
         (item?: Dynamic, ..._extraArguments: unknown[]) =>
           getCachedVersionFace(
             {
@@ -1001,10 +904,7 @@ function StructuredVersionPreviewBody(
           window2.cancelIdleCallback?.(requestIdleCallback);
         };
       }
-      let setTimeout2: Dynamic = setTimeout(
-        structuredVersionPreviewBodyHandler,
-        400,
-      );
+      let setTimeout2: Dynamic = setTimeout(structuredVersionPreviewBodyHandler, 400);
       return (..._extraArguments: unknown[]): undefined => {
         enabled = false;
         clearTimeout(setTimeout2);
@@ -1021,9 +921,7 @@ function StructuredVersionPreviewBody(
       },
     [],
   );
-  let [initialScroll, setInitialScroll]: Dynamic = (0, React.useState)(
-    undefined,
-  );
+  let [initialScroll, setInitialScroll]: Dynamic = (0, React.useState)(undefined);
   let readScroll: Dynamic = (..._extraArguments: unknown[]): Dynamic => {
     let scrollY2: Dynamic = typeof scrollY == `function` ? scrollY() : scrollY;
     setInitialScroll(scrollY2);
@@ -1039,9 +937,7 @@ function StructuredVersionPreviewBody(
   );
   let noticeEnabled: Dynamic = resolvePlatformSyncAndRoutingPreparing();
   let loadError: Dynamic =
-    loadState.state === `error` && loadState.upto === upto
-      ? loadState.words
-      : null;
+    loadState.state === `error` && loadState.upto === upto ? loadState.words : null;
   let changesReadout: Dynamic =
     stats === null
       ? ``
@@ -1061,28 +957,20 @@ function StructuredVersionPreviewBody(
     structuredVersionPreviewBody?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic =>
-    new (Date as Dynamic)(structuredVersionPreviewBody).toLocaleString(
-      mode.locale,
-      {
-        weekday: `short`,
-        hour: `numeric`,
-        minute: `2-digit`,
-        timeZone: mode.timeZone,
-      },
-    );
+    new (Date as Dynamic)(structuredVersionPreviewBody).toLocaleString(mode.locale, {
+      weekday: `short`,
+      hour: `numeric`,
+      minute: `2-digit`,
+      timeZone: mode.timeZone,
+    });
   let previewNote: Dynamic =
     restoreSource === null
       ? group === undefined
-        ? versionPreviewNote(
-            isCurrent,
-            comparisonBase === `first` && !comparisonFailed,
-          )
+        ? versionPreviewNote(isCurrent, comparisonBase === `first` && !comparisonFailed)
         : groupPreviewNote(group, !comparisonFailed)
       : restoredVersionSummary(restoreSource, formatSourceDate);
   let canCompareRestore: Dynamic =
-    restoreSource !== null &&
-    restoreSource.sourceUpto !== undefined &&
-    showChanges;
+    restoreSource !== null && restoreSource.sourceUpto !== undefined && showChanges;
   let resolvedComparisonBase: Dynamic =
     comparisonReady && comparison !== null && comparison.base !== null
       ? comparison.base
@@ -1151,8 +1039,7 @@ function StructuredVersionPreviewBody(
         updatePlatformLiveDocumentAndHistoryPane(null),
     [],
   );
-  let commentThread: Dynamic =
-    resolvePlatformLiveDocumentAndHistoryCompareAsk();
+  let commentThread: Dynamic = resolvePlatformLiveDocumentAndHistoryCompareAsk();
   let commentSequenceRef: Dynamic = (0, React.useRef)(commentThread.seq);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
@@ -1277,9 +1164,7 @@ function StructuredVersionPreviewBody(
                   structuredVersionPreviewBody?: Dynamic,
                   ..._extraArguments: unknown[]
                 ): Dynamic =>
-                  updatePlatformSyncAndRoutingShowChanges(
-                    structuredVersionPreviewBody,
-                  )
+                  updatePlatformSyncAndRoutingShowChanges(structuredVersionPreviewBody)
                 }
                 aria-label={`Show changes`}
               />
@@ -1330,9 +1215,7 @@ function StructuredVersionPreviewBody(
         loadError === null && (
           <div
             data-testid={`history-version-doc-loading`}
-            data-cover={
-              snapshot === null || keepExistingPreview ? `1` : undefined
-            }
+            data-cover={snapshot === null || keepExistingPreview ? `1` : undefined}
             className={`absolute inset-0 ${snapshot === null || keepExistingPreview ? `bg-surface-popover dark:bg-surface-0` : `bg-alpha-0`} pointer-events-none ${showLoading ? `animate-pulse` : ``}`}
           >
             {(showLoading || noticeEnabled) && (
@@ -1352,9 +1235,7 @@ function StructuredVersionPreviewBody(
           data-testid={`history-version-doc-error`}
           className={`bg-surface-popover dark:bg-surface-0 absolute inset-0 flex flex-col items-center justify-center gap-3 p-6`}
         >
-          <p className={`text-secondary text-body text-center`}>
-            {loadError.text}
-          </p>
+          <p className={`text-secondary text-body text-center`}>{loadError.text}</p>
           {loadError.retry && (
             <Button
               data-testid={`history-version-doc-retry`}
@@ -1372,11 +1253,13 @@ function StructuredVersionPreviewBody(
       )}
     </div>
   );
-}
-function VersionDiffSurface(
-  { preview: preview, fontCss: fontCss, stacked = false }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const VersionDiffSurface: ReactComponentTypes.FC<Dynamic> = ({
+  preview: preview,
+  fontCss: fontCss,
+  stacked = false,
+}) => {
   let frameRef: Dynamic = (0, React.useRef)(null);
   let { changes: changes }: Dynamic = preview;
   let changeCount: Dynamic = changes.length;
@@ -1395,10 +1278,7 @@ function VersionDiffSurface(
     [frameDocument],
   );
   let focusChange: Dynamic = (0, React.useCallback)(
-    (
-      versionDiffSurface?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
+    (versionDiffSurface?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       let changeItem: Dynamic = changes[versionDiffSurface];
       if (changeItem !== undefined) {
         setActiveChange(versionDiffSurface);
@@ -1412,10 +1292,7 @@ function VersionDiffSurface(
     [changes],
   );
   let stepChange: Dynamic = (0, React.useCallback)(
-    (
-      versionDiffSurface?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
+    (versionDiffSurface?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       if (changeCount > 0) {
         focusChange(
           versionDiffSurface === 1
@@ -1458,65 +1335,45 @@ function VersionDiffSurface(
     .join(` · `);
   return (
     <div className={`flex size-full flex-col`}>
-      {!stacked &&
-        !preview.plain &&
-        (changeCount > 0 || uncheckedReadout !== ``) && (
-          <div
-            data-testid={`history-preview-v3-changes`}
-            className={`bg-surface-1 flex shrink-0 items-center gap-2 border-b px-2 py-1`}
-          >
-            <span className={`text-secondary text-caption shrink-0`}>
-              {changeCount === 1 ? `1 change` : `${changeCount} changes`}
-              {preview.compare === `current`
-                ? ` since this version`
-                : ` in this version`}
-              {preview.degraded ? ` · some compared by block` : ``}
-            </span>
+      {!stacked && !preview.plain && (changeCount > 0 || uncheckedReadout !== ``) && (
+        <div
+          data-testid={`history-preview-v3-changes`}
+          className={`bg-surface-1 flex shrink-0 items-center gap-2 border-b px-2 py-1`}
+        >
+          <span className={`text-secondary text-caption shrink-0`}>
+            {changeCount === 1 ? `1 change` : `${changeCount} changes`}
+            {preview.compare === `current` ? ` since this version` : ` in this version`}
+            {preview.degraded ? ` · some compared by block` : ``}
+          </span>
+          <span className={`text-primary text-caption min-w-0 flex-1 truncate`}>
+            {activeChangeDetails?.summary ?? ``}
+          </span>
+          {uncheckedReadout !== `` && (
             <span
-              className={`text-primary text-caption min-w-0 flex-1 truncate`}
+              data-testid={`history-preview-v3-widget-note`}
+              className={`text-secondary text-caption shrink-0`}
             >
-              {activeChangeDetails?.summary ?? ``}
+              {uncheckedReadout}
             </span>
-            {uncheckedReadout !== `` && (
-              <span
-                data-testid={`history-preview-v3-widget-note`}
-                className={`text-secondary text-caption shrink-0`}
-              >
-                {uncheckedReadout}
-              </span>
-            )}
-            {changeCount > 0 && (
-              <jsxRuntime.Fragment>
-                <IconButton
-                  data-testid={`history-preview-v3-prev`}
-                  aria-label={`Previous change`}
-                  onClick={(..._extraArguments: unknown[]): Dynamic =>
-                    stepChange(-1)
-                  }
-                  icon={
-                    <UiOverlaysAndIconsCustomIcon
-                      name={`CaretUp`}
-                      customSize={14}
-                    />
-                  }
-                />
-                <IconButton
-                  data-testid={`history-preview-v3-next`}
-                  aria-label={`Next change`}
-                  onClick={(..._extraArguments: unknown[]): Dynamic =>
-                    stepChange(1)
-                  }
-                  icon={
-                    <UiOverlaysAndIconsCustomIcon
-                      name={`CaretDown`}
-                      customSize={14}
-                    />
-                  }
-                />
-              </jsxRuntime.Fragment>
-            )}
-          </div>
-        )}
+          )}
+          {changeCount > 0 && (
+            <jsxRuntime.Fragment>
+              <IconButton
+                data-testid={`history-preview-v3-prev`}
+                aria-label={`Previous change`}
+                onClick={(..._extraArguments: unknown[]): Dynamic => stepChange(-1)}
+                icon={<UiOverlaysAndIconsCustomIcon name={`CaretUp`} customSize={14} />}
+              />
+              <IconButton
+                data-testid={`history-preview-v3-next`}
+                aria-label={`Next change`}
+                onClick={(..._extraArguments: unknown[]): Dynamic => stepChange(1)}
+                icon={<UiOverlaysAndIconsCustomIcon name={`CaretDown`} customSize={14} />}
+              />
+            </jsxRuntime.Fragment>
+          )}
+        </div>
+      )}
       {stacked && !preview.plain && coverageNotice !== `` && (
         <div
           data-testid={`history-preview-v3-widget-note`}
@@ -1535,11 +1392,34 @@ function VersionDiffSurface(
       />
     </div>
   );
-}
-function PreviewNotice(
-  { text: text, onRetry: onRetry }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const StackedPreviewShell: ReactComponentTypes.FC<Dynamic> = ({
+  stacked: stacked,
+  children: children,
+}) => {
+  return stacked ? (
+    <jsxRuntime.Fragment>
+      <PreviewHeader />
+      <div className={`min-h-0 flex-1`}>{children}</div>
+    </jsxRuntime.Fragment>
+  ) : (
+    children
+  );
+};
+
+export const StructuredVersionPreview: ReactComponentTypes.FC<Dynamic> = (props) => {
+  return (
+    <StackedPreviewShell stacked={props.stacked && props.upto !== undefined}>
+      <StructuredVersionPreviewBody {...props} />
+    </StackedPreviewShell>
+  );
+};
+
+export const PreviewNotice: ReactComponentTypes.FC<Dynamic> = ({
+  text: text,
+  onRetry: onRetry,
+}) => {
   return (
     <div
       data-testid={`history-preview-v3-notice`}
@@ -1554,15 +1434,23 @@ function PreviewNotice(
       )}
     </div>
   );
-}
-function PreviewFailure(
-  { flagOn: flagOn, words: words, raw: raw, onRetry: onRetry }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const PreviewFailure: ReactComponentTypes.FC<Dynamic> = ({
+  flagOn: flagOn,
+  words: words,
+  raw: raw,
+  onRetry: onRetry,
+}) => {
   return flagOn ? (
-    <PreviewNotice text={words.text} {...words.retry ? {
-  onRetry: onRetry
-} : {}} />
+    <PreviewNotice
+      text={words.text}
+      {...(words.retry
+        ? {
+            onRetry: onRetry,
+          }
+        : {})}
+    />
   ) : (
     <div
       className={`text-danger text-footnote flex h-full items-center justify-center p-6`}
@@ -1570,11 +1458,9 @@ function PreviewFailure(
       {raw}
     </div>
   );
-}
-function VersionPreviewPane(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const VersionPreviewPane: ReactComponentTypes.FC<Dynamic> = (props) => {
   return resolvePlatformSyncAndRoutingValue26() ? (
     props.upto === undefined ? null : (
       <StackedPreviewShell stacked={props.stacked}>
@@ -1589,184 +1475,11 @@ function VersionPreviewPane(
   ) : (
     <StructuredVersionPreview {...props} />
   );
-}
-function FrameVersionPreview(
-  { pid: pid, fileId: fileId, upto: upto, stacked = false }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let reader: Dynamic = resolvePlatformSyncAndRoutingValue24();
-  let routeContext: Dynamic = resolvePlatformSyncAndRoutingValue22();
-  let language: Dynamic = resolvePlatformSyncAndRoutingCompareMode();
-  let showChanges: Dynamic = resolvePlatformSyncAndRoutingShowChanges();
-  let previewId: Dynamic = PlatformSyncAndRoutingAssign2(
-    (frameVersionPreview?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      frameVersionPreview.preview?.id,
-  );
-  let [slow, setSlow]: Dynamic = (0, React.useState)(false);
-  let [retryTick, setRetryTick]: Dynamic = (0, React.useState)(0);
-  let [result, setResult]: Dynamic = (0, React.useState)(`loading`);
-  let [error, setError]: Dynamic = (0, React.useState)(``);
-  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let enabled: boolean = true;
-    collectDataModelSchemasBuf().then(
-      (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        enabled && setError(result2),
-    );
-    return (..._extraArguments: unknown[]): undefined => {
-      enabled = false;
-    };
-  }, []);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let enabled: boolean = false;
-      setResult(`loading`);
-      setSlow(false);
-      let frameVersionPreviewResult: Dynamic = isFrameArtifact();
-      let frameVersionPreviewHandler: Dynamic = (
-        frameVersionPreview?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic =>
-        frameVersionPreviewResult
-          ? {
-              html: sanitizePreviewHtml(frameVersionPreview.html),
-              prevHtml:
-                frameVersionPreview.prevHtml === null
-                  ? null
-                  : sanitizePreviewHtml(frameVersionPreview.prevHtml),
-            }
-          : frameVersionPreview;
-      let frameVersionPreviewHandler2: Dynamic = (
-        ..._extraArguments: unknown[]
-      ): Dynamic =>
-        loadPlatformLiveDocumentAndHistoryHtml(pid, fileId, upto)
-          .then(
-            (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              !enabled && setResult(frameVersionPreviewHandler(result2)),
-          )
-          .catch(
-            (error2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              !enabled &&
-              setResult({
-                error: versionLoadErrorMessage(error2),
-                raw:
-                  error2 instanceof (Error as Dynamic)
-                    ? error2.message
-                    : String(error2),
-              }),
-          );
-      if (reader) {
-        tryDetailedDiff(
-          (..._extraArguments: unknown[]): Dynamic =>
-            preloadModule(
-              (..._extraArguments: unknown[]): Dynamic =>
-                import("./preview").then(
-                  (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    result2.loadV2Preview(pid, fileId, upto, {
-                      compare: language,
-                      showChanges: showChanges,
-                    }),
-                ),
-              mapPreloadDependencies([0, 1, 2, 3, 4, 5, 6, 7]),
-              import.meta.url,
-            ),
-        ).then(
-          (envelope?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-            if (enabled) return;
-            if (`diff` in envelope) {
-              publishPreviewDiffStats(envelope.diff, previewId);
-              setResult({
-                diff: envelope.diff,
-              });
-              return;
-            }
-            publishPreviewDiffStats(null, previewId);
-            let frameVersionPreviewResult2: Dynamic = versionLoadErrorMessage(
-              envelope.error,
-            );
-            if (frameVersionPreviewResult2.final) {
-              setResult({
-                error: frameVersionPreviewResult2,
-                raw: ``,
-              });
-              return;
-            }
-            setSlow(true);
-            frameVersionPreviewHandler2();
-          },
-        );
-      } else {
-        frameVersionPreviewHandler2();
-      }
-      return (..._extraArguments: unknown[]): undefined => {
-        enabled = true;
-      };
-    },
-    [pid, fileId, upto, reader, language, showChanges, previewId, retryTick],
-  );
-  if (result === `loading`) return <PreviewLoading />;
-  if (`error` in result)
-    return (
-      <PreviewFailure
-        flagOn={routeContext}
-        words={result.error}
-        raw={result.raw}
-        onRetry={(..._extraArguments: unknown[]): Dynamic =>
-          setRetryTick(
-            (
-              frameVersionPreview?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => frameVersionPreview + 1,
-          )
-        }
-      />
-    );
-  if (`diff` in result)
-    return (
-      <VersionDiffSurface
-        preview={result.diff}
-        fontCss={error}
-        stacked={stacked}
-      />
-    );
-  let html: Dynamic = result.html;
-  if (result.prevHtml !== null) {
-    try {
-      html = diffHtml(result.prevHtml, result.html);
-    } catch {}
-    if (isFrameArtifact()) {
-      html = sanitizePreviewHtml(html);
-    }
-  }
-  let previewHtml: string = legacyDiffPreviewHtml(error, html);
-  return slow ? (
-    <div className={`flex size-full flex-col`}>
-      <div
-        data-testid={`history-preview-v3-simpler`}
-        className={`bg-surface-1 text-secondary text-caption shrink-0 border-b px-2 py-1`}
-      >
-        {SIMPLER_COMPARISON_MESSAGE}
-      </div>
-      <iframe
-        title={`Version preview`}
-        data-testid={`history-preview-v3`}
-        sandbox={``}
-        srcDoc={previewHtml}
-        className={`bg-surface-popover dark:bg-surface-0 min-h-0 w-full flex-1 border-0`}
-      />
-    </div>
-  ) : (
-    <iframe
-      title={`Version preview`}
-      data-testid={`history-preview-v3`}
-      sandbox={``}
-      srcDoc={previewHtml}
-      className={`bg-surface-popover dark:bg-surface-0 size-full border-0`}
-    />
-  );
-}
-function PreviewLoading(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-): Dynamic {
+};
+
+export const PreviewLoading: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   return resolvePlatformSyncAndRoutingPreparing() ? (
     <div className={`relative h-full`}>
       <div className={`bg-alpha-0 h-full animate-pulse`} />
@@ -1778,5 +1491,192 @@ function PreviewLoading(
   ) : (
     <div className={`bg-alpha-0 h-full animate-pulse`} />
   );
+};
+
+const mapPreloadDependencies: Dynamic = (
+  ..._extraArguments: unknown[]
+): Dynamic => [];
+import { toModuleNamespace } from "../boot/module-runtime";
+import {
+  Button,
+  collectDataModelSchemasBuf,
+  loadJsxRuntime,
+  loadPlatformLiveDocumentAndHistoryContainer,
+  loadPlatformLiveDocumentAndHistoryHtml,
+  loadReact,
+  PlatformLiveDocumentAndHistoryEntries2,
+  platformSessionAndSourcesPattern9,
+  PlatformSyncAndRoutingAssign2,
+  PlatformSyncAndRoutingState4,
+  resolvePlatformApiAndAuthUseContext2,
+  resolvePlatformLiveDocumentAndHistoryBars,
+  resolvePlatformLiveDocumentAndHistoryCompareAsk,
+  resolvePlatformLiveDocumentAndHistoryParams,
+  resolvePlatformLiveDocumentAndHistoryValue32,
+  resolvePlatformSyncAndRoutingCompact,
+  resolvePlatformSyncAndRoutingCompareMode,
+  resolvePlatformSyncAndRoutingCopyOffers2,
+  resolvePlatformSyncAndRoutingHeadDrivenId,
+  resolvePlatformSyncAndRoutingHeadEmbedNodes,
+  resolvePlatformSyncAndRoutingHeadEpoch,
+  resolvePlatformSyncAndRoutingList,
+  resolvePlatformSyncAndRoutingPick,
+  resolvePlatformSyncAndRoutingPreparing,
+  resolvePlatformSyncAndRoutingPreview,
+  resolvePlatformSyncAndRoutingPreview2,
+  resolvePlatformSyncAndRoutingRestoreOffers2,
+  resolvePlatformSyncAndRoutingShowChanges,
+  resolvePlatformSyncAndRoutingStepAsk,
+  resolvePlatformSyncAndRoutingStepAsk2,
+  resolvePlatformSyncAndRoutingStepOffers,
+  resolvePlatformSyncAndRoutingStepOffers2,
+  resolvePlatformSyncAndRoutingValue22,
+  resolvePlatformSyncAndRoutingValue24,
+  resolvePlatformSyncAndRoutingValue26,
+  Tooltip,
+  UiOverlaysAndIconsCustomIcon,
+  updatePlatformLiveDocumentAndHistoryPane,
+  updatePlatformSyncAndRoutingCopyAsk,
+  updatePlatformSyncAndRoutingPhoneView,
+  updatePlatformSyncAndRoutingRestoreAsk,
+  updatePlatformSyncAndRoutingShowChanges,
+  updatePlatformSyncAndRoutingStats,
+  updatePlatformSyncAndRoutingStepAsk,
+  usePlatformSyncAndRoutingFramed,
+} from "../platform/index";
+import { isFrameArtifact } from "../boot/environment";
+import { preloadModule } from "../boot/preload";
+import {
+  SegmentedControl,
+  Switch,
+} from "../design-system/index";
+import {
+  IconButton,
+  UntippedIconButton,
+  useDocumentDisplay,
+  useDocumentFonts,
+  useDocumentLanguage,
+} from "../document-app/index";
+import {
+  clearProjectEnumCache,
+  clearVersionComparisonCache,
+  clearVersionFaceCaches,
+  collectEmbedReferences,
+  compareVersionDocuments,
+  comparisonBaseKey,
+  describeUncheckedDiffs,
+  diffHtml,
+  equalComparisonBases,
+  getCachedVersionComparison,
+  getCachedVersionFace,
+  getVersionReader,
+  isEmbedDiffError,
+  legacyDiffPreviewHtml,
+  loadProjectEnums,
+  loadVersionFace,
+  neighboringVersionRevisions,
+  normalizeComparisonBase,
+  previousVersionRevision,
+  prewarmComparisonBase,
+  prewarmVersionFaces,
+  publishPreviewDiffStats,
+  resolveComparisonBase,
+  restoredVersionDetails,
+  restoredVersionSummary,
+  sanitizePreviewHtml,
+  SIMPLER_COMPARISON_MESSAGE,
+  tryDetailedDiff,
+  versionBlobReader,
+  versionDiffPreviewHtml,
+  versionDiffStatsSummary,
+  versionLoadErrorMessage,
+  withManifestRedline,
+  withVersionPreviewCss,
+} from "../platform/lazy";
+import { changeStatsLabel } from "./groups";
+import { LFileSnapshotView } from "./snapshot-view";
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+
+function formatVersionDateRange(
+  at2?: Dynamic,
+  since?: Dynamic,
+  locale?: Dynamic,
+  timeZone?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let formatOptions: Dynamic = {
+    month: `short`,
+    day: `numeric`,
+    hour: `numeric`,
+    minute: `2-digit`,
+    timeZone: timeZone,
+  };
+  let atDate: Dynamic = new (Date as Dynamic)(at2);
+  let sinceDate: Dynamic =
+    since === undefined ? undefined : new (Date as Dynamic)(since);
+  if (
+    Number.isNaN(atDate.getTime()) ||
+    (sinceDate !== undefined && Number.isNaN(sinceDate.getTime()))
+  )
+    return atDate.toLocaleString(locale, formatOptions);
+  let formatter: Dynamic = new (Intl.DateTimeFormat as Dynamic)(
+    locale,
+    formatOptions,
+  );
+  return sinceDate === undefined || since === at2
+    ? formatter.format(atDate)
+    : formatter.formatRange(sinceDate, atDate);
 }
-export { PreviewLoading, VersionPreviewPane };
+
+var EARLIER_VERSION_NOTE: string = `Earlier version · comments hidden`;
+var CURRENT_VERSION_NOTE: string = `Current version · comments hidden`;
+var versionPreviewNote: Dynamic = (
+  isCurrent?: Dynamic,
+  comparedWithFirst?: Dynamic,
+  ..._extraArguments: unknown[]
+): string =>
+  comparedWithFirst
+    ? `${isCurrent ? `Current version` : `Earlier version`} · ${FIRST_SAVED_COMPARISON_NOTE} · comments hidden`
+    : isCurrent
+      ? CURRENT_VERSION_NOTE
+      : EARLIER_VERSION_NOTE;
+var groupPreviewNote = (
+  group?: Dynamic,
+  showFirstSavedNote: Dynamic = true,
+  ..._extraArguments: unknown[]
+) =>
+  `${group.count} versions · ${group.base === `first` && showFirstSavedNote ? `${FIRST_SAVED_COMPARISON_NOTE} · ` : ``}comments hidden`;
+var FIRST_SAVED_COMPARISON_NOTE: string = `compared with the document as first saved`;
+var NO_EARLIER_VERSION_NOTE: string = `No earlier version to compare with`;
+var EARLIER_VERSION_LOAD_FAILED_NOTE: string = `Couldn't load the earlier version to compare`;
+var VERSION_COMPARE_FAILED_NOTE: string = `Couldn't compare these versions`;
+var LOAD_OLDER_VERSIONS_NOTE: string = `Show older versions to compare`;
+var RESTORED_VERSION_MATCH_NOTE: string = `Identical to the restored version`;
+var SHORT_COMPARISON_NOTES: Dynamic = {
+  [NO_EARLIER_VERSION_NOTE]: `Nothing earlier to compare`,
+  [EARLIER_VERSION_LOAD_FAILED_NOTE]: `Couldn't compare`,
+  [VERSION_COMPARE_FAILED_NOTE]: `Couldn't compare`,
+  [RESTORED_VERSION_MATCH_NOTE]: `Matches restored version`,
+  [FIRST_SAVED_COMPARISON_NOTE]: `vs first saved version`,
+};
+var CHECKING_EMBEDDED_CONTENT_NOTE: string = `Checking embedded content…`;
+var CHECKING_EMBEDS_NOTE: string = `Checking embeds…`;
+var shortComparisonNotice: Dynamic = (
+  notice?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic =>
+  notice === null
+    ? null
+    : {
+        short:
+          notice === `Checking embedded content…`
+            ? CHECKING_EMBEDS_NOTE
+            : (SHORT_COMPARISON_NOTES[notice] ?? notice),
+        full: notice,
+        ...(notice === `Identical to the restored version`
+          ? {
+              inPlaceOfNoChanges: true,
+            }
+          : {}),
+      };

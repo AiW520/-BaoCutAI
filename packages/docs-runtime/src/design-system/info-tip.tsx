@@ -14,38 +14,26 @@ import {
 } from "./dependencies";
 import { SheetsAuto } from "./sheets/geometry";
 import { Popover } from "./popover";
+import type * as ReactComponentTypes from "react";
 
-var SwitchStylesStyles5: Dynamic;
-
-var SwitchStylesState: Dynamic;
-
-var SwitchStylesState2: Dynamic;
-
-function InfoTip(
-  {
-    content: input,
-    "aria-label": input2,
-    icon: input7 = `Info`,
-    size: input8 = `sm`,
-    side: input9 = `top`,
-    align: input10 = `center`,
-    sideOffset: input11 = 6,
-    delay: input12 = 300,
-    open: input3,
-    onOpenChange: input4,
-    className: input5,
-    popupClassName: input6,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `moreInfo`,
-    `More info`,
-  );
+export const InfoTip: ReactComponentTypes.FC<Dynamic> = ({
+  content: input,
+  "aria-label": input2,
+  icon: input7 = `Info`,
+  size: input8 = `sm`,
+  side: input9 = `top`,
+  align: input10 = `center`,
+  sideOffset: input11 = 6,
+  delay: input12 = 300,
+  open: input3,
+  onOpenChange: input4,
+  className: input5,
+  popupClassName: input6,
+}) => {
+  let value: Dynamic = resolveUiLinksAndFoundationUseContext3(`moreInfo`, `More info`);
   let value2: Dynamic = input2 || value;
   let value3: Dynamic = (0, React.useCallback)(
-    (input13?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      input4?.(input13),
+    (input13?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input4?.(input13),
     [input4],
   );
   let state: Dynamic = {
@@ -81,7 +69,13 @@ function InfoTip(
       </Popover.Root>
     </SheetsAuto.Provider>
   );
-}
+};
+
+var SwitchStylesStyles5: Dynamic;
+
+var SwitchStylesState: Dynamic;
+
+var SwitchStylesState2: Dynamic;
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeInfoTipStep1(): void {
@@ -89,5 +83,3 @@ export function initializeInfoTipStep1(): void {
   SwitchStylesState = `${UiShortcutsAndSizingStyles12} ${UiShortcutsAndSizingStyles14} ${UiShortcutsAndSizingStyles13}`;
   SwitchStylesState2 = `block ${UiShortcutsAndSizingPx2Py15} ${UiShortcutsAndSizingMinW0BreakWords}`;
 }
-
-export { InfoTip };

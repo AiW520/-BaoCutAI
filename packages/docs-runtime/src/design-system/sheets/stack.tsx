@@ -26,6 +26,96 @@ import {
   useSheetsState,
 } from "./geometry";
 import { SheetsCreateContext, useSheetsUnpan } from "./gestures";
+import type * as ReactComponentTypes from "react";
+
+export const SheetsKind: ReactComponentTypes.FC<Dynamic> = ({ kind: input }) => {
+  let value: Dynamic = (0, React.useContext)(SheetsCreateContext);
+  let value2: Dynamic = resolveUiProviderAndLayersUseContext9();
+  let value3: Dynamic = resolveUiProviderAndLayersValue3(input);
+  usePresentationCapture(value?.open ?? false, value?.dismiss);
+  let [value4, value5]: Dynamic = (0, React.useState)(false);
+  let value6: Dynamic = (0, React.useRef)(false);
+  let value7: Dynamic = resolveUiProviderAndLayersUseContext10();
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (value7 === undefined) return;
+      let value9: Dynamic = value7.requestAnimationFrame(
+        (..._extraArguments: unknown[]): undefined => {
+          value5(true);
+        },
+      );
+      return (..._extraArguments: unknown[]): undefined => {
+        value7.cancelAnimationFrame(value9);
+      };
+    },
+    [value7],
+  );
+  let value8: Dynamic =
+    value2 ?? (typeof document === "undefined" ? null : (document as Dynamic).body);
+  return value8 === null || value === null || !value.open
+    ? null
+    : (0, AvatarsState.createPortal)(
+        <UiOverlaysAndIconsSurface {...value3.portalProps}>
+          {
+            <div
+              role={`presentation`}
+              {...{
+                [SheetsDataCdsSheetPending]: ``,
+              }}
+              className={clsx(SheetsState7, !value4 && `opacity-0`)}
+              style={value3.style}
+              onPointerDown={(
+                input2?: Dynamic,
+                ..._extraArguments: unknown[]
+              ): undefined => {
+                value6.current = true;
+                resolveSheetsPreventDefault(input2);
+              }}
+              onPointerCancel={(..._extraArguments: unknown[]): undefined => {
+                value6.current = false;
+              }}
+              onMouseDown={resolveSheetsPreventDefault}
+              onClick={(..._extraArguments: unknown[]): undefined => {
+                if (value6.current) {
+                  value6.current = false;
+                  value.dismiss();
+                }
+              }}
+            />
+          }
+        </UiOverlaysAndIconsSurface>,
+        value8,
+      );
+};
+
+export const SheetsValue: ReactComponentTypes.FC<Dynamic> = ({ children: input }) => {
+  return (
+    <SheetsSheet.Provider value={SheetsSheet2}>
+      <SheetsCreateContext2.Provider value={null}>
+        <SheetsCreateContext3.Provider value={null}>
+          <SheetsCreateContext.Provider value={null}>
+            {input}
+          </SheetsCreateContext.Provider>
+        </SheetsCreateContext3.Provider>
+      </SheetsCreateContext2.Provider>
+    </SheetsSheet.Provider>
+  );
+};
+
+export const SheetsValue2: ReactComponentTypes.FC<Dynamic> = ({
+  value: input,
+  children: input2,
+}) => {
+  return (
+    <SheetsSheet.Provider value={input.state}>
+      <SheetsCreateContext3.Provider value={input.stack.cover}>
+        <SheetsCreateContext.Provider value={input.frame}>
+          {input2}
+        </SheetsCreateContext.Provider>
+      </SheetsCreateContext3.Provider>
+    </SheetsSheet.Provider>
+  );
+};
 
 var SheetsCreateContext2: Dynamic;
 
@@ -311,38 +401,6 @@ function useSheetsOpen(
 
 var SheetsSheet2: Dynamic;
 
-function SheetsValue(
-  { children: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <SheetsSheet.Provider value={SheetsSheet2}>
-      <SheetsCreateContext2.Provider value={null}>
-        <SheetsCreateContext3.Provider value={null}>
-          <SheetsCreateContext.Provider value={null}>
-            {input}
-          </SheetsCreateContext.Provider>
-        </SheetsCreateContext3.Provider>
-      </SheetsCreateContext2.Provider>
-    </SheetsSheet.Provider>
-  );
-}
-
-function SheetsValue2(
-  { value: input, children: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <SheetsSheet.Provider value={input.state}>
-      <SheetsCreateContext3.Provider value={input.stack.cover}>
-        <SheetsCreateContext.Provider value={input.frame}>
-          {input2}
-        </SheetsCreateContext.Provider>
-      </SheetsCreateContext3.Provider>
-    </SheetsSheet.Provider>
-  );
-}
-
 function useSheetsOpen2(
   input?: Dynamic,
   ..._extraArguments: unknown[]
@@ -456,54 +514,6 @@ var resolveSheetsPreventDefault: (
   ..._extraArguments: unknown[]
 ) => undefined;
 
-function SheetsKind(
-  { kind: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = (0, React.useContext)(SheetsCreateContext);
-  let value2: Dynamic = resolveUiProviderAndLayersUseContext9();
-  let value3: Dynamic = resolveUiProviderAndLayersValue3(input);
-  usePresentationCapture(value?.open ?? false, value?.dismiss);
-  let [value4, value5]: Dynamic = (0, React.useState)(false);
-  let value6: Dynamic = (0, React.useRef)(false);
-  let value7: Dynamic = resolveUiProviderAndLayersUseContext10();
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (value7 === undefined) return;
-      let value9: Dynamic = value7.requestAnimationFrame(
-        (..._extraArguments: unknown[]): undefined => {
-          value5(true);
-        },
-      );
-      return (..._extraArguments: unknown[]): undefined => {
-        value7.cancelAnimationFrame(value9);
-      };
-    },
-    [value7],
-  );
-  let value8: Dynamic =
-    value2 ??
-    (typeof document === "undefined" ? null : (document as Dynamic).body);
-  return value8 === null || value === null || !value.open
-    ? null
-    : (0, AvatarsState.createPortal)(
-        <UiOverlaysAndIconsSurface {...value3.portalProps}>{<div role={`presentation`} {...{
-    [SheetsDataCdsSheetPending]: ``
-  }} className={clsx(SheetsState7, !value4 && `opacity-0`)} style={value3.style} onPointerDown={(input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    value6.current = true;
-    resolveSheetsPreventDefault(input2);
-  }} onPointerCancel={(..._extraArguments: unknown[]): undefined => {
-    value6.current = false;
-  }} onMouseDown={resolveSheetsPreventDefault} onClick={(..._extraArguments: unknown[]): undefined => {
-    if (value6.current) {
-      value6.current = false;
-      value.dismiss();
-    }
-  }} />}</UiOverlaysAndIconsSurface>,
-        value8,
-      );
-}
-
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeSheetsStackStep1(): void {
   SheetsCreateContext2 = (0, React.createContext)(null);
@@ -571,30 +581,4 @@ export function initializeSheetsStackStep1(): void {
   };
 }
 
-export {
-  SheetsConcealed,
-  SheetsCreateContext2,
-  SheetsCreateContext3,
-  SheetsDraggableNoneFixedInset0BgTransparent,
-  SheetsKind,
-  SheetsMessage2,
-  SheetsSheet3,
-  SheetsState4,
-  SheetsState5,
-  SheetsState6,
-  SheetsState7,
-  SheetsStyles2,
-  SheetsStyles3,
-  SheetsStyles4,
-  SheetsValue,
-  SheetsValue2,
-  SheetsVisibility,
-  resolveSheetsSheet,
-  resolveSheetsUseContext2,
-  resolveSheetsUseContext3,
-  resolveSheetsUseContext4,
-  useSheetsOpen,
-  useSheetsOpen2,
-  useSheetsPreventScroll,
-  useSheetsSheet2,
-};
+export { SheetsConcealed, SheetsCreateContext2, SheetsCreateContext3, SheetsDraggableNoneFixedInset0BgTransparent, SheetsMessage2, SheetsSheet3, SheetsState4, SheetsState5, SheetsState6, SheetsState7, SheetsStyles2, SheetsStyles3, SheetsStyles4, SheetsVisibility, resolveSheetsSheet, resolveSheetsUseContext2, resolveSheetsUseContext3, resolveSheetsUseContext4, useSheetsOpen, useSheetsOpen2, useSheetsPreventScroll, useSheetsSheet2 };

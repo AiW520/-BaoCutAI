@@ -15,56 +15,30 @@ import {
   CommentsRoundedComposer,
   isCommentsIsValidElement,
 } from "./counter";
+import type * as ReactComponentTypes from "react";
 
-var BadgeAndLinkGlyph: Dynamic;
-
-var BadgeAndLinkGlyph2: Dynamic;
-
-var BadgeAndLinkGlyph3: Dynamic;
-
-var BadgeAndLinkGlyph4: Dynamic;
-
-var BadgeAndLinkComfortable: Dynamic;
-
-var badgeAndLinkValue64: Dynamic;
-
-var BadgeAndLinkNeutral: Dynamic;
-
-var BadgeAndLinkNeutral2: Dynamic;
-
-var BadgeAndLinkNeutral3: Dynamic;
-
-function Alert(
-  {
-    variant: input,
-    icon: input2,
-    action: input3,
-    actionAlign: input14 = `first-line`,
-    details: input4,
-    defaultDetailsOpen: input15 = false,
-    detailsOpen: input5,
-    onDetailsOpenChange: input6,
-    onDismiss: input7,
-    dismissLabel: input8,
-    role: input9,
-    composerCalibration: input10,
-    className: input11,
-    "data-testid": input12,
-    children: input13,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `dismiss`,
-    `Dismiss`,
-  );
+export const Alert: ReactComponentTypes.FC<Dynamic> = ({
+  variant: input,
+  icon: input2,
+  action: input3,
+  actionAlign: input14 = `first-line`,
+  details: input4,
+  defaultDetailsOpen: input15 = false,
+  detailsOpen: input5,
+  onDetailsOpenChange: input6,
+  onDismiss: input7,
+  dismissLabel: input8,
+  role: input9,
+  composerCalibration: input10,
+  className: input11,
+  "data-testid": input12,
+  children: input13,
+}) => {
+  let value: Dynamic = resolveUiLinksAndFoundationUseContext3(`dismiss`, `Dismiss`);
   let value2: Dynamic = input8 ?? value;
   let value3: Dynamic = resolveUiProviderAndLayersUseContext2();
   let state: Dynamic = {
-    "data-step": resolveUiProviderAndLayersBase(
-      value3,
-      BadgeAndLinkComfortable[value3],
-    ),
+    "data-step": resolveUiProviderAndLayersBase(value3, BadgeAndLinkComfortable[value3]),
   };
   let value4: Dynamic = input ?? `neutral`;
   let value5: Dynamic =
@@ -81,8 +55,7 @@ function Alert(
   let value17: Dynamic = (0, React.useRef)(null);
   let value18: Dynamic = (0, React.useRef)(0);
   let value19: boolean = input3 != null && typeof input3 != `boolean`;
-  let value20: Dynamic =
-    !value9 && (value8 || (input14 === `center` && !value6));
+  let value20: Dynamic = !value9 && (value8 || (input14 === `center` && !value6));
   let value21: Dynamic = value20;
   let value22: Dynamic = !value9 && value19;
   let value23: Dynamic = value22 && value13;
@@ -106,9 +79,7 @@ function Alert(
         let current3: Dynamic = value16.current;
         let current4: Dynamic = value17.current;
         if (current3 === null || current4 === null) return;
-        let value32: number = Number.parseFloat(
-          getComputedStyle(current3).lineHeight,
-        );
+        let value32: number = Number.parseFloat(getComputedStyle(current3).lineHeight);
         if (!Number.isFinite(value32) || value32 <= 0) return;
         let top: Dynamic = current4.getBoundingClientRect().top;
         let bounds: Dynamic = current3.getBoundingClientRect();
@@ -133,10 +104,7 @@ function Alert(
     [value22, value6, value24, value21],
   );
   let value25: Dynamic = input5 ?? value11;
-  let value26 = (
-    input16?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let value26 = (input16?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     value12(input16);
     input6?.(input16);
   };
@@ -145,8 +113,18 @@ function Alert(
     <span
       ref={value17}
       {...state}
-      className={resolveUiDesignSystemValue2(`flex shrink-0 items-center gap-xs`, !value23 && `h-[1lh]`, value24 && `basis-full`, !value23 && `-ms-[2px]`, value24 && value5 && BadgeAndLinkGlyph2[value5], value5 !== undefined && !input7 && BadgeAndLinkGlyph4[value5], !value6 && !input7 && `-me-[calc(var(--cds-pad-md)-2px)]`)}
-    >{input3}</span>
+      className={resolveUiDesignSystemValue2(
+        `flex shrink-0 items-center gap-xs`,
+        !value23 && `h-[1lh]`,
+        value24 && `basis-full`,
+        !value23 && `-ms-[2px]`,
+        value24 && value5 && BadgeAndLinkGlyph2[value5],
+        value5 !== undefined && !input7 && BadgeAndLinkGlyph4[value5],
+        !value6 && !input7 && `-me-[calc(var(--cds-pad-md)-2px)]`,
+      )}
+    >
+      {input3}
+    </span>
   ) : null;
   return (
     <div
@@ -194,14 +172,8 @@ function Alert(
             value5 && BadgeAndLinkGlyph[value5],
           )}
         >
-          <Collapsible.Root
-            className={`contents`}
-            open={value25}
-            onOpenChange={value26}
-          >
-            <div
-              className={`flex min-w-0 flex-wrap items-start gap-y-sm gap-x-md`}
-            >
+          <Collapsible.Root className={`contents`} open={value25} onOpenChange={value26}>
+            <div className={`flex min-w-0 flex-wrap items-start gap-y-sm gap-x-md`}>
               <Collapsible.Trigger
                 render={
                   <button
@@ -253,11 +225,40 @@ function Alert(
         <span
           {...state}
           className={`${value5 === undefined ? `-me-[calc(var(--cds-pad-md)-2px)]` : BadgeAndLinkGlyph3[value5]} flex h-[1lh] shrink-0 items-center`}
-        >{<Button variant={`ghost`} iconOnly={true} icon={`X`} aria-label={value2} tooltip={false} onClick={input7} />}</span>
+        >
+          {
+            <Button
+              variant={`ghost`}
+              iconOnly={true}
+              icon={`X`}
+              aria-label={value2}
+              tooltip={false}
+              onClick={input7}
+            />
+          }
+        </span>
       )}
     </div>
   );
-}
+};
+
+var BadgeAndLinkGlyph: Dynamic;
+
+var BadgeAndLinkGlyph2: Dynamic;
+
+var BadgeAndLinkGlyph3: Dynamic;
+
+var BadgeAndLinkGlyph4: Dynamic;
+
+var BadgeAndLinkComfortable: Dynamic;
+
+var badgeAndLinkValue64: Dynamic;
+
+var BadgeAndLinkNeutral: Dynamic;
+
+var BadgeAndLinkNeutral2: Dynamic;
+
+var BadgeAndLinkNeutral3: Dynamic;
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeAlertStep1(): void {
@@ -301,5 +302,3 @@ export function initializeAlertStep1(): void {
     danger: `Warning`,
   };
 }
-
-export { Alert };

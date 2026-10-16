@@ -48,6 +48,37 @@ import {
   widgetBridgeLimit6144,
   widgetBridgeLimit8000,
 } from "../widget-bridge/state";
+import type * as ReactComponentTypes from "react";
+
+export const UseDocumentContextHtmlComponent: ReactComponentTypes.FC<Dynamic> = ({
+  html: html,
+  title: title,
+  fontCss = ``,
+  mode = `light`,
+  edgeMinLeft: edgeMinLeft,
+  zoom: zoom,
+  language: language,
+}) => {
+  return (
+    <iframe
+      aria-label={title}
+      sandbox={``}
+      srcDoc={resolveDocumentContextTest(
+        html,
+        fontCss,
+        mode,
+        title,
+        edgeMinLeft,
+        zoom,
+        language,
+      )}
+      className={`block h-full w-full border-0`}
+      {...{
+        [EditorSelectionAndTablesDataPagesPrintSurface]: ``,
+      }}
+    />
+  );
+};
 
 function filterDocumentContextSlice(
   filterDocumentContextSlice2?: Dynamic,
@@ -1294,25 +1325,6 @@ function resolveDocumentContextTest(
   );
 }
 
-function UseDocumentContextHtmlComponent(
-  {
-    html: html,
-    title: title,
-    fontCss = ``,
-    mode = `light`,
-    edgeMinLeft: edgeMinLeft,
-    zoom: zoom,
-    language: language,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <iframe aria-label={title} sandbox={``} srcDoc={resolveDocumentContextTest(html, fontCss, mode, title, edgeMinLeft, zoom, language)} className={`block h-full w-full border-0`} {...{
-  [EditorSelectionAndTablesDataPagesPrintSurface]: ``
-}} />
-  );
-}
-
 var documentContextLimit2000: number;
 
 var DocumentContextState3: number;
@@ -1462,24 +1474,4 @@ export function initializeDocumentContextCreateWidgetWritingCoordinatorStep1(): 
   (documentContextLimit12 = 12);
 }
 
-export {
-  DocumentContextSetTimeout,
-  DocumentContextState3,
-  UseDocumentContextHtmlComponent,
-  clearDocumentContextDelete,
-  createWidgetWritingCoordinator,
-  documentContextLimit10,
-  documentContextLimit12,
-  documentContextLimit2000,
-  documentContextLimit5000,
-  documentContextLimit64,
-  documentContextSet3,
-  documentFrameStyleAttributes,
-  getDocumentContextValue,
-  isDocumentContextSetTimeout,
-  resolveDocumentContextTest2,
-  updateDocumentContextProblems,
-  useDocumentContextUseSyncExternalStore,
-  useDocumentContextUseSyncExternalStore2,
-  useDocumentContextWarm,
-};
+export { DocumentContextSetTimeout, DocumentContextState3, clearDocumentContextDelete, createWidgetWritingCoordinator, documentContextLimit10, documentContextLimit12, documentContextLimit2000, documentContextLimit5000, documentContextLimit64, documentContextSet3, documentFrameStyleAttributes, getDocumentContextValue, isDocumentContextSetTimeout, resolveDocumentContextTest2, updateDocumentContextProblems, useDocumentContextUseSyncExternalStore, useDocumentContextUseSyncExternalStore2, useDocumentContextWarm };

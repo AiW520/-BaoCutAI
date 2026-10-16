@@ -19,31 +19,15 @@ import {
   toast,
   useCommentStore,
 } from "../dependencies";
+import type * as ReactComponentTypes from "react";
 
-function clampPopoverArrow(
-  clampPopoverArrow2?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  dependencies: Dynamic = 8,
-  argument: Dynamic = 0,
-  ..._extraArguments: unknown[]
-) {
-  return Math.max(
-    Math.min(clampPopoverArrow2, context - options / 2 - dependencies),
-    argument + options / 2 + dependencies,
-  );
-}
-
-function CollaboratorAvatar(
-  {
-    email: email,
-    name: name,
-    photoUrl: photoUrl,
-    size = 16,
-    className = ``,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const CollaboratorAvatar: ReactComponentTypes.FC<Dynamic> = ({
+  email: email,
+  name: name,
+  photoUrl: photoUrl,
+  size = 16,
+  className = ``,
+}) => {
   let collaboratorAvatarResult: Dynamic = resolvePlatformSessionAndSourcesValue(
     email?.trim(),
   );
@@ -67,6 +51,20 @@ function CollaboratorAvatar(
           : {}),
       }}
     />
+  );
+};
+
+function clampPopoverArrow(
+  clampPopoverArrow2?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+  dependencies: Dynamic = 8,
+  argument: Dynamic = 0,
+  ..._extraArguments: unknown[]
+) {
+  return Math.max(
+    Math.min(clampPopoverArrow2, context - options / 2 - dependencies),
+    argument + options / 2 + dependencies,
   );
 }
 
@@ -1618,52 +1616,4 @@ export function initializeCommentNotificationsCreateCommentNoticeCoordinatorStep
   ));
 }
 
-export {
-  CLAUDE_ASKED_WAITING_MESSAGE,
-  CLAUDE_COMMENT_WAITING_MESSAGES,
-  CLAUDE_REPLIED_MESSAGE,
-  CLAUDE_REQUEST_REFUSAL_MESSAGES,
-  CLAUDE_REQUEST_STOP_MESSAGES,
-  CLAUDE_WAITING_FOR_ANSWER_MESSAGE,
-  CLAUDE_WRITE_UNAVAILABLE_MESSAGE,
-  CLAUDE_WRITING_OUTCOME_MESSAGES,
-  COMMENT_DRAFT_BLOCKING_MESSAGE,
-  CollaboratorAvatar,
-  INLINE_ASK_TOAST_ID,
-  askCardRecoveryDisposition,
-  askCardRecoveryLostMessage,
-  askCardRecoveryOffer,
-  askCardRecoveryPreviousNotice,
-  askCardRecoverySendDisposition,
-  askCardRecoverySendMessage,
-  askCardWriteUnavailableMessage,
-  canDisplayCommentUnanchored,
-  clampPopoverArrow,
-  claudeBusyMessage,
-  commentAttachmentState,
-  createCommentNoticeCoordinator,
-  ensureSessionRouteModule,
-  flipAskCardRecovery,
-  getAgentWriteCursor,
-  getSessionRouteModule,
-  hasAgentWrittenSince,
-  hasAskCardRecoveryContent,
-  hasAskCardRecoveryGone,
-  hasAttachedComment,
-  hasMintedContent,
-  initialAskCardRecoveryState,
-  isAskCardRecoveryAlive,
-  isCommentSessionFeatureDisabled,
-  isDetachedResolvedComment,
-  isElementAttachedComment,
-  isWholeDocumentComment,
-  markAskCardLoweringDebt,
-  notifyClaudeReplied,
-  rememberAgentWriteCursor,
-  resolveCommentNotificationsCommentMode,
-  resolveCommentNotificationsIconsOn,
-  shouldReleaseGoneAskCard,
-  takeAskCardLoweringDebt,
-  updateCommentNotificationsRaise,
-  useCommentNotificationsMode,
-};
+export { CLAUDE_ASKED_WAITING_MESSAGE, CLAUDE_COMMENT_WAITING_MESSAGES, CLAUDE_REPLIED_MESSAGE, CLAUDE_REQUEST_REFUSAL_MESSAGES, CLAUDE_REQUEST_STOP_MESSAGES, CLAUDE_WAITING_FOR_ANSWER_MESSAGE, CLAUDE_WRITE_UNAVAILABLE_MESSAGE, CLAUDE_WRITING_OUTCOME_MESSAGES, COMMENT_DRAFT_BLOCKING_MESSAGE, INLINE_ASK_TOAST_ID, askCardRecoveryDisposition, askCardRecoveryLostMessage, askCardRecoveryOffer, askCardRecoveryPreviousNotice, askCardRecoverySendDisposition, askCardRecoverySendMessage, askCardWriteUnavailableMessage, canDisplayCommentUnanchored, clampPopoverArrow, claudeBusyMessage, commentAttachmentState, createCommentNoticeCoordinator, ensureSessionRouteModule, flipAskCardRecovery, getAgentWriteCursor, getSessionRouteModule, hasAgentWrittenSince, hasAskCardRecoveryContent, hasAskCardRecoveryGone, hasAttachedComment, hasMintedContent, initialAskCardRecoveryState, isAskCardRecoveryAlive, isCommentSessionFeatureDisabled, isDetachedResolvedComment, isElementAttachedComment, isWholeDocumentComment, markAskCardLoweringDebt, notifyClaudeReplied, rememberAgentWriteCursor, resolveCommentNotificationsCommentMode, resolveCommentNotificationsIconsOn, shouldReleaseGoneAskCard, takeAskCardLoweringDebt, updateCommentNotificationsRaise, useCommentNotificationsMode };

@@ -36,6 +36,95 @@ import {
 import {
   resolveCommentSessionValue7,
 } from "./use-comment-session-bridge";
+import type * as ReactComponentTypes from "react";
+
+export const AskSuggestionsMeasure: ReactComponentTypes.FC<Dynamic> = ({
+  items: items,
+  onPick: onPick,
+  className: className,
+}) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let elementRef2: Dynamic = (0, React.useRef)(null);
+  let [itemsCountState, setItemsCountState]: Dynamic = (0, React.useState)(items.length);
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let element: Dynamic = elementRef.current;
+      let element2: Dynamic = elementRef2.current;
+      if (!element || !element2) return;
+      let querySelectorAll = (..._extraArguments: unknown[]): undefined => {
+        setItemsCountState(
+          resolveCommentSessionValue10(
+            [...element2.querySelectorAll(`[data-suggestion]`)].map(
+              (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                item.offsetLeft + item.offsetWidth,
+            ),
+            element.clientWidth,
+          ),
+        );
+      };
+      querySelectorAll();
+      if (typeof ResizeObserver === "undefined") return;
+      let resizeObserver = new ResizeObserver(querySelectorAll);
+      resizeObserver.observe(element);
+      return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
+    },
+    [items],
+  );
+  if (items.length === 0) return null;
+  let jsxs: Dynamic = (
+    askSuggestionsMeasure?: Dynamic,
+    options?: Dynamic,
+    ..._extraArguments: unknown[]
+  ) => (
+    <jsxRuntime.Fragment>
+      <span className={`text-muted`} aria-hidden={options ? undefined : true}>
+        {CommentSession_Try}
+      </span>
+      {askSuggestionsMeasure.map(
+        (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
+          <React.Fragment key={item.id}>
+            {index > 0 && <span className={`text-muted`} aria-hidden={true}>{`·`}</span>}
+            {options ? (
+              <Link
+                inheritColor={true}
+                data-suggestion={item.id}
+                onClick={(..._extraArguments: unknown[]): Dynamic => onPick(item)}
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <Link inheritColor={true} disabled={true} data-suggestion={item.id}>
+                {item.label}
+              </Link>
+            )}
+          </React.Fragment>
+        ),
+      )}
+    </jsxRuntime.Fragment>
+  );
+  return (
+    <div ref={elementRef} className={`relative min-w-0 ${className ?? ``}`}>
+      <div
+        ref={elementRef2}
+        aria-hidden={true}
+        className={`text-secondary text-caption pointer-events-none invisible absolute top-0 left-0 flex items-baseline gap-1.5 whitespace-nowrap`}
+        data-testid={`ask-suggestions-measure`}
+      >
+        {jsxs(items, false)}
+      </div>
+      {itemsCountState > 0 && (
+        <div
+          role={`group`}
+          aria-label={`Suggestions`}
+          className={`text-secondary text-caption flex items-baseline gap-1.5 overflow-x-clip whitespace-nowrap`}
+          data-testid={`ask-suggestions`}
+        >
+          {jsxs(items.slice(0, itemsCountState), true)}
+        </div>
+      )}
+    </div>
+  );
+};
 
 function updateCommentSessionSince2(
   updateCommentSessionSince22?: Dynamic,
@@ -383,84 +472,6 @@ function resolveCommentSessionValue10(
   let index = 0;
   for (; index < items.length && items[index] <= options; ) index++;
   return index;
-}
-
-function AskSuggestionsMeasure(
-  { items: items, onPick: onPick, className: className }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let elementRef2: Dynamic = (0, React.useRef)(null);
-  let [itemsCountState, setItemsCountState]: Dynamic = (0, React.useState)(
-    items.length,
-  );
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let element: Dynamic = elementRef.current;
-      let element2: Dynamic = elementRef2.current;
-      if (!element || !element2) return;
-      let querySelectorAll = (..._extraArguments: unknown[]): undefined => {
-        setItemsCountState(
-          resolveCommentSessionValue10(
-            [...element2.querySelectorAll(`[data-suggestion]`)].map(
-              (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                item.offsetLeft + item.offsetWidth,
-            ),
-            element.clientWidth,
-          ),
-        );
-      };
-      querySelectorAll();
-      if (typeof ResizeObserver === "undefined") return;
-      let resizeObserver = new ResizeObserver(querySelectorAll);
-      resizeObserver.observe(element);
-      return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
-    },
-    [items],
-  );
-  if (items.length === 0) return null;
-  let jsxs: Dynamic = (
-    askSuggestionsMeasure?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) => (
-    <jsxRuntime.Fragment>
-      <span className={`text-muted`} aria-hidden={options ? undefined : true}>
-        {CommentSession_Try}
-      </span>
-      {askSuggestionsMeasure.map(
-        (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
-          <React.Fragment key={item.id}>{index > 0 && <span className={`text-muted`} aria-hidden={true}>{`·`}</span>}{options ? <Link inheritColor={true} data-suggestion={item.id} onClick={(..._extraArguments: unknown[]): Dynamic => onPick(item)}>
-                      {item.label}
-                    </Link> : <Link inheritColor={true} disabled={true} data-suggestion={item.id}>
-                      {item.label}
-                    </Link>}</React.Fragment>
-        ),
-      )}
-    </jsxRuntime.Fragment>
-  );
-  return (
-    <div ref={elementRef} className={`relative min-w-0 ${className ?? ``}`}>
-      <div
-        ref={elementRef2}
-        aria-hidden={true}
-        className={`text-secondary text-caption pointer-events-none invisible absolute top-0 left-0 flex items-baseline gap-1.5 whitespace-nowrap`}
-        data-testid={`ask-suggestions-measure`}
-      >
-        {jsxs(items, false)}
-      </div>
-      {itemsCountState > 0 && (
-        <div
-          role={`group`}
-          aria-label={`Suggestions`}
-          className={`text-secondary text-caption flex items-baseline gap-1.5 overflow-x-clip whitespace-nowrap`}
-          data-testid={`ask-suggestions`}
-        >
-          {jsxs(items.slice(0, itemsCountState), true)}
-        </div>
-      )}
-    </div>
-  );
 }
 
 var CommentSessionHeading: Dynamic;
@@ -907,29 +918,4 @@ export function initializeCommentSessionAskSuggestionsMeasureStep2(): void {
   (commentAnchorsPattern = /\bkeep (this|it|them) (up to date|updated|current)|\bwatch\b|\btrack\b|\bmonitor\b|every (day|week|month|morning)|\b(daily|weekly|monthly)\b|automatic|routine|schedul|remind|recurring|notify me when/i);
 }
 
-export {
-  AskSuggestionsMeasure,
-  CommentAnchorsState,
-  CommentAnchorsState2,
-  CommentSessionState14,
-  CommentSessionState15,
-  clearCommentSessionKey,
-  clearCommentSessionSize,
-  commentAnchorsPattern,
-  commentSessionIdentity,
-  commentSessionLimit2564,
-  commentSessionMap11,
-  commentSessionMap9,
-  commentSessionSet6,
-  getCommentSessionValue,
-  getCommentSessionWaited,
-  getCommentSessionWaited2,
-  loadCommentSessionCanSend,
-  registerCommentSessionHost,
-  resolveCommentSessionCommentOnly,
-  resolveCommentSessionLabel,
-  resolveCommentSessionPrompt,
-  resolveCommentSessionSubscribe2,
-  updateCommentSessionCarrier,
-  updateCommentSessionSince2,
-};
+export { CommentAnchorsState, CommentAnchorsState2, CommentSessionState14, CommentSessionState15, clearCommentSessionKey, clearCommentSessionSize, commentAnchorsPattern, commentSessionIdentity, commentSessionLimit2564, commentSessionMap11, commentSessionMap9, commentSessionSet6, getCommentSessionValue, getCommentSessionWaited, getCommentSessionWaited2, loadCommentSessionCanSend, registerCommentSessionHost, resolveCommentSessionCommentOnly, resolveCommentSessionLabel, resolveCommentSessionPrompt, resolveCommentSessionSubscribe2, updateCommentSessionCarrier, updateCommentSessionSince2 };

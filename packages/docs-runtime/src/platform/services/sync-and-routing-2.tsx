@@ -42,6 +42,66 @@ import {
   resolvePlatformApiAndAuthAssistant2,
   resolvePlatformApiAndAuthHuman,
 } from "./api-and-auth-5";
+import type * as ReactComponentTypes from "react";
+
+export const PlatformSyncAndRoutingDoor: ReactComponentTypes.FC<Dynamic> = ({
+  door: door,
+  ambient: ambient,
+  children: children,
+}) => {
+  let collectPlatformApiAndAuthVerb2: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      door === undefined
+        ? PlatformSyncAndRoutingState8
+        : collectPlatformApiAndAuthVerb(door, ambient),
+    [door, ambient],
+  );
+  return (
+    <PlatformSyncAndRoutingCreateContext.Provider value={collectPlatformApiAndAuthVerb2}>
+      {children}
+    </PlatformSyncAndRoutingCreateContext.Provider>
+  );
+};
+
+export const FrameUnavailable: ReactComponentTypes.FC<Dynamic> = ({ what: what }) => {
+  return (
+    <div
+      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
+      data-testid={`frame-unavailable`}
+    >
+      <UiOverlaysAndIconsCustomIcon
+        name={`CloudSlash`}
+        size={`lg`}
+        className={`text-secondary`}
+      />
+      <div className={`text-primary text-body font-medium`}>
+        {what}
+        {` doesn’t open here`}
+      </div>
+      <div
+        className={`text-secondary text-footnote max-w-md text-center`}
+      >{`This kind of tab can’t be shown in this view yet.`}</div>
+    </div>
+  );
+};
+
+export const PlatformSyncAndRoutingLabel: ReactComponentTypes.FC<Dynamic> = ({
+  label: label,
+}) => {
+  return (
+    <div
+      className={`text-muted text-footnote flex h-full items-center justify-center p-6`}
+    >
+      {label ?? `Loading…`}
+    </div>
+  );
+};
+
+export const PlatformSyncAndRoutingLabel2: ReactComponentTypes.FC<Dynamic> = ({
+  label = `Loading workbook…`,
+}) => {
+  return <PlatformSyncAndRoutingLabel label={label} />;
+};
 
 function resolvePlatformSyncAndRoutingLid(
   birthName?: Dynamic,
@@ -635,31 +695,6 @@ function usePlatformSyncAndRoutingPhone(..._extraArguments: unknown[]) {
 
 var resolvePlatformSyncAndRoutingFeedback: Dynamic;
 
-function FrameUnavailable(
-  { what: what }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
-      data-testid={`frame-unavailable`}
-    >
-      <UiOverlaysAndIconsCustomIcon
-        name={`CloudSlash`}
-        size={`lg`}
-        className={`text-secondary`}
-      />
-      <div className={`text-primary text-body font-medium`}>
-        {what}
-        {` doesn’t open here`}
-      </div>
-      <div
-        className={`text-secondary text-footnote max-w-md text-center`}
-      >{`This kind of tab can’t be shown in this view yet.`}</div>
-    </div>
-  );
-}
-
 var PlatformSyncAndRoutingVersionHistoryV2: string;
 
 function resolvePlatformSyncAndRoutingValue22(
@@ -1099,26 +1134,6 @@ var PlatformSyncAndRoutingBatch: typeof resolvePlatformSyncAndRoutingValue27 & {
     batch: typeof resolvePlatformSyncAndRoutingValue27;
 };
 
-function PlatformSyncAndRoutingDoor(
-  { door: door, ambient: ambient, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let collectPlatformApiAndAuthVerb2: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      door === undefined
-        ? PlatformSyncAndRoutingState8
-        : collectPlatformApiAndAuthVerb(door, ambient),
-    [door, ambient],
-  );
-  return (
-    <PlatformSyncAndRoutingCreateContext.Provider
-      value={collectPlatformApiAndAuthVerb2}
-    >
-      {children}
-    </PlatformSyncAndRoutingCreateContext.Provider>
-  );
-}
-
 function resolvePlatformSyncAndRoutingUseContext(
   ..._extraArguments: unknown[]
 ): Dynamic {
@@ -1145,26 +1160,6 @@ function resolvePlatformSyncAndRoutingUseContext2(
       `useIntendReady: no <IntendProvider> above this component — mount one at the page root (httpDoor for the live mount, takeDoor for a filmed one)`,
     );
   return useContext !== PlatformSyncAndRoutingState8;
-}
-
-function PlatformSyncAndRoutingLabel(
-  { label: label }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={`text-muted text-footnote flex h-full items-center justify-center p-6`}
-    >
-      {label ?? `Loading…`}
-    </div>
-  );
-}
-
-function PlatformSyncAndRoutingLabel2(
-  { label = `Loading workbook…` }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return <PlatformSyncAndRoutingLabel label={label} />;
 }
 
 var PlatformSyncAndRouting0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz: string;
@@ -2094,90 +2089,4 @@ export function initializePlatformSyncAndRouting2Step1(): void {
     ));
 }
 
-export {
-  FrameUnavailable,
-  PlatformSyncAndRoutingAssign2,
-  PlatformSyncAndRoutingBirthRefused,
-  PlatformSyncAndRoutingCanRename,
-  PlatformSyncAndRoutingDoor,
-  PlatformSyncAndRoutingLabel2,
-  PlatformSyncAndRoutingRoot,
-  PlatformSyncAndRoutingUntitled,
-  collectPlatformSyncAndRoutingEngine,
-  collectPlatformSyncAndRoutingText,
-  getPlatformSyncAndRoutingValue,
-  getPlatformSyncAndRoutingValue2,
-  loadPlatformSyncAndRoutingFinal,
-  resolvePlatformSyncAndRoutingClaude,
-  resolvePlatformSyncAndRoutingCompareMode,
-  resolvePlatformSyncAndRoutingCopyAsk,
-  resolvePlatformSyncAndRoutingCopyOffers,
-  resolvePlatformSyncAndRoutingCopyOffers2,
-  resolvePlatformSyncAndRoutingEndsWith,
-  resolvePlatformSyncAndRoutingFeedback,
-  resolvePlatformSyncAndRoutingHeadDrivenId,
-  resolvePlatformSyncAndRoutingHeadEmbedNodes,
-  resolvePlatformSyncAndRoutingHeadEpoch,
-  resolvePlatformSyncAndRoutingIndexOf,
-  resolvePlatformSyncAndRoutingIsFinite3,
-  resolvePlatformSyncAndRoutingLid,
-  resolvePlatformSyncAndRoutingList,
-  resolvePlatformSyncAndRoutingName,
-  resolvePlatformSyncAndRoutingOrder,
-  resolvePlatformSyncAndRoutingPath3,
-  resolvePlatformSyncAndRoutingPath4,
-  resolvePlatformSyncAndRoutingPick,
-  resolvePlatformSyncAndRoutingPreparing,
-  resolvePlatformSyncAndRoutingPreview,
-  resolvePlatformSyncAndRoutingPreview2,
-  resolvePlatformSyncAndRoutingPush2,
-  resolvePlatformSyncAndRoutingRef,
-  resolvePlatformSyncAndRoutingRef2,
-  resolvePlatformSyncAndRoutingRestoreAsk,
-  resolvePlatformSyncAndRoutingRestoreOffers,
-  resolvePlatformSyncAndRoutingRestoreOffers2,
-  resolvePlatformSyncAndRoutingScheduled,
-  resolvePlatformSyncAndRoutingScheduled2,
-  resolvePlatformSyncAndRoutingScheduled3,
-  resolvePlatformSyncAndRoutingShowChanges,
-  resolvePlatformSyncAndRoutingStackOffers,
-  resolvePlatformSyncAndRoutingStackOffers2,
-  resolvePlatformSyncAndRoutingStepAsk,
-  resolvePlatformSyncAndRoutingStepAsk2,
-  resolvePlatformSyncAndRoutingStepOffers,
-  resolvePlatformSyncAndRoutingStepOffers2,
-  resolvePlatformSyncAndRoutingTab,
-  resolvePlatformSyncAndRoutingTest2,
-  resolvePlatformSyncAndRoutingUnavailable,
-  resolvePlatformSyncAndRoutingUntitled,
-  resolvePlatformSyncAndRoutingUseContext,
-  resolvePlatformSyncAndRoutingUseContext2,
-  resolvePlatformSyncAndRoutingValue18,
-  resolvePlatformSyncAndRoutingValue19,
-  resolvePlatformSyncAndRoutingValue20,
-  resolvePlatformSyncAndRoutingValue22,
-  resolvePlatformSyncAndRoutingValue23,
-  resolvePlatformSyncAndRoutingValue24,
-  resolvePlatformSyncAndRoutingValue25,
-  resolvePlatformSyncAndRoutingValue26,
-  resolvePlatformSyncAndRoutingValue28,
-  resolvePlatformSyncAndRoutingValue29,
-  resolvePlatformSyncAndRoutingVerb3,
-  updatePlatformSyncAndRoutingCaption,
-  updatePlatformSyncAndRoutingCompareMode,
-  updatePlatformSyncAndRoutingCopyAsk,
-  updatePlatformSyncAndRoutingDirectory,
-  updatePlatformSyncAndRoutingEntry,
-  updatePlatformSyncAndRoutingHeadDrivenId,
-  updatePlatformSyncAndRoutingHeadEmbedNodes,
-  updatePlatformSyncAndRoutingHeadEpoch,
-  updatePlatformSyncAndRoutingKeys,
-  updatePlatformSyncAndRoutingPhoneView,
-  updatePlatformSyncAndRoutingPhoneView2,
-  updatePlatformSyncAndRoutingPreparing,
-  updatePlatformSyncAndRoutingRestoreAsk,
-  updatePlatformSyncAndRoutingShowChanges,
-  updatePlatformSyncAndRoutingStats,
-  updatePlatformSyncAndRoutingStepAsk,
-  usePlatformSyncAndRoutingPhone,
-};
+export { PlatformSyncAndRoutingAssign2, PlatformSyncAndRoutingBirthRefused, PlatformSyncAndRoutingCanRename, PlatformSyncAndRoutingRoot, PlatformSyncAndRoutingUntitled, collectPlatformSyncAndRoutingEngine, collectPlatformSyncAndRoutingText, getPlatformSyncAndRoutingValue, getPlatformSyncAndRoutingValue2, loadPlatformSyncAndRoutingFinal, resolvePlatformSyncAndRoutingClaude, resolvePlatformSyncAndRoutingCompareMode, resolvePlatformSyncAndRoutingCopyAsk, resolvePlatformSyncAndRoutingCopyOffers, resolvePlatformSyncAndRoutingCopyOffers2, resolvePlatformSyncAndRoutingEndsWith, resolvePlatformSyncAndRoutingFeedback, resolvePlatformSyncAndRoutingHeadDrivenId, resolvePlatformSyncAndRoutingHeadEmbedNodes, resolvePlatformSyncAndRoutingHeadEpoch, resolvePlatformSyncAndRoutingIndexOf, resolvePlatformSyncAndRoutingIsFinite3, resolvePlatformSyncAndRoutingLid, resolvePlatformSyncAndRoutingList, resolvePlatformSyncAndRoutingName, resolvePlatformSyncAndRoutingOrder, resolvePlatformSyncAndRoutingPath3, resolvePlatformSyncAndRoutingPath4, resolvePlatformSyncAndRoutingPick, resolvePlatformSyncAndRoutingPreparing, resolvePlatformSyncAndRoutingPreview, resolvePlatformSyncAndRoutingPreview2, resolvePlatformSyncAndRoutingPush2, resolvePlatformSyncAndRoutingRef, resolvePlatformSyncAndRoutingRef2, resolvePlatformSyncAndRoutingRestoreAsk, resolvePlatformSyncAndRoutingRestoreOffers, resolvePlatformSyncAndRoutingRestoreOffers2, resolvePlatformSyncAndRoutingScheduled, resolvePlatformSyncAndRoutingScheduled2, resolvePlatformSyncAndRoutingScheduled3, resolvePlatformSyncAndRoutingShowChanges, resolvePlatformSyncAndRoutingStackOffers, resolvePlatformSyncAndRoutingStackOffers2, resolvePlatformSyncAndRoutingStepAsk, resolvePlatformSyncAndRoutingStepAsk2, resolvePlatformSyncAndRoutingStepOffers, resolvePlatformSyncAndRoutingStepOffers2, resolvePlatformSyncAndRoutingTab, resolvePlatformSyncAndRoutingTest2, resolvePlatformSyncAndRoutingUnavailable, resolvePlatformSyncAndRoutingUntitled, resolvePlatformSyncAndRoutingUseContext, resolvePlatformSyncAndRoutingUseContext2, resolvePlatformSyncAndRoutingValue18, resolvePlatformSyncAndRoutingValue19, resolvePlatformSyncAndRoutingValue20, resolvePlatformSyncAndRoutingValue22, resolvePlatformSyncAndRoutingValue23, resolvePlatformSyncAndRoutingValue24, resolvePlatformSyncAndRoutingValue25, resolvePlatformSyncAndRoutingValue26, resolvePlatformSyncAndRoutingValue28, resolvePlatformSyncAndRoutingValue29, resolvePlatformSyncAndRoutingVerb3, updatePlatformSyncAndRoutingCaption, updatePlatformSyncAndRoutingCompareMode, updatePlatformSyncAndRoutingCopyAsk, updatePlatformSyncAndRoutingDirectory, updatePlatformSyncAndRoutingEntry, updatePlatformSyncAndRoutingHeadDrivenId, updatePlatformSyncAndRoutingHeadEmbedNodes, updatePlatformSyncAndRoutingHeadEpoch, updatePlatformSyncAndRoutingKeys, updatePlatformSyncAndRoutingPhoneView, updatePlatformSyncAndRoutingPhoneView2, updatePlatformSyncAndRoutingPreparing, updatePlatformSyncAndRoutingRestoreAsk, updatePlatformSyncAndRoutingShowChanges, updatePlatformSyncAndRoutingStats, updatePlatformSyncAndRoutingStepAsk, usePlatformSyncAndRoutingPhone };

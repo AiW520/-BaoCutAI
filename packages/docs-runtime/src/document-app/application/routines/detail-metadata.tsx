@@ -9,21 +9,16 @@ import {
 } from "../../dependencies";
 import type { RoutineRow, RoutineRun } from "../project-contracts";
 import { RoutineInflightChip } from "../routes-filmed-prose-page";
-export function RoutineDetailMetadata({
-  row,
-  run,
-  endedAt,
-  nowMs,
-  filteredRefs,
-  onSelectRoutine,
-}: {
+import type * as React from "react";
+
+export const RoutineDetailMetadata: React.FC<{
   row: RoutineRow;
   run?: RoutineRun;
   endedAt: string;
   nowMs: number;
   filteredRefs: readonly string[];
   onSelectRoutine: (name: string) => void;
-}) {
+}> = ({ row, run, endedAt, nowMs, filteredRefs, onSelectRoutine }) => {
   return (
     <div className={`mt-4 grid grid-cols-[auto_1fr] items-baseline gap-x-8 gap-y-2.5`}>
       <span className={`text-muted text-footnote`}>{`Last ran`}</span>
@@ -92,4 +87,4 @@ export function RoutineDetailMetadata({
       )}
     </div>
   );
-}
+};

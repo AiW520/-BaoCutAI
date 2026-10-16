@@ -6,16 +6,15 @@ import { RoutineRunActivity } from "./run-activity";
 import { RoutineHistoryButton } from "./run-history";
 import { useRoutinePage, type RoutinePageOptions } from "./use-routine-page";
 import { useRoutineRuns } from "./use-routine-runs";
-interface RoutinePageProps extends RoutinePageOptions {
-  onVisualize?: VisualizeRoutine;
-}
-function RoutinePage({
+import type * as React from "react";
+
+export const RoutinePage: React.FC<RoutinePageProps> = ({
   pid,
   routineId,
   version,
   chipNav,
   onVisualize,
-}: RoutinePageProps) {
+}) => {
   const { pageState, selectedRef } = useRoutinePage({
     pid,
     routineId,
@@ -66,5 +65,8 @@ function RoutinePage({
       </div>
     </div>
   );
+};
+
+interface RoutinePageProps extends RoutinePageOptions {
+  onVisualize?: VisualizeRoutine;
 }
-export { RoutinePage };

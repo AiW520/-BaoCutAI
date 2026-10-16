@@ -93,23 +93,358 @@ import {
   RoomViewEmbedPage,
 } from "../session-navigation/room-view-embed-page";
 import { TranscriptDebugPage, FilmedMountDebugPage, HeroDesignPage, FeedbackDesignPage, CodePaneDebugPage } from "./debug-pages";
+import type * as ReactComponentTypes from "react";
 
-function UseApplicationRootModeComponent(
-  { mode: mode, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const ApplicationRoot: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
+    recordFramePhase(`app`);
+    CommentsStoreClaude.getState().load();
+    PlatformApiAndAuthUser.getState().load();
+    EditorSelectionAndTablesPrefs.getState().load();
+  }, []);
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
+    resolveCommentsStoreWhat2({
+      onLaneLog: (applicationRoot?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        onFrameShellLog(
+          (applicationRoot2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            applicationRoot(applicationRoot2);
+            let applicationRootResult4: Dynamic =
+              resolveObservabilityBrowserAndOperationEventsKey(applicationRoot2);
+            if (applicationRootResult4 !== null) {
+              emitTelemetryEvent(applicationRootResult4);
+            }
+            resolvePlatformSyncAndRoutingEmit2(applicationRoot2);
+          },
+        ),
+      onMuxState: clearPlatformApiAndAuthDelete2,
+      onMuxRow: clearPlatformApiAndAuthDelete,
+      muxStats: resolvePlatformApiAndAuthState5,
+    });
+  }, []);
+  useActivity();
+  usePlatformSyncAndRoutingNavigate();
+  let mode: Dynamic = usePlatformSyncAndRoutingSystem();
+  let applicationRootResult: Dynamic = useCommentsStoreUseSyncExternalStore();
+  let enabled = !isFrameArtifact();
+  let enabled2: Dynamic = enabled && applicationRootResult;
+  let [resetKey, setResetKey]: Dynamic =
+    resolveObservabilityBrowserAndOperationEventsValue48();
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let setTimeout2 = setTimeout((..._extraArguments: unknown[]): undefined => {
+        let path: Dynamic = resolvePlatformApiAndAuthPathOverride();
+        let matchItemSlice = /^\/(projects|skills|users)\/[^/]+/
+          .exec(path)?.[0]
+          ?.slice(1);
+        api.event({
+          kind: `page_visited`,
+          container: matchItemSlice ?? ``,
+          path: path,
+        });
+      }, 1500);
+      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
+    },
+    [resetKey],
+  );
+  let startsWith: Dynamic =
+    resetKey.startsWith(`/design`) ||
+    resetKey.startsWith(`/debug`) ||
+    resetKey.startsWith(`/sessions`) ||
+    resetKey === `/auth/done` ||
+    isFrameArtifact();
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!startsWith) return useChatStore.getState().connect();
+    },
+    [startsWith],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      resolveDataModelSchemasValue4(
+        ({ file: file }: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          throw Error(
+            `navigate("${file}") with no handler — link has no project context. Pass herePath to handleClaudeHref or ensure Workspace registered setNavHandler.`,
+          );
+        },
+      );
+      resolveDataModelSchemasValue5(setResetKey);
+    },
+    [setResetKey],
+  );
+  let applicationRootResult2: Dynamic = CommentsStoreClaude(
+    (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic => response.status,
+  );
+  let applicationRootResult3: Dynamic = CommentsStoreClaude(
+    (applicationRoot?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      applicationRoot.claude,
+  );
+  if (enabled && resetKey.startsWith(`/design/hero`))
+    return (
+      <React.Suspense fallback={null}>
+        <HeroDesignPage />
+      </React.Suspense>
+    );
+  if (enabled && resetKey.startsWith(`/design/feedback`))
+    return (
+      <React.Suspense fallback={null}>
+        <FeedbackDesignPage />
+      </React.Suspense>
+    );
+  if (resetKey === `/auth/done`)
+    return (
+      <UiProviderAndLayersDensity mode={mode} className={`contents`}>
+        <SignInRequiredPage />
+      </UiProviderAndLayersDensity>
+    );
+  {
+    let match = /^\/manifest\/replay(?:\/([^/?]+)(?:\/([^/?]+))?)?\/?(?:\?.*)?$/.exec(
+      resetKey,
+    );
+    if (match) {
+      let decodeURIComponent2: Dynamic = (
+        applicationRoot?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => {
+        if (applicationRoot !== undefined)
+          try {
+            return decodeURIComponent(applicationRoot);
+          } catch {
+            return applicationRoot;
+          }
+      };
+      return (
+        <UiProviderAndLayersDensity mode={mode} className={`contents`}>
+          <div className={`flex h-screen flex-col`}>
+            <React.Suspense fallback={null}>
+              <ApplicationRootDefault9
+                suite={decodeURIComponent2(match[1])}
+                spec={decodeURIComponent2(match[2])}
+              />
+            </React.Suspense>
+          </div>
+        </UiProviderAndLayersDensity>
+      );
+    }
+  }
+  if (applicationRootResult2 === `idle` || applicationRootResult2 === `loading`)
+    return null;
+  if (!applicationRootResult3?.connected)
+    return (
+      <UiProviderAndLayersDensity mode={mode} className={`contents`}>
+        <ConnectionPage />
+      </UiProviderAndLayersDensity>
+    );
+  let jsxs = (
+    <ToastProvider viewportClassName={PHONE_TOAST_POSITION_CLASS}>
+      <DocumentContextMenuInstaller />
+      <div className={`flex h-screen flex-col`}>
+        <ResolvePlatformSyncAndRoutingValue13Component />
+        <ResolvePlatformSyncAndRoutingValue12Component />
+        <div className={`flex min-h-0 flex-1`}>
+          <div className={`min-w-0 flex-1 overflow-y-auto`}>
+            <RouteErrorBoundary resetKey={resetKey} key={resetKey.split(`/`)[1] || `/`}>
+              {
+                <React.Suspense fallback={null}>
+                  <ResolveObservabilityBrowserAndOperationEventsLocationComponent>
+                    <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                      path={`/`}
+                      component={
+                        isFrameArtifact() ? FrameEntryUnlinked : ApplicationRootDefault4
+                      }
+                    />
+                    <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                      path={`/project/:pid`}
+                      component={RoomViewEmbedPage}
+                    />
+                    <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                      path={`/project/:pid/file/:fileId`}
+                      component={RoomViewEmbedPage}
+                    />
+                    <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                      path={`/project/:pid/routine/:rid`}
+                      component={RoomViewEmbedPage}
+                    />
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/runs/:id?`}
+                        component={ApplicationRootDefault7}
+                      />
+                    )}
+                    {enabled2 && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/debug/suites`}
+                        component={ApplicationRootDefault13}
+                      />
+                    )}
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/suite/:sid/run/:rid`}
+                        component={ApplicationRootDefault8}
+                      />
+                    )}
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/sessions/:id?`}
+                        component={ApplicationRootDefault10}
+                      />
+                    )}
+                    {enabled2 && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/debug/code-pane`}
+                      >
+                        <React.Suspense fallback={null}>
+                          <CodePaneDebugPage />
+                        </React.Suspense>
+                      </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                    )}
+                    {enabled2 && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/debug/transcript-fold`}
+                      >
+                        <React.Suspense fallback={null}>
+                          <TranscriptDebugPage />
+                        </React.Suspense>
+                      </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                    )}
+                    {enabled2 && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/debug/filmed-mount`}
+                      >
+                        <React.Suspense fallback={null}>
+                          <FilmedMountDebugPage />
+                        </React.Suspense>
+                      </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                    )}
+                    {enabled2 && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/debug/:id?`}
+                        component={Debug}
+                      />
+                    )}
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/actions/:id?`}
+                        component={ApplicationRootDefault12}
+                      />
+                    )}
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/settings`}
+                        component={ApplicationRootDefault11}
+                      />
+                    )}
+                    <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                      path={`/projects/*`}
+                    >
+                      {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => (
+                        <ApplicationRootDefault6
+                          key={`projects/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`}
+                        />
+                      )}
+                    </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/skills/*?`}
+                      >
+                        {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => (
+                          <ApplicationRootDefault5
+                            key={`skills/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`}
+                          />
+                        )}
+                      </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                    )}
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/users/*`}
+                      >
+                        {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => (
+                          <ApplicationRootDefault5
+                            key={`users/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`}
+                          />
+                        )}
+                      </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                    )}
+                    {enabled && (
+                      <ResolveObservabilityBrowserAndOperationEventsPathComponent
+                        path={`/me`}
+                        component={useApplicationRootReplace}
+                      />
+                    )}
+                    <ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                      <AccessDeniedPage />
+                    </ResolveObservabilityBrowserAndOperationEventsPathComponent>
+                  </ResolveObservabilityBrowserAndOperationEventsLocationComponent>
+                </React.Suspense>
+              }
+            </RouteErrorBoundary>
+          </div>
+        </div>
+      </div>
+      <HiddenScreenshotter />
+      {false}
+      <DebugReportDialog />
+      {applicationRootResult && <DebugOverlay />}
+      <FilePeekDialog />
+      <ConnectorAuthenticationDialog />
+      <ExportProgressDialog />
+      <ConnectorPermissionDialog />
+    </ToastProvider>
+  );
+  return (
+    <UiProviderAndLayersDensity mode={mode} className={`contents`}>
+      {isFrameArtifact() ? (
+        <UseApplicationRootModeComponent mode={mode}>
+          {jsxs}
+        </UseApplicationRootModeComponent>
+      ) : (
+        <React.Suspense fallback={null}>
+          <ApplicationRootDefault3 mode={mode}>{jsxs}</ApplicationRootDefault3>
+        </React.Suspense>
+      )}
+    </UiProviderAndLayersDensity>
+  );
+};
+
+export const UseApplicationRootModeComponent: ReactComponentTypes.FC<Dynamic> = ({
+  mode: mode,
+  children: children,
+}) => {
   return (
     <UiProviderAndLayersDensity
       mode={mode}
-      density={
-        resolvePlatformSyncAndRoutingValue10() ? `comfortable` : `compact`
-      }
+      density={resolvePlatformSyncAndRoutingValue10() ? `comfortable` : `compact`}
       className={`contents`}
     >
       {children}
     </UiProviderAndLayersDensity>
   );
-}
+};
+
+export const FrameEntryUnlinked: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let frameEntryUnlinkedResult: Dynamic = frameBootContainer();
+  return frameEntryUnlinkedResult ? (
+    <ResolvePlatformApiAndAuthHrefComponent
+      to={resolveDataContentAndReferencesKind2(frameEntryUnlinkedResult)}
+      replace={true}
+    />
+  ) : (
+    <div
+      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
+      data-testid={`frame-entry-unlinked`}
+    >
+      <div
+        className={`text-primary text-body font-medium`}
+      >{`This artifact isn’t linked to a document yet`}</div>
+      <div
+        className={`text-secondary text-footnote max-w-md text-center`}
+      >{`It was published without a document address. Re-create the artifact, or open the document in Claude Docs.`}</div>
+    </div>
+  );
+};
 
 function useApplicationRootMode2(
   { mode: mode, children: children }: Dynamic,
@@ -160,264 +495,6 @@ function useApplicationRootReplace(..._extraArguments: unknown[]) {
       replace={true}
     />
   ) : null;
-}
-
-function FrameEntryUnlinked(..._extraArguments: unknown[]) {
-  let frameEntryUnlinkedResult: Dynamic = frameBootContainer();
-  return frameEntryUnlinkedResult ? (
-    <ResolvePlatformApiAndAuthHrefComponent
-      to={resolveDataContentAndReferencesKind2(frameEntryUnlinkedResult)}
-      replace={true}
-    />
-  ) : (
-    <div
-      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
-      data-testid={`frame-entry-unlinked`}
-    >
-      <div
-        className={`text-primary text-body font-medium`}
-      >{`This artifact isn’t linked to a document yet`}</div>
-      <div
-        className={`text-secondary text-footnote max-w-md text-center`}
-      >{`It was published without a document address. Re-create the artifact, or open the document in Claude Docs.`}</div>
-    </div>
-  );
-}
-
-function ApplicationRoot(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
-    recordFramePhase(`app`);
-    CommentsStoreClaude.getState().load();
-    PlatformApiAndAuthUser.getState().load();
-    EditorSelectionAndTablesPrefs.getState().load();
-  }, []);
-  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
-    resolveCommentsStoreWhat2({
-      onLaneLog: (
-        applicationRoot?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic =>
-        onFrameShellLog(
-          (
-            applicationRoot2?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            applicationRoot(applicationRoot2);
-            let applicationRootResult4: Dynamic =
-              resolveObservabilityBrowserAndOperationEventsKey(
-                applicationRoot2,
-              );
-            if (applicationRootResult4 !== null) {
-              emitTelemetryEvent(applicationRootResult4);
-            }
-            resolvePlatformSyncAndRoutingEmit2(applicationRoot2);
-          },
-        ),
-      onMuxState: clearPlatformApiAndAuthDelete2,
-      onMuxRow: clearPlatformApiAndAuthDelete,
-      muxStats: resolvePlatformApiAndAuthState5,
-    });
-  }, []);
-  useActivity();
-  usePlatformSyncAndRoutingNavigate();
-  let mode: Dynamic = usePlatformSyncAndRoutingSystem();
-  let applicationRootResult: Dynamic = useCommentsStoreUseSyncExternalStore();
-  let enabled = !isFrameArtifact();
-  let enabled2: Dynamic = enabled && applicationRootResult;
-  let [resetKey, setResetKey]: Dynamic =
-    resolveObservabilityBrowserAndOperationEventsValue48();
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let setTimeout2 = setTimeout(
-        (..._extraArguments: unknown[]): undefined => {
-          let path: Dynamic = resolvePlatformApiAndAuthPathOverride();
-          let matchItemSlice = /^\/(projects|skills|users)\/[^/]+/
-            .exec(path)?.[0]
-            ?.slice(1);
-          api.event({
-            kind: `page_visited`,
-            container: matchItemSlice ?? ``,
-            path: path,
-          });
-        },
-        1500,
-      );
-      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
-    },
-    [resetKey],
-  );
-  let startsWith: Dynamic =
-    resetKey.startsWith(`/design`) ||
-    resetKey.startsWith(`/debug`) ||
-    resetKey.startsWith(`/sessions`) ||
-    resetKey === `/auth/done` ||
-    isFrameArtifact();
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!startsWith) return useChatStore.getState().connect();
-    },
-    [startsWith],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      resolveDataModelSchemasValue4(
-        ({ file: file }: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          throw Error(
-            `navigate("${file}") with no handler — link has no project context. Pass herePath to handleClaudeHref or ensure Workspace registered setNavHandler.`,
-          );
-        },
-      );
-      resolveDataModelSchemasValue5(setResetKey);
-    },
-    [setResetKey],
-  );
-  let applicationRootResult2: Dynamic = CommentsStoreClaude(
-    (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      response.status,
-  );
-  let applicationRootResult3: Dynamic = CommentsStoreClaude(
-    (applicationRoot?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      applicationRoot.claude,
-  );
-  if (enabled && resetKey.startsWith(`/design/hero`))
-    return (
-      <React.Suspense fallback={null}>
-        <HeroDesignPage />
-      </React.Suspense>
-    );
-  if (enabled && resetKey.startsWith(`/design/feedback`))
-    return (
-      <React.Suspense fallback={null}>
-        <FeedbackDesignPage />
-      </React.Suspense>
-    );
-  if (resetKey === `/auth/done`)
-    return (
-      <UiProviderAndLayersDensity mode={mode} className={`contents`}>
-        <SignInRequiredPage />
-      </UiProviderAndLayersDensity>
-    );
-  {
-    let match =
-      /^\/manifest\/replay(?:\/([^/?]+)(?:\/([^/?]+))?)?\/?(?:\?.*)?$/.exec(
-        resetKey,
-      );
-    if (match) {
-      let decodeURIComponent2: Dynamic = (
-        applicationRoot?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => {
-        if (applicationRoot !== undefined)
-          try {
-            return decodeURIComponent(applicationRoot);
-          } catch {
-            return applicationRoot;
-          }
-      };
-      return (
-        <UiProviderAndLayersDensity mode={mode} className={`contents`}>
-          <div className={`flex h-screen flex-col`}>
-            <React.Suspense fallback={null}>
-              <ApplicationRootDefault9
-                suite={decodeURIComponent2(match[1])}
-                spec={decodeURIComponent2(match[2])}
-              />
-            </React.Suspense>
-          </div>
-        </UiProviderAndLayersDensity>
-      );
-    }
-  }
-  if (applicationRootResult2 === `idle` || applicationRootResult2 === `loading`)
-    return null;
-  if (!applicationRootResult3?.connected)
-    return (
-      <UiProviderAndLayersDensity mode={mode} className={`contents`}>
-        <ConnectionPage />
-      </UiProviderAndLayersDensity>
-    );
-  let jsxs = (
-    <ToastProvider viewportClassName={PHONE_TOAST_POSITION_CLASS}>
-      <DocumentContextMenuInstaller />
-      <div className={`flex h-screen flex-col`}>
-        <ResolvePlatformSyncAndRoutingValue13Component />
-        <ResolvePlatformSyncAndRoutingValue12Component />
-        <div className={`flex min-h-0 flex-1`}>
-          <div className={`min-w-0 flex-1 overflow-y-auto`}>
-            <RouteErrorBoundary resetKey={resetKey} key={resetKey.split(`/`)[1] || `/`}>{<React.Suspense fallback={null}>
-                      <ResolveObservabilityBrowserAndOperationEventsLocationComponent>
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                          path={`/`}
-                          component={isFrameArtifact() ? FrameEntryUnlinked : ApplicationRootDefault4}
-                        />
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/project/:pid`} component={RoomViewEmbedPage} />
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/project/:pid/file/:fileId`} component={RoomViewEmbedPage} />
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/project/:pid/routine/:rid`} component={RoomViewEmbedPage} />
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/runs/:id?`} component={ApplicationRootDefault7} />}
-                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/suites`} component={ApplicationRootDefault13} />}
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/suite/:sid/run/:rid`} component={ApplicationRootDefault8} />}
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/sessions/:id?`} component={ApplicationRootDefault10} />}
-                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/code-pane`}>
-                            <React.Suspense fallback={null}>
-                              <CodePaneDebugPage />
-                            </React.Suspense>
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
-                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/transcript-fold`}>
-                            <React.Suspense fallback={null}>
-                              <TranscriptDebugPage />
-                            </React.Suspense>
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
-                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/filmed-mount`}>
-                            <React.Suspense fallback={null}>
-                              <FilmedMountDebugPage />
-                            </React.Suspense>
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
-                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/:id?`} component={Debug} />}
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/actions/:id?`} component={ApplicationRootDefault12} />}
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/settings`} component={ApplicationRootDefault11} />}
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/projects/*`}>
-                          {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => <ApplicationRootDefault6 key={`projects/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`} />}
-                        </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/skills/*?`}>
-                            {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => <ApplicationRootDefault5 key={`skills/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`} />}
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/users/*`}>
-                            {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => <ApplicationRootDefault5 key={`users/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`} />}
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
-                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/me`} component={useApplicationRootReplace} />}
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                          <AccessDeniedPage />
-                        </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                      </ResolveObservabilityBrowserAndOperationEventsLocationComponent>
-                    </React.Suspense>}</RouteErrorBoundary>
-          </div>
-        </div>
-      </div>
-      <HiddenScreenshotter />
-      {false}
-      <DebugReportDialog />
-      {applicationRootResult && <DebugOverlay />}
-      <FilePeekDialog />
-      <ConnectorAuthenticationDialog />
-      <ExportProgressDialog />
-      <ConnectorPermissionDialog />
-    </ToastProvider>
-  );
-  return (
-    <UiProviderAndLayersDensity mode={mode} className={`contents`}>
-      {isFrameArtifact() ? (
-        <UseApplicationRootModeComponent mode={mode}>
-          {jsxs}
-        </UseApplicationRootModeComponent>
-      ) : (
-        <React.Suspense fallback={null}>
-          <ApplicationRootDefault3 mode={mode}>{jsxs}</ApplicationRootDefault3>
-        </React.Suspense>
-      )}
-    </UiProviderAndLayersDensity>
-  );
 }
 
 var ApplicationRootState: Dynamic;

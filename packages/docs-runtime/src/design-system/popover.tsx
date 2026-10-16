@@ -55,6 +55,89 @@ import {
 } from "./menu/interactions";
 import { resolveMenuPopupsDraggable } from "./menu/focus";
 import { MenuPopupsKind } from "./menu/search";
+import type * as ReactComponentTypes from "react";
+
+export const PopoverConsumerHandlesOpenChange: ReactComponentTypes.FC<Dynamic> = ({
+  consumerHandlesOpenChange: input,
+  ...input2
+}) => {
+  let value: Dynamic = useSheetsOpen2(input2);
+  let value2: Dynamic = (0, React.useRef)({
+    popupMounted: false,
+    declinesFocus: false,
+    anchor: undefined,
+    triggerEl: null,
+  });
+  let value3: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => ({
+      update: (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        Object.assign(value2.current, input3);
+      },
+      read: (..._extraArguments: unknown[]): Dynamic => value2.current,
+    }),
+    [],
+  );
+  let value4: Dynamic = useSheetsWasOpen(
+    value.open,
+    (..._extraArguments: unknown[]): boolean => {
+      let value6: Dynamic = value3.read();
+      return !value6.popupMounted || isPopoverVirtual(value6);
+    },
+    false,
+  );
+  let value5: Dynamic = useSheetsOpen({
+    open: value.open,
+    actionsRef: input2.actionsRef,
+    onOpenChange: value.onOpenChange,
+    onOpenChangeComplete: input2.onOpenChangeComplete,
+    structurallyAnchored: value4,
+    closable: !(input2.open !== undefined && !input),
+  });
+  return (
+    <PopoverCreateContext.Provider value={value3}>
+      <SheetsValue2 value={value5}>
+        <BasePopoverRoot
+          {...input2}
+          modal={value5.modal ?? input2.modal}
+          actionsRef={value5.actionsRef}
+          onOpenChange={value5.onOpenChange}
+          onOpenChangeComplete={value5.onOpenChangeComplete}
+        />
+      </SheetsValue2>
+    </PopoverCreateContext.Provider>
+  );
+};
+
+export const PopoverActionsRef: ReactComponentTypes.FC<Dynamic> = ({
+  onOpenChange: input,
+  actionsRef: input2,
+  ...input3
+}) => {
+  let value: Dynamic = usePopoverInnerOverlays(input);
+  let value2: Dynamic = resolveSheetsUseContext4();
+  let value3: Dynamic = (0, React.useRef)(null);
+  resolveUiTooltipsAndControlsClose(value3, input2);
+  return (
+    <PopoverCreateContext2.Provider value={value.innerOverlays}>
+      <UiOverlaysAndIconsActionsRef actionsRef={value3}>
+        {value2 ? (
+          <PopoverConsumerHandlesOpenChange
+            {...input3}
+            actionsRef={value3}
+            onOpenChange={value.onOpenChange}
+            consumerHandlesOpenChange={input !== undefined}
+          />
+        ) : (
+          <BasePopoverRoot
+            {...input3}
+            actionsRef={value3}
+            onOpenChange={value.onOpenChange}
+          />
+        )}
+      </UiOverlaysAndIconsActionsRef>
+    </PopoverCreateContext2.Provider>
+  );
+};
 
 var PopoverPopover: Dynamic;
 
@@ -146,83 +229,6 @@ function isPopoverVirtual(
         value.closest(
           `input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]`,
         ) !== null;
-}
-
-function PopoverActionsRef(
-  { onOpenChange: input, actionsRef: input2, ...input3 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = usePopoverInnerOverlays(input);
-  let value2: Dynamic = resolveSheetsUseContext4();
-  let value3: Dynamic = (0, React.useRef)(null);
-  resolveUiTooltipsAndControlsClose(value3, input2);
-  return (
-    <PopoverCreateContext2.Provider value={value.innerOverlays}>
-      <UiOverlaysAndIconsActionsRef actionsRef={value3}>
-        {value2 ? (
-          <PopoverConsumerHandlesOpenChange
-            {...input3}
-            actionsRef={value3}
-            onOpenChange={value.onOpenChange}
-            consumerHandlesOpenChange={input !== undefined}
-          />
-        ) : (
-          <BasePopoverRoot {...input3} actionsRef={value3} onOpenChange={value.onOpenChange} />
-        )}
-      </UiOverlaysAndIconsActionsRef>
-    </PopoverCreateContext2.Provider>
-  );
-}
-
-function PopoverConsumerHandlesOpenChange(
-  { consumerHandlesOpenChange: input, ...input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = useSheetsOpen2(input2);
-  let value2: Dynamic = (0, React.useRef)({
-    popupMounted: false,
-    declinesFocus: false,
-    anchor: undefined,
-    triggerEl: null,
-  });
-  let value3: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => ({
-      update: (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        Object.assign(value2.current, input3);
-      },
-      read: (..._extraArguments: unknown[]): Dynamic => value2.current,
-    }),
-    [],
-  );
-  let value4: Dynamic = useSheetsWasOpen(
-    value.open,
-    (..._extraArguments: unknown[]): boolean => {
-      let value6: Dynamic = value3.read();
-      return !value6.popupMounted || isPopoverVirtual(value6);
-    },
-    false,
-  );
-  let value5: Dynamic = useSheetsOpen({
-    open: value.open,
-    actionsRef: input2.actionsRef,
-    onOpenChange: value.onOpenChange,
-    onOpenChangeComplete: input2.onOpenChangeComplete,
-    structurallyAnchored: value4,
-    closable: !(input2.open !== undefined && !input),
-  });
-  return (
-    <PopoverCreateContext.Provider value={value3}>
-      <SheetsValue2 value={value5}>
-        <BasePopoverRoot
-          {...input2}
-          modal={value5.modal ?? input2.modal}
-          actionsRef={value5.actionsRef}
-          onOpenChange={value5.onOpenChange}
-          onOpenChangeComplete={value5.onOpenChangeComplete}
-        />
-      </SheetsValue2>
-    </PopoverCreateContext.Provider>
-  );
 }
 
 var PopoverTriggerEl: Dynamic;

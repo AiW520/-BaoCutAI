@@ -11,18 +11,14 @@ import {
 } from "../dependencies";
 import type { DuplicateProjectResult } from "./project-contracts";
 import { duplicateProjectSchema } from "./project-contracts";
-interface ProjectDuplicateDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  pid: string;
-  projectName: string;
-}
-function ProjectDuplicateDialog({
+import type * as React from "react";
+
+export const ProjectDuplicateDialog: React.FC<ProjectDuplicateDialogProps> = ({
   open,
   onOpenChange,
   pid,
   projectName: projectName2,
-}: ProjectDuplicateDialogProps) {
+}) => {
   const [, set]: [string, (path: string) => void] =
     resolveObservabilityBrowserAndOperationEventsValue48();
   const [name, setName] = useState(``);
@@ -124,5 +120,11 @@ function ProjectDuplicateDialog({
       </UiDialogsRoot.Popup>
     </UiDialogsRoot.Root>
   );
+};
+
+interface ProjectDuplicateDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pid: string;
+  projectName: string;
 }
-export { ProjectDuplicateDialog };

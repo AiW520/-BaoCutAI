@@ -67,6 +67,37 @@ import {
   removePendingBlocks,
   stripCommentAnchors,
 } from "../presence-and-chat";
+import type * as ReactComponentTypes from "react";
+
+export const HomeButton: ReactComponentTypes.FC<Dynamic> = ({ boxed: boxed }) => {
+  let [, set]: Dynamic = resolveObservabilityBrowserAndOperationEventsValue48();
+  return (
+    <Tooltip content={`Home`}>
+      <button
+        type={`button`}
+        aria-label={`Home`}
+        onClick={(..._extraArguments: unknown[]): Dynamic => set(`/`)}
+        className={boxed ? BOXED_HOME_BUTTON_CLASS : HOME_BUTTON_CLASS}
+      >
+        <UiOverlaysAndIconsCustomIcon
+          name={`Home`}
+          customSize={15}
+          className={`-mt-px`}
+        />
+      </button>
+    </Tooltip>
+  );
+};
+
+export const TabCaretIcon: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  return (
+    <span aria-hidden={`true`} className={`text-muted -mx-0.5 inline-flex shrink-0`}>
+      <UiOverlaysAndIconsCustomIcon name={`CaretDown`} size={`xs`} />
+    </span>
+  );
+};
 
 function legacyDocumentLeafIndex(
   legacyDocumentLeafIndex2?: Dynamic,
@@ -1003,26 +1034,6 @@ var HOME_BUTTON_CLASS: string;
 
 var BOXED_HOME_BUTTON_CLASS: string;
 
-function HomeButton({ boxed: boxed }: Dynamic, ..._extraArguments: unknown[]) {
-  let [, set]: Dynamic = resolveObservabilityBrowserAndOperationEventsValue48();
-  return (
-    <Tooltip content={`Home`}>
-      <button
-        type={`button`}
-        aria-label={`Home`}
-        onClick={(..._extraArguments: unknown[]): Dynamic => set(`/`)}
-        className={boxed ? BOXED_HOME_BUTTON_CLASS : HOME_BUTTON_CLASS}
-      >
-        <UiOverlaysAndIconsCustomIcon
-          name={`Home`}
-          customSize={15}
-          className={`-mt-px`}
-        />
-      </button>
-    </Tooltip>
-  );
-}
-
 function joinClasses(...joinClasses2: Dynamic[]) {
   return joinClasses2.filter(Boolean).join(` `);
 }
@@ -1030,19 +1041,6 @@ function joinClasses(...joinClasses2: Dynamic[]) {
 var tabRailContext: Dynamic;
 
 var tabRailDisabledContext: Dynamic;
-
-function TabCaretIcon(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  return (
-    <span
-      aria-hidden={`true`}
-      className={`text-muted -mx-0.5 inline-flex shrink-0`}
-    >
-      <UiOverlaysAndIconsCustomIcon name={`CaretDown`} size={`xs`} />
-    </span>
-  );
-}
 
 function tabActionTooltip(
   tabAction?: Dynamic,
@@ -1433,51 +1431,4 @@ export function initializeDocumentContextActionsDuplicateDocumentTabStep1(): voi
   ): Dynamic => tabIdentityKey2 ?? ``);
 }
 
-export {
-  AGENT_ADDED_TAB_TOAST_ID,
-  BOXED_HOME_BUTTON_CLASS,
-  DISABLED_TAB_CLASS,
-  DuplicateStructureInvalid,
-  DuplicateTooLarge,
-  DuplicateUnsupported,
-  HomeButton,
-  IN_THIS_TAB_LABEL,
-  TABS_MOVED_TO_PAGE_MESSAGE,
-  TAB_DRAG_MIME_TYPE,
-  TAB_OUTLINE_REFRESH_MS,
-  TabCaretIcon,
-  TabRailButton,
-  addedTabs,
-  agentAddedTabsMessage,
-  canCreateSpreadsheetTabs,
-  canRestoreTabMenuFocus,
-  cancelTabNavigation,
-  cancelTabRename,
-  clearActiveTabRename,
-  clearPendingTabRename,
-  createDocumentFile,
-  createTab,
-  disabledTabActionAccessibility,
-  duplicateDocumentTab,
-  duplicateVersionTab,
-  findTabTreeNode,
-  hasTabMenuFocusTargets,
-  isDuplicateObject,
-  isRealTabFile,
-  isSpreadsheetTab,
-  isTabDropBelowLabel,
-  joinClasses,
-  markActiveTabRename,
-  readDuplicateSourceFile,
-  registerTabNavigationWaiter,
-  registerTabRename,
-  releaseActiveTabRename,
-  requestTabRename,
-  resolveTabNavigation,
-  tabActionTooltip,
-  tabDropPosition,
-  tabIdentityKey,
-  tabRailContext,
-  tabRailDisabledContext,
-  tabSubtreeIds,
-};
+export { AGENT_ADDED_TAB_TOAST_ID, BOXED_HOME_BUTTON_CLASS, DISABLED_TAB_CLASS, DuplicateStructureInvalid, DuplicateTooLarge, DuplicateUnsupported, IN_THIS_TAB_LABEL, TABS_MOVED_TO_PAGE_MESSAGE, TAB_DRAG_MIME_TYPE, TAB_OUTLINE_REFRESH_MS, TabRailButton, addedTabs, agentAddedTabsMessage, canCreateSpreadsheetTabs, canRestoreTabMenuFocus, cancelTabNavigation, cancelTabRename, clearActiveTabRename, clearPendingTabRename, createDocumentFile, createTab, disabledTabActionAccessibility, duplicateDocumentTab, duplicateVersionTab, findTabTreeNode, hasTabMenuFocusTargets, isDuplicateObject, isRealTabFile, isSpreadsheetTab, isTabDropBelowLabel, joinClasses, markActiveTabRename, readDuplicateSourceFile, registerTabNavigationWaiter, registerTabRename, releaseActiveTabRename, requestTabRename, resolveTabNavigation, tabActionTooltip, tabDropPosition, tabIdentityKey, tabRailContext, tabRailDisabledContext, tabSubtreeIds };

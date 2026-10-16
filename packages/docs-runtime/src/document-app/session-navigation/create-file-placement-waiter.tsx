@@ -45,6 +45,514 @@ import {
 import {
   RecoveryTextPanel,
 } from "../document-recovery";
+import type * as ReactComponentTypes from "react";
+
+export const RoomDeniedScreen: ReactComponentTypes.FC<Dynamic> = ({
+  goHome: roomDeniedScreen2 = true,
+  frame: roomDeniedScreen3 = false,
+  gone: roomDeniedScreen4 = false,
+  tooLarge: roomDeniedScreen5 = false,
+  pid: roomDeniedScreen,
+} = {}) => {
+  let roomDeniedScreenResult: Dynamic = PlatformApiAndAuthUser(
+    (roomDeniedScreen6?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      roomDeniedScreen6.user?.email,
+  );
+  let { lines: items, dismiss: onDismiss }: Dynamic =
+    usePlatformLiveDocumentAndHistoryPid(roomDeniedScreen, roomDeniedScreen4);
+  let label = roomDeniedScreen3 ? `document` : `project`;
+  let title = roomDeniedScreen4
+    ? `This ${label} has been deleted or is no longer available.`
+    : roomDeniedScreen5
+      ? `This ${label} is too long to open here.`
+      : roomDeniedScreen3
+        ? `This document isn’t available`
+        : `This project isn’t available`;
+  let line = roomDeniedScreen4
+    ? null
+    : roomDeniedScreen5
+      ? `Nothing is lost; it is just more than this view can load at once.`
+      : roomDeniedScreen3
+        ? `It may have been deleted, or you may no longer have access.`
+        : `It may have been moved, or you may no longer have access.`;
+  return (
+    <div
+      data-testid={`room-denied-screen`}
+      data-gone={roomDeniedScreen4 ? `true` : undefined}
+      data-too-large={roomDeniedScreen5 ? `true` : undefined}
+      className={`bg-surface-0 flex h-full flex-col overflow-y-auto px-6`}
+    >
+      <div className={`my-auto flex flex-col items-center gap-3 py-6`}>
+        <RoomDeniedMessage title={title} line={line} key={`${title}|${line}`} />
+        {items.length > 0 && (
+          <div
+            className={`flex w-full max-w-xl flex-col gap-2`}
+            data-testid={`room-denied-kept`}
+          >
+            <div
+              className={`text-secondary text-center text-sm`}
+            >{`Your unsaved changes are kept below.`}</div>
+            <RecoveryTextPanel items={items} onDismiss={onDismiss} />
+          </div>
+        )}
+        {roomDeniedScreenResult && (
+          <div className={`text-secondary text-xs`}>
+            {`Signed in as`}
+            {` `}
+            <span className={`text-primary font-medium`}>{roomDeniedScreenResult}</span>
+          </div>
+        )}
+        {roomDeniedScreen2 && (
+          <ObservabilityBrowserAndOperationEventsHref
+            href={`/`}
+            className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary mt-2 rounded-md px-4 py-1.5 text-sm`}
+          >{`Go home`}</ObservabilityBrowserAndOperationEventsHref>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const RoomSigninFace: ReactComponentTypes.FC<Dynamic> = ({
+  signInHref: signInHref,
+  supportCode: supportCode,
+}) => {
+  let roomSigninFaceResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
+    resolvePlatformLiveDocumentAndHistoryReason5(`signin`);
+  }, []);
+  return (
+    <div
+      role={`status`}
+      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
+      data-testid={`room-signin-face`}
+    >
+      <UiOverlaysAndIconsCustomIcon
+        name={`Lock`}
+        size={`lg`}
+        className={`text-secondary`}
+      />
+      <div className={`text-primary text-body font-medium`}>
+        {ObservabilityBrowserAndOperationEventsTitle.title}
+      </div>
+      <div className={`text-secondary text-footnote max-w-md text-center`}>
+        {ObservabilityBrowserAndOperationEventsTitle.body}
+      </div>
+      <Button
+        size={roomSigninFaceResult(`sm`)}
+        variant={`primary`}
+        href={signInHref}
+        target={`_top`}
+        rel={`noopener noreferrer`}
+        data-testid={`room-signin-link`}
+      >
+        {ObservabilityBrowserAndOperationEventsTitle.cta}
+      </Button>
+      {supportCode ? (
+        <div className={`text-disabled mt-6`}>
+          <SupportCodeCopyButton code={supportCode} />
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+export const FileTabNavigation: ReactComponentTypes.FC<Dynamic> = ({
+  lead: lead,
+  tabs: tabs,
+  active: active,
+  entries: entries,
+  onSelect: onSelect,
+  onClose: onClose,
+  onCloseOthers: onCloseOthers,
+  onDownloadFile: onDownloadFile,
+  onSelectFilesDashboard: onSelectFilesDashboard,
+  onDeleteFile: onDeleteFile,
+  onRenameFile: onRenameFile,
+  topicNames: topicNames,
+  functions: functions,
+  onRenameFolder: onRenameFolder,
+  onDeleteFolder: onDeleteFolder,
+  onTreeNewFolder: onTreeNewFolder,
+  onTreeNewFile: onTreeNewFile,
+  pendingFolder: pendingFolder,
+  onCommitFolder: onCommitFolder,
+  onCancelFolder: onCancelFolder,
+  onMove: onMove,
+  status: status,
+  presence: presence,
+  pinnedPaths: pinnedPaths,
+  onTogglePin: onTogglePin,
+  actions: actions,
+  onReorder: onReorder,
+  tray: tray,
+  elevated: elevated,
+  cosMember: cosMember,
+}) => {
+  let [fileTabNavigationState, setFileTabNavigationState]: Dynamic = (0, React.useState)(
+    null,
+  );
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let [fileTabNavigationState2, setFileTabNavigationState2]: Dynamic = (0,
+  React.useState)(null);
+  let setFileTabNavigationState3 = (
+    fileTabNavigation?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): undefined => {
+    elementRef.current = fileTabNavigation;
+    setFileTabNavigationState2(fileTabNavigation);
+  };
+  let onDragEnd = (..._extraArguments: unknown[]): undefined => {
+    let fileTabNavigationState3: Dynamic = fileTabNavigationState;
+    let element: Dynamic = elementRef.current;
+    setFileTabNavigationState(null);
+    setFileTabNavigationState3(null);
+    if (fileTabNavigationState3 === null || !element || !onReorder) return;
+    let total: Dynamic = element.idx + +!element.before;
+    if (total > fileTabNavigationState3) {
+      --total;
+    }
+    if (total === fileTabNavigationState3) return;
+    let tabsSlice: Dynamic = tabs.slice();
+    let [splice]: Dynamic = tabsSlice.splice(fileTabNavigationState3, 1);
+    if (splice !== undefined) {
+      tabsSlice.splice(total, 0, splice);
+      onReorder(tabsSlice);
+    }
+  };
+  return (
+    <div
+      className={`relative flex h-10 shrink-0 items-center gap-0.5 px-2 ${elevated ? `` : `border-strong border-b`}`}
+    >
+      {lead}
+      {tray ? (
+        <jsxRuntime.Fragment>
+          {tray.leading === undefined ? (
+            <div
+              className={`grid shrink-0 transition-[grid-template-columns] duration-200 ease-in-out ${tray.collapsed ? `grid-cols-[1fr]` : `grid-cols-[0fr]`}`}
+            >
+              <div className={`overflow-hidden`}>
+                <div className={cosMember ? `w-23` : `w-16`} />
+              </div>
+            </div>
+          ) : (
+            tray.leading
+          )}
+          {tray.path}
+          <div className={`min-w-0 flex-1`} />
+          {tray.trailing}
+        </jsxRuntime.Fragment>
+      ) : (
+        <jsxRuntime.Fragment>
+          <ResolvePlatformSyncAndRoutingValue19Component
+            entries={entries}
+            activePath={active}
+            onPick={onSelect}
+            active={!active}
+            onClick={onSelectFilesDashboard}
+            onDeleteFile={onDeleteFile}
+            onRenameFile={onRenameFile}
+            onDownload={onDownloadFile}
+            onRenameFolder={onRenameFolder}
+            onDeleteFolder={onDeleteFolder}
+            onNewFolder={onTreeNewFolder}
+            onNewFile={onTreeNewFile}
+            pendingFolder={pendingFolder}
+            onCommitFolder={onCommitFolder}
+            onCancelFolder={onCancelFolder}
+            onMove={onMove}
+            status={status}
+            presence={presence}
+            pinnedPaths={pinnedPaths}
+            onTogglePin={onTogglePin}
+            topicNames={topicNames}
+            functions={functions}
+          />
+          <div
+            role={`tablist`}
+            aria-label={`Open files`}
+            className={`no-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto`}
+          >
+            {tabs.map((path?: Dynamic, idx?: Dynamic, ..._extraArguments: unknown[]) => (
+              <FileTabNavigationItem
+                path={path}
+                active={path === active}
+                onSelect={(..._extraArguments: unknown[]): Dynamic => onSelect(path)}
+                onClose={(..._extraArguments: unknown[]): Dynamic => onClose(path)}
+                onCloseOthers={
+                  tabs.length > 1
+                    ? (..._extraArguments: unknown[]): Dynamic => onCloseOthers?.(path)
+                    : undefined
+                }
+                onRename={onRenameFile}
+                onDownload={
+                  onDownloadFile
+                    ? (..._extraArguments: unknown[]): Dynamic => onDownloadFile(path)
+                    : undefined
+                }
+                onDelete={
+                  onDeleteFile
+                    ? (..._extraArguments: unknown[]): Dynamic => onDeleteFile(path)
+                    : undefined
+                }
+                dnd={
+                  onReorder
+                    ? {
+                        dragging: fileTabNavigationState === idx,
+                        drop:
+                          fileTabNavigationState2?.idx === idx &&
+                          fileTabNavigationState !== null
+                            ? fileTabNavigationState2.before
+                              ? `before`
+                              : `after`
+                            : null,
+                        onDragStart: (
+                          fileTabNavigation?: Dynamic,
+                          ..._extraArguments: unknown[]
+                        ): undefined => {
+                          fileTabNavigation.dataTransfer.setData(`text/plain`, path);
+                          fileTabNavigation.dataTransfer.effectAllowed = `move`;
+                          setFileTabNavigationState(idx);
+                        },
+                        onDragOver: (
+                          event?: Dynamic,
+                          ..._extraArguments: unknown[]
+                        ): undefined => {
+                          if (fileTabNavigationState === null) return;
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = `move`;
+                          let currentTargetBounds: Dynamic =
+                            event.currentTarget.getBoundingClientRect();
+                          let before =
+                            event.clientX <
+                            currentTargetBounds.left + currentTargetBounds.width / 2;
+                          let element: Dynamic = elementRef.current;
+                          if (
+                            !element ||
+                            element.idx !== idx ||
+                            element.before !== before
+                          ) {
+                            setFileTabNavigationState3({
+                              idx: idx,
+                              before: before,
+                            });
+                          }
+                        },
+                        onDragEnd: onDragEnd,
+                      }
+                    : undefined
+                }
+                key={path}
+              />
+            ))}
+          </div>
+        </jsxRuntime.Fragment>
+      )}
+      {actions && (
+        <div className={`ml-auto flex shrink-0 items-center gap-2.5 pl-2`}>{actions}</div>
+      )}
+    </div>
+  );
+};
+
+export const FileTabNavigationItem: ReactComponentTypes.FC<Dynamic> = ({
+  path: path,
+  active: active,
+  onSelect: onSelect,
+  onClose: onClose,
+  onCloseOthers: onCloseOthers,
+  onRename: onRename,
+  onDownload: onDownload,
+  onDelete: onDelete,
+  dnd: dnd,
+}) => {
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  let [enabledState2, setEnabledState2]: Dynamic = (0, React.useState)(false);
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let pop: Dynamic = path.split(`/`).pop() || path;
+  let pathSlice: Dynamic = path.slice(0, path.length - pop.length);
+  let defaultValue: Dynamic = resolvePlatformRuntimeAndChatSplit(pop);
+  let Item: Dynamic = resolveObservabilityBrowserAndOperationEventsLastIndexOf(pop)[1];
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (active) {
+        elementRef.current?.scrollIntoView({
+          inline: `nearest`,
+          block: `nearest`,
+        });
+      }
+    },
+    [active],
+  );
+  let onRename2 = (
+    fileTabNavigationItem?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): undefined => {
+    setEnabledState2(false);
+    let fileTabNavigationItemResult: Dynamic =
+      resolveObservabilityBrowserAndOperationEventsTrim(fileTabNavigationItem);
+    if (!(!fileTabNavigationItemResult || fileTabNavigationItemResult === defaultValue)) {
+      onRename?.(path, pathSlice + fileTabNavigationItemResult + Item);
+    }
+  };
+  let drop: Dynamic = dnd?.drop;
+  let render = (
+    <div
+      ref={elementRef}
+      role={`tab`}
+      tabIndex={0}
+      aria-selected={active}
+      draggable={!!dnd && !enabledState2}
+      onDragStart={dnd && !enabledState2 ? dnd.onDragStart : undefined}
+      onDragOver={dnd?.onDragOver}
+      onDragEnd={dnd?.onDragEnd}
+      onClick={enabledState2 ? undefined : onSelect}
+      onDoubleClick={
+        onRename
+          ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(true)
+          : undefined
+      }
+      onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (!(enabledState2 || event.target !== event.currentTarget)) {
+          if (event.key === `Enter` || event.key === ` `) {
+            event.preventDefault();
+            onSelect();
+          }
+        }
+      }}
+      onMouseEnter={(..._extraArguments: unknown[]): Dynamic => setEnabledState(true)}
+      onMouseLeave={(..._extraArguments: unknown[]): Dynamic => setEnabledState(false)}
+      data-path={path}
+      className={`group flex h-7 max-w-[180px] shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] transition-colors ${active ? `bg-surface-1 text-primary font-semibold` : `text-secondary hover:bg-alpha-1 hover:text-primary font-normal`} ${dnd?.dragging ? `opacity-40` : ``}`}
+      style={
+        drop
+          ? {
+              boxShadow: `${drop === `before` ? `-2px` : `2px`} 0 0 0 var(--cds-fill-brand)`,
+            }
+          : undefined
+      }
+    >
+      <ResolvePlatformRuntimeAndChatPathComponent path={path} size={12} />
+      {enabledState2 ? (
+        <input
+          autoFocus={true}
+          defaultValue={defaultValue}
+          onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            event.currentTarget.select()
+          }
+          onClick={(
+            fileTabNavigationItem?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): Dynamic => fileTabNavigationItem.stopPropagation()}
+          onBlur={(event?: Dynamic, ..._extraArguments: unknown[]) =>
+            onRename2(event.currentTarget.value)
+          }
+          onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            if (event.key === `Enter`) {
+              onRename2(event.currentTarget.value);
+            } else {
+              if (event.key === `Escape`) {
+                setEnabledState2(false);
+              }
+            }
+          }}
+          className={`text-primary min-w-0 flex-1 bg-transparent outline-none`}
+        />
+      ) : (
+        <Tooltip content={path} multiline={true}>
+          <span className={`truncate`}>{defaultValue}</span>
+        </Tooltip>
+      )}
+      <button
+        type={`button`}
+        aria-label={`Close ${defaultValue}`}
+        onClick={(
+          fileTabNavigationItem?: Dynamic,
+          ..._extraArguments: unknown[]
+        ): undefined => {
+          fileTabNavigationItem.stopPropagation();
+          onClose();
+        }}
+        className={`hover:bg-alpha-2 focus-visible:ring-strong -mr-1 ml-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none ${enabledState || active ? `opacity-50 hover:opacity-100` : `opacity-0`} transition-opacity`}
+      >
+        <UiOverlaysAndIconsCustomIcon name={`X`} customSize={10} />
+      </button>
+    </div>
+  );
+  return !onRename && !onDownload && !onDelete && !onCloseOthers ? (
+    render
+  ) : (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger render={render} />
+      <ContextMenu.Popup finalFocus={false}>
+        {onRename && (
+          <UseSessionNavigationItemComponent
+            onSelect={(..._extraArguments: unknown[]) =>
+              requestAnimationFrame(
+                (..._extraArguments: unknown[]): Dynamic => setEnabledState2(true),
+              )
+            }
+          >{`Rename`}</UseSessionNavigationItemComponent>
+        )}
+        {onDownload && (
+          <UseSessionNavigationItemComponent
+            onSelect={onDownload}
+          >{`Download`}</UseSessionNavigationItemComponent>
+        )}
+        {onDelete && (
+          <UseSessionNavigationItemComponent
+            onSelect={onDelete}
+          >{`Delete`}</UseSessionNavigationItemComponent>
+        )}
+        <ContextMenu.Separator />
+        <UseSessionNavigationItemComponent
+          onSelect={onClose}
+        >{`Close`}</UseSessionNavigationItemComponent>
+        {onCloseOthers && (
+          <UseSessionNavigationItemComponent
+            onSelect={onCloseOthers}
+          >{`Close others`}</UseSessionNavigationItemComponent>
+        )}
+      </ContextMenu.Popup>
+    </ContextMenu.Root>
+  );
+};
+
+export const RoomDeniedMessage: ReactComponentTypes.FC<Dynamic> = ({
+  title: title,
+  line: line,
+}) => {
+  let ariaLabelledby: Dynamic = (0, React.useId)();
+  let controlId: Dynamic = (0, React.useId)();
+  return (
+    <div
+      ref={useSessionNavigationPreventScroll(
+        line === null ? title : `${title}${/[.!?]$/.test(title) ? `` : `.`} ${line}`,
+      )}
+      role={`group`}
+      aria-labelledby={ariaLabelledby}
+      aria-describedby={line === null ? undefined : controlId}
+      tabIndex={-1}
+      data-testid={`room-denied-message`}
+      className={`focus-ring-fades -m-2 flex flex-col items-center gap-3 rounded-md p-2`}
+    >
+      <h1 id={ariaLabelledby} className={`text-primary text-lg font-medium`}>
+        {title}
+      </h1>
+      {line !== null && (
+        <div id={controlId} className={`text-secondary max-w-md text-center text-sm`}>
+          {line}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const UseSessionNavigationItemComponent: ReactComponentTypes.FC<Dynamic> = (
+  node,
+) => {
+  return <Menu.Item onClick={node.onSelect}>{node.children}</Menu.Item>;
+};
 
 var SessionNavigation_BongoLastTab: string;
 
@@ -781,112 +1289,6 @@ function createFilePlacementWaiter(
   );
 }
 
-function RoomDeniedScreen(
-  {
-    goHome: roomDeniedScreen2 = true,
-    frame: roomDeniedScreen3 = false,
-    gone: roomDeniedScreen4 = false,
-    tooLarge: roomDeniedScreen5 = false,
-    pid: roomDeniedScreen,
-  }: Dynamic = {},
-  ..._extraArguments: unknown[]
-) {
-  let roomDeniedScreenResult: Dynamic = PlatformApiAndAuthUser(
-    (roomDeniedScreen6?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      roomDeniedScreen6.user?.email,
-  );
-  let { lines: items, dismiss: onDismiss }: Dynamic =
-    usePlatformLiveDocumentAndHistoryPid(roomDeniedScreen, roomDeniedScreen4);
-  let label = roomDeniedScreen3 ? `document` : `project`;
-  let title = roomDeniedScreen4
-    ? `This ${label} has been deleted or is no longer available.`
-    : roomDeniedScreen5
-      ? `This ${label} is too long to open here.`
-      : roomDeniedScreen3
-        ? `This document isn’t available`
-        : `This project isn’t available`;
-  let line = roomDeniedScreen4
-    ? null
-    : roomDeniedScreen5
-      ? `Nothing is lost; it is just more than this view can load at once.`
-      : roomDeniedScreen3
-        ? `It may have been deleted, or you may no longer have access.`
-        : `It may have been moved, or you may no longer have access.`;
-  return (
-    <div
-      data-testid={`room-denied-screen`}
-      data-gone={roomDeniedScreen4 ? `true` : undefined}
-      data-too-large={roomDeniedScreen5 ? `true` : undefined}
-      className={`bg-surface-0 flex h-full flex-col overflow-y-auto px-6`}
-    >
-      <div className={`my-auto flex flex-col items-center gap-3 py-6`}>
-        <RoomDeniedMessage title={title} line={line} key={`${title}|${line}`} />
-        {items.length > 0 && (
-          <div
-            className={`flex w-full max-w-xl flex-col gap-2`}
-            data-testid={`room-denied-kept`}
-          >
-            <div
-              className={`text-secondary text-center text-sm`}
-            >{`Your unsaved changes are kept below.`}</div>
-            <RecoveryTextPanel items={items} onDismiss={onDismiss} />
-          </div>
-        )}
-        {roomDeniedScreenResult && (
-          <div className={`text-secondary text-xs`}>
-            {`Signed in as`}
-            {` `}
-            <span className={`text-primary font-medium`}>
-              {roomDeniedScreenResult}
-            </span>
-          </div>
-        )}
-        {roomDeniedScreen2 && (
-          <ObservabilityBrowserAndOperationEventsHref
-            href={`/`}
-            className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary mt-2 rounded-md px-4 py-1.5 text-sm`}
-          >{`Go home`}</ObservabilityBrowserAndOperationEventsHref>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RoomDeniedMessage(
-  { title: title, line: line }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let ariaLabelledby: Dynamic = (0, React.useId)();
-  let controlId: Dynamic = (0, React.useId)();
-  return (
-    <div
-      ref={useSessionNavigationPreventScroll(
-        line === null
-          ? title
-          : `${title}${/[.!?]$/.test(title) ? `` : `.`} ${line}`,
-      )}
-      role={`group`}
-      aria-labelledby={ariaLabelledby}
-      aria-describedby={line === null ? undefined : controlId}
-      tabIndex={-1}
-      data-testid={`room-denied-message`}
-      className={`focus-ring-fades -m-2 flex flex-col items-center gap-3 rounded-md p-2`}
-    >
-      <h1 id={ariaLabelledby} className={`text-primary text-lg font-medium`}>
-        {title}
-      </h1>
-      {line !== null && (
-        <div
-          id={controlId}
-          className={`text-secondary max-w-md text-center text-sm`}
-        >
-          {line}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function useSessionNavigationPreventScroll(
   sessionNavigationPreventScroll?: Dynamic,
   ..._extraArguments: unknown[]
@@ -934,50 +1336,6 @@ function useSessionNavigationPreventScroll(
     }
   }, []);
   return elementRef;
-}
-
-function RoomSigninFace(
-  { signInHref: signInHref, supportCode: supportCode }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let roomSigninFaceResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
-    resolvePlatformLiveDocumentAndHistoryReason5(`signin`);
-  }, []);
-  return (
-    <div
-      role={`status`}
-      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
-      data-testid={`room-signin-face`}
-    >
-      <UiOverlaysAndIconsCustomIcon
-        name={`Lock`}
-        size={`lg`}
-        className={`text-secondary`}
-      />
-      <div className={`text-primary text-body font-medium`}>
-        {ObservabilityBrowserAndOperationEventsTitle.title}
-      </div>
-      <div className={`text-secondary text-footnote max-w-md text-center`}>
-        {ObservabilityBrowserAndOperationEventsTitle.body}
-      </div>
-      <Button
-        size={roomSigninFaceResult(`sm`)}
-        variant={`primary`}
-        href={signInHref}
-        target={`_top`}
-        rel={`noopener noreferrer`}
-        data-testid={`room-signin-link`}
-      >
-        {ObservabilityBrowserAndOperationEventsTitle.cta}
-      </Button>
-      {supportCode ? (
-        <div className={`text-disabled mt-6`}>
-          <SupportCodeCopyButton code={supportCode} />
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 function resolveSessionNavigationBirthName(
@@ -1098,358 +1456,6 @@ function resolveSessionNavigationFrame(
     : `door`;
 }
 
-function UseSessionNavigationItemComponent(
-  node?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return <Menu.Item onClick={node.onSelect}>{node.children}</Menu.Item>;
-}
-
-function FileTabNavigation(
-  {
-    lead: lead,
-    tabs: tabs,
-    active: active,
-    entries: entries,
-    onSelect: onSelect,
-    onClose: onClose,
-    onCloseOthers: onCloseOthers,
-    onDownloadFile: onDownloadFile,
-    onSelectFilesDashboard: onSelectFilesDashboard,
-    onDeleteFile: onDeleteFile,
-    onRenameFile: onRenameFile,
-    topicNames: topicNames,
-    functions: functions,
-    onRenameFolder: onRenameFolder,
-    onDeleteFolder: onDeleteFolder,
-    onTreeNewFolder: onTreeNewFolder,
-    onTreeNewFile: onTreeNewFile,
-    pendingFolder: pendingFolder,
-    onCommitFolder: onCommitFolder,
-    onCancelFolder: onCancelFolder,
-    onMove: onMove,
-    status: status,
-    presence: presence,
-    pinnedPaths: pinnedPaths,
-    onTogglePin: onTogglePin,
-    actions: actions,
-    onReorder: onReorder,
-    tray: tray,
-    elevated: elevated,
-    cosMember: cosMember,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [fileTabNavigationState, setFileTabNavigationState]: Dynamic = (0,
-  React.useState)(null);
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let [fileTabNavigationState2, setFileTabNavigationState2]: Dynamic = (0,
-  React.useState)(null);
-  let setFileTabNavigationState3 = (
-    fileTabNavigation?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    elementRef.current = fileTabNavigation;
-    setFileTabNavigationState2(fileTabNavigation);
-  };
-  let onDragEnd = (..._extraArguments: unknown[]): undefined => {
-    let fileTabNavigationState3: Dynamic = fileTabNavigationState;
-    let element: Dynamic = elementRef.current;
-    setFileTabNavigationState(null);
-    setFileTabNavigationState3(null);
-    if (fileTabNavigationState3 === null || !element || !onReorder) return;
-    let total: Dynamic = element.idx + +!element.before;
-    if (total > fileTabNavigationState3) {
-      --total;
-    }
-    if (total === fileTabNavigationState3) return;
-    let tabsSlice: Dynamic = tabs.slice();
-    let [splice]: Dynamic = tabsSlice.splice(fileTabNavigationState3, 1);
-    if (splice !== undefined) {
-      tabsSlice.splice(total, 0, splice);
-      onReorder(tabsSlice);
-    }
-  };
-  return (
-    <div
-      className={`relative flex h-10 shrink-0 items-center gap-0.5 px-2 ${elevated ? `` : `border-strong border-b`}`}
-    >
-      {lead}
-      {tray ? (
-        <jsxRuntime.Fragment>
-          {tray.leading === undefined ? (
-            <div
-              className={`grid shrink-0 transition-[grid-template-columns] duration-200 ease-in-out ${tray.collapsed ? `grid-cols-[1fr]` : `grid-cols-[0fr]`}`}
-            >
-              <div className={`overflow-hidden`}>
-                <div className={cosMember ? `w-23` : `w-16`} />
-              </div>
-            </div>
-          ) : (
-            tray.leading
-          )}
-          {tray.path}
-          <div className={`min-w-0 flex-1`} />
-          {tray.trailing}
-        </jsxRuntime.Fragment>
-      ) : (
-        <jsxRuntime.Fragment>
-          <ResolvePlatformSyncAndRoutingValue19Component
-            entries={entries}
-            activePath={active}
-            onPick={onSelect}
-            active={!active}
-            onClick={onSelectFilesDashboard}
-            onDeleteFile={onDeleteFile}
-            onRenameFile={onRenameFile}
-            onDownload={onDownloadFile}
-            onRenameFolder={onRenameFolder}
-            onDeleteFolder={onDeleteFolder}
-            onNewFolder={onTreeNewFolder}
-            onNewFile={onTreeNewFile}
-            pendingFolder={pendingFolder}
-            onCommitFolder={onCommitFolder}
-            onCancelFolder={onCancelFolder}
-            onMove={onMove}
-            status={status}
-            presence={presence}
-            pinnedPaths={pinnedPaths}
-            onTogglePin={onTogglePin}
-            topicNames={topicNames}
-            functions={functions}
-          />
-          <div
-            role={`tablist`}
-            aria-label={`Open files`}
-            className={`no-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto`}
-          >
-            {tabs.map(
-              (
-                path?: Dynamic,
-                idx?: Dynamic,
-                ..._extraArguments: unknown[]
-              ) => (
-                <FileTabNavigationItem path={path} active={path === active} onSelect={(..._extraArguments: unknown[]): Dynamic => onSelect(path)} onClose={(..._extraArguments: unknown[]): Dynamic => onClose(path)} onCloseOthers={tabs.length > 1 ? (..._extraArguments: unknown[]): Dynamic => onCloseOthers?.(path) : undefined} onRename={onRenameFile} onDownload={onDownloadFile ? (..._extraArguments: unknown[]): Dynamic => onDownloadFile(path) : undefined} onDelete={onDeleteFile ? (..._extraArguments: unknown[]): Dynamic => onDeleteFile(path) : undefined} dnd={onReorder ? {
-  dragging: fileTabNavigationState === idx,
-  drop: fileTabNavigationState2?.idx === idx && fileTabNavigationState !== null ? fileTabNavigationState2.before ? `before` : `after` : null,
-  onDragStart: (fileTabNavigation?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    fileTabNavigation.dataTransfer.setData(`text/plain`, path);
-    fileTabNavigation.dataTransfer.effectAllowed = `move`;
-    setFileTabNavigationState(idx);
-  },
-  onDragOver: (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    if (fileTabNavigationState === null) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = `move`;
-    let currentTargetBounds: Dynamic = event.currentTarget.getBoundingClientRect();
-    let before = event.clientX < currentTargetBounds.left + currentTargetBounds.width / 2;
-    let element: Dynamic = elementRef.current;
-    if (!element || element.idx !== idx || element.before !== before) {
-      setFileTabNavigationState3({
-        idx: idx,
-        before: before
-      });
-    }
-  },
-  onDragEnd: onDragEnd
-} : undefined} key={path} />
-              ),
-            )}
-          </div>
-        </jsxRuntime.Fragment>
-      )}
-      {actions && (
-        <div className={`ml-auto flex shrink-0 items-center gap-2.5 pl-2`}>
-          {actions}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FileTabNavigationItem(
-  {
-    path: path,
-    active: active,
-    onSelect: onSelect,
-    onClose: onClose,
-    onCloseOthers: onCloseOthers,
-    onRename: onRename,
-    onDownload: onDownload,
-    onDelete: onDelete,
-    dnd: dnd,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  let [enabledState2, setEnabledState2]: Dynamic = (0, React.useState)(false);
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let pop: Dynamic = path.split(`/`).pop() || path;
-  let pathSlice: Dynamic = path.slice(0, path.length - pop.length);
-  let defaultValue: Dynamic = resolvePlatformRuntimeAndChatSplit(pop);
-  let Item: Dynamic =
-    resolveObservabilityBrowserAndOperationEventsLastIndexOf(pop)[1];
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (active) {
-        elementRef.current?.scrollIntoView({
-          inline: `nearest`,
-          block: `nearest`,
-        });
-      }
-    },
-    [active],
-  );
-  let onRename2 = (
-    fileTabNavigationItem?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    setEnabledState2(false);
-    let fileTabNavigationItemResult: Dynamic =
-      resolveObservabilityBrowserAndOperationEventsTrim(fileTabNavigationItem);
-    if (
-      !(
-        !fileTabNavigationItemResult ||
-        fileTabNavigationItemResult === defaultValue
-      )
-    ) {
-      onRename?.(path, pathSlice + fileTabNavigationItemResult + Item);
-    }
-  };
-  let drop: Dynamic = dnd?.drop;
-  let render = (
-    <div
-      ref={elementRef}
-      role={`tab`}
-      tabIndex={0}
-      aria-selected={active}
-      draggable={!!dnd && !enabledState2}
-      onDragStart={dnd && !enabledState2 ? dnd.onDragStart : undefined}
-      onDragOver={dnd?.onDragOver}
-      onDragEnd={dnd?.onDragEnd}
-      onClick={enabledState2 ? undefined : onSelect}
-      onDoubleClick={
-        onRename
-          ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(true)
-          : undefined
-      }
-      onKeyDown={(
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (!(enabledState2 || event.target !== event.currentTarget)) {
-          if (event.key === `Enter` || event.key === ` `) {
-            event.preventDefault();
-            onSelect();
-          }
-        }
-      }}
-      onMouseEnter={(..._extraArguments: unknown[]): Dynamic =>
-        setEnabledState(true)
-      }
-      onMouseLeave={(..._extraArguments: unknown[]): Dynamic =>
-        setEnabledState(false)
-      }
-      data-path={path}
-      className={`group flex h-7 max-w-[180px] shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] transition-colors ${active ? `bg-surface-1 text-primary font-semibold` : `text-secondary hover:bg-alpha-1 hover:text-primary font-normal`} ${dnd?.dragging ? `opacity-40` : ``}`}
-      style={
-        drop
-          ? {
-              boxShadow: `${drop === `before` ? `-2px` : `2px`} 0 0 0 var(--cds-fill-brand)`,
-            }
-          : undefined
-      }
-    >
-      <ResolvePlatformRuntimeAndChatPathComponent path={path} size={12} />
-      {enabledState2 ? (
-        <input
-          autoFocus={true}
-          defaultValue={defaultValue}
-          onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            event.currentTarget.select()
-          }
-          onClick={(
-            fileTabNavigationItem?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => fileTabNavigationItem.stopPropagation()}
-          onBlur={(event?: Dynamic, ..._extraArguments: unknown[]) =>
-            onRename2(event.currentTarget.value)
-          }
-          onKeyDown={(
-            event?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            if (event.key === `Enter`) {
-              onRename2(event.currentTarget.value);
-            } else {
-              if (event.key === `Escape`) {
-                setEnabledState2(false);
-              }
-            }
-          }}
-          className={`text-primary min-w-0 flex-1 bg-transparent outline-none`}
-        />
-      ) : (
-        <Tooltip content={path} multiline={true}>
-          <span className={`truncate`}>{defaultValue}</span>
-        </Tooltip>
-      )}
-      <button
-        type={`button`}
-        aria-label={`Close ${defaultValue}`}
-        onClick={(
-          fileTabNavigationItem?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          fileTabNavigationItem.stopPropagation();
-          onClose();
-        }}
-        className={`hover:bg-alpha-2 focus-visible:ring-strong -mr-1 ml-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none ${enabledState || active ? `opacity-50 hover:opacity-100` : `opacity-0`} transition-opacity`}
-      >
-        <UiOverlaysAndIconsCustomIcon name={`X`} customSize={10} />
-      </button>
-    </div>
-  );
-  return !onRename && !onDownload && !onDelete && !onCloseOthers ? (
-    render
-  ) : (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger render={render} />
-      <ContextMenu.Popup finalFocus={false}>
-        {onRename && (
-          <UseSessionNavigationItemComponent
-            onSelect={(..._extraArguments: unknown[]) =>
-              requestAnimationFrame(
-                (..._extraArguments: unknown[]): Dynamic =>
-                  setEnabledState2(true),
-              )
-            }
-          >{`Rename`}</UseSessionNavigationItemComponent>
-        )}
-        {onDownload && (
-          <UseSessionNavigationItemComponent
-            onSelect={onDownload}
-          >{`Download`}</UseSessionNavigationItemComponent>
-        )}
-        {onDelete && (
-          <UseSessionNavigationItemComponent
-            onSelect={onDelete}
-          >{`Delete`}</UseSessionNavigationItemComponent>
-        )}
-        <ContextMenu.Separator />
-        <UseSessionNavigationItemComponent
-          onSelect={onClose}
-        >{`Close`}</UseSessionNavigationItemComponent>
-        {onCloseOthers && (
-          <UseSessionNavigationItemComponent
-            onSelect={onCloseOthers}
-          >{`Close others`}</UseSessionNavigationItemComponent>
-        )}
-      </ContextMenu.Popup>
-    </ContextMenu.Root>
-  );
-}
-
 var resolveSessionNavigationThen: Dynamic;
 
 var resolveSessionNavigationThen2: Dynamic;
@@ -1551,21 +1557,4 @@ export function initializeSessionNavigationCreateFilePlacementWaiterStep1(): voi
     ));
 }
 
-export {
-  FileTabNavigation,
-  RoomDeniedScreen,
-  RoomSigninFace,
-  SessionNavigationTitle,
-  createFilePlacementWaiter,
-  getSessionNavigationValue,
-  isSessionNavigationKind,
-  resolveSessionNavigationBirthName,
-  resolveSessionNavigationContent,
-  resolveSessionNavigationFilmed,
-  resolveSessionNavigationFrame,
-  resolveSessionNavigationThen3,
-  resolveSessionNavigationValue2,
-  resolveSessionNavigationValue3,
-  sessionNavigationLimit3000,
-  updateSessionNavigationDelete,
-};
+export { SessionNavigationTitle, createFilePlacementWaiter, getSessionNavigationValue, isSessionNavigationKind, resolveSessionNavigationBirthName, resolveSessionNavigationContent, resolveSessionNavigationFilmed, resolveSessionNavigationFrame, resolveSessionNavigationThen3, resolveSessionNavigationValue2, resolveSessionNavigationValue3, sessionNavigationLimit3000, updateSessionNavigationDelete };

@@ -12,6 +12,63 @@ import {
   resolveObservabilityBrowserAndOperationEventsXlsx,
 } from "../platform/index";
 import { codeToHtml } from "../syntax-highlighting/core";
+import type * as ReactComponentTypes from "react";
+
+export const CodeViewer: ReactComponentTypes.FC<Dynamic> = ({
+  path: path,
+  name: fileName,
+}) => {
+  let { loaded: loaded, error: error }: Dynamic = useCodeFilePreview(path, fileName);
+  if (error)
+    return (
+      <div className={`p-4 font-mono text-xs text-danger`}>
+        {`Failed to load `}
+        {path}
+        {`: `}
+        {error}
+      </div>
+    );
+  if (loaded == null) return <div className={`bg-alpha-0 h-full animate-pulse`} />;
+  if (loaded.kind === `image`)
+    return (
+      <div
+        className={`bg-alpha-0 flex h-full items-center justify-center overflow-auto p-4`}
+      >
+        <img
+          src={loaded.url}
+          alt={fileName}
+          className={`max-h-full max-w-full object-contain`}
+        />
+      </div>
+    );
+  if (loaded.kind === `binary`) {
+    let Item: Dynamic =
+      PlatformRuntimeAndChatXlsx[
+        resolveObservabilityBrowserAndOperationEventsXlsx(fileName)
+      ];
+    return (
+      <div
+        className={`text-secondary flex h-full flex-col items-center justify-center gap-2`}
+      >
+        <Item size={32} />
+        <div className={`text-xs`}>{fileName}</div>
+        <div className={`text-[10px]`}>
+          {resolveObservabilityBrowserAndOperationEventsToFixed(loaded.bytes)}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      data-code-viewer={true}
+      className={`h-full overflow-auto font-mono text-xs leading-[1.6]`}
+      dangerouslySetInnerHTML={{
+        __html: loaded.html,
+      }}
+    />
+  );
+};
+
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var languageByExtension: Dynamic = {
   py: `python`,
@@ -131,62 +188,3 @@ function useCodeFilePreview(
   };
 }
 var jsxRuntime: Dynamic = loadJsxRuntime();
-function CodeViewer(
-  { path: path, name: fileName }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let { loaded: loaded, error: error }: Dynamic = useCodeFilePreview(
-    path,
-    fileName,
-  );
-  if (error)
-    return (
-      <div className={`p-4 font-mono text-xs text-danger`}>
-        {`Failed to load `}
-        {path}
-        {`: `}
-        {error}
-      </div>
-    );
-  if (loaded == null)
-    return <div className={`bg-alpha-0 h-full animate-pulse`} />;
-  if (loaded.kind === `image`)
-    return (
-      <div
-        className={`bg-alpha-0 flex h-full items-center justify-center overflow-auto p-4`}
-      >
-        <img
-          src={loaded.url}
-          alt={fileName}
-          className={`max-h-full max-w-full object-contain`}
-        />
-      </div>
-    );
-  if (loaded.kind === `binary`) {
-    let Item: Dynamic =
-      PlatformRuntimeAndChatXlsx[
-        resolveObservabilityBrowserAndOperationEventsXlsx(fileName)
-      ];
-    return (
-      <div
-        className={`text-secondary flex h-full flex-col items-center justify-center gap-2`}
-      >
-        <Item size={32} />
-        <div className={`text-xs`}>{fileName}</div>
-        <div className={`text-[10px]`}>
-          {resolveObservabilityBrowserAndOperationEventsToFixed(loaded.bytes)}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div
-      data-code-viewer={true}
-      className={`h-full overflow-auto font-mono text-xs leading-[1.6]`}
-      dangerouslySetInnerHTML={{
-        __html: loaded.html,
-      }}
-    />
-  );
-}
-export { CodeViewer };

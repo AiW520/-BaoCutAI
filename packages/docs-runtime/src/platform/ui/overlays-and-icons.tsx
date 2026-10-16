@@ -27,6 +27,333 @@ import {
   resolveUiProviderAndLayersValue2,
   useUiProviderAndLayersUseContext,
 } from "./provider-and-layers";
+import type * as ReactComponentTypes from "react";
+
+export const UiOverlaysAndIconsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
+  actionsRef: actionsRef,
+  children: children,
+}) => {
+  let [uniqueItemsState]: Dynamic = (0, React.useState)(
+    (..._extraArguments: unknown[]): Dynamic => new (Set as Dynamic)(),
+  );
+  let enabledRef: Dynamic = (0, React.useRef)(false);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => (
+      enabledRef.current && ((enabledRef.current = false), actionsRef.current?.close?.()),
+      (..._extraArguments: unknown[]): undefined => {
+        enabledRef.current = false;
+        for (let uiOverlaysAndIconsActionsRefResult of uniqueItemsState as Dynamic)
+          if (
+            isUiOverlaysAndIconsNone(uiOverlaysAndIconsActionsRefResult) &&
+            isUiOverlaysAndIconsDataOpen(uiOverlaysAndIconsActionsRefResult)
+          ) {
+            enabledRef.current = true;
+          }
+      }
+    ),
+    [actionsRef, uniqueItemsState],
+  );
+  return (
+    <UiOverlaysAndIconsCreateContext5.Provider value={uniqueItemsState}>
+      {children}
+    </UiOverlaysAndIconsCreateContext5.Provider>
+  );
+};
+
+export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<Dynamic> = (
+  uiOverlaysAndIconsCustomIcon,
+) => {
+  let uiOverlaysAndIconsComfortable: string = resolveUiOverlaysAndIconsComfortable();
+  if (uiOverlaysAndIconsCustomIcon.customIcon) {
+    let {
+      customIcon: uiOverlaysAndIconsCustomIcon13,
+      size: uiOverlaysAndIconsCustomIcon20 = UiOverlaysAndIconsMd,
+      alt: uiOverlaysAndIconsCustomIcon14,
+      className: className2,
+      style: uiOverlaysAndIconsCustomIcon15,
+      name: uiOverlaysAndIconsCustomIcon16,
+      icon: uiOverlaysAndIconsCustomIcon17,
+      animated: uiOverlaysAndIconsCustomIcon18,
+      ...uiOverlaysAndIconsCustomIcon19
+    }: Dynamic = uiOverlaysAndIconsCustomIcon;
+    let px2: Dynamic =
+      UiOverlaysAndIconsMaster[
+        resolveUiOverlaysAndIconsAuto(
+          uiOverlaysAndIconsCustomIcon20,
+          uiOverlaysAndIconsComfortable,
+        )
+      ].px;
+    let fontSize: string = resolveUiOverlaysAndIconsValue6(px2);
+    return (
+      <svg
+        data-cds={`Icon`}
+        width={`1em`}
+        height={`1em`}
+        viewBox={`0 0 ${uiOverlaysAndIconsCustomIcon13.viewBox} ${uiOverlaysAndIconsCustomIcon13.viewBox}`}
+        fill={`currentColor`}
+        fillRule={`evenodd`}
+        stroke={`none`}
+        strokeLinecap={`round`}
+        strokeLinejoin={`round`}
+        xmlns={`http://www.w3.org/2000/svg`}
+        style={{
+          ...UiOverlaysAndIconsFlexShrink,
+          fontSize: fontSize,
+          ...uiOverlaysAndIconsCustomIcon15,
+        }}
+        className={className2}
+        {...uiOverlaysAndIconsCustomIcon19}
+        role={
+          uiOverlaysAndIconsCustomIcon19.role ??
+          (uiOverlaysAndIconsCustomIcon14 ? `img` : undefined)
+        }
+        aria-hidden={
+          uiOverlaysAndIconsCustomIcon19[`aria-hidden`] ??
+          (uiOverlaysAndIconsCustomIcon14 ? undefined : true)
+        }
+        aria-label={
+          uiOverlaysAndIconsCustomIcon19[`aria-label`] ??
+          (uiOverlaysAndIconsCustomIcon14 || undefined)
+        }
+      >
+        {uiOverlaysAndIconsCustomIcon13.paths.map(
+          (path?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            typeof path == `string` ? (
+              <path d={path} key={index} />
+            ) : (
+              <path
+                d={path.d}
+                fill={`none`}
+                stroke={`currentColor`}
+                strokeWidth={path.strokeWidth}
+                vectorEffect={`non-scaling-stroke`}
+                key={index}
+              />
+            ),
+        )}
+      </svg>
+    );
+  }
+  let {
+    bold: uiOverlaysAndIconsCustomIcon10 = false,
+    animated: uiOverlaysAndIconsCustomIcon11 = false,
+    alt: uiOverlaysAndIconsCustomIcon2,
+    className: className,
+    style: uiOverlaysAndIconsCustomIcon3,
+    name: uiOverlaysAndIconsCustomIcon4,
+    icon: uiOverlaysAndIconsCustomIcon5,
+    size: uiOverlaysAndIconsCustomIcon6,
+    customSize: uiOverlaysAndIconsCustomIcon7,
+    customIcon: uiOverlaysAndIconsCustomIcon8,
+    ...uiOverlaysAndIconsCustomIcon9
+  }: Dynamic = uiOverlaysAndIconsCustomIcon;
+  let name: Dynamic =
+    uiOverlaysAndIconsCustomIcon.name ?? uiOverlaysAndIconsCustomIcon.icon.name;
+  let cdsOpsz: Dynamic;
+  let uiOverlaysAndIconsCustomIconResult: Dynamic;
+  if (uiOverlaysAndIconsCustomIcon7 === undefined) {
+    uiOverlaysAndIconsCustomIconResult = resolveUiOverlaysAndIconsAuto(
+      uiOverlaysAndIconsCustomIcon6 ?? UiOverlaysAndIconsMd,
+      uiOverlaysAndIconsComfortable,
+    );
+    cdsOpsz = UiOverlaysAndIconsMaster[uiOverlaysAndIconsCustomIconResult].px;
+  } else {
+    cdsOpsz = uiOverlaysAndIconsCustomIcon7;
+    uiOverlaysAndIconsCustomIconResult = resolveUiOverlaysAndIconsValue8(cdsOpsz);
+  }
+  let stroke: Dynamic =
+    UiOverlaysAndIconsMaster[uiOverlaysAndIconsCustomIconResult].stroke;
+  if (uiOverlaysAndIconsCustomIcon10) {
+    `strong` in stroke;
+  }
+  let UiOverlaysAndIconsIcons2Item: Dynamic = UiOverlaysAndIconsIcons2[name];
+  let UiOverlaysAndIconsSecondaryItem: Dynamic =
+    UiOverlaysAndIconsIcons2Item === undefined
+      ? undefined
+      : UiOverlaysAndIconsSecondary[name];
+  let UiOverlaysAndIconsXxlItem: Dynamic =
+    UiOverlaysAndIconsXxl[uiOverlaysAndIconsCustomIconResult];
+  let strong: Dynamic =
+    uiOverlaysAndIconsCustomIcon7 === undefined
+      ? uiOverlaysAndIconsCustomIcon10 && UiOverlaysAndIconsXxlItem.strong !== undefined
+        ? UiOverlaysAndIconsXxlItem.strong
+        : UiOverlaysAndIconsXxlItem.regular
+      : resolveUiOverlaysAndIconsFontSize(
+          cdsOpsz,
+          uiOverlaysAndIconsCustomIcon10 && `strong` in stroke
+            ? stroke.strong
+            : stroke.regular,
+        );
+  let uiOverlaysAndIconsCustomIcon12: Dynamic =
+    uiOverlaysAndIconsCustomIcon11 && uiOverlaysAndIconsSet.has(name);
+  let UiOverlaysAndIconsAnimDurItem: Dynamic = uiOverlaysAndIconsCustomIcon12
+    ? UiOverlaysAndIconsAnimDur[name]
+    : undefined;
+  let UiOverlaysAndIconsAnimDurOutItem: Dynamic = uiOverlaysAndIconsCustomIcon12
+    ? UiOverlaysAndIconsAnimDurOut[name]
+    : undefined;
+  let cdsAnimEase: Dynamic = uiOverlaysAndIconsCustomIcon12
+    ? UiOverlaysAndIconsAnimEase[name]
+    : undefined;
+  let record2: Dynamic = uiOverlaysAndIconsCustomIcon12
+    ? {
+        ...strong,
+        "--cds-opsz": cdsOpsz,
+        "--cds-wght": strong.fontWeight,
+        ...(UiOverlaysAndIconsAnimDurItem !== undefined && {
+          "--cds-anim-dur": `${UiOverlaysAndIconsAnimDurItem}ms`,
+        }),
+        ...(UiOverlaysAndIconsAnimDurOutItem !== undefined && {
+          "--cds-anim-dur-out": `${UiOverlaysAndIconsAnimDurOutItem}ms`,
+        }),
+        ...(cdsAnimEase !== undefined && {
+          "--cds-anim-ease": cdsAnimEase,
+        }),
+      }
+    : strong;
+  return (
+    <span
+      data-cds={`Icon`}
+      data-cds-anim={uiOverlaysAndIconsCustomIcon12 ? `` : undefined}
+      data-cds-anim-loop={
+        uiOverlaysAndIconsCustomIcon12 && uiOverlaysAndIconsSet2.has(name)
+          ? ``
+          : undefined
+      }
+      style={
+        uiOverlaysAndIconsCustomIcon3
+          ? {
+              ...record2,
+              ...uiOverlaysAndIconsCustomIcon3,
+            }
+          : record2
+      }
+      className={className}
+      {...uiOverlaysAndIconsCustomIcon9}
+      role={
+        uiOverlaysAndIconsCustomIcon9.role ??
+        (uiOverlaysAndIconsCustomIcon2 ? `img` : undefined)
+      }
+      aria-hidden={
+        uiOverlaysAndIconsCustomIcon9[`aria-hidden`] ??
+        (uiOverlaysAndIconsCustomIcon2 ? undefined : true)
+      }
+      aria-label={
+        uiOverlaysAndIconsCustomIcon9[`aria-label`] ??
+        (uiOverlaysAndIconsCustomIcon2 || undefined)
+      }
+    >
+      {UiOverlaysAndIconsSecondaryItem !== undefined && (
+        <span data-cds-icon-layer={`secondary`} aria-hidden={`true`}>
+          {String.fromCodePoint(UiOverlaysAndIconsSecondaryItem)}
+        </span>
+      )}
+      {UiOverlaysAndIconsIcons2Item === undefined
+        ? null
+        : String.fromCodePoint(UiOverlaysAndIconsIcons2Item)}
+    </span>
+  );
+};
+
+export const UiOverlaysAndIconsValue: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+}) => {
+  return (
+    <UiOverlaysAndIconsCreateContext.Provider value={false}>
+      <UiOverlaysAndIconsCreateContext2.Provider value={`div`}>
+        <UiOverlaysAndIconsCreateContext4.Provider value={null}>
+          <UiOverlaysAndIconsCreateContext3.Provider value={null}>
+            {children}
+          </UiOverlaysAndIconsCreateContext3.Provider>
+        </UiOverlaysAndIconsCreateContext4.Provider>
+      </UiOverlaysAndIconsCreateContext2.Provider>
+    </UiOverlaysAndIconsCreateContext.Provider>
+  );
+};
+
+export const UiOverlaysAndIconsSurface: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+  className: className,
+  style: style,
+  surface: surface,
+  density: density,
+  companionModalCatcher = false,
+  closeOnActivityHide = false,
+}) => {
+  let uiOverlaysAndIconsValue4: Dynamic = resolveUiOverlaysAndIconsValue4(
+    resolveUiLinksAndFoundationValue12,
+    useUiOverlaysAndIconsUseContext(closeOnActivityHide),
+  );
+  let uiProviderAndLayersUseContext2: Dynamic = resolveUiProviderAndLayersUseContext2();
+  let dataDensity: Dynamic = density ?? uiProviderAndLayersUseContext2;
+  let dataMode: Dynamic = useUiProviderAndLayersUseContext();
+  let dataCdsTheme: Dynamic = useUiDesignSystemUseContext();
+  let dataPlatform: Dynamic = resolveUiProviderAndLayersUseContext3();
+  let uiProviderAndLayersUseContext4: Dynamic = resolveUiProviderAndLayersUseContext4();
+  let dataFont: Dynamic =
+    useUiLinksAndFoundationUseSyncExternalStore2(
+      uiProviderAndLayersUseContext4 === undefined,
+    ) ?? uiProviderAndLayersUseContext4;
+  let uiProviderAndLayersUseContext5: Dynamic = resolveUiProviderAndLayersUseContext5();
+  let dataCdsFizzyLake: Dynamic = resolveUiLinksAndFoundationUseContext2();
+  let dataPageBg: Dynamic = resolveUiProviderAndLayersUseContext();
+  let uiProviderAndLayersUseContext6: Dynamic = resolveUiProviderAndLayersUseContext6();
+  let surface2: Dynamic = surface ?? uiProviderAndLayersUseContext6;
+  let style2: Dynamic =
+    surface2 || uiProviderAndLayersUseContext5 !== undefined || style
+      ? {
+          ...resolveUiProviderAndLayersCdsPageBg(surface2),
+          ...resolveUiProviderAndLayersCdsFontMonoOverride(
+            uiProviderAndLayersUseContext5,
+          ),
+          ...style,
+        }
+      : undefined;
+  return (
+    <div
+      ref={uiOverlaysAndIconsValue4}
+      className={resolveUiDesignSystemValue2(`cds-root pointer-events-auto`, className)}
+      data-cds-portal={``}
+      data-density={dataDensity}
+      data-mode={dataMode}
+      data-cds-theme={dataCdsTheme}
+      data-platform={dataPlatform}
+      data-font={dataFont}
+      data-cds-fizzy-lake={dataCdsFizzyLake}
+      data-page-bg={dataPageBg}
+      style={style2}
+      onPointerDown={companionModalCatcher ? resolveUiOverlaysAndIconsTouch : undefined}
+      onMouseDown={
+        companionModalCatcher ? resolveUiOverlaysAndIconsCurrentTarget : undefined
+      }
+      onDragStart={companionModalCatcher ? installUiOverlaysAndIconsEvent : undefined}
+    >
+      <UiProviderAndLayersState.Provider value={dataDensity}>
+        <UiProviderAndLayersCreateContext8.Provider value={surface2}>
+          <UiProviderAndLayersCreateContext12.Provider value={true}>
+            <UiOverlaysAndIconsCreateContext6.Provider value={false}>
+              <UiOverlaysAndIconsValue>{children}</UiOverlaysAndIconsValue>
+            </UiOverlaysAndIconsCreateContext6.Provider>
+          </UiProviderAndLayersCreateContext12.Provider>
+        </UiProviderAndLayersCreateContext8.Provider>
+      </UiProviderAndLayersState.Provider>
+    </div>
+  );
+};
+
+export const UiOverlaysAndIconsIcon: ReactComponentTypes.FC<Dynamic> = ({
+  icon: icon,
+}) => {
+  return (
+    <span className={`flex size-icon shrink-0 items-center justify-center`}>
+      {resolveUiOverlaysAndIconsValue9(icon) ? (
+        <UiOverlaysAndIconsCustomIcon name={icon} size={`auto`} />
+      ) : (
+        icon
+      )}
+    </span>
+  );
+};
 
 function resolveUiOverlaysAndIconsValue(
   element?: Dynamic,
@@ -143,23 +470,6 @@ var UiOverlaysAndIconsCreateContext3: Dynamic;
 
 var UiOverlaysAndIconsCreateContext4: Dynamic;
 
-function UiOverlaysAndIconsValue(
-  { children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <UiOverlaysAndIconsCreateContext.Provider value={false}>
-      <UiOverlaysAndIconsCreateContext2.Provider value={`div`}>
-        <UiOverlaysAndIconsCreateContext4.Provider value={null}>
-          <UiOverlaysAndIconsCreateContext3.Provider value={null}>
-            {children}
-          </UiOverlaysAndIconsCreateContext3.Provider>
-        </UiOverlaysAndIconsCreateContext4.Provider>
-      </UiOverlaysAndIconsCreateContext2.Provider>
-    </UiOverlaysAndIconsCreateContext.Provider>
-  );
-}
-
 var UiOverlaysAndIconsHttpWwwW3Org1999Xhtml: string;
 
 function resolveUiOverlaysAndIconsNamespaceURI(
@@ -210,38 +520,6 @@ function isUiOverlaysAndIconsDataOpen(
     if (isUiOverlaysAndIconsDataOpenResult.hasAttribute(`data-open`))
       return true;
   return false;
-}
-
-function UiOverlaysAndIconsActionsRef(
-  { actionsRef: actionsRef, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let [uniqueItemsState]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic => new (Set as Dynamic)(),
-  );
-  let enabledRef: Dynamic = (0, React.useRef)(false);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => (
-      enabledRef.current &&
-        ((enabledRef.current = false), actionsRef.current?.close?.()),
-      (..._extraArguments: unknown[]): undefined => {
-        enabledRef.current = false;
-        for (let uiOverlaysAndIconsActionsRefResult of uniqueItemsState as Dynamic)
-          if (
-            isUiOverlaysAndIconsNone(uiOverlaysAndIconsActionsRefResult) &&
-            isUiOverlaysAndIconsDataOpen(uiOverlaysAndIconsActionsRefResult)
-          ) {
-            enabledRef.current = true;
-          }
-      }
-    ),
-    [actionsRef, uniqueItemsState],
-  );
-  return (
-    <UiOverlaysAndIconsCreateContext5.Provider value={uniqueItemsState}>
-      {children}
-    </UiOverlaysAndIconsCreateContext5.Provider>
-  );
 }
 
 function useUiOverlaysAndIconsUseContext(
@@ -486,92 +764,6 @@ function resolveUiOverlaysAndIconsValue5(
   );
 }
 
-function UiOverlaysAndIconsSurface(
-  {
-    children: children,
-    className: className,
-    style: style,
-    surface: surface,
-    density: density,
-    companionModalCatcher = false,
-    closeOnActivityHide = false,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let uiOverlaysAndIconsValue4: Dynamic = resolveUiOverlaysAndIconsValue4(
-    resolveUiLinksAndFoundationValue12,
-    useUiOverlaysAndIconsUseContext(closeOnActivityHide),
-  );
-  let uiProviderAndLayersUseContext2: Dynamic =
-    resolveUiProviderAndLayersUseContext2();
-  let dataDensity: Dynamic = density ?? uiProviderAndLayersUseContext2;
-  let dataMode: Dynamic = useUiProviderAndLayersUseContext();
-  let dataCdsTheme: Dynamic = useUiDesignSystemUseContext();
-  let dataPlatform: Dynamic = resolveUiProviderAndLayersUseContext3();
-  let uiProviderAndLayersUseContext4: Dynamic =
-    resolveUiProviderAndLayersUseContext4();
-  let dataFont: Dynamic =
-    useUiLinksAndFoundationUseSyncExternalStore2(
-      uiProviderAndLayersUseContext4 === undefined,
-    ) ?? uiProviderAndLayersUseContext4;
-  let uiProviderAndLayersUseContext5: Dynamic =
-    resolveUiProviderAndLayersUseContext5();
-  let dataCdsFizzyLake: Dynamic = resolveUiLinksAndFoundationUseContext2();
-  let dataPageBg: Dynamic = resolveUiProviderAndLayersUseContext();
-  let uiProviderAndLayersUseContext6: Dynamic =
-    resolveUiProviderAndLayersUseContext6();
-  let surface2: Dynamic = surface ?? uiProviderAndLayersUseContext6;
-  let style2: Dynamic =
-    surface2 || uiProviderAndLayersUseContext5 !== undefined || style
-      ? {
-          ...resolveUiProviderAndLayersCdsPageBg(surface2),
-          ...resolveUiProviderAndLayersCdsFontMonoOverride(
-            uiProviderAndLayersUseContext5,
-          ),
-          ...style,
-        }
-      : undefined;
-  return (
-    <div
-      ref={uiOverlaysAndIconsValue4}
-      className={resolveUiDesignSystemValue2(
-        `cds-root pointer-events-auto`,
-        className,
-      )}
-      data-cds-portal={``}
-      data-density={dataDensity}
-      data-mode={dataMode}
-      data-cds-theme={dataCdsTheme}
-      data-platform={dataPlatform}
-      data-font={dataFont}
-      data-cds-fizzy-lake={dataCdsFizzyLake}
-      data-page-bg={dataPageBg}
-      style={style2}
-      onPointerDown={
-        companionModalCatcher ? resolveUiOverlaysAndIconsTouch : undefined
-      }
-      onMouseDown={
-        companionModalCatcher
-          ? resolveUiOverlaysAndIconsCurrentTarget
-          : undefined
-      }
-      onDragStart={
-        companionModalCatcher ? installUiOverlaysAndIconsEvent : undefined
-      }
-    >
-      <UiProviderAndLayersState.Provider value={dataDensity}>
-        <UiProviderAndLayersCreateContext8.Provider value={surface2}>
-          <UiProviderAndLayersCreateContext12.Provider value={true}>
-            <UiOverlaysAndIconsCreateContext6.Provider value={false}>
-              <UiOverlaysAndIconsValue>{children}</UiOverlaysAndIconsValue>
-            </UiOverlaysAndIconsCreateContext6.Provider>
-          </UiProviderAndLayersCreateContext12.Provider>
-        </UiProviderAndLayersCreateContext8.Provider>
-      </UiProviderAndLayersState.Provider>
-    </div>
-  );
-}
-
 var UiOverlaysAndIconsCdsRemScale: string;
 
 var UiOverlaysAndIconsState2: string;
@@ -733,149 +925,11 @@ function resolveUiOverlaysAndIconsStroke(
 
 var UiOverlaysAndIconsXxl: Dynamic;
 
-function UiOverlaysAndIconsCustomIcon(
-  uiOverlaysAndIconsCustomIcon?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let uiOverlaysAndIconsComfortable: string =
-    resolveUiOverlaysAndIconsComfortable();
-  if (uiOverlaysAndIconsCustomIcon.customIcon) {
-    let {
-      customIcon: uiOverlaysAndIconsCustomIcon13,
-      size: uiOverlaysAndIconsCustomIcon20 = UiOverlaysAndIconsMd,
-      alt: uiOverlaysAndIconsCustomIcon14,
-      className: className2,
-      style: uiOverlaysAndIconsCustomIcon15,
-      name: uiOverlaysAndIconsCustomIcon16,
-      icon: uiOverlaysAndIconsCustomIcon17,
-      animated: uiOverlaysAndIconsCustomIcon18,
-      ...uiOverlaysAndIconsCustomIcon19
-    }: Dynamic = uiOverlaysAndIconsCustomIcon;
-    let px2: Dynamic =
-      UiOverlaysAndIconsMaster[
-        resolveUiOverlaysAndIconsAuto(
-          uiOverlaysAndIconsCustomIcon20,
-          uiOverlaysAndIconsComfortable,
-        )
-      ].px;
-    let fontSize: string = resolveUiOverlaysAndIconsValue6(px2);
-    return (
-      <svg data-cds={`Icon`} width={`1em`} height={`1em`} viewBox={`0 0 ${uiOverlaysAndIconsCustomIcon13.viewBox} ${uiOverlaysAndIconsCustomIcon13.viewBox}`} fill={`currentColor`} fillRule={`evenodd`} stroke={`none`} strokeLinecap={`round`} strokeLinejoin={`round`} xmlns={`http://www.w3.org/2000/svg`} style={{
-  ...UiOverlaysAndIconsFlexShrink,
-  fontSize: fontSize,
-  ...uiOverlaysAndIconsCustomIcon15
-}} className={className2} {...uiOverlaysAndIconsCustomIcon19} role={uiOverlaysAndIconsCustomIcon19.role ?? (uiOverlaysAndIconsCustomIcon14 ? `img` : undefined)} aria-hidden={uiOverlaysAndIconsCustomIcon19[`aria-hidden`] ?? (uiOverlaysAndIconsCustomIcon14 ? undefined : true)} aria-label={uiOverlaysAndIconsCustomIcon19[`aria-label`] ?? (uiOverlaysAndIconsCustomIcon14 || undefined)}>{uiOverlaysAndIconsCustomIcon13.paths.map((path?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic => typeof path == `string` ? <path d={path} key={index} /> : <path d={path.d} fill={`none`} stroke={`currentColor`} strokeWidth={path.strokeWidth} vectorEffect={`non-scaling-stroke`} key={index} />)}</svg>
-    );
-  }
-  let {
-    bold: uiOverlaysAndIconsCustomIcon10 = false,
-    animated: uiOverlaysAndIconsCustomIcon11 = false,
-    alt: uiOverlaysAndIconsCustomIcon2,
-    className: className,
-    style: uiOverlaysAndIconsCustomIcon3,
-    name: uiOverlaysAndIconsCustomIcon4,
-    icon: uiOverlaysAndIconsCustomIcon5,
-    size: uiOverlaysAndIconsCustomIcon6,
-    customSize: uiOverlaysAndIconsCustomIcon7,
-    customIcon: uiOverlaysAndIconsCustomIcon8,
-    ...uiOverlaysAndIconsCustomIcon9
-  }: Dynamic = uiOverlaysAndIconsCustomIcon;
-  let name: Dynamic =
-    uiOverlaysAndIconsCustomIcon.name ?? uiOverlaysAndIconsCustomIcon.icon.name;
-  let cdsOpsz: Dynamic;
-  let uiOverlaysAndIconsCustomIconResult: Dynamic;
-  if (uiOverlaysAndIconsCustomIcon7 === undefined) {
-    uiOverlaysAndIconsCustomIconResult = resolveUiOverlaysAndIconsAuto(
-      uiOverlaysAndIconsCustomIcon6 ?? UiOverlaysAndIconsMd,
-      uiOverlaysAndIconsComfortable,
-    );
-    cdsOpsz = UiOverlaysAndIconsMaster[uiOverlaysAndIconsCustomIconResult].px;
-  } else {
-    cdsOpsz = uiOverlaysAndIconsCustomIcon7;
-    uiOverlaysAndIconsCustomIconResult =
-      resolveUiOverlaysAndIconsValue8(cdsOpsz);
-  }
-  let stroke: Dynamic =
-    UiOverlaysAndIconsMaster[uiOverlaysAndIconsCustomIconResult].stroke;
-  if (uiOverlaysAndIconsCustomIcon10) {
-    `strong` in stroke;
-  }
-  let UiOverlaysAndIconsIcons2Item: Dynamic = UiOverlaysAndIconsIcons2[name];
-  let UiOverlaysAndIconsSecondaryItem: Dynamic =
-    UiOverlaysAndIconsIcons2Item === undefined
-      ? undefined
-      : UiOverlaysAndIconsSecondary[name];
-  let UiOverlaysAndIconsXxlItem: Dynamic =
-    UiOverlaysAndIconsXxl[uiOverlaysAndIconsCustomIconResult];
-  let strong: Dynamic =
-    uiOverlaysAndIconsCustomIcon7 === undefined
-      ? uiOverlaysAndIconsCustomIcon10 &&
-        UiOverlaysAndIconsXxlItem.strong !== undefined
-        ? UiOverlaysAndIconsXxlItem.strong
-        : UiOverlaysAndIconsXxlItem.regular
-      : resolveUiOverlaysAndIconsFontSize(
-          cdsOpsz,
-          uiOverlaysAndIconsCustomIcon10 && `strong` in stroke
-            ? stroke.strong
-            : stroke.regular,
-        );
-  let uiOverlaysAndIconsCustomIcon12: Dynamic =
-    uiOverlaysAndIconsCustomIcon11 && uiOverlaysAndIconsSet.has(name);
-  let UiOverlaysAndIconsAnimDurItem: Dynamic = uiOverlaysAndIconsCustomIcon12
-    ? UiOverlaysAndIconsAnimDur[name]
-    : undefined;
-  let UiOverlaysAndIconsAnimDurOutItem: Dynamic = uiOverlaysAndIconsCustomIcon12
-    ? UiOverlaysAndIconsAnimDurOut[name]
-    : undefined;
-  let cdsAnimEase: Dynamic = uiOverlaysAndIconsCustomIcon12
-    ? UiOverlaysAndIconsAnimEase[name]
-    : undefined;
-  let record2: Dynamic = uiOverlaysAndIconsCustomIcon12
-    ? {
-        ...strong,
-        "--cds-opsz": cdsOpsz,
-        "--cds-wght": strong.fontWeight,
-        ...(UiOverlaysAndIconsAnimDurItem !== undefined && {
-          "--cds-anim-dur": `${UiOverlaysAndIconsAnimDurItem}ms`,
-        }),
-        ...(UiOverlaysAndIconsAnimDurOutItem !== undefined && {
-          "--cds-anim-dur-out": `${UiOverlaysAndIconsAnimDurOutItem}ms`,
-        }),
-        ...(cdsAnimEase !== undefined && {
-          "--cds-anim-ease": cdsAnimEase,
-        }),
-      }
-    : strong;
-  return (
-    <span data-cds={`Icon`} data-cds-anim={uiOverlaysAndIconsCustomIcon12 ? `` : undefined} data-cds-anim-loop={uiOverlaysAndIconsCustomIcon12 && uiOverlaysAndIconsSet2.has(name) ? `` : undefined} style={uiOverlaysAndIconsCustomIcon3 ? {
-  ...record2,
-  ...uiOverlaysAndIconsCustomIcon3
-} : record2} className={className} {...uiOverlaysAndIconsCustomIcon9} role={uiOverlaysAndIconsCustomIcon9.role ?? (uiOverlaysAndIconsCustomIcon2 ? `img` : undefined)} aria-hidden={uiOverlaysAndIconsCustomIcon9[`aria-hidden`] ?? (uiOverlaysAndIconsCustomIcon2 ? undefined : true)} aria-label={uiOverlaysAndIconsCustomIcon9[`aria-label`] ?? (uiOverlaysAndIconsCustomIcon2 || undefined)}>{UiOverlaysAndIconsSecondaryItem !== undefined && <span data-cds-icon-layer={`secondary`} aria-hidden={`true`}>
-              {String.fromCodePoint(UiOverlaysAndIconsSecondaryItem)}
-            </span>}{UiOverlaysAndIconsIcons2Item === undefined ? null : String.fromCodePoint(UiOverlaysAndIconsIcons2Item)}</span>
-  );
-}
-
 function resolveUiOverlaysAndIconsValue9(
   uiOverlaysAndIconsValue9?: unknown,
   ..._extraArguments: unknown[]
 ) {
   return typeof uiOverlaysAndIconsValue9 == `string`;
-}
-
-function UiOverlaysAndIconsIcon(
-  { icon: icon }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <span className={`flex size-icon shrink-0 items-center justify-center`}>
-      {resolveUiOverlaysAndIconsValue9(icon) ? (
-        <UiOverlaysAndIconsCustomIcon name={icon} size={`auto`} />
-      ) : (
-        icon
-      )}
-    </span>
-  );
 }
 
 // BaoCut: called by platform-core-initialize in the recovered source order.
@@ -1415,27 +1469,4 @@ export function initializeUiOverlaysAndIconsStep1(): void {
   }));
 }
 
-export {
-  UiOverlaysAndIconsActionsRef,
-  UiOverlaysAndIconsCreateContext,
-  UiOverlaysAndIconsCreateContext2,
-  UiOverlaysAndIconsCreateContext3,
-  UiOverlaysAndIconsCreateContext4,
-  UiOverlaysAndIconsCreateContext6,
-  UiOverlaysAndIconsCustomIcon,
-  UiOverlaysAndIconsDataCdsOverlay,
-  UiOverlaysAndIconsIcon,
-  UiOverlaysAndIconsMaster,
-  UiOverlaysAndIconsStyles,
-  UiOverlaysAndIconsSurface,
-  resolveUiOverlaysAndIconsValue,
-  resolveUiOverlaysAndIconsValue2,
-  resolveUiOverlaysAndIconsValue3,
-  resolveUiOverlaysAndIconsValue4,
-  resolveUiOverlaysAndIconsValue5,
-  resolveUiOverlaysAndIconsValue6,
-  resolveUiOverlaysAndIconsValue7,
-  resolveUiOverlaysAndIconsValue9,
-  useUiOverlaysAndIconsUseInsertionEffect,
-  useUiOverlaysAndIconsUseInsertionEffect2,
-};
+export { UiOverlaysAndIconsCreateContext, UiOverlaysAndIconsCreateContext2, UiOverlaysAndIconsCreateContext3, UiOverlaysAndIconsCreateContext4, UiOverlaysAndIconsCreateContext6, UiOverlaysAndIconsDataCdsOverlay, UiOverlaysAndIconsMaster, UiOverlaysAndIconsStyles, resolveUiOverlaysAndIconsValue, resolveUiOverlaysAndIconsValue2, resolveUiOverlaysAndIconsValue3, resolveUiOverlaysAndIconsValue4, resolveUiOverlaysAndIconsValue5, resolveUiOverlaysAndIconsValue6, resolveUiOverlaysAndIconsValue7, resolveUiOverlaysAndIconsValue9, useUiOverlaysAndIconsUseInsertionEffect, useUiOverlaysAndIconsUseInsertionEffect2 };

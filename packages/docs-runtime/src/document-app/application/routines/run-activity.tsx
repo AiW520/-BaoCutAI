@@ -5,12 +5,11 @@ import {
 import { UseDocumentPreviewStatusComponent } from "../../document-preview/use-page-skill-seat";
 import type { RoutineRun } from "../project-contracts";
 import { ApplicationRoutesStaged } from "../routes-filmed-prose-page";
-interface DisplayClock {
-  now(): string;
-  locale: string;
-  timeZone: string;
-}
-function RoutineRunActivity({ runs }: { runs?: readonly RoutineRun[] }) {
+import type * as React from "react";
+
+export const RoutineRunActivity: React.FC<{ runs?: readonly RoutineRun[] }> = ({
+  runs,
+}) => {
   const clock: DisplayClock = resolvePlatformApiAndAuthUseContext2();
   if (runs === undefined) return null;
   const nowMs = Date.parse(clock.now());
@@ -73,5 +72,10 @@ function RoutineRunActivity({ runs }: { runs?: readonly RoutineRun[] }) {
       </div>
     </div>
   );
+};
+
+interface DisplayClock {
+  now(): string;
+  locale: string;
+  timeZone: string;
 }
-export { RoutineRunActivity };

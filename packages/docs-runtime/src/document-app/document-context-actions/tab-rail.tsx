@@ -161,6 +161,63 @@ import {
   TabTreeRows,
   tabMoveAnnouncement,
 } from "./tab-tree-rows";
+import type * as ReactComponentTypes from "react";
+
+export const TabPresenceSplash: ReactComponentTypes.FC<Dynamic> = ({
+  rowId: rowId,
+  ts: ts2,
+  played: played,
+}) => {
+  let [playedEntryState]: Dynamic = (0, React.useState)(
+    (..._extraArguments: unknown[]): Dynamic => played.get(rowId) ?? 0,
+  );
+  return ts2 <= Math.max(playedEntryState, played.get(rowId) ?? 0) ? null : (
+    <span
+      onAnimationEnd={(..._extraArguments: unknown[]): undefined => {
+        if (ts2 > (played.get(rowId) ?? 0)) {
+          played.set(rowId, ts2);
+        }
+      }}
+      className={`animate-presence-splash pointer-events-none absolute inset-0 rounded-md`}
+      key={Math.floor(ts2 / 500)}
+    />
+  );
+};
+
+export const TabRenameInput: ReactComponentTypes.FC<Dynamic> = (tabRenameInput) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let uniqueItemsRef: Dynamic = (0, React.useRef)(new (Set as Dynamic)());
+  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
+    elementRef.current?.focus();
+    elementRef.current?.select();
+    elementRef.current?.parentElement?.scrollIntoView?.({
+      block: `nearest`,
+    });
+  }, []);
+  return (
+    <input
+      ref={elementRef}
+      type={`text`}
+      autoComplete={`off`}
+      spellCheck={false}
+      className={`-my-0.5 min-w-0 flex-1 border-0 bg-transparent p-0 leading-[calc(1lh+4px)] outline-none`}
+      {...tabRenameInput}
+      onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let code: Dynamic = event.code || event.key;
+        let isComposing: Dynamic = event.nativeEvent.isComposing;
+        if (event.repeat && !isComposing && !uniqueItemsRef.current.has(code)) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        if (!(isComposing && (code === `Enter` || code === `NumpadEnter`))) {
+          uniqueItemsRef.current.add(code);
+        }
+        tabRenameInput.onKeyDown?.(event);
+      }}
+    />
+  );
+};
 
 function TabRail(
   {
@@ -1574,52 +1631,6 @@ var TAB_PRESENCE_ANIMATION_MIN: number;
 
 var TAB_PRESENCE_ANIMATION_DURATION: number;
 
-function TabPresenceSplash(
-  { rowId: rowId, ts: ts2, played: played }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [playedEntryState]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic => played.get(rowId) ?? 0,
-  );
-  return ts2 <= Math.max(playedEntryState, played.get(rowId) ?? 0) ? null : (
-    <span onAnimationEnd={(..._extraArguments: unknown[]): undefined => {
-  if (ts2 > (played.get(rowId) ?? 0)) {
-    played.set(rowId, ts2);
-  }
-}} className={`animate-presence-splash pointer-events-none absolute inset-0 rounded-md`} key={Math.floor(ts2 / 500)} />
-  );
-}
-
-function TabRenameInput(
-  tabRenameInput?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let uniqueItemsRef: Dynamic = (0, React.useRef)(new (Set as Dynamic)());
-  (0, React.useEffect)((..._extraArguments: unknown[]): undefined => {
-    elementRef.current?.focus();
-    elementRef.current?.select();
-    elementRef.current?.parentElement?.scrollIntoView?.({
-      block: `nearest`,
-    });
-  }, []);
-  return (
-    <input ref={elementRef} type={`text`} autoComplete={`off`} spellCheck={false} className={`-my-0.5 min-w-0 flex-1 border-0 bg-transparent p-0 leading-[calc(1lh+4px)] outline-none`} {...tabRenameInput} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  let code: Dynamic = event.code || event.key;
-  let isComposing: Dynamic = event.nativeEvent.isComposing;
-  if (event.repeat && !isComposing && !uniqueItemsRef.current.has(code)) {
-    event.preventDefault();
-    event.stopPropagation();
-    return;
-  }
-  if (!(isComposing && (code === `Enter` || code === `NumpadEnter`))) {
-    uniqueItemsRef.current.add(code);
-  }
-  tabRenameInput.onKeyDown?.(event);
-}} />
-  );
-}
-
 var TABS_MENU_LABEL: string;
 
 var TABS_MENU_ICON_STYLE: {
@@ -1662,15 +1673,4 @@ export function initializeDocumentContextActionsTabRailStep1(): void {
       : `Move into “${moveIntoTabLabel2}”`);
 }
 
-export {
-  LAST_TAB_DELETE_MESSAGE,
-  MOVE_TAB_LABEL,
-  TAB_MOVE_DIRECTIONS,
-  TAB_MOVE_LABELS,
-  TAB_PRESENCE_ANIMATION_DURATION,
-  TAB_PRESENCE_ANIMATION_MIN,
-  TabPresenceSplash,
-  TabRail,
-  TabRenameInput,
-  moveIntoTabLabel,
-};
+export { LAST_TAB_DELETE_MESSAGE, MOVE_TAB_LABEL, TAB_MOVE_DIRECTIONS, TAB_MOVE_LABELS, TAB_PRESENCE_ANIMATION_DURATION, TAB_PRESENCE_ANIMATION_MIN, TabRail, moveIntoTabLabel };

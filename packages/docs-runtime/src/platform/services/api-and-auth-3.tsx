@@ -16,6 +16,23 @@ import {
 import {
   isPlatformApiAndAuthPath,
 } from "./api-and-auth-4";
+import type * as React from "react";
+
+export const LiteUnavailable: React.FC<Dynamic> = ({ what: what }) => {
+  return (
+    <div
+      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
+      data-testid={`lite-unavailable`}
+    >
+      <div className={`text-primary text-body font-medium`}>
+        {what ? `${what} isn’t available in this viewer` : `Not available in this viewer`}
+      </div>
+      <div
+        className={`text-secondary text-footnote max-w-md text-center`}
+      >{`Open this document in Claude Docs to view it.`}</div>
+    </div>
+  );
+};
 
 var PlatformApiAndAuthAdd: Dynamic;
 
@@ -287,27 +304,6 @@ var resolvePlatformApiAndAuthValue16: Dynamic;
 var resolvePlatformApiAndAuthReject: Dynamic;
 
 var resolvePlatformApiAndAuthValue17: (...platformApiAndAuthValue17: Dynamic[]) => undefined;
-
-function LiteUnavailable(
-  { what: what }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={`gap-md flex h-full flex-col items-center justify-center px-6`}
-      data-testid={`lite-unavailable`}
-    >
-      <div className={`text-primary text-body font-medium`}>
-        {what
-          ? `${what} isn’t available in this viewer`
-          : `Not available in this viewer`}
-      </div>
-      <div
-        className={`text-secondary text-footnote max-w-md text-center`}
-      >{`Open this document in Claude Docs to view it.`}</div>
-    </div>
-  );
-}
 
 var PlatformApiAndAuthWhat: Dynamic;
 

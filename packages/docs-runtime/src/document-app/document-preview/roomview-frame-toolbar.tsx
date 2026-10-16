@@ -14,42 +14,19 @@ import {
   DOCUMENT_PREVIEW_POPOVER_CLASS,
   resolveDocumentPreviewTrim,
 } from "./use-page-skill-seat";
+import type * as React from "react";
 
-function resolveDocumentPreviewValue3(
-  documentPreviewValue3?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let documentPreviewTrim: Dynamic = resolveDocumentPreviewTrim(
-    documentPreviewValue3,
-  );
-  let documentPreviewTrim2: Dynamic = resolveDocumentPreviewTrim(
-    options !== undefined && options !== `` ? options : documentPreviewValue3,
-  );
-  return `Build a widget visualizing the results of the routine \`${documentPreviewTrim2}\`${documentPreviewTrim2 === documentPreviewTrim ? `` : ` (routine id ${documentPreviewTrim} — routines are addressed by their minted id, never by name)`}. A chart's source reads a BLOB id at launch — a routine/…, run/… or table/… ref is refused at publish — so first save the routine's latest row-shaped result (an array of row objects) as a blob the doc owns, then use <claude.Visualize> with sources={{rows: {kind: 'ref', ref: 'blob/<that blob id>'}}} and a definition {kind: 'chart', source: 'rows', axes: {x: [{column: '<the x column>', type: 'band' | 'time' | 'linear' | 'log'}]}, marks: [{type: 'bar' | 'line' | 'point' | 'area', y: '<measure column>', group?: {by: '<series column>'}}]} whose marks fit the result shape (the x axis type is always written — 'band' for categories, 'time' for dates — never inferred). Tokens-styled chrome.`;
-}
-
-var DocumentPreview_AbsoluteTop3Left3FlexItemsCenterGap15: string;
-
-var DocumentPreviewState: string;
-
-var DocumentPreview_BorderTransparent: string;
-
-function RoomviewFrameToolbar(
-  {
-    seats: seats,
-    tabs: tabs,
-    pageSkill: pageSkill,
-    viewOnly: viewOnly,
-    pillPosture: pillPosture,
-    pillReason: pillReason,
-    docked = false,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const RoomviewFrameToolbar: React.FC<Dynamic> = ({
+  seats: seats,
+  tabs: tabs,
+  pageSkill: pageSkill,
+  viewOnly: viewOnly,
+  pillPosture: pillPosture,
+  pillReason: pillReason,
+  docked = false,
+}) => {
   let zIndex: Dynamic = resolveUiProviderAndLayersUseContext11(20);
-  let roomviewFrameToolbarResult: Dynamic =
-    resolvePlatformSyncAndRoutingStackOffers2();
+  let roomviewFrameToolbarResult: Dynamic = resolvePlatformSyncAndRoutingStackOffers2();
   let DocumentSelectionState7: Dynamic = DocumentSelectionState(
     (roomviewFrame?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       roomviewFrame.scrolled,
@@ -91,7 +68,27 @@ function RoomviewFrameToolbar(
       )}
     </div>
   );
+};
+
+function resolveDocumentPreviewValue3(
+  documentPreviewValue3?: Dynamic,
+  options?: Dynamic,
+  ..._extraArguments: unknown[]
+) {
+  let documentPreviewTrim: Dynamic = resolveDocumentPreviewTrim(
+    documentPreviewValue3,
+  );
+  let documentPreviewTrim2: Dynamic = resolveDocumentPreviewTrim(
+    options !== undefined && options !== `` ? options : documentPreviewValue3,
+  );
+  return `Build a widget visualizing the results of the routine \`${documentPreviewTrim2}\`${documentPreviewTrim2 === documentPreviewTrim ? `` : ` (routine id ${documentPreviewTrim} — routines are addressed by their minted id, never by name)`}. A chart's source reads a BLOB id at launch — a routine/…, run/… or table/… ref is refused at publish — so first save the routine's latest row-shaped result (an array of row objects) as a blob the doc owns, then use <claude.Visualize> with sources={{rows: {kind: 'ref', ref: 'blob/<that blob id>'}}} and a definition {kind: 'chart', source: 'rows', axes: {x: [{column: '<the x column>', type: 'band' | 'time' | 'linear' | 'log'}]}, marks: [{type: 'bar' | 'line' | 'point' | 'area', y: '<measure column>', group?: {by: '<series column>'}}]} whose marks fit the result shape (the x axis type is always written — 'band' for categories, 'time' for dates — never inferred). Tokens-styled chrome.`;
 }
+
+var DocumentPreview_AbsoluteTop3Left3FlexItemsCenterGap15: string;
+
+var DocumentPreviewState: string;
+
+var DocumentPreview_BorderTransparent: string;
 
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializeDocumentPreviewRoomviewFrameToolbarStep1(): void {
@@ -100,4 +97,4 @@ export function initializeDocumentPreviewRoomviewFrameToolbarStep1(): void {
   (DocumentPreview_BorderTransparent = `border-transparent`);
 }
 
-export { RoomviewFrameToolbar, resolveDocumentPreviewValue3 };
+export { resolveDocumentPreviewValue3 };

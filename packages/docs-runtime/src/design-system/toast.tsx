@@ -20,57 +20,20 @@ import {
   resolveUiTooltipsAndControlsValue3,
   uiProviderAndLayersValue9000,
 } from "./dependencies";
+import type * as ReactComponentTypes from "react";
 
-var toastValue6000: Dynamic;
-
-var toastValue1000: Dynamic;
-
-function resolveToastIsFinite(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return input === undefined || input <= 0
-    ? input
-    : Number.isFinite(input)
-      ? input < 6e3
-        ? toastValue6000
-        : input
-      : 0;
-}
-
-var ToastPopover: Dynamic;
-
-var ToastNeutral: Dynamic;
-
-var ToastNeutral2: Dynamic;
-
-var ToastNeutral3: Dynamic;
-
-var ToastNeutral4: Dynamic;
-
-var ToastStyles: Dynamic;
-
-var ToastStyles2: Dynamic;
-
-var ToastMinW0Flex1TextPrettyBreakWords: Dynamic;
-
-var ToastStyles3: Dynamic;
-
-var toastValues: Dynamic;
-
-function ToastToast(
-  { toast: input, front: input2, frontHeight: input3, zIndex: input4 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ToastToast: ReactComponentTypes.FC<Dynamic> = ({
+  toast: input,
+  front: input2,
+  frontHeight: input3,
+  zIndex: input4,
+}) => {
   let value: Dynamic = input.data?.variant ?? input.type ?? `neutral`;
   let value2: Dynamic = input.data?.icon;
   let value3: boolean = value2 != null && typeof value2 != `boolean`;
   let value4: boolean = !input2;
   let value5: Dynamic = value4 && input3 ? input3 : undefined;
-  let value6: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `dismiss`,
-    `Dismiss`,
-  );
+  let value6: Dynamic = resolveUiLinksAndFoundationUseContext3(`dismiss`, `Dismiss`);
   let { update: value7 }: Dynamic = BaseToastuseToastManager();
   let value8: Dynamic = (0, React.useContext)(ToastCreateContext);
   let value9: Dynamic = (0, React.useRef)(null);
@@ -116,10 +79,7 @@ function ToastToast(
     behind: value4,
     lockedHeight: value5,
   });
-  if (
-    !value14 &&
-    (value15.behind !== value4 || value15.lockedHeight !== value5)
-  ) {
+  if (!value14 && (value15.behind !== value4 || value15.lockedHeight !== value5)) {
     value16({
       behind: value4,
       lockedHeight: value5,
@@ -135,23 +95,16 @@ function ToastToast(
       style={{
         zIndex: input4,
       }}
-      onKeyDown={(
-        input5?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
+      onKeyDown={(input5?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         if (
           input5.key === `Escape` &&
-          input5.currentTarget.contains(
-            input5.currentTarget.ownerDocument.activeElement,
-          )
+          input5.currentTarget.contains(input5.currentTarget.ownerDocument.activeElement)
         ) {
           value13();
         }
       }}
     >
-      <div
-        className={`${ToastPopover} ${ToastNeutral[value]} ${ToastNeutral2[value]}`}
-      >
+      <div className={`${ToastPopover} ${ToastNeutral[value]} ${ToastNeutral2[value]}`}>
         <div
           className={ToastStyles2}
           data-behind={value17 ? `` : undefined}
@@ -168,10 +121,7 @@ function ToastToast(
               {value3 ? (
                 value2
               ) : (
-                <UiOverlaysAndIconsCustomIcon
-                  name={ToastNeutral3[value]}
-                  size={`md`}
-                />
+                <UiOverlaysAndIconsCustomIcon name={ToastNeutral3[value]} size={`md`} />
               )}
             </span>
           )}
@@ -187,86 +137,19 @@ function ToastToast(
             </BaseToastTitle>
             <BaseToastDescription />
             {input.data?.action && (
-              <div className={`mt-pad-md empty:hidden`}>
-                {input.data.action}
-              </div>
+              <div className={`mt-pad-md empty:hidden`}>{input.data.action}</div>
             )}
           </div>
-          <BaseToastClose
-            aria-label={value6}
-            className={ToastStyles3}
-            onClick={value13}
-          >
+          <BaseToastClose aria-label={value6} className={ToastStyles3} onClick={value13}>
             <UiOverlaysAndIconsCustomIcon name={`X`} size={`sm`} />
           </BaseToastClose>
         </div>
       </div>
     </BaseToastRoot>
   );
-}
+};
 
-var ToastCreateContext: Dynamic;
-
-function ToastPinned(
-  { pinned: input, onDismiss: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input.variant ?? `neutral`;
-  let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `dismiss`,
-    `Dismiss`,
-  );
-  return (
-    <div
-      data-pinned={``}
-      className={`pointer-events-auto relative w-full ${ToastPopover} ${ToastNeutral[value]} ${ToastNeutral2[value]}`}
-    >
-      <div className={ToastStyles2}>
-        <span className={`shrink-0 ${ToastNeutral4[value]}`}>
-          <UiOverlaysAndIconsCustomIcon
-            name={ToastNeutral3[value]}
-            size={`md`}
-          />
-        </span>
-        <div className={ToastMinW0Flex1TextPrettyBreakWords}>
-          <div className={`font-medium`}>{input.title}</div>
-          {input.description && <div>{input.description}</div>}
-          {input.action && (
-            <div className={`mt-pad-md empty:hidden`}>{input.action}</div>
-          )}
-        </div>
-        {input.dismissible && (
-          <button
-            type={`button`}
-            aria-label={input.dismissLabel ?? value2}
-            onClick={input2}
-            className={ToastStyles3}
-          >
-            <UiOverlaysAndIconsCustomIcon name={`X`} size={`sm`} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function isToastContains(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input?.ownerDocument.activeElement;
-  if (!input || !value || !input.contains(value)) return false;
-  try {
-    return value.matches(`:focus-visible`);
-  } catch {
-    return true;
-  }
-}
-
-function ToastCtx(
-  { ctx: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ToastCtx: ReactComponentTypes.FC<Dynamic> = ({ ctx: input }) => {
   let {
     pinned: value,
     setPinned: value2,
@@ -279,16 +162,9 @@ function ToastCtx(
       let current: Dynamic = value3.current;
       if (!current) return;
       let ownerDocument: Dynamic = current.ownerDocument;
-      let value6 = (
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
+      let value6 = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         let target: Dynamic = event.target;
-        if (
-          target &&
-          typeof target.focus == `function` &&
-          !current.contains(target)
-        ) {
+        if (target && typeof target.focus == `function` && !current.contains(target)) {
           value5.current = target;
         }
       };
@@ -304,8 +180,7 @@ function ToastCtx(
       if (
         !current ||
         !value4.current ||
-        ((value4.current = false),
-        current.contains(current.ownerDocument.activeElement))
+        ((value4.current = false), current.contains(current.ownerDocument.activeElement))
       )
         return;
       let current2: Dynamic = value5.current;
@@ -324,18 +199,13 @@ function ToastCtx(
       }}
       role={`status`}
       className={value ? `w-full` : `sr-only`}
-      onKeyDown={(
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
+      onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         if (
           event.key === `Escape` &&
           !event.defaultPrevented &&
           !event.nativeEvent.isComposing &&
           value?.dismissible &&
-          event.currentTarget.contains(
-            event.currentTarget.ownerDocument.activeElement,
-          )
+          event.currentTarget.contains(event.currentTarget.ownerDocument.activeElement)
         ) {
           value2(null);
         }
@@ -349,12 +219,9 @@ function ToastCtx(
       )}
     </div>
   );
-}
+};
 
-function ToastToasts(
-  { className: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ToastToasts: ReactComponentTypes.FC<Dynamic> = ({ className: input }) => {
   let { toasts: value }: Dynamic = BaseToastuseToastManager();
   let value2: Dynamic = (0, React.useContext)(ToastCreateContext);
   UiDesignSystemUseLayoutEffect(
@@ -395,7 +262,13 @@ function ToastToasts(
                 options?: Dynamic,
                 ..._extraArguments: unknown[]
               ): Dynamic => (
-                <ToastToast toast={input2} front={input2 === match} frontHeight={match?.height} zIndex={value.length - options} key={input2.id} />
+                <ToastToast
+                  toast={input2}
+                  front={input2 === match}
+                  frontHeight={match?.height}
+                  zIndex={value.length - options}
+                  key={input2.id}
+                />
               ),
             )}
           </BaseToastViewport>
@@ -403,26 +276,14 @@ function ToastToasts(
       </UiOverlaysAndIconsSurface>
     </BaseToastPortal>
   );
-}
+};
 
-function resolveToastAllocId(..._extraArguments: unknown[]): Dynamic {
-  let index: number = 0;
-  return {
-    allocId: (..._extraArguments: unknown[]) => `cds-toast-${++index}`,
-    movingIds: new (Set as Dynamic)(),
-    userDismissAt: new (Map as Dynamic)(),
-  };
-}
-
-function ToastProvider(
-  {
-    children: input,
-    timeout: input4 = toastValue6000,
-    limit: input2,
-    viewportClassName: input3,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const ToastProvider: ReactComponentTypes.FC<Dynamic> = ({
+  children: input,
+  timeout: input4 = toastValue6000,
+  limit: input2,
+  viewportClassName: input3,
+}) => {
   let [value, value2]: Dynamic = (0, React.useState)(null);
   let value3: Dynamic = (0, React.useRef)(value);
   let value4: Dynamic = (0, React.useRef)(null);
@@ -474,6 +335,102 @@ function ToastProvider(
       </ToastCreateContext.Provider>
     </BaseToastProvider>
   );
+};
+
+export const ToastPinned: ReactComponentTypes.FC<Dynamic> = ({
+  pinned: input,
+  onDismiss: input2,
+}) => {
+  let value: Dynamic = input.variant ?? `neutral`;
+  let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(`dismiss`, `Dismiss`);
+  return (
+    <div
+      data-pinned={``}
+      className={`pointer-events-auto relative w-full ${ToastPopover} ${ToastNeutral[value]} ${ToastNeutral2[value]}`}
+    >
+      <div className={ToastStyles2}>
+        <span className={`shrink-0 ${ToastNeutral4[value]}`}>
+          <UiOverlaysAndIconsCustomIcon name={ToastNeutral3[value]} size={`md`} />
+        </span>
+        <div className={ToastMinW0Flex1TextPrettyBreakWords}>
+          <div className={`font-medium`}>{input.title}</div>
+          {input.description && <div>{input.description}</div>}
+          {input.action && <div className={`mt-pad-md empty:hidden`}>{input.action}</div>}
+        </div>
+        {input.dismissible && (
+          <button
+            type={`button`}
+            aria-label={input.dismissLabel ?? value2}
+            onClick={input2}
+            className={ToastStyles3}
+          >
+            <UiOverlaysAndIconsCustomIcon name={`X`} size={`sm`} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+var toastValue6000: Dynamic;
+
+var toastValue1000: Dynamic;
+
+function resolveToastIsFinite(
+  input?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  return input === undefined || input <= 0
+    ? input
+    : Number.isFinite(input)
+      ? input < 6e3
+        ? toastValue6000
+        : input
+      : 0;
+}
+
+var ToastPopover: Dynamic;
+
+var ToastNeutral: Dynamic;
+
+var ToastNeutral2: Dynamic;
+
+var ToastNeutral3: Dynamic;
+
+var ToastNeutral4: Dynamic;
+
+var ToastStyles: Dynamic;
+
+var ToastStyles2: Dynamic;
+
+var ToastMinW0Flex1TextPrettyBreakWords: Dynamic;
+
+var ToastStyles3: Dynamic;
+
+var toastValues: Dynamic;
+
+var ToastCreateContext: Dynamic;
+
+function isToastContains(
+  input?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let value: Dynamic = input?.ownerDocument.activeElement;
+  if (!input || !value || !input.contains(value)) return false;
+  try {
+    return value.matches(`:focus-visible`);
+  } catch {
+    return true;
+  }
+}
+
+function resolveToastAllocId(..._extraArguments: unknown[]): Dynamic {
+  let index: number = 0;
+  return {
+    allocId: (..._extraArguments: unknown[]) => `cds-toast-${++index}`,
+    movingIds: new (Set as Dynamic)(),
+    userDismissAt: new (Map as Dynamic)(),
+  };
 }
 
 var resolveToastValue: (..._extraArguments: unknown[]) => undefined;
@@ -729,4 +686,4 @@ export function initializeToastStep1(): void {
   resolveToastValue = (..._extraArguments: unknown[]): undefined => undefined;
 }
 
-export { ToastProvider, useToast };
+export { useToast };

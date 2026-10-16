@@ -23,6 +23,96 @@ import {
   resolveShimmerValue9,
 } from "../activity-status";
 import { ShimmerSwapKey } from "../activity-transitions";
+import type * as ReactComponentTypes from "react";
+
+export const CommentsLabel: ReactComponentTypes.FC<Dynamic> = ({
+  label: input,
+  leading: input2,
+}) => {
+  let value: string = typeof input == `string` ? input : ``;
+  let value2: string = value === `` ? `pending` : `busy`;
+  resolveUiTooltipsAndControlsValue5(
+    value2 === `pending`,
+    'cds: <TurnStatus state="busy"> needs a host-supplied `label` (CDS ships no status copy); rendering the pending mark instead.',
+  );
+  resolveUiTooltipsAndControlsValue5(
+    value2 === `pending` && input2 === null,
+    'cds: <TurnStatus state="pending" leading={null}>: a pending row is only its mark, so `null` is ignored and the Spark renders; pass `null` from the first busy state.',
+  );
+  let { state: value3, label: value4 }: Dynamic = useCommentsMinMs(
+    (0, React.useMemo)(
+      (..._extraArguments: unknown[]): Dynamic => ({
+        state: value2,
+        label: value,
+      }),
+      [value2, value],
+    ),
+    resolveShimmerBusy(value2, value),
+    {
+      minMs: (input3?: Dynamic, ..._extraArguments: unknown[]) =>
+        input3.state === `busy` && value2 === `busy` ? undefined : 0,
+      settleMs: 250,
+      restretch: true,
+    },
+  );
+  let value5: boolean = value3 === `busy`;
+  let value6: boolean = !value5 || input2 !== null;
+  let value7: Dynamic = resolveShimmerTest2(value4);
+  let { busy: value8 }: Dynamic = resolveShimmerFailed();
+  let value9: Dynamic = (0, React.useId)();
+  return (
+    <div
+      data-closed={``}
+      data-cds={`TurnStatus`}
+      data-state={value3}
+      className={`group/status flex w-full min-w-0 flex-col`}
+    >
+      <div
+        tabIndex={-1}
+        className={resolveUiDesignSystemValue2(
+          ShimmerFlexMinW0ItemsCenterGapXsTextStartFontSansTextBodyFontNormal,
+          `items-center`,
+          ShimmerStyles5,
+          ShimmerStyles4,
+          value5 &&
+            value6 &&
+            `transition-[margin-inline-start] duration-200 ease-out motion-reduce:transition-none`,
+          `rounded outline-none focus-visible:[box-shadow:inset_0_0_0_1px_var(--cds-fill-accent)] focus-visible:outline-hidden`,
+        )}
+        style={resolveShimmerValue10(false, true)}
+        title={value5 ? resolveShimmerValue8(value4) : undefined}
+      >
+        {value6 && (
+          <ShimmerMotion motion={value5 ? `busy` : `pending`} leading={input2} />
+        )}
+        <span id={`${value9}-text`} className={`flex min-w-0 gap-xs items-center`}>
+          {value5 && (
+            <ShimmerSwapKey
+              swapKey={resolveShimmerBusy(value3, value4)}
+              id={`${value9}-label`}
+              className={`min-w-0 max-w-full`}
+            >
+              <Shimmer
+                variant={`secondary`}
+                className={`min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap py-[0.125em] -my-[0.125em]`}
+              >
+                <ShimmerValue value={value7} prose={true} />
+              </Shimmer>
+            </ShimmerSwapKey>
+          )}
+        </span>
+        {value5 && (
+          <span id={`${value9}-busy`} className={`sr-only`}>
+            {value8}
+          </span>
+        )}
+      </div>
+      <span className={`sr-only`} role={`status`} aria-live={`polite`}>
+        {value5 ? resolveShimmerValue9(value7) : ``}
+      </span>
+    </div>
+  );
+};
 
 var commentsValue650: Dynamic;
 
@@ -182,101 +272,6 @@ function useCommentsMinMs(
     [value9, options, input, value2, value7, value3, value14, value8],
   );
   return value9 ? value5.value : input;
-}
-
-function CommentsLabel(
-  { label: input, leading: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: string = typeof input == `string` ? input : ``;
-  let value2: string = value === `` ? `pending` : `busy`;
-  resolveUiTooltipsAndControlsValue5(
-    value2 === `pending`,
-    'cds: <TurnStatus state="busy"> needs a host-supplied `label` (CDS ships no status copy); rendering the pending mark instead.',
-  );
-  resolveUiTooltipsAndControlsValue5(
-    value2 === `pending` && input2 === null,
-    'cds: <TurnStatus state="pending" leading={null}>: a pending row is only its mark, so `null` is ignored and the Spark renders; pass `null` from the first busy state.',
-  );
-  let { state: value3, label: value4 }: Dynamic = useCommentsMinMs(
-    (0, React.useMemo)(
-      (..._extraArguments: unknown[]): Dynamic => ({
-        state: value2,
-        label: value,
-      }),
-      [value2, value],
-    ),
-    resolveShimmerBusy(value2, value),
-    {
-      minMs: (input3?: Dynamic, ..._extraArguments: unknown[]) =>
-        input3.state === `busy` && value2 === `busy` ? undefined : 0,
-      settleMs: 250,
-      restretch: true,
-    },
-  );
-  let value5: boolean = value3 === `busy`;
-  let value6: boolean = !value5 || input2 !== null;
-  let value7: Dynamic = resolveShimmerTest2(value4);
-  let { busy: value8 }: Dynamic = resolveShimmerFailed();
-  let value9: Dynamic = (0, React.useId)();
-  return (
-    <div
-      data-closed={``}
-      data-cds={`TurnStatus`}
-      data-state={value3}
-      className={`group/status flex w-full min-w-0 flex-col`}
-    >
-      <div
-        tabIndex={-1}
-        className={resolveUiDesignSystemValue2(
-          ShimmerFlexMinW0ItemsCenterGapXsTextStartFontSansTextBodyFontNormal,
-          `items-center`,
-          ShimmerStyles5,
-          ShimmerStyles4,
-          value5 &&
-            value6 &&
-            `transition-[margin-inline-start] duration-200 ease-out motion-reduce:transition-none`,
-          `rounded outline-none focus-visible:[box-shadow:inset_0_0_0_1px_var(--cds-fill-accent)] focus-visible:outline-hidden`,
-        )}
-        style={resolveShimmerValue10(false, true)}
-        title={value5 ? resolveShimmerValue8(value4) : undefined}
-      >
-        {value6 && (
-          <ShimmerMotion
-            motion={value5 ? `busy` : `pending`}
-            leading={input2}
-          />
-        )}
-        <span
-          id={`${value9}-text`}
-          className={`flex min-w-0 gap-xs items-center`}
-        >
-          {value5 && (
-            <ShimmerSwapKey
-              swapKey={resolveShimmerBusy(value3, value4)}
-              id={`${value9}-label`}
-              className={`min-w-0 max-w-full`}
-            >
-              <Shimmer
-                variant={`secondary`}
-                className={`min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap py-[0.125em] -my-[0.125em]`}
-              >
-                <ShimmerValue value={value7} prose={true} />
-              </Shimmer>
-            </ShimmerSwapKey>
-          )}
-        </span>
-        {value5 && (
-          <span id={`${value9}-busy`} className={`sr-only`}>
-            {value8}
-          </span>
-        )}
-      </div>
-      <span className={`sr-only`} role={`status`} aria-live={`polite`}>
-        {value5 ? resolveShimmerValue9(value7) : ``}
-      </span>
-    </div>
-  );
 }
 
 var CommentsLabel2: Dynamic;

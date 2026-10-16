@@ -21,6 +21,36 @@ import {
 import {
   DOC_FONTS_FEATURE,
 } from "./run-review";
+import type * as ReactComponentTypes from "react";
+
+export const TabsLeftListGate: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  onUp: onUp,
+  onLost: onLost,
+  onRenaming: onRenaming,
+  feed = null,
+  onJump: onJump,
+  timers: timers,
+}) => {
+  return (
+    <RouteErrorBoundary
+      component={`tabslist`}
+      fallback={<TabsListLoadFailure onLost={onLost} />}
+    >
+      <React.Suspense fallback={null}>
+        <LazyTabsLeftList
+          seat={seat}
+          onUp={onUp}
+          onRenaming={onRenaming}
+          feed={feed}
+          onJump={onJump}
+          timers={timers}
+          onLost={onLost}
+        />
+      </React.Suspense>
+    </RouteErrorBoundary>
+  );
+};
 
 function TabsListLoadFailure(
   { onLost: onLost }: Dynamic,
@@ -58,38 +88,6 @@ function useStableDocumentIdentity(
 }
 
 var LazyTabsLeftList: Dynamic;
-
-function TabsLeftListGate(
-  {
-    seat: seat,
-    onUp: onUp,
-    onLost: onLost,
-    onRenaming: onRenaming,
-    feed = null,
-    onJump: onJump,
-    timers: timers,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <RouteErrorBoundary
-      component={`tabslist`}
-      fallback={<TabsListLoadFailure onLost={onLost} />}
-    >
-      <React.Suspense fallback={null}>
-        <LazyTabsLeftList
-          seat={seat}
-          onUp={onUp}
-          onRenaming={onRenaming}
-          feed={feed}
-          onJump={onJump}
-          timers={timers}
-          onLost={onLost}
-        />
-      </React.Suspense>
-    </RouteErrorBoundary>
-  );
-}
 
 var MAX_TABS_SIDEBAR_WIDTH: number;
 
@@ -944,56 +942,4 @@ export function initializeDocumentChromeStep1(): void {
       : null);
 }
 
-export {
-  EMPTY_TABS_OUTLINE_STATE,
-  TABS_OUTLINE_HOLD_MS,
-  TabsLeftListGate,
-  canDrawDocumentSidebar,
-  canShowTabsList,
-  clampSidebarToViewport,
-  classifyDocumentLayoutTier,
-  classifyTabsSidebarVisibility,
-  clearTabsPlacementPick,
-  collapseTabChildren,
-  commitTabsPlacementPick,
-  countTabTree,
-  estimateTabsSidebarWidth,
-  findTabSiblingSet,
-  flattenTabTree,
-  getSelectedHeading,
-  getTabOutline,
-  getTabsPlacement,
-  getTabsPlacementEpoch,
-  getTabsPlacementPick,
-  hasDocumentSidebarHeight,
-  isTabsLocationFeatureEnabled,
-  isTabsPlacementObject,
-  latestSidebarVisibility,
-  measureTabsSidebarViewport,
-  notifyTabsPlacement,
-  parseTabsPlacement,
-  parseTabsSidebarWidth,
-  pickTabsPlacement,
-  reduceTabsOutline,
-  releaseTabsPlacementPick,
-  rememberSidebarVisibility,
-  serializeTabsPlacement,
-  shouldEstimateZoomedSidebar,
-  shouldOfferTabsPlacement,
-  shouldReadTabsOutline,
-  shouldShowDocumentRail,
-  shouldTakeBareDocumentRail,
-  sidebarTotalWidth,
-  sidebarVisibilityForKey,
-  subscribeTabsPlacement,
-  tabDescendantIds,
-  tabDropPlacement,
-  tabKeyboardMovePlacement,
-  tabPositionAnnouncement,
-  tabTreeLayoutKey,
-  tabsPlacementUnavailableReason,
-  tabsSidebarDrawingState,
-  useStableDocumentIdentity,
-  useTabsPlacement,
-  zoomedProseWidth,
-};
+export { EMPTY_TABS_OUTLINE_STATE, TABS_OUTLINE_HOLD_MS, canDrawDocumentSidebar, canShowTabsList, clampSidebarToViewport, classifyDocumentLayoutTier, classifyTabsSidebarVisibility, clearTabsPlacementPick, collapseTabChildren, commitTabsPlacementPick, countTabTree, estimateTabsSidebarWidth, findTabSiblingSet, flattenTabTree, getSelectedHeading, getTabOutline, getTabsPlacement, getTabsPlacementEpoch, getTabsPlacementPick, hasDocumentSidebarHeight, isTabsLocationFeatureEnabled, isTabsPlacementObject, latestSidebarVisibility, measureTabsSidebarViewport, notifyTabsPlacement, parseTabsPlacement, parseTabsSidebarWidth, pickTabsPlacement, reduceTabsOutline, releaseTabsPlacementPick, rememberSidebarVisibility, serializeTabsPlacement, shouldEstimateZoomedSidebar, shouldOfferTabsPlacement, shouldReadTabsOutline, shouldShowDocumentRail, shouldTakeBareDocumentRail, sidebarTotalWidth, sidebarVisibilityForKey, subscribeTabsPlacement, tabDescendantIds, tabDropPlacement, tabKeyboardMovePlacement, tabPositionAnnouncement, tabTreeLayoutKey, tabsPlacementUnavailableReason, tabsSidebarDrawingState, useStableDocumentIdentity, useTabsPlacement, zoomedProseWidth };

@@ -106,64 +106,55 @@ import {
 } from "../session-navigation/ldoc-comments-btn";
 import { RoomTabUnbound } from "./document-states";
 import { isRoutineFeedUpdate } from "./project-data";
+import type * as ReactComponentTypes from "react";
 
-var applicationRoutesLimit640: number;
-
-var ApplicationRoutesSet: Dynamic;
-
-var applicationRoutesLimit0: number;
-
-function FilmedProsePage(
-  {
-    room: room,
-    pid: pid,
-    fileId: fileId,
-    snapshotHead: snapshotHead,
-    snapshotReady = false,
-    displayName: displayName,
-    version: version,
-    objectFiles: objectFiles,
-    tabNames: tabNames,
-    onSurfaceKind: onSurfaceKind,
-    onHeadKind: onHeadKind,
-    onShown: onShown,
-    onLeaveProbe: onLeaveProbe,
-    leaving = false,
-    onViewOnly: onViewOnly,
-    onPageGone: onPageGone,
-    onTabGone: onTabGone,
-    onEscapeToChrome: onEscapeToChrome,
-    onHistoryLeave: onHistoryLeave,
-    onTitleCommit: onTitleCommit,
-    onFirstHeading: onFirstHeading,
-    filmedProse: filmedProse,
-    readOnly = false,
-    embed = false,
-    edgeMinLeft: edgeMinLeft,
-    railSlot = null,
-    onRailInSlot: onRailInSlot,
-    leftOverlayHost: leftOverlayHost,
-    leftOverlayHeld: leftOverlayHeld,
-    onLeftOverlayState: onLeftOverlayState,
-    outlineWanted = false,
-    onOutline: onOutline,
-    onOutlineAt: onOutlineAt,
-    onOutlineScrolled: onOutlineScrolled,
-    outlineJump = null,
-    bornHere = false,
-    hostCommentOffered = false,
-    placement: placement,
-    onOpenFile: onOpenFile,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const FilmedProsePage: ReactComponentTypes.FC<Dynamic> = ({
+  room: room,
+  pid: pid,
+  fileId: fileId,
+  snapshotHead: snapshotHead,
+  snapshotReady = false,
+  displayName: displayName,
+  version: version,
+  objectFiles: objectFiles,
+  tabNames: tabNames,
+  onSurfaceKind: onSurfaceKind,
+  onHeadKind: onHeadKind,
+  onShown: onShown,
+  onLeaveProbe: onLeaveProbe,
+  leaving = false,
+  onViewOnly: onViewOnly,
+  onPageGone: onPageGone,
+  onTabGone: onTabGone,
+  onEscapeToChrome: onEscapeToChrome,
+  onHistoryLeave: onHistoryLeave,
+  onTitleCommit: onTitleCommit,
+  onFirstHeading: onFirstHeading,
+  filmedProse: filmedProse,
+  readOnly = false,
+  embed = false,
+  edgeMinLeft: edgeMinLeft,
+  railSlot = null,
+  onRailInSlot: onRailInSlot,
+  leftOverlayHost: leftOverlayHost,
+  leftOverlayHeld: leftOverlayHeld,
+  onLeftOverlayState: onLeftOverlayState,
+  outlineWanted = false,
+  onOutline: onOutline,
+  onOutlineAt: onOutlineAt,
+  onOutlineScrolled: onOutlineScrolled,
+  outlineJump = null,
+  bornHere = false,
+  hostCommentOffered = false,
+  placement: placement,
+  onOpenFile: onOpenFile,
+}) => {
   let filmedProsePageResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
   let filmed = resolveEditorSelectionAndTablesLocale(filmedProsePageResult);
   let phone: Dynamic = resolvePlatformSyncAndRoutingValue20();
   let filmedProsePageResult2 = usePlatformSyncAndRoutingPhone();
   let filmedProsePageResult3: Dynamic = useCommentsEditorState(pid);
-  let frameWritable: Dynamic =
-    filmedProsePageResult3 && !filmedProsePageResult2;
+  let frameWritable: Dynamic = filmedProsePageResult3 && !filmedProsePageResult2;
   let frameCommentable: Dynamic = useCommentsEditorState2(pid);
   let documentRuntimeReadOnly: Dynamic = resolveDocumentRuntimeReadOnly({
     frameWritable: frameWritable,
@@ -172,8 +163,10 @@ function FilmedProsePage(
   });
   let frame: Dynamic = isFrameArtifact();
   let filmed2: Dynamic = filmed || frame;
-  let filmedProsePageResult4: Dynamic =
-    resolvePlatformLiveDocumentAndHistoryValue36(pid, fileId);
+  let filmedProsePageResult4: Dynamic = resolvePlatformLiveDocumentAndHistoryValue36(
+    pid,
+    fileId,
+  );
   // BaoCut: 独立页面没有版本历史（docs-host.ts 的 versionHistoryOffered）：版本面板与版本预览都不开，记在本地的
   // 「面板开着」（bongo.settings.historyRailOpen）也不起作用。原版独立页面这里总是开着（resolvePlatformLiveDocumentAndHistoryValue36）。
   let historyRoad: Dynamic =
@@ -212,8 +205,7 @@ function FilmedProsePage(
   let fileValueRef: Dynamic = (0, React.useRef)(fileValue);
   fileValueRef.current = fileValue;
   let [sessionNavigationValue3State]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      resolveSessionNavigationValue3(),
+    (..._extraArguments: unknown[]): Dynamic => resolveSessionNavigationValue3(),
   );
   let historyOpen: Dynamic = PlatformSyncAndRoutingState4(
     (filmedProsePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -227,8 +219,9 @@ function FilmedProsePage(
     [pid, fileId],
   );
   let embed2: Dynamic = embed || frame;
-  let [filmedProsePageState2, setFilmedProsePageState]: Dynamic = (0,
-  React.useState)(null);
+  let [filmedProsePageState2, setFilmedProsePageState]: Dynamic = (0, React.useState)(
+    null,
+  );
   let parentElement: Dynamic = railSlot?.parentElement ?? filmedProsePageState2;
   let [matchesClientWidthState, setMatchesClientWidthState]: Dynamic = (0,
   React.useState)(
@@ -238,14 +231,11 @@ function FilmedProsePage(
   );
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
-      if (!embed2 || !parentElement || typeof ResizeObserver === "undefined")
-        return;
+      if (!embed2 || !parentElement || typeof ResizeObserver === "undefined") return;
       let setMatchesClientWidthState2: Dynamic = (
         ..._extraArguments: unknown[]
       ): Dynamic =>
-        setMatchesClientWidthState(
-          parentElement.clientWidth < applicationRoutesLimit640,
-        );
+        setMatchesClientWidthState(parentElement.clientWidth < applicationRoutesLimit640);
       let resizeObserver = new ResizeObserver(setMatchesClientWidthState2);
       resizeObserver.observe(parentElement);
       setMatchesClientWidthState2();
@@ -254,10 +244,8 @@ function FilmedProsePage(
     [embed2, parentElement],
   );
   let embed3: Dynamic = embed2 && matchesClientWidthState;
-  let documentPreviewRailOverlay: Dynamic =
-    resolveDocumentPreviewRailOverlay(embed3);
-  let inSlot: Dynamic =
-    historyRoad && historyOpen && !embed3 && railSlot !== null;
+  let documentPreviewRailOverlay: Dynamic = resolveDocumentPreviewRailOverlay(embed3);
+  let inSlot: Dynamic = historyRoad && historyOpen && !embed3 && railSlot !== null;
   let filmedProsePageResult5: Dynamic = PlatformSyncAndRoutingAssign2(
     (filmedProsePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       filmedProsePage.preview,
@@ -300,10 +288,7 @@ function FilmedProsePage(
         return;
       let requestAnimationFrame2 = requestAnimationFrame(
         (..._extraArguments: unknown[]) =>
-          isPlatformLiveDocumentAndHistoryHasFocus(
-            document,
-            onHistoryLeaveRef.current,
-          ),
+          isPlatformLiveDocumentAndHistoryHasFocus(document, onHistoryLeaveRef.current),
       );
       return (..._extraArguments: unknown[]) =>
         cancelAnimationFrame(requestAnimationFrame2);
@@ -316,8 +301,7 @@ function FilmedProsePage(
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): undefined => {
-      let issue2: Dynamic =
-        sessionNavigationValue3State.issue(!filmedProsePage);
+      let issue2: Dynamic = sessionNavigationValue3State.issue(!filmedProsePage);
       (async (..._extraArguments: unknown[]): Promise<Dynamic> => {
         try {
           return await room.read(
@@ -331,9 +315,7 @@ function FilmedProsePage(
           if (
             filmedProsePageResult8 instanceof
               (DataOperationControlRoomReadDenied as Dynamic) &&
-            resolveDataOperationControlEngineBound(
-              filmedProsePageResult8.reason,
-            )
+            resolveDataOperationControlEngineBound(filmedProsePageResult8.reason)
           )
             return await room.read(
               {
@@ -360,8 +342,7 @@ function FilmedProsePage(
           }
           if (sessionNavigationValue3State.land(issue2)) {
             setFileValue(
-              error instanceof
-                (DataOperationControlRoomReadDenied as Dynamic) &&
+              error instanceof (DataOperationControlRoomReadDenied as Dynamic) &&
                 error.reason === `engine-unported`
                 ? {
                     birthName: ``,
@@ -414,13 +395,7 @@ function FilmedProsePage(
         ..._extraArguments: unknown[]
       ): Dynamic =>
         issue(true, (..._extraArguments: unknown[]): undefined => {
-          if (
-            !(
-              enabled ||
-              filmedProsePage ||
-              filmedProsePageResult8 !== undefined
-            )
-          ) {
+          if (!(enabled || filmedProsePage || filmedProsePageResult8 !== undefined)) {
             filmedProsePageResult8 = setTimeout(
               (..._extraArguments: unknown[]): undefined => {
                 filmedProsePageResult8 = undefined;
@@ -434,10 +409,7 @@ function FilmedProsePage(
         });
       let filmedProsePageResult9: Dynamic = subscribeProjectFeed(
         pid,
-        (
-          filmedProsePage?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
+        (filmedProsePage?: Dynamic, ..._extraArguments: unknown[]): undefined => {
           if (isSessionNavigationKind(filmedProsePage, fileId)) {
             issue2();
           }
@@ -493,8 +465,7 @@ function FilmedProsePage(
     },
     [kind, fileId, onSurfaceKind],
   );
-  let kind2 =
-    fileValue === undefined ? undefined : filePresentationKind(fileValue);
+  let kind2 = fileValue === undefined ? undefined : filePresentationKind(fileValue);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (kind2 !== undefined) {
@@ -530,8 +501,7 @@ function FilmedProsePage(
     [matchesFileValue, onLeftOverlayState2],
   );
   let [warmed, setWarmed]: Dynamic = (0, React.useState)(false);
-  let filmedProsePageResult6: Dynamic =
-    resolvePlatformLiveDocumentAndHistoryOpen();
+  let filmedProsePageResult6: Dynamic = resolvePlatformLiveDocumentAndHistoryOpen();
   let historyOpenRef: Dynamic = (0, React.useRef)(historyOpen);
   let [enabledState3, setEnabledState3]: Dynamic = (0, React.useState)(false);
   (0, React.useEffect)(
@@ -582,8 +552,7 @@ function FilmedProsePage(
     },
     [],
   );
-  let intent: Dynamic =
-    filmedProsePageResult6 || enabledState3 || enabledState4;
+  let intent: Dynamic = filmedProsePageResult6 || enabledState3 || enabledState4;
   let labelRef: Dynamic = (0, React.useRef)(``);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
@@ -649,11 +618,10 @@ function FilmedProsePage(
         }, filmedProsePage);
       };
       cancelIdleCallback2(platformKeyboardAndSaveStatusValue2500);
-      let filmedProsePageResult10: Dynamic =
-        clearPlatformKeyboardAndSaveStatusDelete(
-          (..._extraArguments: unknown[]) =>
-            cancelIdleCallback2(platformKeyboardAndSaveStatusValue2500),
-        );
+      let filmedProsePageResult10: Dynamic = clearPlatformKeyboardAndSaveStatusDelete(
+        (..._extraArguments: unknown[]) =>
+          cancelIdleCallback2(platformKeyboardAndSaveStatusValue2500),
+      );
       return (..._extraArguments: unknown[]): undefined => {
         filmedProsePageResult10();
         cancelIdleCallback();
@@ -684,8 +652,7 @@ function FilmedProsePage(
           key,
           (..._extraArguments: unknown[]): Dynamic => leaveWordRef.current?.(),
         );
-        return (..._extraArguments: unknown[]): Dynamic =>
-          onLeaveProbe(key, null);
+        return (..._extraArguments: unknown[]): Dynamic => onLeaveProbe(key, null);
       }
     },
     [key, onLeaveProbe],
@@ -758,26 +725,17 @@ function FilmedProsePage(
       <BlobFileView
         room={room}
         blobRef={fileValue.content.blob ?? ``}
-        mime={resolveDataOperationEngineApplicationOctetStream(
-          fileValue.birthName,
-        )}
+        mime={resolveDataOperationEngineApplicationOctetStream(fileValue.birthName)}
         displayName={displayName}
       />
     ) : resolveDataOperationEngineLdoc(fileValue.birthName) === `iron` ? (
       <React.Suspense fallback={<PlatformSyncAndRoutingLabel2 />}>
-        <SessionNavigationThen2
-          room={room}
-          pid={pid}
-          fileId={fileId}
-          filmed={filmed}
-        />
+        <SessionNavigationThen2 room={room} pid={pid} fileId={fileId} filmed={filmed} />
       </React.Suspense>
     ) : fileValue.content?.kind === `text` ? (
       <TextFileView
         text={fileValue.content.text ?? ``}
-        mime={resolveDataOperationEngineApplicationOctetStream(
-          fileValue.birthName,
-        )}
+        mime={resolveDataOperationEngineApplicationOctetStream(fileValue.birthName)}
         scrollKey={documentScrollKey(pid, fileId)}
       />
     ) : fileValue.unbound ? (
@@ -818,9 +776,7 @@ function FilmedProsePage(
         onOutlineAt={onOutlineAt === undefined ? undefined : onOutlineAt2}
         onOutlineScrolled={onOutlineScrolled2}
         outlineJump={
-          outlineJump !== null && outlineJump.fileId === fileId
-            ? outlineJump
-            : null
+          outlineJump !== null && outlineJump.fileId === fileId ? outlineJump : null
         }
         bornHere={bornHere}
         commentsReadOnly={documentRuntimeReadOnly.commentsReadOnly}
@@ -870,10 +826,7 @@ function FilmedProsePage(
         }
         onFirstHeading={
           onFirstHeading
-            ? (
-                filmedProsePage?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic =>
+            ? (filmedProsePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                 onFirstHeading(
                   {
                     pid: pid,
@@ -897,24 +850,68 @@ function FilmedProsePage(
       >
         <div className={`relative min-w-0 flex-1`}>
           {historyRoad2 && (
-            <div data-testid={`history-version-pane`} data-shown={upto === undefined ? undefined : `1`} data-warm-road={labelRef.current} className={upto === undefined ? `hidden` : documentPreviewRailOverlay.overlayClass ?? `bg-surface-popover dark:bg-surface-0 absolute inset-0 z-10`} style={upto === undefined ? undefined : documentPreviewRailOverlay.overlayStyle} inert={upto === undefined || historyOpen && documentPreviewRailOverlay.listCovers === true} aria-hidden={upto === undefined || historyOpen && documentPreviewRailOverlay.listCovers === true} {...upto === undefined ? {
-  "data-pages-print-skip": ``
-} : {}}>{<React.Suspense fallback={upto === undefined ? null : <div className={`bg-alpha-0 h-full animate-pulse`} />}>
-                    <SessionNavigationDefault3
-                      pid={pid}
-                      fileId={fileId}
-                      upto={upto}
-                      previewId={filmedProsePageResult5?.id}
-                      title={fileValue?.birthName || `Document`}
-                      envelope={envelope}
-                      scrollY={(..._extraArguments: unknown[]): Dynamic => getDocumentScroll(documentScrollKey(pid, fileId))}
-                      stacked={documentPreviewRailOverlay.stacked}
-                    />
-                  </React.Suspense>}</div>
+            <div
+              data-testid={`history-version-pane`}
+              data-shown={upto === undefined ? undefined : `1`}
+              data-warm-road={labelRef.current}
+              className={
+                upto === undefined
+                  ? `hidden`
+                  : (documentPreviewRailOverlay.overlayClass ??
+                    `bg-surface-popover dark:bg-surface-0 absolute inset-0 z-10`)
+              }
+              style={
+                upto === undefined ? undefined : documentPreviewRailOverlay.overlayStyle
+              }
+              inert={
+                upto === undefined ||
+                (historyOpen && documentPreviewRailOverlay.listCovers === true)
+              }
+              aria-hidden={
+                upto === undefined ||
+                (historyOpen && documentPreviewRailOverlay.listCovers === true)
+              }
+              {...(upto === undefined
+                ? {
+                    "data-pages-print-skip": ``,
+                  }
+                : {})}
+            >
+              {
+                <React.Suspense
+                  fallback={
+                    upto === undefined ? null : (
+                      <div className={`bg-alpha-0 h-full animate-pulse`} />
+                    )
+                  }
+                >
+                  <SessionNavigationDefault3
+                    pid={pid}
+                    fileId={fileId}
+                    upto={upto}
+                    previewId={filmedProsePageResult5?.id}
+                    title={fileValue?.birthName || `Document`}
+                    envelope={envelope}
+                    scrollY={(..._extraArguments: unknown[]): Dynamic =>
+                      getDocumentScroll(documentScrollKey(pid, fileId))
+                    }
+                    stacked={documentPreviewRailOverlay.stacked}
+                  />
+                </React.Suspense>
+              }
+            </div>
           )}
-          <div className={upto === undefined ? `size-full` : `invisible size-full`} inert={upto !== undefined || leaving || enabledState} {...upto === undefined ? {} : {
-  [EditorSelectionAndTablesDataPagesPrintSkip]: ``
-}}>{filmedProsePageResult7}</div>
+          <div
+            className={upto === undefined ? `size-full` : `invisible size-full`}
+            inert={upto !== undefined || leaving || enabledState}
+            {...(upto === undefined
+              ? {}
+              : {
+                  [EditorSelectionAndTablesDataPagesPrintSkip]: ``,
+                })}
+          >
+            {filmedProsePageResult7}
+          </div>
         </div>
         {historyRoad && historyOpen && (
           <UseDocumentPreviewSlotElComponent
@@ -953,15 +950,10 @@ function FilmedProsePage(
                 stacked={documentPreviewRailOverlay.stacked}
                 besideBar={inSlot}
                 readOnly={
-                  version !== undefined ||
-                  !!documentRuntimeReadOnly.readOnly ||
-                  viewOnly
+                  version !== undefined || !!documentRuntimeReadOnly.readOnly || viewOnly
                 }
                 onLeave={onHistoryLeave}
-                onRestore={(
-                  filmedProsePage?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ) => {
+                onRestore={(filmedProsePage?: Dynamic, ..._extraArguments: unknown[]) => {
                   if (filmedProsePage.upto === undefined) return;
                   let filmedProsePageResult8: Dynamic = viewerId();
                   if (filmedProsePageResult8) {
@@ -972,8 +964,7 @@ function FilmedProsePage(
                     if (!enabled) {
                       enabled = true;
                       enabledRef2.current =
-                        PlatformSyncAndRoutingAssign2.getState().preview ===
-                        null;
+                        PlatformSyncAndRoutingAssign2.getState().preview === null;
                       setEnabledState(--countRef.current > 0);
                     }
                   };
@@ -1019,9 +1010,7 @@ function FilmedProsePage(
                               options?: Dynamic,
                               ..._extraArguments: unknown[]
                             ) => setTimeout(filmedProsePage2, options),
-                            dropHead: (
-                              ..._extraArguments: unknown[]
-                            ): Dynamic =>
+                            dropHead: (..._extraArguments: unknown[]): Dynamic =>
                               PlatformLiveDocumentAndHistoryEntries2.getState().dropOpenHead(
                                 {
                                   pid: pid,
@@ -1033,16 +1022,11 @@ function FilmedProsePage(
                       },
                     )
                     .catch(
-                      (
-                        error?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): undefined => {
+                      (error?: Dynamic, ..._extraArguments: unknown[]): undefined => {
                         getState();
                         PlatformSyncAndRoutingAssign2.getState().clear();
                         toast.error(
-                          resolvePlatformLiveDocumentAndHistoryRestoreFailed(
-                            error,
-                          ),
+                          resolvePlatformLiveDocumentAndHistoryRestoreFailed(error),
                         );
                       },
                     )
@@ -1050,10 +1034,7 @@ function FilmedProsePage(
                 }}
                 onCopy={
                   frame && placement && onOpenFile
-                    ? (
-                        preview?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): Dynamic =>
+                    ? (preview?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                         preloadModule(
                           (..._extraArguments: unknown[]): Dynamic =>
                             import("../../document-history/copy").then(
@@ -1089,11 +1070,26 @@ function FilmedProsePage(
               >{`Loading widget panel…`}</div>
             }
           >
-            <SessionNavigationDefault container={`project/${pid}`} dir={`project/${pid}`} fsEntryId={fileId} nodeId={SessionNavigationPanel2.nodeId} onClose={(..._extraArguments: unknown[]): Dynamic => SessionNavigationPanel.getState().close()} onOpenCode={(filmedProsePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic => SessionNavigationNodeId.getState().open(filmedProsePage)} room={room2} onOpenRef={(file?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  updateDataModelSchemasPath({
-    file: file
-  });
-}} key={`${fileId}/${SessionNavigationPanel2.nodeId}`} />
+            <SessionNavigationDefault
+              container={`project/${pid}`}
+              dir={`project/${pid}`}
+              fsEntryId={fileId}
+              nodeId={SessionNavigationPanel2.nodeId}
+              onClose={(..._extraArguments: unknown[]): Dynamic =>
+                SessionNavigationPanel.getState().close()
+              }
+              onOpenCode={(
+                filmedProsePage?: Dynamic,
+                ..._extraArguments: unknown[]
+              ): Dynamic => SessionNavigationNodeId.getState().open(filmedProsePage)}
+              room={room2}
+              onOpenRef={(file?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+                updateDataModelSchemasPath({
+                  file: file,
+                });
+              }}
+              key={`${fileId}/${SessionNavigationPanel2.nodeId}`}
+            />
           </React.Suspense>
         )}
       </div>
@@ -1113,23 +1109,17 @@ function FilmedProsePage(
       )}
     </div>
   );
-}
+};
 
-function BlobFileView(
-  {
-    room: room,
-    blobRef: blobRef,
-    mime: mime,
-    displayName: displayName,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const BlobFileView: ReactComponentTypes.FC<Dynamic> = ({
+  room: room,
+  blobRef: blobRef,
+  mime: mime,
+  displayName: displayName,
+}) => {
   let blobFileViewResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let blobRefSlice: Dynamic = blobRef.startsWith(`blob/`)
-    ? blobRef.slice(5)
-    : blobRef;
-  let [blobFileViewState, setBlobFileViewState]: Dynamic = (0,
-  React.useState)();
+  let blobRefSlice: Dynamic = blobRef.startsWith(`blob/`) ? blobRef.slice(5) : blobRef;
+  let [blobFileViewState, setBlobFileViewState]: Dynamic = (0, React.useState)();
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
       let enabled = true;
@@ -1184,9 +1174,7 @@ function BlobFileView(
         <div className={`gap-md flex items-center`}>
           <UiOverlaysAndIconsCustomIcon name={`File`} customSize={20} />
           <div className={`flex flex-col`}>
-            <span className={`text-primary text-body`}>
-              {displayName ?? `Download`}
-            </span>
+            <span className={`text-primary text-body`}>{displayName ?? `Download`}</span>
             <span className={`text-secondary text-caption`}>
               {mime2 || `application/octet-stream`}
               {` · `}
@@ -1208,12 +1196,13 @@ function BlobFileView(
       </div>
     </div>
   );
-}
+};
 
-function TextFileView(
-  { text: text, mime: mime, scrollKey: scrollKey }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const TextFileView: ReactComponentTypes.FC<Dynamic> = ({
+  text: text,
+  mime: mime,
+  scrollKey: scrollKey,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   (0, React.useLayoutEffect)(
     (..._extraArguments: unknown[]): undefined => {
@@ -1248,19 +1237,17 @@ function TextFileView(
       </div>
     </div>
   );
-}
+};
 
-function ChatPill(
-  { pid: pid, currentFile: currentFile }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const ChatPill: ReactComponentTypes.FC<Dynamic> = ({
+  pid: pid,
+  currentFile: currentFile,
+}) => {
   let chatPillResult: Dynamic = PlatformRuntimeAndChatAssign(
-    (chatPill?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      chatPill.mode,
+    (chatPill?: Dynamic, ..._extraArguments: unknown[]): Dynamic => chatPill.mode,
   );
   let chatPillResult2: Dynamic = PlatformRuntimeAndChatAssign(
-    (chatPill?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      chatPill.set,
+    (chatPill?: Dynamic, ..._extraArguments: unknown[]): Dynamic => chatPill.set,
   );
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
@@ -1269,8 +1256,7 @@ function ChatPill(
     [pid, chatPillResult2],
   );
   let chatPillResult3: Dynamic = EditorSelectionAndTablesSelection2(
-    (chatPill?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      chatPill.revealNonce,
+    (chatPill?: Dynamic, ..._extraArguments: unknown[]): Dynamic => chatPill.revealNonce,
   );
   let chatPillResultRef: Dynamic = (0, React.useRef)(chatPillResult3);
   (0, React.useEffect)(
@@ -1336,11 +1322,36 @@ function ChatPill(
         <React.Suspense fallback={null}>
           <SessionNavigationThen pid={pid} currentFile={currentFile} />
         </React.Suspense>
-        <PaneResizeHandle {...chatPillResult4.handleProps} side={`right`} label={`Resize chat`} />
+        <PaneResizeHandle
+          {...chatPillResult4.handleProps}
+          side={`right`}
+          label={`Resize chat`}
+        />
       </div>
     )
   ) : null;
-}
+};
+
+export const RoutineInflightChip: ReactComponentTypes.FC<Dynamic> = ({ run: run }) => {
+  return (
+    <span
+      data-testid={`routine-inflight-chip`}
+      className={`bg-alpha-1 text-secondary text-caption flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5`}
+    >
+      <UseDocumentPreviewStatusComponent
+        status={run.status === `staged` ? `warning` : undefined}
+        running={run.status === `running`}
+      />
+      {ApplicationRoutesStaged[run.status] ?? run.status}
+    </span>
+  );
+};
+
+var applicationRoutesLimit640: number;
+
+var ApplicationRoutesSet: Dynamic;
+
+var applicationRoutesLimit0: number;
 
 function resolveApplicationRoutesKind(
   entry?: Dynamic,
@@ -1361,24 +1372,6 @@ var ApplicationRoutesStaged: Readonly<Record<string, string>>;
 var applicationRoutesSet: Set<string>;
 
 var resolveApplicationRoutesRuns: (row: { runs?: readonly RoutineRun[] | null }) => RoutineRun | undefined;
-
-function RoutineInflightChip(
-  { run: run }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <span
-      data-testid={`routine-inflight-chip`}
-      className={`bg-alpha-1 text-secondary text-caption flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5`}
-    >
-      <UseDocumentPreviewStatusComponent
-        status={run.status === `staged` ? `warning` : undefined}
-        running={run.status === `running`}
-      />
-      {ApplicationRoutesStaged[run.status] ?? run.status}
-    </span>
-  );
-}
 
 var ApplicationRoutes_Styles: string;
 
@@ -1413,14 +1406,4 @@ export function initializeApplicationRoutesFilmedProsePageStep1(): void {
   (ApplicationRoutes_Styles = `hover:bg-alpha-1 data-[popup-open]:bg-alpha-1 text-primary flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[13px] font-semibold transition-colors outline-none`);
 }
 
-export {
-  ApplicationRoutesSet,
-  ApplicationRoutesStaged,
-  ApplicationRoutes_Styles,
-  ChatPill,
-  FilmedProsePage,
-  RoutineInflightChip,
-  applicationRoutesSet,
-  resolveApplicationRoutesKind,
-  resolveApplicationRoutesRuns,
-};
+export { ApplicationRoutesSet, ApplicationRoutesStaged, ApplicationRoutes_Styles, applicationRoutesSet, resolveApplicationRoutesKind, resolveApplicationRoutesRuns };

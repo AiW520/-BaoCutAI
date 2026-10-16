@@ -45,6 +45,48 @@ import {
   resolveCommentComponentsCount2,
   resolveCommentComponentsTarget5,
 } from "./comment-reply-sheet";
+import type * as ReactComponentTypes from "react";
+
+export const InlineAskNotice: ReactComponentTypes.FC<Dynamic> = ({
+  notice: notice,
+  quiet = false,
+}) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let elementRef2: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let ownerDocument: Dynamic = elementRef.current?.ownerDocument;
+      return (..._extraArguments: unknown[]): undefined => {
+        resolvePlatformAnnouncementsValue2(
+          ownerDocument,
+          CommentComponents_InlineAskNotice,
+        );
+        elementRef2.current = null;
+      };
+    },
+    [notice],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (!(quiet || elementRef2.current === notice)) {
+        resolvePlatformAnnouncementsValue(elementRef.current?.ownerDocument, notice, {
+          key: CommentComponents_InlineAskNotice,
+        });
+        elementRef2.current = notice;
+      }
+    },
+    [notice, quiet],
+  );
+  return (
+    <div
+      ref={elementRef}
+      className={`text-secondary mb-1.5 text-footnote`}
+      data-testid={`inline-ask-notice`}
+    >
+      {notice}
+    </div>
+  );
+};
 
 var resolveCommentComponentsValue3: (commentComponentsValue3?: Dynamic, ..._extraArguments: unknown[]) => string;
 
@@ -381,51 +423,6 @@ function resolveCommentComponentsWords2(
 
 var CommentComponents_InlineAskNotice: string;
 
-function InlineAskNotice(
-  { notice: notice, quiet = false }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let elementRef2: Dynamic = (0, React.useRef)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let ownerDocument: Dynamic = elementRef.current?.ownerDocument;
-      return (..._extraArguments: unknown[]): undefined => {
-        resolvePlatformAnnouncementsValue2(
-          ownerDocument,
-          CommentComponents_InlineAskNotice,
-        );
-        elementRef2.current = null;
-      };
-    },
-    [notice],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (!(quiet || elementRef2.current === notice)) {
-        resolvePlatformAnnouncementsValue(
-          elementRef.current?.ownerDocument,
-          notice,
-          {
-            key: CommentComponents_InlineAskNotice,
-          },
-        );
-        elementRef2.current = notice;
-      }
-    },
-    [notice, quiet],
-  );
-  return (
-    <div
-      ref={elementRef}
-      className={`text-secondary mb-1.5 text-footnote`}
-      data-testid={`inline-ask-notice`}
-    >
-      {notice}
-    </div>
-  );
-}
-
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializeCommentComponentsState5Step1(): void {
   (resolveCommentComponentsValue3 = (
@@ -622,23 +619,4 @@ export function initializeCommentComponentsState5Step1(): void {
   (CommentComponents_InlineAskNotice = `inline-ask-notice`);
 }
 
-export {
-  CommentComponentsState5,
-  CommentComponentsState6,
-  INLINE_ASK_COMPOSER_LAYOUT,
-  InlineAskNotice,
-  NodeThreadsCard,
-  isCommentComponentsOwnerDocument,
-  isCommentComponentsPreventScroll,
-  resolveCommentComponentsActiveElement,
-  resolveCommentComponentsDocked,
-  resolveCommentComponentsIsConnected,
-  resolveCommentComponentsKey,
-  resolveCommentComponentsLeft,
-  resolveCommentComponentsOffered,
-  resolveCommentComponentsValue3,
-  resolveCommentComponentsWidth2,
-  resolveCommentComponentsWrites,
-  updateCommentComponentsDismissed,
-  useCommentComponentsBeside,
-};
+export { CommentComponentsState5, CommentComponentsState6, INLINE_ASK_COMPOSER_LAYOUT, NodeThreadsCard, isCommentComponentsOwnerDocument, isCommentComponentsPreventScroll, resolveCommentComponentsActiveElement, resolveCommentComponentsDocked, resolveCommentComponentsIsConnected, resolveCommentComponentsKey, resolveCommentComponentsLeft, resolveCommentComponentsOffered, resolveCommentComponentsValue3, resolveCommentComponentsWidth2, resolveCommentComponentsWrites, updateCommentComponentsDismissed, useCommentComponentsBeside };

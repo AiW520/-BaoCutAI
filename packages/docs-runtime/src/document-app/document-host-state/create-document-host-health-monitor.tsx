@@ -49,6 +49,258 @@ import {
   documentHostStateLimit4096,
   filterDocumentHostStateFilter,
 } from "./create-document-host-coordinator";
+import type * as ReactComponentTypes from "react";
+
+export const UseDocumentHostStateParticipantsComponent: ReactComponentTypes.FC<
+  Dynamic
+> = ({
+  participants: participants,
+  following: following,
+  onFollow: onFollow,
+  showSelf: showSelf,
+  restingClaude: restingClaude,
+}) => {
+  let documentHostStateValue12: Dynamic = resolveDocumentHostStateValue12();
+  let useDocumentHostStateParticipantsResult: Dynamic = isFrameArtifact();
+  let useDocumentHostStateParticipantsResult2: Dynamic = useCommentsEditorThen();
+  let avatarUrl: Dynamic = (0, React.useSyncExternalStore)(
+    frameFacesSubscribe,
+    frameViewerFace,
+  );
+  useDocumentHostStateValues(participants);
+  let updateDocumentHostStateKind2: Dynamic = updateDocumentHostStateKind(
+    participants,
+    documentHostStateValue12,
+    {
+      self:
+        (showSelf ?? useDocumentHostStateParticipantsResult)
+          ? resolveDocumentHostStateEmail(
+              documentHostStateValue12,
+              useDocumentHostStateParticipantsResult
+                ? useDocumentHostStateParticipantsResult2.id === null ||
+                  avatarUrl === undefined
+                  ? useDocumentHostStateParticipantsResult2
+                  : {
+                      ...useDocumentHostStateParticipantsResult2,
+                      avatarUrl: avatarUrl,
+                    }
+                : null,
+              resolvePlatformApiAndAuthAntspace()?.firstName ??
+                resolvePlatformApiAndAuthAntspace()?.name,
+            )
+          : null,
+      restingClaude: restingClaude ?? useDocumentHostStateParticipantsResult,
+      ...(useDocumentHostStateParticipantsResult
+        ? {
+            viewerId: useDocumentHostStateParticipantsResult2.id,
+          }
+        : {}),
+    },
+  );
+  let flatMapText: Dynamic = updateDocumentHostStateKind2
+    .slice(0, 5)
+    .flatMap(
+      (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        entry.kind === `peer` && entry.p.who.kind === `human` && entry.p.who.email
+          ? [entry.p.who.email]
+          : [],
+    )
+    .join(`|`);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!flatMapText) return;
+      let mappedFlatMapTextParts: Dynamic = flatMapText
+        .split(`|`)
+        .map(
+          (flatMapTextPart?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) =>
+            setTimeout(
+              (..._extraArguments: unknown[]): undefined =>
+                void PlatformApiAndAuthPriming.getState().prime(
+                  resolvePlatformApiAndAuthSplit2(flatMapTextPart),
+                ),
+              index * 250,
+            ),
+        );
+      return (..._extraArguments: unknown[]): Dynamic =>
+        mappedFlatMapTextParts.forEach(clearTimeout);
+    },
+    [flatMapText],
+  );
+  // BaoCut: 在线头像里歇着的智能体叫 Agent，不叫 Claude。
+  return updateDocumentHostStateKind2.length === 0 ? null : (
+    <AvatarGroup
+      max={5}
+      size={`sm`}
+      noun={`viewers`}
+      className={`[--cds-avatar-sm:24px]`}
+    >
+      {updateDocumentHostStateKind2.map(
+        (event?: Dynamic, ..._extraArguments: unknown[]) =>
+          event.kind === `resting` ? (
+            <PresenceClaudeResting name={`Agent`} key={event.key} />
+          ) : (
+            <DocumentPresencePerson
+              name={
+                event.kind === `self`
+                  ? `${resolveDocumentHostStateKind2(event.p)} (you)`
+                  : resolveDocumentHostStateKind2(event.p)
+              }
+              p={event.p}
+              isSelf={event.kind === `self`}
+              following={following}
+              onFollow={onFollow}
+              key={event.key}
+            />
+          ),
+      )}
+    </AvatarGroup>
+  );
+};
+
+export const DocumentPresencePerson: ReactComponentTypes.FC<Dynamic> = ({
+  name: name,
+  p: p5,
+  isSelf = false,
+  following: following,
+  onFollow: onFollow,
+}) => {
+  let documentPresencePersonResult = resolvePlatformApiAndAuthAgent(p5);
+  let documentPresencePersonResult2: Dynamic = PlatformApiAndAuthPriming(
+    (documentPresencePerson?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      p5.who.kind === `human` &&
+      p5.who.email &&
+      !resolveDocumentHostStateIncludes2(p5.who.email)
+        ? resolvePlatformApiAndAuthToLowerCase(documentPresencePerson, p5.who.email)
+        : undefined,
+  );
+  let useDocumentHostStateKind2: Dynamic = useDocumentHostStateKind(p5);
+  let photoUrl: Dynamic =
+    (p5.who.kind === `human` && p5.who.photoUrl) ||
+    useDocumentHostStateKind2?.avatarUrl ||
+    documentPresencePersonResult2;
+  let content: Dynamic = useDocumentHostStateKind2?.name
+    ? isSelf
+      ? `${useDocumentHostStateKind2.name} (you)`
+      : useDocumentHostStateKind2.name
+    : name;
+  let [, setUseReducer]: Dynamic = (0, React.useReducer)(
+    (documentPresencePerson?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      documentPresencePerson + 1,
+    0,
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (p5.who.kind !== `xagent`) return;
+      let difference = p5.ts + documentHostStateLimit45000 - Date.now();
+      if (difference <= 0) return;
+      let setTimeout2 = setTimeout(setUseReducer, difference + 50);
+      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
+    },
+    [p5.ts, p5.who.kind],
+  );
+  let matchesRunning =
+    p5.who.kind === `agent`
+      ? p5.running === false
+      : p5.who.kind === `xagent` && Date.now() - p5.ts > 45e3;
+  let label = isSelf
+    ? ``
+    : following === documentPresencePersonResult
+      ? `click to stop following`
+      : `click to follow`;
+  let detail =
+    [...resolveDocumentHostStateKind3(p5), label].filter(Boolean).join(` · `) ||
+    undefined;
+  let documentHostStateKind4: Dynamic = resolveDocumentHostStateKind4(p5);
+  let ariaLabel: Dynamic =
+    p5.who.kind === `human` && p5.who.email ? p5.who.email : content;
+  return (
+    <Tooltip content={content} detail={detail} side={`bottom`} hoverable={false}>
+      <button
+        type={`button`}
+        data-testid={isSelf ? `presence-self` : `presence-avatar`}
+        aria-label={ariaLabel}
+        onClick={
+          isSelf
+            ? undefined
+            : (..._extraArguments: unknown[]): Dynamic =>
+                onFollow(
+                  documentPresencePersonResult,
+                  p5.who.kind === `human` ? p5.who.email : p5.who.agent,
+                )
+        }
+        className={`hover:outline-stronger flex size-6 cursor-pointer items-center justify-center overflow-hidden rounded-full outline-[1.5px] outline-offset-1 outline-transparent transition-[outline-color]`}
+        style={{
+          backgroundColor: resolveDocumentHostStateColor(p5),
+          boxShadow: `inset 0 0 0 1.5px ${resolveDocumentHostStateColor(p5)}`,
+          opacity: matchesRunning ? documentHostStateLimit0_5 : 1,
+          ...(following === documentPresencePersonResult && {
+            outline: `2px solid var(--cds-text-primary)`,
+          }),
+        }}
+      >
+        {documentHostStateKind4.kind === `spark` ? (
+          <PresenceAgentSpark
+            src={documentHostStateKind4.src}
+            alt={documentHostStateKind4.alt}
+          />
+        ) : (
+          p5.who.kind === `human` && (
+            <CollaboratorAvatar
+              email={resolveDocumentHostStateIncludes2(p5.who.email) ? `` : p5.who.email}
+              name={
+                useDocumentHostStateKind2?.name ??
+                p5.who.name ??
+                (resolveDocumentHostStateIncludes2(p5.who.email) ? `?` : undefined)
+              }
+              photoUrl={photoUrl}
+              size={21}
+              className={`ring-0`}
+            />
+          )
+        )}
+      </button>
+    </Tooltip>
+  );
+};
+
+export const PresenceAgentSpark: ReactComponentTypes.FC<Dynamic> = ({
+  src: src,
+  alt: alt,
+}) => {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      data-testid={`presence-agent-spark`}
+      className={`size-3.5 shrink-0`}
+      style={{
+        filter: `brightness(0) invert(1)`,
+      }}
+      draggable={false}
+    />
+  );
+};
+
+export const PresenceClaudeResting: ReactComponentTypes.FC<Dynamic> = ({
+  name: name,
+}) => {
+  return (
+    <Tooltip content={name} detail={`idle`} side={`bottom`} hoverable={false}>
+      <span
+        role={`img`}
+        data-testid={`presence-claude-resting`}
+        aria-label={name}
+        className={`flex size-6 items-center justify-center overflow-hidden rounded-full`}
+        style={{
+          backgroundColor: PlatformApiAndAuthColor.color,
+          opacity: documentHostStateLimit0_5,
+        }}
+      >
+        <PresenceAgentSpark src={CLAUDE_LOGO_DATA_URI} alt={``} />
+      </span>
+    </Tooltip>
+  );
+};
 
 function createDocumentHostHealthMonitor(
   documentHostHealthMonitor?: Dynamic,
@@ -1104,284 +1356,6 @@ function updateDocumentHostStateKind(
   return items;
 }
 
-function UseDocumentHostStateParticipantsComponent(
-  {
-    participants: participants,
-    following: following,
-    onFollow: onFollow,
-    showSelf: showSelf,
-    restingClaude: restingClaude,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let documentHostStateValue12: Dynamic = resolveDocumentHostStateValue12();
-  let useDocumentHostStateParticipantsResult: Dynamic = isFrameArtifact();
-  let useDocumentHostStateParticipantsResult2: Dynamic =
-    useCommentsEditorThen();
-  let avatarUrl: Dynamic = (0, React.useSyncExternalStore)(
-    frameFacesSubscribe,
-    frameViewerFace,
-  );
-  useDocumentHostStateValues(participants);
-  let updateDocumentHostStateKind2: Dynamic = updateDocumentHostStateKind(
-    participants,
-    documentHostStateValue12,
-    {
-      self:
-        (showSelf ?? useDocumentHostStateParticipantsResult)
-          ? resolveDocumentHostStateEmail(
-              documentHostStateValue12,
-              useDocumentHostStateParticipantsResult
-                ? useDocumentHostStateParticipantsResult2.id === null ||
-                  avatarUrl === undefined
-                  ? useDocumentHostStateParticipantsResult2
-                  : {
-                      ...useDocumentHostStateParticipantsResult2,
-                      avatarUrl: avatarUrl,
-                    }
-                : null,
-              resolvePlatformApiAndAuthAntspace()?.firstName ??
-                resolvePlatformApiAndAuthAntspace()?.name,
-            )
-          : null,
-      restingClaude: restingClaude ?? useDocumentHostStateParticipantsResult,
-      ...(useDocumentHostStateParticipantsResult
-        ? {
-            viewerId: useDocumentHostStateParticipantsResult2.id,
-          }
-        : {}),
-    },
-  );
-  let flatMapText: Dynamic = updateDocumentHostStateKind2
-    .slice(0, 5)
-    .flatMap(
-      (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        entry.kind === `peer` &&
-        entry.p.who.kind === `human` &&
-        entry.p.who.email
-          ? [entry.p.who.email]
-          : [],
-    )
-    .join(`|`);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!flatMapText) return;
-      let mappedFlatMapTextParts: Dynamic = flatMapText
-        .split(`|`)
-        .map(
-          (
-            flatMapTextPart?: Dynamic,
-            index?: Dynamic,
-            ..._extraArguments: unknown[]
-          ) =>
-            setTimeout(
-              (..._extraArguments: unknown[]): undefined =>
-                void PlatformApiAndAuthPriming.getState().prime(
-                  resolvePlatformApiAndAuthSplit2(flatMapTextPart),
-                ),
-              index * 250,
-            ),
-        );
-      return (..._extraArguments: unknown[]): Dynamic =>
-        mappedFlatMapTextParts.forEach(clearTimeout);
-    },
-    [flatMapText],
-  );
-  // BaoCut: 在线头像里歇着的智能体叫 Agent，不叫 Claude。
-  return updateDocumentHostStateKind2.length === 0 ? null : (
-    <AvatarGroup
-      max={5}
-      size={`sm`}
-      noun={`viewers`}
-      className={`[--cds-avatar-sm:24px]`}
-    >
-      {updateDocumentHostStateKind2.map(
-        (event?: Dynamic, ..._extraArguments: unknown[]) =>
-          event.kind === `resting` ? (
-            <PresenceClaudeResting name={`Agent`} key={event.key} />
-          ) : (
-            <DocumentPresencePerson
-              name={event.kind === `self` ? `${resolveDocumentHostStateKind2(event.p)} (you)` : resolveDocumentHostStateKind2(event.p)}
-              p={event.p}
-              isSelf={event.kind === `self`}
-              following={following}
-              onFollow={onFollow}
-              key={event.key}
-            />
-          ),
-      )}
-    </AvatarGroup>
-  );
-}
-
-function DocumentPresencePerson(
-  {
-    name: name,
-    p: p5,
-    isSelf = false,
-    following: following,
-    onFollow: onFollow,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let documentPresencePersonResult = resolvePlatformApiAndAuthAgent(p5);
-  let documentPresencePersonResult2: Dynamic = PlatformApiAndAuthPriming(
-    (
-      documentPresencePerson?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic =>
-      p5.who.kind === `human` &&
-      p5.who.email &&
-      !resolveDocumentHostStateIncludes2(p5.who.email)
-        ? resolvePlatformApiAndAuthToLowerCase(
-            documentPresencePerson,
-            p5.who.email,
-          )
-        : undefined,
-  );
-  let useDocumentHostStateKind2: Dynamic = useDocumentHostStateKind(p5);
-  let photoUrl: Dynamic =
-    (p5.who.kind === `human` && p5.who.photoUrl) ||
-    useDocumentHostStateKind2?.avatarUrl ||
-    documentPresencePersonResult2;
-  let content: Dynamic = useDocumentHostStateKind2?.name
-    ? isSelf
-      ? `${useDocumentHostStateKind2.name} (you)`
-      : useDocumentHostStateKind2.name
-    : name;
-  let [, setUseReducer]: Dynamic = (0, React.useReducer)(
-    (
-      documentPresencePerson?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => documentPresencePerson + 1,
-    0,
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (p5.who.kind !== `xagent`) return;
-      let difference = p5.ts + documentHostStateLimit45000 - Date.now();
-      if (difference <= 0) return;
-      let setTimeout2 = setTimeout(setUseReducer, difference + 50);
-      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
-    },
-    [p5.ts, p5.who.kind],
-  );
-  let matchesRunning =
-    p5.who.kind === `agent`
-      ? p5.running === false
-      : p5.who.kind === `xagent` && Date.now() - p5.ts > 45e3;
-  let label = isSelf
-    ? ``
-    : following === documentPresencePersonResult
-      ? `click to stop following`
-      : `click to follow`;
-  let detail =
-    [...resolveDocumentHostStateKind3(p5), label].filter(Boolean).join(` · `) ||
-    undefined;
-  let documentHostStateKind4: Dynamic = resolveDocumentHostStateKind4(p5);
-  let ariaLabel: Dynamic =
-    p5.who.kind === `human` && p5.who.email ? p5.who.email : content;
-  return (
-    <Tooltip
-      content={content}
-      detail={detail}
-      side={`bottom`}
-      hoverable={false}
-    >
-      <button
-        type={`button`}
-        data-testid={isSelf ? `presence-self` : `presence-avatar`}
-        aria-label={ariaLabel}
-        onClick={
-          isSelf
-            ? undefined
-            : (..._extraArguments: unknown[]): Dynamic =>
-                onFollow(
-                  documentPresencePersonResult,
-                  p5.who.kind === `human` ? p5.who.email : p5.who.agent,
-                )
-        }
-        className={`hover:outline-stronger flex size-6 cursor-pointer items-center justify-center overflow-hidden rounded-full outline-[1.5px] outline-offset-1 outline-transparent transition-[outline-color]`}
-        style={{
-          backgroundColor: resolveDocumentHostStateColor(p5),
-          boxShadow: `inset 0 0 0 1.5px ${resolveDocumentHostStateColor(p5)}`,
-          opacity: matchesRunning ? documentHostStateLimit0_5 : 1,
-          ...(following === documentPresencePersonResult && {
-            outline: `2px solid var(--cds-text-primary)`,
-          }),
-        }}
-      >
-        {documentHostStateKind4.kind === `spark` ? (
-          <PresenceAgentSpark
-            src={documentHostStateKind4.src}
-            alt={documentHostStateKind4.alt}
-          />
-        ) : (
-          p5.who.kind === `human` && (
-            <CollaboratorAvatar
-              email={
-                resolveDocumentHostStateIncludes2(p5.who.email)
-                  ? ``
-                  : p5.who.email
-              }
-              name={
-                useDocumentHostStateKind2?.name ??
-                p5.who.name ??
-                (resolveDocumentHostStateIncludes2(p5.who.email)
-                  ? `?`
-                  : undefined)
-              }
-              photoUrl={photoUrl}
-              size={21}
-              className={`ring-0`}
-            />
-          )
-        )}
-      </button>
-    </Tooltip>
-  );
-}
-
-function PresenceAgentSpark(
-  { src: src, alt: alt }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <img
-      src={src}
-      alt={alt}
-      data-testid={`presence-agent-spark`}
-      className={`size-3.5 shrink-0`}
-      style={{
-        filter: `brightness(0) invert(1)`,
-      }}
-      draggable={false}
-    />
-  );
-}
-
-function PresenceClaudeResting(
-  { name: name }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <Tooltip content={name} detail={`idle`} side={`bottom`} hoverable={false}>
-      <span
-        role={`img`}
-        data-testid={`presence-claude-resting`}
-        aria-label={name}
-        className={`flex size-6 items-center justify-center overflow-hidden rounded-full`}
-        style={{
-          backgroundColor: PlatformApiAndAuthColor.color,
-          opacity: documentHostStateLimit0_5,
-        }}
-      >
-        <PresenceAgentSpark src={CLAUDE_LOGO_DATA_URI} alt={``} />
-      </span>
-    </Tooltip>
-  );
-}
-
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializeDocumentHostStateCreateDocumentHostHealthMonitorStep1(): void {
   (documentHostStateSet2 = new (Set as Dynamic)([
@@ -1573,22 +1547,4 @@ export function initializeDocumentHostStateCreateDocumentHostHealthMonitorStep1(
     ));
 }
 
-export {
-  CLAUDE_LOGO_DATA_URI,
-  UseDocumentHostStateParticipantsComponent,
-  clearDocumentHostStateDelete,
-  createDocumentHostHealthMonitor,
-  isDocumentHostStateKind,
-  resolveDocumentHostStateReadonly,
-  resolveDocumentHostStateSave,
-  resolveDocumentHostStateSave2,
-  resolveDocumentHostStateValue10,
-  resolveDocumentHostStateValue3,
-  resolveDocumentHostStateValue4,
-  resolveDocumentHostStateValue5,
-  resolveDocumentHostStateValue7,
-  resolveDocumentHostStateValue8,
-  updateDocumentHostStateIdent,
-  useDocumentHostStateSaved,
-  useDocumentHostStateValues,
-};
+export { CLAUDE_LOGO_DATA_URI, clearDocumentHostStateDelete, createDocumentHostHealthMonitor, isDocumentHostStateKind, resolveDocumentHostStateReadonly, resolveDocumentHostStateSave, resolveDocumentHostStateSave2, resolveDocumentHostStateValue10, resolveDocumentHostStateValue3, resolveDocumentHostStateValue4, resolveDocumentHostStateValue5, resolveDocumentHostStateValue7, resolveDocumentHostStateValue8, updateDocumentHostStateIdent, useDocumentHostStateSaved, useDocumentHostStateValues };

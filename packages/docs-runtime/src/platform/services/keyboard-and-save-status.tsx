@@ -8,6 +8,42 @@ import {
   UiDesignSystemUseLayoutEffect,
   resolveUiDesignSystemValue2,
 } from "../ui/design-system";
+import type * as ReactComponentTypes from "react";
+
+export const DropZone_Overlay: ReactComponentTypes.FC<Dynamic> = ({
+  dragState: dragState,
+  className: className,
+  ...dropZoneOverlay
+}) => {
+  return (
+    <div
+      {...dropZoneOverlay}
+      aria-hidden={true}
+      data-cds={`DropZone`}
+      {...resolvePlatformKeyboardAndSaveStatusDataDragOver(dragState)}
+      className={resolveUiDesignSystemValue2(
+        `pointer-events-none absolute inset-0 z-10 rounded-[inherit] opacity-0 shadow-drop-ring`,
+        `outline-2 -outline-offset-2 outline-transparent`,
+        `transition-opacity duration-snap ease-out motion-reduce:transition-none`,
+        `data-[drag-over]:opacity-100`,
+        `data-[drag-rejected]:shadow-drop-ring-danger`,
+        className,
+      )}
+    >
+      {
+        <div
+          className={resolveUiDesignSystemValue2(
+            `absolute inset-0 rounded-[inherit] opacity-0 shadow-drop-glow`,
+            `transition-opacity duration-slow ease-out motion-reduce:transition-none`,
+            `[[data-drag-over]>&]:opacity-100`,
+            `[[data-drag-over]>&]:delay-[100ms]`,
+            `[[data-drag-rejected]>&]:shadow-drop-glow-danger`,
+          )}
+        />
+      }
+    </div>
+  );
+};
 
 function resolvePlatformKeyboardAndSaveStatusDataDragOver(
   platformKeyboardAndSaveStatusDataDragOver?: Dynamic,
@@ -21,21 +57,6 @@ function resolvePlatformKeyboardAndSaveStatusDataDragOver(
     "data-drag-rejected":
       platformKeyboardAndSaveStatusDataDragOver === `rejected` || undefined,
   };
-}
-
-function DropZone_Overlay(
-  { dragState: dragState, className: className, ...dropZoneOverlay }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      {...dropZoneOverlay}
-      aria-hidden={true}
-      data-cds={`DropZone`}
-      {...resolvePlatformKeyboardAndSaveStatusDataDragOver(dragState)}
-      className={resolveUiDesignSystemValue2(`pointer-events-none absolute inset-0 z-10 rounded-[inherit] opacity-0 shadow-drop-ring`, `outline-2 -outline-offset-2 outline-transparent`, `transition-opacity duration-snap ease-out motion-reduce:transition-none`, `data-[drag-over]:opacity-100`, `data-[drag-rejected]:shadow-drop-ring-danger`, className)}
-    >{<div className={resolveUiDesignSystemValue2(`absolute inset-0 rounded-[inherit] opacity-0 shadow-drop-glow`, `transition-opacity duration-slow ease-out motion-reduce:transition-none`, `[[data-drag-over]>&]:opacity-100`, `[[data-drag-over]>&]:delay-[100ms]`, `[[data-drag-rejected]>&]:shadow-drop-glow-danger`)} />}</div>
-  );
 }
 
 var platformKeyboardAndSaveStatusValue3: number;
@@ -2924,73 +2945,4 @@ export function initializePlatformKeyboardAndSaveStatusStep1(): void {
   (PlatformKeyboardAndSaveStatusState3 = null);
 }
 
-export {
-  DropZone_Overlay,
-  PlatformKeyboardAndSaveStatusBusy,
-  PlatformKeyboardAndSaveStatusGroup,
-  PlatformKeyboardAndSaveStatusInTheTabsList,
-  PlatformKeyboardAndSaveStatusKey,
-  PlatformKeyboardAndSaveStatusOrientation,
-  PlatformKeyboardAndSaveStatusText,
-  PlatformKeyboardAndSaveStatusYourUnsavedChangesAreKeptBelow,
-  clearPlatformKeyboardAndSaveStatusDelete,
-  collectPlatformKeyboardAndSaveStatusJoin,
-  collectPlatformKeyboardAndSaveStatusMods,
-  filterPlatformKeyboardAndSaveStatusJudge,
-  filterPlatformKeyboardAndSaveStatusNext,
-  isPlatformKeyboardAndSaveStatusCharCodeAt,
-  isPlatformKeyboardAndSaveStatusClear,
-  isPlatformKeyboardAndSaveStatusDown,
-  isPlatformKeyboardAndSaveStatusFilter,
-  isPlatformKeyboardAndSaveStatusKeyCode,
-  isPlatformKeyboardAndSaveStatusLimit,
-  isPlatformKeyboardAndSaveStatusPenOff,
-  isPlatformKeyboardAndSaveStatusSaved,
-  isPlatformKeyboardAndSaveStatusText,
-  platformKeyboardAndSaveStatusValue1000000,
-  platformKeyboardAndSaveStatusValue2500,
-  resolvePlatformKeyboardAndSaveStatusAssert,
-  resolvePlatformKeyboardAndSaveStatusBar,
-  resolvePlatformKeyboardAndSaveStatusBid,
-  resolvePlatformKeyboardAndSaveStatusBid2,
-  resolvePlatformKeyboardAndSaveStatusBid3,
-  resolvePlatformKeyboardAndSaveStatusBody,
-  resolvePlatformKeyboardAndSaveStatusBusy,
-  resolvePlatformKeyboardAndSaveStatusCount,
-  resolvePlatformKeyboardAndSaveStatusDeleted,
-  resolvePlatformKeyboardAndSaveStatusDrop,
-  resolvePlatformKeyboardAndSaveStatusFace,
-  resolvePlatformKeyboardAndSaveStatusFind,
-  resolvePlatformKeyboardAndSaveStatusFolds,
-  resolvePlatformKeyboardAndSaveStatusJudge,
-  resolvePlatformKeyboardAndSaveStatusKept,
-  resolvePlatformKeyboardAndSaveStatusKeptAsText,
-  resolvePlatformKeyboardAndSaveStatusKey,
-  resolvePlatformKeyboardAndSaveStatusKeys,
-  resolvePlatformKeyboardAndSaveStatusLink,
-  resolvePlatformKeyboardAndSaveStatusMoved,
-  resolvePlatformKeyboardAndSaveStatusNavigator,
-  resolvePlatformKeyboardAndSaveStatusNotice,
-  resolvePlatformKeyboardAndSaveStatusOpening,
-  resolvePlatformKeyboardAndSaveStatusPending,
-  resolvePlatformKeyboardAndSaveStatusRepeat,
-  resolvePlatformKeyboardAndSaveStatusRise,
-  resolvePlatformKeyboardAndSaveStatusSaved,
-  resolvePlatformKeyboardAndSaveStatusSaving,
-  resolvePlatformKeyboardAndSaveStatusShiftKey,
-  resolvePlatformKeyboardAndSaveStatusShow,
-  resolvePlatformKeyboardAndSaveStatusTest,
-  resolvePlatformKeyboardAndSaveStatusText,
-  resolvePlatformKeyboardAndSaveStatusToggle,
-  resolvePlatformKeyboardAndSaveStatusUnknownId,
-  resolvePlatformKeyboardAndSaveStatusUnsaved2,
-  resolvePlatformKeyboardAndSaveStatusValue2,
-  resolvePlatformKeyboardAndSaveStatusValue3,
-  resolvePlatformKeyboardAndSaveStatusValue4,
-  resolvePlatformKeyboardAndSaveStatusValue5,
-  resolvePlatformKeyboardAndSaveStatusValue6,
-  resolvePlatformKeyboardAndSaveStatusValue7,
-  resolvePlatformKeyboardAndSaveStatusValue8,
-  resolvePlatformKeyboardAndSaveStatusWhy,
-  resolvePlatformKeyboardAndSaveStatusWhy2,
-};
+export { PlatformKeyboardAndSaveStatusBusy, PlatformKeyboardAndSaveStatusGroup, PlatformKeyboardAndSaveStatusInTheTabsList, PlatformKeyboardAndSaveStatusKey, PlatformKeyboardAndSaveStatusOrientation, PlatformKeyboardAndSaveStatusText, PlatformKeyboardAndSaveStatusYourUnsavedChangesAreKeptBelow, clearPlatformKeyboardAndSaveStatusDelete, collectPlatformKeyboardAndSaveStatusJoin, collectPlatformKeyboardAndSaveStatusMods, filterPlatformKeyboardAndSaveStatusJudge, filterPlatformKeyboardAndSaveStatusNext, isPlatformKeyboardAndSaveStatusCharCodeAt, isPlatformKeyboardAndSaveStatusClear, isPlatformKeyboardAndSaveStatusDown, isPlatformKeyboardAndSaveStatusFilter, isPlatformKeyboardAndSaveStatusKeyCode, isPlatformKeyboardAndSaveStatusLimit, isPlatformKeyboardAndSaveStatusPenOff, isPlatformKeyboardAndSaveStatusSaved, isPlatformKeyboardAndSaveStatusText, platformKeyboardAndSaveStatusValue1000000, platformKeyboardAndSaveStatusValue2500, resolvePlatformKeyboardAndSaveStatusAssert, resolvePlatformKeyboardAndSaveStatusBar, resolvePlatformKeyboardAndSaveStatusBid, resolvePlatformKeyboardAndSaveStatusBid2, resolvePlatformKeyboardAndSaveStatusBid3, resolvePlatformKeyboardAndSaveStatusBody, resolvePlatformKeyboardAndSaveStatusBusy, resolvePlatformKeyboardAndSaveStatusCount, resolvePlatformKeyboardAndSaveStatusDeleted, resolvePlatformKeyboardAndSaveStatusDrop, resolvePlatformKeyboardAndSaveStatusFace, resolvePlatformKeyboardAndSaveStatusFind, resolvePlatformKeyboardAndSaveStatusFolds, resolvePlatformKeyboardAndSaveStatusJudge, resolvePlatformKeyboardAndSaveStatusKept, resolvePlatformKeyboardAndSaveStatusKeptAsText, resolvePlatformKeyboardAndSaveStatusKey, resolvePlatformKeyboardAndSaveStatusKeys, resolvePlatformKeyboardAndSaveStatusLink, resolvePlatformKeyboardAndSaveStatusMoved, resolvePlatformKeyboardAndSaveStatusNavigator, resolvePlatformKeyboardAndSaveStatusNotice, resolvePlatformKeyboardAndSaveStatusOpening, resolvePlatformKeyboardAndSaveStatusPending, resolvePlatformKeyboardAndSaveStatusRepeat, resolvePlatformKeyboardAndSaveStatusRise, resolvePlatformKeyboardAndSaveStatusSaved, resolvePlatformKeyboardAndSaveStatusSaving, resolvePlatformKeyboardAndSaveStatusShiftKey, resolvePlatformKeyboardAndSaveStatusShow, resolvePlatformKeyboardAndSaveStatusTest, resolvePlatformKeyboardAndSaveStatusText, resolvePlatformKeyboardAndSaveStatusToggle, resolvePlatformKeyboardAndSaveStatusUnknownId, resolvePlatformKeyboardAndSaveStatusUnsaved2, resolvePlatformKeyboardAndSaveStatusValue2, resolvePlatformKeyboardAndSaveStatusValue3, resolvePlatformKeyboardAndSaveStatusValue4, resolvePlatformKeyboardAndSaveStatusValue5, resolvePlatformKeyboardAndSaveStatusValue6, resolvePlatformKeyboardAndSaveStatusValue7, resolvePlatformKeyboardAndSaveStatusValue8, resolvePlatformKeyboardAndSaveStatusWhy, resolvePlatformKeyboardAndSaveStatusWhy2 };

@@ -28,40 +28,9 @@ import {
 } from "../index";
 import { PropertyRow } from "../../design-system/property-row";
 import { enqueueStyleWrite } from "../../document/style-write-chain";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-function readDocumentLayoutChoice(
-  choice?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return {
-    [PAGE_WIDTH_PROPERTY]: serializeDocumentLayout(choice)[PAGE_WIDTH_PROPERTY],
-  };
-}
-var LAYOUT_COPY: Dynamic = {
-  button: `Layout`,
-  width: `Width`,
-  widthName: `Page width`,
-  default: `Default`,
-  wide: `Wide`,
-  refused: `Couldn’t save the layout choice. The document is back to its saved layout.`,
-  notSent: `Couldn’t save the layout choice. The document is back to its saved layout. Try again.`,
-};
-var LAYOUT_FAILURE_TOAST_KEY: string = `doc-layout-failed`;
-var PAGE_WIDTH_OPTIONS: Dynamic = [
-  {
-    value: `default`,
-    label: LAYOUT_COPY.default,
-  },
-  {
-    value: `wide`,
-    label: LAYOUT_COPY.wide,
-  },
-];
-function DocLayoutControl(
-  { seat: seat }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const DocLayoutControl: ReactComponentTypes.FC<Dynamic> = ({ seat: seat }) => {
   let [open, setOpen]: Dynamic = (0, React.useState)(false);
   let openRef: Dynamic = (0, React.useRef)(open);
   openRef.current = open;
@@ -69,14 +38,10 @@ function DocLayoutControl(
   let popupRef: Dynamic = (0, React.useRef)(null);
   let finalFocus: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
-      resolvePlatformFeatureFlagsHasFocus(
-        canClosePagebarOnFocusLeave(popupRef),
-      ),
+      resolvePlatformFeatureFlagsHasFocus(canClosePagebarOnFocusLeave(popupRef)),
     [],
   );
-  let [optimisticChoice, setOptimisticChoice]: Dynamic = (0, React.useState)(
-    null,
-  );
+  let [optimisticChoice, setOptimisticChoice]: Dynamic = (0, React.useState)(null);
   let [failure, setFailure]: Dynamic = (0, React.useState)(null);
   let [failureIsQuiet, setFailureIsQuiet]: Dynamic = (0, React.useState)(true);
   let failureWasShown: Dynamic = (0, React.useRef)(false);
@@ -126,29 +91,21 @@ function DocLayoutControl(
       let seat2: Dynamic = seatRef.current;
       if (
         seat2.post === undefined ||
-        equalDocumentLayouts(
-          docLayoutControl,
-          pendingChoice.current ?? choiceRef.current,
-        )
+        equalDocumentLayouts(docLayoutControl, pendingChoice.current ?? choiceRef.current)
       )
         return;
       pendingChoice.current = docLayoutControl;
       setFailure(null);
       failureWasShown.current = false;
       setOptimisticChoice(docLayoutControl);
-      let docLayoutControlResult: Dynamic = getDocumentDisplayGeneration(
-        seat2.pid,
-      );
+      let docLayoutControlResult: Dynamic = getDocumentDisplayGeneration(seat2.pid);
       pickDocumentLayout(seat2.pid, docLayoutControl);
       enqueueStyleWrite(seat2.pid, {
         change: readDocumentLayoutChoice(docLayoutControl),
         road: (..._extraArguments: unknown[]): Dynamic => seatRef.current,
       })
         .then((result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          resolveDataOperationControlValue3(
-            `layout:${docLayoutControl.width}`,
-            result,
-          );
+          resolveDataOperationControlValue3(`layout:${docLayoutControl.width}`, result);
           if (pendingChoice.current === docLayoutControl) {
             pendingChoice.current = null;
             if (result !== `allowed`) {
@@ -160,10 +117,7 @@ function DocLayoutControl(
                         parseDocumentLayout(seatRef.current.style),
                         docLayoutControlResult,
                       )
-                    : clearDocumentLayoutPickIfCurrent(
-                        seat2.pid,
-                        docLayoutControlResult,
-                      )
+                    : clearDocumentLayoutPickIfCurrent(seat2.pid, docLayoutControlResult)
                 ) {
                   if (!mountedRef.current || !openRef.current) {
                     toast.error(LAYOUT_COPY[result], {
@@ -231,10 +185,42 @@ function DocLayoutControl(
             className={`text-footnote text-danger pt-1`}
             data-testid={`doc-layout-error`}
             key={(announceFailure ? `alert:` : `quiet:`) + failure}
-          >{LAYOUT_COPY[failure]}</p>
+          >
+            {LAYOUT_COPY[failure]}
+          </p>
         ) : null}
       </Popover.Popup>
     </Popover.Root>
   );
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+function readDocumentLayoutChoice(
+  choice?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  return {
+    [PAGE_WIDTH_PROPERTY]: serializeDocumentLayout(choice)[PAGE_WIDTH_PROPERTY],
+  };
 }
-export { DocLayoutControl };
+var LAYOUT_COPY: Dynamic = {
+  button: `Layout`,
+  width: `Width`,
+  widthName: `Page width`,
+  default: `Default`,
+  wide: `Wide`,
+  refused: `Couldn’t save the layout choice. The document is back to its saved layout.`,
+  notSent: `Couldn’t save the layout choice. The document is back to its saved layout. Try again.`,
+};
+var LAYOUT_FAILURE_TOAST_KEY: string = `doc-layout-failed`;
+var PAGE_WIDTH_OPTIONS: Dynamic = [
+  {
+    value: `default`,
+    label: LAYOUT_COPY.default,
+  },
+  {
+    value: `wide`,
+    label: LAYOUT_COPY.wide,
+  },
+];

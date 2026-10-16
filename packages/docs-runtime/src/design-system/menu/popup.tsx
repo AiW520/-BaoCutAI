@@ -52,6 +52,21 @@ import {
   MenuPopupsCreateContext,
   resolveMenuPopupsCell,
 } from "./focus";
+import type * as ReactComponentTypes from "react";
+
+export const MenuPopupsKeys: ReactComponentTypes.FC<Dynamic> = ({ keys: input }) => {
+  return (
+    <UiShortcutsAndSizingKeys
+      keys={input}
+      variant={`text`}
+      aria-hidden={true}
+      className={resolveUiDesignSystemValue2(
+        `pointer-coarse:hidden text-footnote`,
+        resolveMenuPopupsTabularNums(input),
+      )}
+    />
+  );
+};
 
 var menuPopupsSet2: Dynamic;
 
@@ -476,23 +491,6 @@ function resolveMenuPopupsTabularNums(
   return menuPopupsPattern.test(input) ? `tabular-nums` : ``;
 }
 
-function MenuPopupsKeys(
-  { keys: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <UiShortcutsAndSizingKeys
-      keys={input}
-      variant={`text`}
-      aria-hidden={true}
-      className={resolveUiDesignSystemValue2(
-        `pointer-coarse:hidden text-footnote`,
-        resolveMenuPopupsTabularNums(input),
-      )}
-    />
-  );
-}
-
 function MenuPopupsSide(
   input?: Dynamic,
   options?: Dynamic,
@@ -735,21 +733,4 @@ export function initializeMenuPopupStep1(): void {
   MenuPopupsPending.displayName = `MenuSheetCapablePopup`;
 }
 
-export {
-  MenuPopupsAlign,
-  MenuPopupsAnchoredWithoutFinalFocus,
-  MenuPopupsKeys,
-  MenuPopupsProvider,
-  MenuPopupsValue,
-  isMenuPopupsReason,
-  menuPopupsSet2,
-  resolveMenuPopupsCancel,
-  resolveMenuPopupsTabularNums,
-  resolveMenuPopupsValue3,
-  resolveMenuPopupsValue4,
-  resolveMenuPopupsValue5,
-  useMenuPopupsEnabled,
-  useMenuPopupsLabel,
-  useMenuPopupsTriggerRef,
-  useMenuPopupsUseContext,
-};
+export { MenuPopupsAlign, MenuPopupsAnchoredWithoutFinalFocus, MenuPopupsProvider, MenuPopupsValue, isMenuPopupsReason, menuPopupsSet2, resolveMenuPopupsCancel, resolveMenuPopupsTabularNums, resolveMenuPopupsValue3, resolveMenuPopupsValue4, resolveMenuPopupsValue5, useMenuPopupsEnabled, useMenuPopupsLabel, useMenuPopupsTriggerRef, useMenuPopupsUseContext };

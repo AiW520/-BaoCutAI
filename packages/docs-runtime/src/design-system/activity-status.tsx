@@ -16,6 +16,178 @@ import {
   resolveShimmerValue4,
   resolveShimmerValue6,
 } from "./spark";
+import type * as ReactComponentTypes from "react";
+
+export const ShimmerMotion: ReactComponentTypes.FC<Dynamic> = ({
+  motion: input,
+  leading: input2,
+  onLeft: input3,
+}) => {
+  let value: Dynamic = resolveShimmerValue6(input2);
+  let [value2, value3]: Dynamic = (0, React.useState)(!value);
+  if (!value && !value2) {
+    value3(true);
+  }
+  let value4: Dynamic = value2;
+  let value5: Dynamic = (0, React.useRef)(null);
+  let value6: Dynamic = useUiOverlaysAndIconsUseInsertionEffect2(
+    (..._extraArguments: unknown[]): Dynamic => input3?.(),
+  );
+  let value7: boolean = input === `leaving` || input === `leaving-still`;
+  UiDesignSystemUseLayoutEffect(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!value7) return;
+      let current: Dynamic = value5.current;
+      if (!current || typeof current.animate != `function` || isReducedMotion()) {
+        value6();
+        return;
+      }
+      let value9: string = current.parentElement
+        ? getComputedStyle(current.parentElement).columnGap
+        : `0px`;
+      let value10: string = `calc(-1 * ${value9 === `normal` ? `0px` : value9})`;
+      let marginInlineEnd: string = getComputedStyle(current).marginInlineEnd;
+      let width: Dynamic = current.getBoundingClientRect().width;
+      let parentElement: Dynamic = current.parentElement;
+      let value11: Dynamic = parentElement?.style.getPropertyValue(
+        ShimmerCdsTurnStatusHang,
+      )
+        ? parentElement
+        : null;
+      let value12: Dynamic =
+        (value11 && parseFloat(getComputedStyle(value11).marginInlineStart)) || 0;
+      let value13: Dynamic =
+        width + (parseFloat(value9) || 0) + (parseFloat(marginInlineEnd) || 0);
+      let value14: Dynamic;
+      let value15: Dynamic;
+      let value16: boolean = false;
+      queueMicrotask((..._extraArguments: unknown[]): undefined => {
+        if (!value16) {
+          if (value11) {
+            value15 = resolveShimmerAnimate(
+              value11,
+              [
+                {
+                  marginInlineStart: `${value12}px`,
+                },
+                {
+                  marginInlineStart: `${value12 + value13}px`,
+                },
+              ],
+              {
+                duration: 400,
+                easing: ShimmerMessage2,
+                fill: `forwards`,
+              },
+            );
+          }
+          value14 = resolveShimmerValue3(
+            current,
+            [
+              {
+                offset: 0,
+                width: `${width}px`,
+                marginInlineEnd: marginInlineEnd,
+                opacity: 1,
+                transform: `scale(1)`,
+              },
+              {
+                offset: 0.6,
+                opacity: 1,
+              },
+              {
+                offset: 1,
+                width: `0px`,
+                marginInlineEnd: value10,
+                opacity: 0,
+                transform: `scale(0)`,
+              },
+            ],
+            {
+              duration: 400,
+              easing: ShimmerMessage2,
+              fill: `forwards`,
+            },
+          );
+          if (!value14 || (value11 && !value15)) {
+            resolveShimmerValue4(value14);
+            resolveShimmerValue4(value15);
+            value14 = value15 = undefined;
+            value6();
+            return;
+          }
+          value14.finished.then(
+            value6,
+            (..._extraArguments: unknown[]): undefined => undefined,
+          );
+        }
+      });
+      return (..._extraArguments: unknown[]): undefined => {
+        value16 = true;
+        resolveShimmerValue4(value14);
+        resolveShimmerValue4(value15);
+      };
+    },
+    [value7, value6],
+  );
+  let value8: boolean = input === `busy` || input === `pending` || input === `leaving`;
+  return (
+    <span
+      ref={value5}
+      aria-hidden={`true`}
+      data-cds-row-mark={``}
+      className={clsx(
+        `relative flex h-[1lh] shrink-0 items-center justify-center`,
+        ShimmerStyles6,
+      )}
+    >
+      <span
+        className={clsx(
+          `absolute top-1/2 left-1/2 flex size-icon -translate-x-1/2 -translate-y-1/2 items-center justify-center motion-reduce:transition-none`,
+          value
+            ? `opacity-0 transition-opacity delay-150 duration-200 ease-out`
+            : `opacity-100`,
+        )}
+      >
+        {input === `pending` && !value ? (
+          <ShimmerMemo2
+            state={`thinking`}
+            size={`160%`}
+            className={`absolute top-1/2 left-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2`}
+          />
+        ) : (
+          <ShimmerMemo2
+            state={value8 && !value ? `thinking` : undefined}
+            size={`100%`}
+            className={`shrink-0`}
+          />
+        )}
+      </span>
+      {value && (
+        <span
+          className={clsx(
+            `absolute inset-0 flex items-center justify-center [&>*]:max-h-full [&>*]:max-w-full`,
+            value4 &&
+              `transition-opacity delay-150 duration-200 ease-out motion-reduce:transition-none starting:opacity-0`,
+          )}
+        >
+          {input2}
+        </span>
+      )}
+    </span>
+  );
+};
+
+export const ShimmerValue: ReactComponentTypes.FC<Dynamic> = ({
+  value: input,
+  prose: input2 = false,
+}) => {
+  return typeof input == `string` ? (
+    <bdi>{input2 ? resolveShimmerReplace2(input) : resolveShimmerReplace(input)}</bdi>
+  ) : (
+    input
+  );
+};
 
 var shimmerState3: Dynamic;
 
@@ -162,19 +334,6 @@ var ShimmerFlexMinW0ItemsCenterGapXsTextStartFontSansTextBodyFontNormal: Dynamic
 
 var ShimmerStyles5: Dynamic;
 
-function ShimmerValue(
-  { value: input, prose: input2 = false }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return typeof input == `string` ? (
-    <bdi>
-      {input2 ? resolveShimmerReplace2(input) : resolveShimmerReplace(input)}
-    </bdi>
-  ) : (
-    input
-  );
-}
-
 function resolveShimmerValue9(
   input?: Dynamic,
   ..._extraArguments: unknown[]
@@ -262,171 +421,6 @@ function resolveShimmerValue10(
 
 var ShimmerStyles6: Dynamic;
 
-function ShimmerMotion(
-  { motion: input, leading: input2, onLeft: input3 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveShimmerValue6(input2);
-  let [value2, value3]: Dynamic = (0, React.useState)(!value);
-  if (!value && !value2) {
-    value3(true);
-  }
-  let value4: Dynamic = value2;
-  let value5: Dynamic = (0, React.useRef)(null);
-  let value6: Dynamic = useUiOverlaysAndIconsUseInsertionEffect2(
-    (..._extraArguments: unknown[]): Dynamic => input3?.(),
-  );
-  let value7: boolean = input === `leaving` || input === `leaving-still`;
-  UiDesignSystemUseLayoutEffect(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!value7) return;
-      let current: Dynamic = value5.current;
-      if (
-        !current ||
-        typeof current.animate != `function` ||
-        isReducedMotion()
-      ) {
-        value6();
-        return;
-      }
-      let value9: string = current.parentElement
-        ? getComputedStyle(current.parentElement).columnGap
-        : `0px`;
-      let value10: string = `calc(-1 * ${value9 === `normal` ? `0px` : value9})`;
-      let marginInlineEnd: string = getComputedStyle(current).marginInlineEnd;
-      let width: Dynamic = current.getBoundingClientRect().width;
-      let parentElement: Dynamic = current.parentElement;
-      let value11: Dynamic = parentElement?.style.getPropertyValue(
-        ShimmerCdsTurnStatusHang,
-      )
-        ? parentElement
-        : null;
-      let value12: Dynamic =
-        (value11 && parseFloat(getComputedStyle(value11).marginInlineStart)) ||
-        0;
-      let value13: Dynamic =
-        width + (parseFloat(value9) || 0) + (parseFloat(marginInlineEnd) || 0);
-      let value14: Dynamic;
-      let value15: Dynamic;
-      let value16: boolean = false;
-      queueMicrotask((..._extraArguments: unknown[]): undefined => {
-        if (!value16) {
-          if (value11) {
-            value15 = resolveShimmerAnimate(
-              value11,
-              [
-                {
-                  marginInlineStart: `${value12}px`,
-                },
-                {
-                  marginInlineStart: `${value12 + value13}px`,
-                },
-              ],
-              {
-                duration: 400,
-                easing: ShimmerMessage2,
-                fill: `forwards`,
-              },
-            );
-          }
-          value14 = resolveShimmerValue3(
-            current,
-            [
-              {
-                offset: 0,
-                width: `${width}px`,
-                marginInlineEnd: marginInlineEnd,
-                opacity: 1,
-                transform: `scale(1)`,
-              },
-              {
-                offset: 0.6,
-                opacity: 1,
-              },
-              {
-                offset: 1,
-                width: `0px`,
-                marginInlineEnd: value10,
-                opacity: 0,
-                transform: `scale(0)`,
-              },
-            ],
-            {
-              duration: 400,
-              easing: ShimmerMessage2,
-              fill: `forwards`,
-            },
-          );
-          if (!value14 || (value11 && !value15)) {
-            resolveShimmerValue4(value14);
-            resolveShimmerValue4(value15);
-            value14 = value15 = undefined;
-            value6();
-            return;
-          }
-          value14.finished.then(
-            value6,
-            (..._extraArguments: unknown[]): undefined => undefined,
-          );
-        }
-      });
-      return (..._extraArguments: unknown[]): undefined => {
-        value16 = true;
-        resolveShimmerValue4(value14);
-        resolveShimmerValue4(value15);
-      };
-    },
-    [value7, value6],
-  );
-  let value8: boolean =
-    input === `busy` || input === `pending` || input === `leaving`;
-  return (
-    <span
-      ref={value5}
-      aria-hidden={`true`}
-      data-cds-row-mark={``}
-      className={clsx(
-        `relative flex h-[1lh] shrink-0 items-center justify-center`,
-        ShimmerStyles6,
-      )}
-    >
-      <span
-        className={clsx(
-          `absolute top-1/2 left-1/2 flex size-icon -translate-x-1/2 -translate-y-1/2 items-center justify-center motion-reduce:transition-none`,
-          value
-            ? `opacity-0 transition-opacity delay-150 duration-200 ease-out`
-            : `opacity-100`,
-        )}
-      >
-        {input === `pending` && !value ? (
-          <ShimmerMemo2
-            state={`thinking`}
-            size={`160%`}
-            className={`absolute top-1/2 left-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2`}
-          />
-        ) : (
-          <ShimmerMemo2
-            state={value8 && !value ? `thinking` : undefined}
-            size={`100%`}
-            className={`shrink-0`}
-          />
-        )}
-      </span>
-      {value && (
-        <span
-          className={clsx(
-            `absolute inset-0 flex items-center justify-center [&>*]:max-h-full [&>*]:max-w-full`,
-            value4 &&
-              `transition-opacity delay-150 duration-200 ease-out motion-reduce:transition-none starting:opacity-0`,
-          )}
-        >
-          {input2}
-        </span>
-      )}
-    </span>
-  );
-}
-
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeActivityStatusStep1(): void {
   resolveShimmerValue7 = (..._extraArguments: unknown[]): Dynamic =>
@@ -464,17 +458,4 @@ export function initializeActivityStatusStep1(): void {
   ShimmerStyles6 = `w-[20px] me-[calc(12px_-_var(--cds-gap-xs))]`;
 }
 
-export {
-  ShimmerFlexMinW0ItemsCenterGapXsTextStartFontSansTextBodyFontNormal,
-  ShimmerMotion,
-  ShimmerStyles4,
-  ShimmerStyles5,
-  ShimmerValue,
-  collectShimmerThen,
-  resolveShimmerBusy,
-  resolveShimmerFailed,
-  resolveShimmerTest2,
-  resolveShimmerValue10,
-  resolveShimmerValue8,
-  resolveShimmerValue9,
-};
+export { ShimmerFlexMinW0ItemsCenterGapXsTextStartFontSansTextBodyFontNormal, ShimmerStyles4, ShimmerStyles5, collectShimmerThen, resolveShimmerBusy, resolveShimmerFailed, resolveShimmerTest2, resolveShimmerValue10, resolveShimmerValue8, resolveShimmerValue9 };

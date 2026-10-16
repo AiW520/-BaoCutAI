@@ -47,90 +47,15 @@ import {
   useSelectedTabHeading,
   useTabOutline,
 } from "../document-app/index";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-var TAB_DRAG_MIME_TYPE: string = `application/x-bongo-v3-tab-left`;
-var TAB_ICON_SCALE: number = 0.875;
-var TAB_EDGE_PADDING: string = `calc(0.75rem * var(--cds-rem-scale, 1))`;
-var TAB_ROOT_PADDING_STYLE: Dynamic = {
-  paddingLeft: TAB_EDGE_PADDING,
-};
-var TAB_INDENT_STEP: number = 3;
-var TAB_HOVER_OPEN_MS: number = 230;
-var TAB_ICON_WIDTH: number = 20;
-var TAB_BRANCH_GUTTER: string = `calc(${TAB_ICON_WIDTH}px + 0.125rem)`;
-var ROW_ACTIONS_HIDDEN_CLASS: string = `flex w-0 flex-none overflow-hidden`;
-var ROW_ACTIONS_SHOWN_CLASSES: string = [
-  `group-hover/row:-ml-1.5 group-hover/row:w-auto group-hover/row:overflow-visible`,
-  `group-focus-within/row:-ml-1.5 group-focus-within/row:w-auto group-focus-within/row:overflow-visible`,
-  `has-[[data-popup-open]]:-ml-1.5 has-[[data-popup-open]]:w-auto has-[[data-popup-open]]:overflow-visible`,
-  `pointer-coarse:-ml-1.5 pointer-coarse:w-auto pointer-coarse:overflow-visible`,
-].join(` `);
-var dropPositionOf = (event?: Dynamic, ..._extraArguments: unknown[]) => {
-  let rowBounds: Dynamic = event.currentTarget.getBoundingClientRect();
-  let offsetY: number = event.clientY - rowBounds.top;
-  return offsetY < rowBounds.height * 0.25
-    ? `before`
-    : offsetY > rowBounds.height * 0.75
-      ? `after`
-      : `into`;
-};
-function scrollRowIntoView(
-  container?: Dynamic,
-  row?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  if (container.clientHeight === 0) return false;
-  let rowBounds: Dynamic = row.getBoundingClientRect();
-  let containerBounds: Dynamic = container.getBoundingClientRect();
-  if (rowBounds.top < containerBounds.top) {
-    container.scrollTop -= containerBounds.top - rowBounds.top + 4;
-  } else {
-    if (rowBounds.bottom > containerBounds.bottom) {
-      container.scrollTop += rowBounds.bottom - containerBounds.bottom + 4;
-    }
-  }
-  return true;
-}
-function watchScrollEdges(
-  container?: Dynamic,
-  enabled?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let clearEdges = (..._extraArguments: unknown[]): undefined => {
-    container.removeAttribute(`data-more-above`);
-    container.removeAttribute(`data-more-below`);
-  };
-  if (!enabled) {
-    clearEdges();
-    return clearEdges;
-  }
-  let updateEdges = (..._extraArguments: unknown[]): undefined => {
-    container.toggleAttribute(`data-more-above`, container.scrollTop > 1);
-    container.toggleAttribute(
-      `data-more-below`,
-      container.scrollTop + container.clientHeight < container.scrollHeight - 1,
-    );
-  };
-  updateEdges();
-  container.addEventListener(`scroll`, updateEdges, {
-    passive: true,
-  });
-  return (..._extraArguments: unknown[]): undefined => {
-    container.removeEventListener(`scroll`, updateEdges);
-    clearEdges();
-  };
-}
-function TabsLeftList(
-  {
-    seat: seat,
-    onUp: onUp,
-    onRenaming: onRenaming,
-    outline = null,
-    timers: timers,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const TabsLeftList: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  onUp: onUp,
+  onRenaming: onRenaming,
+  outline = null,
+  timers: timers,
+}) => {
   let mode: Dynamic = resolvePlatformSyncAndRoutingCompact();
   (0, React.useLayoutEffect)(
     (..._extraArguments: unknown[]): Dynamic => (
@@ -167,10 +92,8 @@ function TabsLeftList(
               allRow.node.children.length > 0,
           )
           .map(
-            (
-              filteredAllRow?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => filteredAllRow.node.id,
+            (filteredAllRow?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              filteredAllRow.node.id,
           ),
       ),
     [allRows],
@@ -181,8 +104,7 @@ function TabsLeftList(
     (..._extraArguments: unknown[]): Dynamic =>
       new (Set as Dynamic)(
         [...expandedTabs].filter(
-          (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            branchIds.has(item),
+          (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => branchIds.has(item),
         ),
       ),
     [expandedTabs, branchIds],
@@ -238,11 +160,7 @@ function TabsLeftList(
       let items: Dynamic = [];
       let lookupEntry: Dynamic =
         activeId === undefined ? undefined : lookup.get(activeId);
-      for (
-        ;
-        lookupEntry !== undefined && !items.includes(lookupEntry.node.id);
-
-      ) {
+      for (; lookupEntry !== undefined && !items.includes(lookupEntry.node.id); ) {
         items.push(lookupEntry.node.id);
         lookupEntry =
           lookupEntry.parentId === undefined
@@ -283,11 +201,7 @@ function TabsLeftList(
       let lookup2: Dynamic = new (Map as Dynamic)();
       for (let items of lookup.values() as Dynamic)
         items.forEach(
-          (
-            item?: Dynamic,
-            index?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic =>
+          (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
             lookup2.set(item, {
               size: items.length,
               pos: index + 1,
@@ -314,14 +228,11 @@ function TabsLeftList(
   let outlineDocument: Dynamic = outline?.outline ?? null;
   let outlineRows: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
-      outlineDocument === null
-        ? []
-        : isDataOperationControlIndent(outlineDocument),
+      outlineDocument === null ? [] : isDataOperationControlIndent(outlineDocument),
     [outlineDocument],
   );
   let hasActiveOutline: Dynamic =
-    activeId !== undefined &&
-    resolveDataOperationControlValue8(outlineDocument);
+    activeId !== undefined && resolveDataOperationControlValue8(outlineDocument);
   let outlineExpandedStore: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
       resolvePlatformLiveDocumentAndHistoryShown(seat.pid),
@@ -354,16 +265,13 @@ function TabsLeftList(
   let outlineRootCount: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic =>
       outlineRows.filter(
-        (outlineRow?: Dynamic, ..._extraArguments: unknown[]) =>
-          outlineRow.indent === 0,
+        (outlineRow?: Dynamic, ..._extraArguments: unknown[]) => outlineRow.indent === 0,
       ).length,
     [outlineRows],
   );
   let listId: Dynamic = (0, React.useId)();
   let outlineScrollRef: Dynamic = (0, React.useRef)(null);
-  let [outlineRowLimit, setOutlineRowLimit]: Dynamic = (0, React.useState)(
-    null,
-  );
+  let [outlineRowLimit, setOutlineRowLimit]: Dynamic = (0, React.useState)(null);
   let activeIdRef: Dynamic = (0, React.useRef)(activeId);
   activeIdRef.current = activeId;
   let hasOutlineRef: Dynamic = (0, React.useRef)(hasActiveOutline);
@@ -392,9 +300,7 @@ function TabsLeftList(
             preventScroll: true,
           });
       }
-      outlineExpandedStore.set(
-        matchesOutlineExpandedStoreEntry ? null : activeId2,
-      );
+      outlineExpandedStore.set(matchesOutlineExpandedStoreEntry ? null : activeId2);
     },
     [outlineExpandedStore],
   );
@@ -406,8 +312,7 @@ function TabsLeftList(
     let hasChildren: Dynamic = branchIds.has(tabId);
     if (!hasOutline && !hasChildren) return null;
     let outlineExpanded: Dynamic = hasOutline && activeOutlineExpanded;
-    let childrenCollapsed: Dynamic =
-      hasChildren && !expandedBranchIds.has(tabId);
+    let childrenCollapsed: Dynamic = hasChildren && !expandedBranchIds.has(tabId);
     let allClosed: boolean =
       outlineExpanded === hasOutline && childrenCollapsed === hasChildren;
     let [nextOutlineExpanded, nextChildrenExpanded]: Dynamic = allClosed
@@ -428,11 +333,7 @@ function TabsLeftList(
     expanded?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    if (
-      tabId === activeId &&
-      hasActiveOutline &&
-      activeOutlineExpanded !== expanded
-    ) {
+    if (tabId === activeId && hasActiveOutline && activeOutlineExpanded !== expanded) {
       toggleActiveOutline(tabId);
     }
     setBranchExpanded(tabId, !expanded);
@@ -509,15 +410,9 @@ function TabsLeftList(
     };
     clearOutlineHover();
     if (!canEdit || timers === undefined) return expandOutline();
-    outlineHoverState.current.wait = timers.set(
-      expandOutline,
-      TAB_HOVER_OPEN_MS,
-    );
+    outlineHoverState.current.wait = timers.set(expandOutline, TAB_HOVER_OPEN_MS);
   };
-  let undoOutlineHover = (
-    tabId?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let undoOutlineHover = (tabId?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     let { did: previousHover }: Dynamic = outlineHoverState.current;
     clearOutlineHover();
     if (canEdit && previousHover !== undefined && previousHover.id === tabId) {
@@ -526,10 +421,7 @@ function TabsLeftList(
   };
   let [renameDraft, setRenameDraft]: Dynamic = (0, React.useState)(null);
   let renameDraftRef: Dynamic = (0, React.useRef)(null);
-  let updateRenameDraft = (
-    draft?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let updateRenameDraft = (draft?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     renameDraftRef.current = draft;
     setRenameDraft(draft);
   };
@@ -576,10 +468,7 @@ function TabsLeftList(
     [draggedId, visibleRows],
   );
   let [focusedTabId, setFocusedTabId]: Dynamic = (0, React.useState)(null);
-  let isVisibleTab: Dynamic = (
-    tabId?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
+  let isVisibleTab: Dynamic = (tabId?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
     tabId != null &&
     visibleRows.some(
       (visibleRow?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -590,9 +479,7 @@ function TabsLeftList(
     : isVisibleTab(activeId)
       ? activeId
       : visibleRows[0]?.node.id;
-  let [focusedOutlineId, setFocusedOutlineId]: Dynamic = (0, React.useState)(
-    null,
-  );
+  let [focusedOutlineId, setFocusedOutlineId]: Dynamic = (0, React.useState)(null);
   let outlineTabStopId: Dynamic =
     activeOutlineExpanded &&
     focusedOutlineId !== null &&
@@ -610,12 +497,8 @@ function TabsLeftList(
   let movePendingRef: Dynamic = (0, React.useRef)(false);
   let rootsRef: Dynamic = (0, React.useRef)(roots);
   rootsRef.current = roots;
-  let tabElement: Dynamic = (
-    tabId?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    listRef.current?.querySelector(`[data-tab-row="${CSS.escape(tabId)}"]`) ??
-    null;
+  let tabElement: Dynamic = (tabId?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+    listRef.current?.querySelector(`[data-tab-row="${CSS.escape(tabId)}"]`) ?? null;
   let focusableRows: Dynamic = (..._extraArguments: unknown[]): Dynamic => [
     ...(listRef.current?.querySelectorAll(
       `[data-tab-row], [data-outline-row], [data-tab-add]`,
@@ -625,12 +508,8 @@ function TabsLeftList(
     (..._extraArguments: unknown[]): Dynamic => {
       let tree: Dynamic = treeRef.current;
       if (!tree) return;
-      let tabsLeftListHandler: Dynamic = (
-        ..._extraArguments: unknown[]
-      ): boolean => {
-        let activeElement: Dynamic = tree.querySelector(
-          `[aria-current="page"]`,
-        );
+      let tabsLeftListHandler: Dynamic = (..._extraArguments: unknown[]): boolean => {
+        let activeElement: Dynamic = tree.querySelector(`[aria-current="page"]`);
         return activeElement === null
           ? tree.clientHeight > 0
           : scrollRowIntoView(tree, activeElement);
@@ -644,8 +523,7 @@ function TabsLeftList(
         },
       );
       resizeObserver.observe(tree);
-      return (..._extraArguments: unknown[]): Dynamic =>
-        resizeObserver.disconnect();
+      return (..._extraArguments: unknown[]): Dynamic => resizeObserver.disconnect();
     },
     [renameFailure, allRows.length],
   );
@@ -656,14 +534,9 @@ function TabsLeftList(
       let parentElement: Dynamic = listRef.current?.parentElement;
       if (!activeOutlineExpanded || !tree || !outlineScroll || !parentElement)
         return setOutlineRowLimit(null);
-      let tabsLeftListHandler: Dynamic = (
-        ..._extraArguments: unknown[]
-      ): Dynamic => {
-        let outlineRow: Dynamic =
-          outlineScroll.querySelector(`[data-outline-row]`);
-        let maxHeight2: number = parseFloat(
-          getComputedStyle(parentElement).maxHeight,
-        );
+      let tabsLeftListHandler: Dynamic = (..._extraArguments: unknown[]): Dynamic => {
+        let outlineRow: Dynamic = outlineScroll.querySelector(`[data-outline-row]`);
+        let maxHeight2: number = parseFloat(getComputedStyle(parentElement).maxHeight);
         if (
           outlineRow === null ||
           outlineRow.offsetHeight === 0 ||
@@ -681,9 +554,7 @@ function TabsLeftList(
           (listRef.current.offsetHeight - tree.offsetHeight);
         let rowLimit: number = Math.max(
           TAB_INDENT_STEP,
-          Math.floor(
-            (maxHeight2 - nonOutlineHeight + 1 - verticalPadding) / rowHeight,
-          ),
+          Math.floor((maxHeight2 - nonOutlineHeight + 1 - verticalPadding) / rowHeight),
         );
         setOutlineRowLimit(
           rowLimit >= outlineRows.length
@@ -692,9 +563,7 @@ function TabsLeftList(
         );
       };
       tabsLeftListHandler();
-      let resizeObserver: Dynamic = new (ResizeObserver as Dynamic)(
-        tabsLeftListHandler,
-      );
+      let resizeObserver: Dynamic = new (ResizeObserver as Dynamic)(tabsLeftListHandler);
       resizeObserver.observe(parentElement);
       let maxHeight: Dynamic = parentElement.style.maxHeight;
       let mutationObserver: Dynamic = new (MutationObserver as Dynamic)(
@@ -744,10 +613,7 @@ function TabsLeftList(
     if (outlineUnsubscribe === null || isVisibleTab(outlineUnsubscribe)) return;
     outlineUnsubscribeRef.current = null;
     let activeElement: Dynamic = (document as Dynamic).activeElement;
-    if (
-      activeElement === null ||
-      activeElement === (document as Dynamic).body
-    ) {
+    if (activeElement === null || activeElement === (document as Dynamic).body) {
       (tabStopId ? tabElement(tabStopId) : null)?.focus({
         preventScroll: true,
       });
@@ -757,10 +623,7 @@ function TabsLeftList(
     let focusedElement: Dynamic = focusedElementRef.current;
     if (focusedElement === null) return;
     let activeElement: Dynamic = (document as Dynamic).activeElement;
-    if (
-      activeElement !== null &&
-      activeElement !== (document as Dynamic).body
-    ) {
+    if (activeElement !== null && activeElement !== (document as Dynamic).body) {
       if (
         !(
           activeElement instanceof (HTMLElement as Dynamic) &&
@@ -796,9 +659,8 @@ function TabsLeftList(
       ..._extraArguments: unknown[]
     ): undefined => {
       let matchedElement: Dynamic =
-        listRef.current?.querySelector(
-          `[data-tab-row="${CSS.escape(tabsLeftList)}"]`,
-        ) ?? null;
+        listRef.current?.querySelector(`[data-tab-row="${CSS.escape(tabsLeftList)}"]`) ??
+        null;
       if (
         matchedElement !== null &&
         resolveDataOperationControlDataBaseUiFocusGuard(
@@ -825,12 +687,7 @@ function TabsLeftList(
     byKey?: Dynamic,
     ..._extraArguments: unknown[]
   ): Promise<undefined> => {
-    if (
-      !canEdit ||
-      busy ||
-      movePendingRef.current ||
-      renameDraftRef.current !== null
-    )
+    if (!canEdit || busy || movePendingRef.current || renameDraftRef.current !== null)
       return;
     let placement: Dynamic = tabKeyboardMovePlacement(roots, tabId, target);
     let oldPlacement: Dynamic = tabPositionAnnouncement(roots, tabId);
@@ -848,11 +705,7 @@ function TabsLeftList(
     if (placement.parent !== undefined) {
       setBranchExpanded(placement.parent, false);
     }
-    let result: Dynamic = await ops.move(
-      tabId,
-      placement.parent,
-      placement.beforeId,
-    );
+    let result: Dynamic = await ops.move(tabId, placement.parent, placement.beforeId);
     if (result === `moved` || result === `accepted`) {
       setMoveFailure(
         (tabsLeftList?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -875,10 +728,7 @@ function TabsLeftList(
   (0, React.useLayoutEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (moveFailure === null || moveFailure.written === null) return;
-      let tabsLeftListResult: Dynamic = tabPositionAnnouncement(
-        roots,
-        moveFailure.id,
-      );
+      let tabsLeftListResult: Dynamic = tabPositionAnnouncement(roots, moveFailure.id);
       let matchesTabsLeftListResult: boolean =
         tabsLeftListResult !== undefined &&
         tabsLeftListResult.parentId === moveFailure.from.parentId &&
@@ -913,8 +763,7 @@ function TabsLeftList(
       renameInputRef.current = null;
       if (renameInput === null || renameInput !== activeId) return;
       let list: Dynamic = listRef.current;
-      if (list === null || !list.contains(list.ownerDocument.activeElement))
-        return;
+      if (list === null || !list.contains(list.ownerDocument.activeElement)) return;
       let tabsLeftListResult: Dynamic = tabPositionAnnouncement(
         rootsRef.current,
         renameInput,
@@ -977,8 +826,7 @@ function TabsLeftList(
   );
   (0, React.useLayoutEffect)(
     (..._extraArguments: unknown[]): undefined => {
-      if (renameDraft !== null || renameFocusRequestRef.current === null)
-        return;
+      if (renameDraft !== null || renameFocusRequestRef.current === null) return;
       let { id: renameFocusRequest, byKey: renameFocusRequest2 }: Dynamic =
         renameFocusRequestRef.current;
       renameFocusRequestRef.current = null;
@@ -997,15 +845,9 @@ function TabsLeftList(
     },
     [renameDraft, activeId, seat.pid],
   );
-  let beginRename = (
-    tabId?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let beginRename = (tabId?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     if (!canEdit || busy || moveFailure?.id === tabId) return;
-    if (
-      renameDraftRef.current !== null &&
-      renameDraftRef.current.id !== tabId
-    ) {
+    if (renameDraftRef.current !== null && renameDraftRef.current.id !== tabId) {
       finishRename(true, false);
     }
     let displayName: Dynamic = displayNames.get(tabId) ?? ``;
@@ -1046,16 +888,10 @@ function TabsLeftList(
       }
     }
   };
-  let handleOutlineKey = (
-    event?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  let handleOutlineKey = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     let outlineRowId: Dynamic =
       event.target.closest(`[data-outline-row]`)?.dataset.outlineRow;
-    if (
-      outlineRowId !== undefined &&
-      (event.key === ` ` || event.key === `Enter`)
-    ) {
+    if (outlineRowId !== undefined && (event.key === ` ` || event.key === `Enter`)) {
       event.preventDefault();
     }
     outlineJumpTracker.keyUp(event.key, outlineRowId);
@@ -1075,24 +911,15 @@ function TabsLeftList(
         event.preventDefault();
       }
     }
-    if (
-      event.nativeEvent.isComposing ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey
-    )
+    if (event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey)
       return;
     let row: Dynamic = target.closest(
       `[data-tab-row], [data-outline-row], [data-tab-add]`,
     );
-    if (!row || (target !== row && row.dataset.outlineRow === undefined))
-      return;
+    if (!row || (target !== row && row.dataset.outlineRow === undefined)) return;
     let rows: Dynamic = focusableRows();
     let rowIndex: Dynamic = rows.indexOf(row);
-    let focusRow = (
-      row2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
+    let focusRow = (row2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       if (row2) {
         event.preventDefault();
         row2.focus({
@@ -1105,8 +932,7 @@ function TabsLeftList(
     };
     if (event.key === `ArrowDown`)
       return focusRow(rows[Math.min(rows.length - 1, rowIndex + 1)]);
-    if (event.key === `ArrowUp`)
-      return focusRow(rows[Math.max(0, rowIndex - 1)]);
+    if (event.key === `ArrowUp`) return focusRow(rows[Math.max(0, rowIndex - 1)]);
     if (event.key === `Home`) return focusRow(rows[0]);
     if (event.key === `End`) return focusRow(rows[rows.length - 1]);
     let outlineId: Dynamic = row.dataset.outlineRow;
@@ -1141,8 +967,7 @@ function TabsLeftList(
           (outlineRow?: Dynamic, ..._extraArguments: unknown[]) =>
             outlineRow.id === outlineId,
         )?.h;
-        if (event.repeat || headingLevel === undefined || outline === null)
-          return;
+        if (event.repeat || headingLevel === undefined || outline === null) return;
         outlineJumpTracker.press(outlineId, headingLevel, event.key);
       }
       return;
@@ -1155,11 +980,7 @@ function TabsLeftList(
     );
     let hasOutline: Dynamic = tabId === activeId && hasActiveOutline;
     let expansion: Dynamic = rowExpansion(tabId);
-    if (
-      event.key === `ArrowRight` ||
-      event.key === `ArrowLeft` ||
-      event.key === `F2`
-    ) {
+    if (event.key === `ArrowRight` || event.key === `ArrowLeft` || event.key === `F2`) {
       clearOutlineHover();
     }
     if (event.key === `ArrowRight`) {
@@ -1168,9 +989,7 @@ function TabsLeftList(
       if (hasOutline && activeOutlineExpanded)
         return focusRow(listRef.current?.querySelector(`[data-outline-row]`));
       let firstChild: Dynamic = tabRow?.node.children[0];
-      return focusRow(
-        firstChild === undefined ? null : tabElement(firstChild.id),
-      );
+      return focusRow(firstChild === undefined ? null : tabElement(firstChild.id));
     }
     if (event.key === `ArrowLeft`) {
       if (expansion?.expanded === true) {
@@ -1182,9 +1001,7 @@ function TabsLeftList(
       }
       return expansion !== null && event.repeat
         ? event.preventDefault()
-        : focusRow(
-            tabRow?.parentId === undefined ? null : tabElement(tabRow.parentId),
-          );
+        : focusRow(tabRow?.parentId === undefined ? null : tabElement(tabRow.parentId));
     }
     if (event.key === `Enter` || event.key === ` `) {
       event.preventDefault();
@@ -1204,25 +1021,20 @@ function TabsLeftList(
       event.preventDefault();
       beginRename(tabId);
     } else {
-      if (
-        event.key === `ContextMenu` ||
-        (event.key === `F10` && event.shiftKey)
-      ) {
+      if (event.key === `ContextMenu` || (event.key === `F10` && event.shiftKey)) {
         event.preventDefault();
         row.querySelector(`[data-tab-menu]`)?.click();
       }
     }
   };
   let isInsideIconGutter = (event?: Dynamic, ..._extraArguments: unknown[]) =>
-    event.clientX <
-    (treeRef.current?.getBoundingClientRect().left ?? 0) + TAB_ICON_WIDTH;
+    event.clientX < (treeRef.current?.getBoundingClientRect().left ?? 0) + TAB_ICON_WIDTH;
   let dropOnRow = (
     event?: Dynamic,
     tabId?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    let draggedTab: Dynamic =
-      event.dataTransfer.getData(TAB_DRAG_MIME_TYPE) || draggedId;
+    let draggedTab: Dynamic = event.dataTransfer.getData(TAB_DRAG_MIME_TYPE) || draggedId;
     let position: ReturnType<typeof dropPositionOf> = dropPositionOf(event);
     setDropTarget(null);
     setDraggedId(null);
@@ -1243,12 +1055,8 @@ function TabsLeftList(
       ops.move(draggedTab, dropPlacement.parent, dropPlacement.beforeId);
     }
   };
-  let dropAtRoot = (
-    event?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    let draggedTab: Dynamic =
-      event.dataTransfer.getData(TAB_DRAG_MIME_TYPE) || draggedId;
+  let dropAtRoot = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    let draggedTab: Dynamic = event.dataTransfer.getData(TAB_DRAG_MIME_TYPE) || draggedId;
     setDropTarget(null);
     setDraggedId(null);
     if (
@@ -1265,12 +1073,7 @@ function TabsLeftList(
     event?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    if (
-      !(
-        !event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE) ||
-        draggedId === null
-      )
-    ) {
+    if (!(!event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE) || draggedId === null)) {
       event.preventDefault();
       event.stopPropagation();
       event.dataTransfer.dropEffect = `move`;
@@ -1295,10 +1098,7 @@ function TabsLeftList(
           marginLeft: -20,
           paddingLeft: TAB_BRANCH_GUTTER,
         }}
-        onDragOver={(
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
+        onDragOver={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
           if (event.target === event.currentTarget) {
             if (isInsideIconGutter(event)) {
               setDropTarget(null);
@@ -1308,19 +1108,13 @@ function TabsLeftList(
           }
         }}
         onDrop={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          if (
-            !(event.target !== event.currentTarget || isInsideIconGutter(event))
-          ) {
+          if (!(event.target !== event.currentTarget || isInsideIconGutter(event))) {
             event.preventDefault();
             dropAtRoot(event);
           }
         }}
       >
-        <div
-          role={`tree`}
-          aria-label={`Tabs`}
-          className={`flex flex-col gap-px`}
-        >
+        <div role={`tree`} aria-label={`Tabs`} className={`flex flex-col gap-px`}>
           {visibleRows.map(
             (
               { node: node, depth: depth, parentId: parentId }: Dynamic,
@@ -1328,18 +1122,14 @@ function TabsLeftList(
             ): Dynamic => {
               let id: Dynamic = node.id;
               let outlineRootCount2: Dynamic =
-                activeOutlineExpanded &&
-                parentId !== undefined &&
-                parentId === activeId
+                activeOutlineExpanded && parentId !== undefined && parentId === activeId
                   ? outlineRootCount
                   : 0;
               let displayNameEntry: Dynamic = displayNames.get(id) ?? ``;
               let matchesId: boolean = id === activeId;
               let matchesId2: boolean = renameDraft?.id === id;
               let zone: Dynamic =
-                dropTarget !== null &&
-                dropTarget !== `tail` &&
-                dropTarget.id === id
+                dropTarget !== null && dropTarget !== `tail` && dropTarget.id === id
                   ? dropTarget.zone
                   : null;
               let jsx: Dynamic = (
@@ -1379,161 +1169,362 @@ function TabsLeftList(
               let matchesId3: Dynamic = matchesId && hasActiveOutline;
               let rowExpansion2: Dynamic = rowExpansion(id);
               return (
-                <React.Fragment key={id}>{<div role={`treeitem`} aria-expanded={rowExpansion2?.expanded} aria-owns={matchesId3 && activeOutlineExpanded ? listId : undefined} aria-level={depth + 1} aria-setsize={(siblingDirectory.get(id)?.size ?? 0) + outlineRootCount2 || undefined} aria-posinset={(siblingDirectory.get(id)?.pos ?? 0) + outlineRootCount2 || undefined} aria-current={matchesId ? `page` : undefined} aria-label={displayNameEntry} tabIndex={id === tabStopId && !matchesId2 && outlineTabStopId === null ? 0 : -1} data-tab-row={id} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    if (event.target === event.currentTarget) {
-      setFocusedTabId(id);
-      setFocusedOutlineId(null);
-    }
-  }} className={`group/row focus-visible:ring-fill-accent relative flex items-center rounded focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId2 ? `` : matchesId ? `bg-fill-ghost-selected` : `hover:bg-fill-ghost-hover`} ${zone === `into` ? `ring-strong ring-1` : ``} ${draggedId === id ? `opacity-40` : ``}`} style={depth > 0 ? {
-    paddingLeft: `${depth * TAB_ICON_SCALE}rem`
-  } : undefined} draggable={canEdit && !matchesId2 && !busy} onDragStart={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-    if (isInsideIconGutter(event)) return event.preventDefault();
-    clearOutlineHover();
-    event.dataTransfer.setData(TAB_DRAG_MIME_TYPE, id);
-    event.dataTransfer.effectAllowed = `move`;
-    setDraggedId(id);
-  }} onDragEnd={(..._extraArguments: unknown[]): undefined => {
-    setDraggedId(null);
-    setDropTarget(null);
-  }} onDragOver={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    if (!event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE) || draggedId === null) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (draggedSubtreeIds?.has(id)) {
-      event.dataTransfer.dropEffect = `none`;
-      if (zone !== null) {
-        setDropTarget(null);
-      }
-      return;
-    }
-    event.dataTransfer.dropEffect = `move`;
-    let dropPositionOf2: string = dropPositionOf(event);
-    if (zone !== dropPositionOf2) {
-      setDropTarget({
-        id: id,
-        zone: dropPositionOf2
-      });
-    }
-  }} onDragLeave={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    if (!event.currentTarget.contains(event.relatedTarget) && zone !== null) {
-      setDropTarget(null);
-    }
-  }} onDrop={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    if (event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE)) {
-      event.preventDefault();
-      event.stopPropagation();
-      dropOnRow(event, id);
-    }
-  }}>
-                          {rowExpansion2 !== null && !matchesId2 ? <button type={`button`} tabIndex={-1} draggable={false} aria-label={tabOutlineToggleLabel(rowExpansion2.names, rowExpansion2.expanded, displayNameEntry)} className={`text-muted hover:text-primary absolute inset-y-0 flex items-center justify-center ${draggedId === null ? `` : `pointer-events-none`}`} style={{
-      left: `calc(-1 * ${TAB_BRANCH_GUTTER})`,
-      width: TAB_ICON_WIDTH
-    }} onClick={(..._extraArguments: unknown[]): undefined => {
-      tabElement(id)?.focus({
-        preventScroll: true
-      });
-      clearOutlineHover();
-      toggleRow(id, !rowExpansion2.expanded);
-    }} data-testid={`tabs-left-toggle-${id}`}>
-                              <UiOverlaysAndIconsCustomIcon name={rowExpansion2.expanded ? `CaretDown` : `CaretRight`} size={`xs`} />
-                            </button> : null}
-                          {matchesId2 ? <label className={`gap-sm text-body text-primary min-h-control compact:px-2 comfortable:px-2.5 flex min-w-0 flex-1 cursor-text items-center self-stretch rounded ${fieldSurfaceClasses} focus-within:shadow-focus ${matchesId ? `font-medium` : ``}`} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      if (!(event.target instanceof (HTMLInputElement as Dynamic))) {
-        event.preventDefault();
-      }
-    }}>
-                              <TabRenameInput aria-label={`Tab name`} style={TAB_ROOT_PADDING_STYLE} value={renameDraft.draft} onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        let renameDraft2: Dynamic = renameDraftRef.current;
-        if (renameDraft2 !== null) {
-          updateRenameDraft({
-            ...renameDraft2,
-            draft: event.target.value
-          });
-        }
-      }} onBlur={(..._extraArguments: unknown[]): Dynamic => finishRename(true, false)} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (!event.nativeEvent.isComposing) {
-          event.stopPropagation();
-          if (event.key === `Enter`) {
-            event.preventDefault();
-            finishRename(true, true);
-          } else {
-            if (event.key === `Escape`) {
-              event.preventDefault();
-              event.nativeEvent.stopImmediatePropagation();
-              finishRename(false, true);
-            }
-          }
-        }
-      }} data-testid={`tabs-left-rename-${id}`} />
-                            </label> : <Tooltip
-                              lazy={true}
-                              content={(..._extraArguments: unknown[]): Dynamic => overflowTitle(listRef.current?.querySelector(`[data-tab-name="${CSS.escape(id)}"]`), displayNameEntry)}
-                              side={`right`}
-                            >
-                              {jsx}
-                            </Tooltip>}
-                          <span className={`${ROW_ACTIONS_HIDDEN_CLASS} ${matchesId2 ? `invisible` : ROW_ACTIONS_SHOWN_CLASSES}`}>
-                            <Menu align={`start`} renderTrigger={<IconButton
-                              icon={<UiOverlaysAndIconsCustomIcon name={`DotsVertical`} size={`xs`} />}
+                <React.Fragment key={id}>
+                  {
+                    <div
+                      role={`treeitem`}
+                      aria-expanded={rowExpansion2?.expanded}
+                      aria-owns={matchesId3 && activeOutlineExpanded ? listId : undefined}
+                      aria-level={depth + 1}
+                      aria-setsize={
+                        (siblingDirectory.get(id)?.size ?? 0) + outlineRootCount2 ||
+                        undefined
+                      }
+                      aria-posinset={
+                        (siblingDirectory.get(id)?.pos ?? 0) + outlineRootCount2 ||
+                        undefined
+                      }
+                      aria-current={matchesId ? `page` : undefined}
+                      aria-label={displayNameEntry}
+                      tabIndex={
+                        id === tabStopId && !matchesId2 && outlineTabStopId === null
+                          ? 0
+                          : -1
+                      }
+                      data-tab-row={id}
+                      onFocus={(
+                        event?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): undefined => {
+                        if (event.target === event.currentTarget) {
+                          setFocusedTabId(id);
+                          setFocusedOutlineId(null);
+                        }
+                      }}
+                      className={`group/row focus-visible:ring-fill-accent relative flex items-center rounded focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId2 ? `` : matchesId ? `bg-fill-ghost-selected` : `hover:bg-fill-ghost-hover`} ${zone === `into` ? `ring-strong ring-1` : ``} ${draggedId === id ? `opacity-40` : ``}`}
+                      style={
+                        depth > 0
+                          ? {
+                              paddingLeft: `${depth * TAB_ICON_SCALE}rem`,
+                            }
+                          : undefined
+                      }
+                      draggable={canEdit && !matchesId2 && !busy}
+                      onDragStart={(
+                        event?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): Dynamic => {
+                        if (isInsideIconGutter(event)) return event.preventDefault();
+                        clearOutlineHover();
+                        event.dataTransfer.setData(TAB_DRAG_MIME_TYPE, id);
+                        event.dataTransfer.effectAllowed = `move`;
+                        setDraggedId(id);
+                      }}
+                      onDragEnd={(..._extraArguments: unknown[]): undefined => {
+                        setDraggedId(null);
+                        setDropTarget(null);
+                      }}
+                      onDragOver={(
+                        event?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): undefined => {
+                        if (
+                          !event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE) ||
+                          draggedId === null
+                        )
+                          return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (draggedSubtreeIds?.has(id)) {
+                          event.dataTransfer.dropEffect = `none`;
+                          if (zone !== null) {
+                            setDropTarget(null);
+                          }
+                          return;
+                        }
+                        event.dataTransfer.dropEffect = `move`;
+                        let dropPositionOf2: string = dropPositionOf(event);
+                        if (zone !== dropPositionOf2) {
+                          setDropTarget({
+                            id: id,
+                            zone: dropPositionOf2,
+                          });
+                        }
+                      }}
+                      onDragLeave={(
+                        event?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): undefined => {
+                        if (
+                          !event.currentTarget.contains(event.relatedTarget) &&
+                          zone !== null
+                        ) {
+                          setDropTarget(null);
+                        }
+                      }}
+                      onDrop={(
+                        event?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): undefined => {
+                        if (event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE)) {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          dropOnRow(event, id);
+                        }
+                      }}
+                    >
+                      {rowExpansion2 !== null && !matchesId2 ? (
+                        <button
+                          type={`button`}
+                          tabIndex={-1}
+                          draggable={false}
+                          aria-label={tabOutlineToggleLabel(
+                            rowExpansion2.names,
+                            rowExpansion2.expanded,
+                            displayNameEntry,
+                          )}
+                          className={`text-muted hover:text-primary absolute inset-y-0 flex items-center justify-center ${draggedId === null ? `` : `pointer-events-none`}`}
+                          style={{
+                            left: `calc(-1 * ${TAB_BRANCH_GUTTER})`,
+                            width: TAB_ICON_WIDTH,
+                          }}
+                          onClick={(..._extraArguments: unknown[]): undefined => {
+                            tabElement(id)?.focus({
+                              preventScroll: true,
+                            });
+                            clearOutlineHover();
+                            toggleRow(id, !rowExpansion2.expanded);
+                          }}
+                          data-testid={`tabs-left-toggle-${id}`}
+                        >
+                          <UiOverlaysAndIconsCustomIcon
+                            name={rowExpansion2.expanded ? `CaretDown` : `CaretRight`}
+                            size={`xs`}
+                          />
+                        </button>
+                      ) : null}
+                      {matchesId2 ? (
+                        <label
+                          className={`gap-sm text-body text-primary min-h-control compact:px-2 comfortable:px-2.5 flex min-w-0 flex-1 cursor-text items-center self-stretch rounded ${fieldSurfaceClasses} focus-within:shadow-focus ${matchesId ? `font-medium` : ``}`}
+                          onMouseDown={(
+                            event?: Dynamic,
+                            ..._extraArguments: unknown[]
+                          ): undefined => {
+                            if (
+                              !(event.target instanceof (HTMLInputElement as Dynamic))
+                            ) {
+                              event.preventDefault();
+                            }
+                          }}
+                        >
+                          <TabRenameInput
+                            aria-label={`Tab name`}
+                            style={TAB_ROOT_PADDING_STYLE}
+                            value={renameDraft.draft}
+                            onChange={(
+                              event?: Dynamic,
+                              ..._extraArguments: unknown[]
+                            ): undefined => {
+                              let renameDraft2: Dynamic = renameDraftRef.current;
+                              if (renameDraft2 !== null) {
+                                updateRenameDraft({
+                                  ...renameDraft2,
+                                  draft: event.target.value,
+                                });
+                              }
+                            }}
+                            onBlur={(..._extraArguments: unknown[]): Dynamic =>
+                              finishRename(true, false)
+                            }
+                            onKeyDown={(
+                              event?: Dynamic,
+                              ..._extraArguments: unknown[]
+                            ): undefined => {
+                              if (!event.nativeEvent.isComposing) {
+                                event.stopPropagation();
+                                if (event.key === `Enter`) {
+                                  event.preventDefault();
+                                  finishRename(true, true);
+                                } else {
+                                  if (event.key === `Escape`) {
+                                    event.preventDefault();
+                                    event.nativeEvent.stopImmediatePropagation();
+                                    finishRename(false, true);
+                                  }
+                                }
+                              }
+                            }}
+                            data-testid={`tabs-left-rename-${id}`}
+                          />
+                        </label>
+                      ) : (
+                        <Tooltip
+                          lazy={true}
+                          content={(..._extraArguments: unknown[]): Dynamic =>
+                            overflowTitle(
+                              listRef.current?.querySelector(
+                                `[data-tab-name="${CSS.escape(id)}"]`,
+                              ),
+                              displayNameEntry,
+                            )
+                          }
+                          side={`right`}
+                        >
+                          {jsx}
+                        </Tooltip>
+                      )}
+                      <span
+                        className={`${ROW_ACTIONS_HIDDEN_CLASS} ${matchesId2 ? `invisible` : ROW_ACTIONS_SHOWN_CLASSES}`}
+                      >
+                        <Menu
+                          align={`start`}
+                          renderTrigger={
+                            <IconButton
+                              icon={
+                                <UiOverlaysAndIconsCustomIcon
+                                  name={`DotsVertical`}
+                                  size={`xs`}
+                                />
+                              }
                               size={24}
                               aria-label={`${EditorExtensionsMoreActions} for ${displayNameEntry}`}
                               tabIndex={-1}
                               data-tab-menu={``}
                               data-testid={`tabs-left-menu-${id}`}
-                            />} onOpenChange={(tabsLeftList?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (tabsLeftList) {
-          if (canEdit) {
-            ops.probeKind(id);
-          }
-          return;
-        }
-        requestAnimationFrame((..._extraArguments: unknown[]): undefined => {
-          let activeElement: Dynamic = (document as Dynamic).activeElement;
-          if (activeElement === null || activeElement === (document as Dynamic).body || activeElement instanceof (HTMLElement as Dynamic) && activeElement.hasAttribute(`data-tab-menu`)) {
-            tabElement(id)?.focus({
-              preventScroll: true
-            });
-          }
-        });
-      }} items={tabRowMenuItems({
-        id: id,
-        readOnly: readOnly,
-        busy: busy,
-        kind: kinds.get(id),
-        onRename: (..._extraArguments: unknown[]): Dynamic => beginRename(id),
-        onDuplicate: (..._extraArguments: unknown[]): Dynamic => ops.duplicate(id),
-        onNewSubtab: (..._extraArguments: unknown[]): undefined => void createTab(id),
-        onCopyLink: (..._extraArguments: unknown[]): Dynamic => ops.copyLink(id),
-        onDelete: (..._extraArguments: unknown[]): undefined => {
-          outlineUnsubscribeRef.current = id;
-          ops.requestDelete(id);
-        },
-        onlyTab: singleTab,
-        moves: tabMoveAvailability(siblingDirectory.get(id)?.pos ?? 1, siblingDirectory.get(id)?.size ?? 1, depth, moveFailure !== null),
-        intoName: previousSiblingName(id),
-        moveSaving: moveFailure?.id === id,
-        onMove: (tabsLeftList?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => void moveTab(id, tabsLeftList, resolveDataOperationControlByKey(document, options))
-      })} />
-                          </span>
-                          {(zone === `before` || zone === `after` && !(matchesId3 && activeOutlineExpanded)) && <span
-                            aria-hidden={`true`}
-                            className={`bg-fill-primary pointer-events-none absolute inset-x-1 h-0.5 rounded-full ${zone === `before` ? `-top-px` : `-bottom-px`}`}
-                          />}
-                        </div>}{matchesId3 && activeOutlineExpanded ? <TabsHeadingRow boxRef={outlineScrollRef} id={listId} tabName={displayNameEntry} rows={outlineRows} places={visibleOutlineRows} marked={activeOutlineId} stop={outlineTabStopId} level={depth + 2} indentRem={depth * TAB_ICON_SCALE + 0.875} lead={TAB_EDGE_PADDING} cap={outlineRowLimit} restTone={`text-secondary`} onPick={(tabsLeftList?: Dynamic, options?: Dynamic, context?: Dynamic, ..._extraArguments: unknown[]): Dynamic => outline?.jump(tabsLeftList, options || canEdit && (context === `mouse` || context === `pen`))} onRowFocus={(tabsLeftList?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    setFocusedOutlineId(tabsLeftList);
-    focusedElementRef.current = {
-      id: tabsLeftList,
-      index: options
-    };
-    outlineJumpTracker.arrivedOn(tabsLeftList);
-  }} onRowBlur={(tabsLeftList?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    if (tabsLeftList) {
-      focusedElementRef.current = null;
-    }
-    outlineJumpTracker.drop();
-  }} /> : null}{matchesId3 && activeOutlineExpanded && zone === `after` ? <span aria-hidden={`true`} className={`relative block h-0`}>
-                            <span className={`bg-fill-primary pointer-events-none absolute inset-x-1 -top-px h-0.5 rounded-full`} />
-                          </span> : null}</React.Fragment>
+                            />
+                          }
+                          onOpenChange={(
+                            tabsLeftList?: Dynamic,
+                            ..._extraArguments: unknown[]
+                          ): undefined => {
+                            if (tabsLeftList) {
+                              if (canEdit) {
+                                ops.probeKind(id);
+                              }
+                              return;
+                            }
+                            requestAnimationFrame(
+                              (..._extraArguments: unknown[]): undefined => {
+                                let activeElement: Dynamic = (document as Dynamic)
+                                  .activeElement;
+                                if (
+                                  activeElement === null ||
+                                  activeElement === (document as Dynamic).body ||
+                                  (activeElement instanceof (HTMLElement as Dynamic) &&
+                                    activeElement.hasAttribute(`data-tab-menu`))
+                                ) {
+                                  tabElement(id)?.focus({
+                                    preventScroll: true,
+                                  });
+                                }
+                              },
+                            );
+                          }}
+                          items={tabRowMenuItems({
+                            id: id,
+                            readOnly: readOnly,
+                            busy: busy,
+                            kind: kinds.get(id),
+                            onRename: (..._extraArguments: unknown[]): Dynamic =>
+                              beginRename(id),
+                            onDuplicate: (..._extraArguments: unknown[]): Dynamic =>
+                              ops.duplicate(id),
+                            onNewSubtab: (..._extraArguments: unknown[]): undefined =>
+                              void createTab(id),
+                            onCopyLink: (..._extraArguments: unknown[]): Dynamic =>
+                              ops.copyLink(id),
+                            onDelete: (..._extraArguments: unknown[]): undefined => {
+                              outlineUnsubscribeRef.current = id;
+                              ops.requestDelete(id);
+                            },
+                            onlyTab: singleTab,
+                            moves: tabMoveAvailability(
+                              siblingDirectory.get(id)?.pos ?? 1,
+                              siblingDirectory.get(id)?.size ?? 1,
+                              depth,
+                              moveFailure !== null,
+                            ),
+                            intoName: previousSiblingName(id),
+                            moveSaving: moveFailure?.id === id,
+                            onMove: (
+                              tabsLeftList?: Dynamic,
+                              options?: Dynamic,
+                              ..._extraArguments: unknown[]
+                            ): undefined =>
+                              void moveTab(
+                                id,
+                                tabsLeftList,
+                                resolveDataOperationControlByKey(document, options),
+                              ),
+                          })}
+                        />
+                      </span>
+                      {(zone === `before` ||
+                        (zone === `after` && !(matchesId3 && activeOutlineExpanded))) && (
+                        <span
+                          aria-hidden={`true`}
+                          className={`bg-fill-primary pointer-events-none absolute inset-x-1 h-0.5 rounded-full ${zone === `before` ? `-top-px` : `-bottom-px`}`}
+                        />
+                      )}
+                    </div>
+                  }
+                  {matchesId3 && activeOutlineExpanded ? (
+                    <TabsHeadingRow
+                      boxRef={outlineScrollRef}
+                      id={listId}
+                      tabName={displayNameEntry}
+                      rows={outlineRows}
+                      places={visibleOutlineRows}
+                      marked={activeOutlineId}
+                      stop={outlineTabStopId}
+                      level={depth + 2}
+                      indentRem={depth * TAB_ICON_SCALE + 0.875}
+                      lead={TAB_EDGE_PADDING}
+                      cap={outlineRowLimit}
+                      restTone={`text-secondary`}
+                      onPick={(
+                        tabsLeftList?: Dynamic,
+                        options?: Dynamic,
+                        context?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): Dynamic =>
+                        outline?.jump(
+                          tabsLeftList,
+                          options ||
+                            (canEdit && (context === `mouse` || context === `pen`)),
+                        )
+                      }
+                      onRowFocus={(
+                        tabsLeftList?: Dynamic,
+                        options?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): undefined => {
+                        setFocusedOutlineId(tabsLeftList);
+                        focusedElementRef.current = {
+                          id: tabsLeftList,
+                          index: options,
+                        };
+                        outlineJumpTracker.arrivedOn(tabsLeftList);
+                      }}
+                      onRowBlur={(
+                        tabsLeftList?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): undefined => {
+                        if (tabsLeftList) {
+                          focusedElementRef.current = null;
+                        }
+                        outlineJumpTracker.drop();
+                      }}
+                    />
+                  ) : null}
+                  {matchesId3 && activeOutlineExpanded && zone === `after` ? (
+                    <span aria-hidden={`true`} className={`relative block h-0`}>
+                      <span
+                        className={`bg-fill-primary pointer-events-none absolute inset-x-1 -top-px h-0.5 rounded-full`}
+                      />
+                    </span>
+                  ) : null}
+                </React.Fragment>
               );
             },
           )}
@@ -1547,14 +1538,9 @@ function TabsLeftList(
             data-testid={`tabs-left-add`}
             className={`text-muted relative w-full justify-start aria-disabled:opacity-50 ${dropTarget === `tail` ? `ring-strong ring-1` : ``}`}
             icon={<UiOverlaysAndIconsCustomIcon name={`Add`} size={`xs`} />}
-            onClick={(..._extraArguments: unknown[]): undefined =>
-              void createTab()
-            }
+            onClick={(..._extraArguments: unknown[]): undefined => void createTab()}
             onDragOver={handleRootDragOver}
-            onDrop={(
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
+            onDrop={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
               event.preventDefault();
               event.stopPropagation();
               dropAtRoot(event);
@@ -1567,10 +1553,7 @@ function TabsLeftList(
           className={`gap-xs flex items-center pt-1 pl-2`}
           data-testid={`tabs-left-error`}
         >
-          <span
-            role={`alert`}
-            className={`text-footnote text-danger min-w-0 flex-1`}
-          >
+          <span role={`alert`} className={`text-footnote text-danger min-w-0 flex-1`}>
             {seat.error}
           </span>
           <Button
@@ -1582,18 +1565,16 @@ function TabsLeftList(
       )}
     </nav>
   );
-}
-function TabsLeftListFed(
-  {
-    seat: seat,
-    onUp: onUp,
-    onRenaming: onRenaming,
-    feed: feed,
-    onJump: onJump,
-    timers: timers,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+};
+
+export const TabsLeftListFed: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  onUp: onUp,
+  onRenaming: onRenaming,
+  feed: feed,
+  onJump: onJump,
+  timers: timers,
+}) => {
   let outlineFeed: Dynamic = feed ?? tabsOutlineStore;
   let outlineState: Dynamic = useTabOutline(outlineFeed, seat.activeId);
   let cursorState: Dynamic = useSelectedTabHeading(outlineFeed, seat.activeId);
@@ -1616,5 +1597,79 @@ function TabsLeftListFed(
       timers={timers}
     />
   );
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+var TAB_DRAG_MIME_TYPE: string = `application/x-bongo-v3-tab-left`;
+var TAB_ICON_SCALE: number = 0.875;
+var TAB_EDGE_PADDING: string = `calc(0.75rem * var(--cds-rem-scale, 1))`;
+var TAB_ROOT_PADDING_STYLE: Dynamic = {
+  paddingLeft: TAB_EDGE_PADDING,
+};
+var TAB_INDENT_STEP: number = 3;
+var TAB_HOVER_OPEN_MS: number = 230;
+var TAB_ICON_WIDTH: number = 20;
+var TAB_BRANCH_GUTTER: string = `calc(${TAB_ICON_WIDTH}px + 0.125rem)`;
+var ROW_ACTIONS_HIDDEN_CLASS: string = `flex w-0 flex-none overflow-hidden`;
+var ROW_ACTIONS_SHOWN_CLASSES: string = [
+  `group-hover/row:-ml-1.5 group-hover/row:w-auto group-hover/row:overflow-visible`,
+  `group-focus-within/row:-ml-1.5 group-focus-within/row:w-auto group-focus-within/row:overflow-visible`,
+  `has-[[data-popup-open]]:-ml-1.5 has-[[data-popup-open]]:w-auto has-[[data-popup-open]]:overflow-visible`,
+  `pointer-coarse:-ml-1.5 pointer-coarse:w-auto pointer-coarse:overflow-visible`,
+].join(` `);
+var dropPositionOf = (event?: Dynamic, ..._extraArguments: unknown[]) => {
+  let rowBounds: Dynamic = event.currentTarget.getBoundingClientRect();
+  let offsetY: number = event.clientY - rowBounds.top;
+  return offsetY < rowBounds.height * 0.25
+    ? `before`
+    : offsetY > rowBounds.height * 0.75
+      ? `after`
+      : `into`;
+};
+function scrollRowIntoView(
+  container?: Dynamic,
+  row?: Dynamic,
+  ..._extraArguments: unknown[]
+) {
+  if (container.clientHeight === 0) return false;
+  let rowBounds: Dynamic = row.getBoundingClientRect();
+  let containerBounds: Dynamic = container.getBoundingClientRect();
+  if (rowBounds.top < containerBounds.top) {
+    container.scrollTop -= containerBounds.top - rowBounds.top + 4;
+  } else {
+    if (rowBounds.bottom > containerBounds.bottom) {
+      container.scrollTop += rowBounds.bottom - containerBounds.bottom + 4;
+    }
+  }
+  return true;
 }
-export { TabsLeftListFed };
+function watchScrollEdges(
+  container?: Dynamic,
+  enabled?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let clearEdges = (..._extraArguments: unknown[]): undefined => {
+    container.removeAttribute(`data-more-above`);
+    container.removeAttribute(`data-more-below`);
+  };
+  if (!enabled) {
+    clearEdges();
+    return clearEdges;
+  }
+  let updateEdges = (..._extraArguments: unknown[]): undefined => {
+    container.toggleAttribute(`data-more-above`, container.scrollTop > 1);
+    container.toggleAttribute(
+      `data-more-below`,
+      container.scrollTop + container.clientHeight < container.scrollHeight - 1,
+    );
+  };
+  updateEdges();
+  container.addEventListener(`scroll`, updateEdges, {
+    passive: true,
+  });
+  return (..._extraArguments: unknown[]): undefined => {
+    container.removeEventListener(`scroll`, updateEdges);
+    clearEdges();
+  };
+}

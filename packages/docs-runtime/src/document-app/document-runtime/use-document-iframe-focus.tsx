@@ -56,6 +56,418 @@ import {
   resolveDocumentRuntimeRange,
   resolveDocumentRuntimeRange2,
 } from "./use-document-runtime-subscribe-project-feed";
+import type * as ReactComponentTypes from "react";
+
+export const WidgetHoverToolbar: ReactComponentTypes.FC<Dynamic> = (widgetHover) => {
+  let {
+    nodeId: dataNodeId,
+    onEdit: widgetHover2,
+    onEscape: widgetHover3,
+  }: Dynamic = widgetHover;
+  let widgetHoverToolbarResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  return (
+    <div
+      role={`toolbar`}
+      aria-label={`Widget`}
+      data-testid={`widget-hover-toolbar`}
+      data-node-id={dataNodeId}
+      className={`flex items-center gap-1`}
+      aria-keyshortcuts={collectPlatformKeyboardAndSaveStatusJoin(`formatToolbar`)}
+      onKeyDown={(widgetHover4?: Dynamic, ..._extraArguments: unknown[]) =>
+        resolveDocumentRuntimeTarget(widgetHover4, dataNodeId, widgetHover3)
+      }
+    >
+      <Button
+        variant={`secondary`}
+        size={widgetHoverToolbarResult(`sm`)}
+        icon={`Edit`}
+        onClick={(..._extraArguments: unknown[]): Dynamic => widgetHover2(dataNodeId)}
+        data-testid={`widget-hover-edit`}
+      >
+        {DocumentRuntime_Edit}
+      </Button>
+    </div>
+  );
+};
+
+export const WidgetActionMenu: ReactComponentTypes.FC<Dynamic> = (widgetActionMenu) => {
+  let {
+    nodeId: dataNodeId,
+    loadHandlers: widgetActionMenu2,
+    onRun: widgetActionMenu3,
+    onOpenPanel: widgetActionMenu4,
+    onViewData: widgetActionMenu5,
+    onComment: widgetActionMenu6,
+    onReact: widgetActionMenu7,
+    onOpenCode: widgetActionMenu8,
+    onAskClaude: widgetActionMenu9,
+    onDelete: widgetActionMenu10,
+    noun = `widget`,
+    onEscape: widgetActionMenu11,
+    chordTarget: widgetActionMenu12 = false,
+    anchorHidden: widgetActionMenu13 = false,
+  }: Dynamic = widgetActionMenu;
+  let [open, setOpen]: Dynamic = (0, React.useState)(false);
+  let [open2, setOpen2]: Dynamic = (0, React.useState)(false);
+  let anchor: Dynamic = (0, React.useRef)(null);
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let labelRef: Dynamic = (0, React.useRef)(`none`);
+  let [itemsState, setItemsState]: Dynamic = (0, React.useState)([]);
+  if (open && widgetActionMenu13) {
+    setOpen(false);
+  }
+  if (open2 && widgetActionMenu13) {
+    setOpen2(false);
+  }
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!open && !open2) return;
+      let setOpen3 = (..._extraArguments: unknown[]): undefined => {
+        setOpen(false);
+        setOpen2(false);
+      };
+      window.addEventListener(`blur`, setOpen3);
+      return (..._extraArguments: unknown[]) =>
+        window.removeEventListener(`blur`, setOpen3);
+    },
+    [open, open2],
+  );
+  let labelRef2: Dynamic = (0, React.useRef)(`none`);
+  let elementRef2: Dynamic = (0, React.useRef)(null);
+  let finalFocus: Dynamic = (0, React.useCallback)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let label: Dynamic = labelRef2.current;
+      if (label !== `escape-key` && label !== `outside-press`) return false;
+      let activeElement = document.activeElement;
+      return (
+        activeElement === null ||
+        activeElement === document.body ||
+        (elementRef2.current?.contains(activeElement) ?? false)
+      );
+    },
+    [],
+  );
+  let finalFocus2: Dynamic = (0, React.useCallback)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let label: Dynamic = labelRef.current;
+      if (label !== `escape-key` && label !== `outside-press`) return false;
+      let activeElement = document.activeElement;
+      return activeElement === null ||
+        activeElement === document.body ||
+        (elementRef.current?.contains(activeElement) ?? false)
+        ? (anchor.current ?? false)
+        : false;
+    },
+    [],
+  );
+  let countRef: Dynamic = (0, React.useRef)(0);
+  let onOpenChange = (
+    widgetActionMenu15?: Dynamic,
+    options?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): undefined => {
+    labelRef2.current = widgetActionMenu15 ? `none` : (options?.reason ?? `none`);
+    setOpen(widgetActionMenu15);
+    if (!widgetActionMenu15) return;
+    let widgetActionMenuResult: number = ++countRef.current;
+    widgetActionMenu2(dataNodeId).then(
+      (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (countRef.current === widgetActionMenuResult) {
+          setItemsState(result);
+        }
+      },
+      (..._extraArguments: unknown[]): undefined => {
+        if (countRef.current === widgetActionMenuResult) {
+          setItemsState([]);
+        }
+      },
+    );
+  };
+  let onOpenChangeRef: Dynamic = (0, React.useRef)(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+  let widgetActionMenuRef: Dynamic = (0, React.useRef)(widgetActionMenu13);
+  widgetActionMenuRef.current = widgetActionMenu13;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      EditorHostTell.subscribe(
+        (widgetActionMenu15?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          let anchor2: Dynamic = anchor.current;
+          if (
+            widgetActionMenu15.nodeId !== dataNodeId ||
+            anchor2 === null ||
+            widgetActionMenuRef.current
+          )
+            return;
+          let anchorBounds: Dynamic = anchor2.getBoundingClientRect();
+          if (
+            !(
+              widgetActionMenu15.x < anchorBounds.left ||
+              widgetActionMenu15.x > anchorBounds.right ||
+              widgetActionMenu15.y < anchorBounds.top ||
+              widgetActionMenu15.y > anchorBounds.bottom
+            )
+          ) {
+            anchor2.focus({
+              preventScroll: true,
+            });
+            onOpenChangeRef.current(true);
+          }
+        },
+      ),
+    [dataNodeId],
+  );
+  let run: Dynamic = itemsState.map(
+    (itemsState2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+      label: `Run ${itemsState2.label ?? itemsState2.routine.split(`/`).pop() ?? itemsState2.routine}`,
+      onSelect: (..._extraArguments: unknown[]): undefined => {
+        (async (..._extraArguments: unknown[]): Promise<undefined> => {
+          try {
+            let widgetActionMenu15: Dynamic = await widgetActionMenu3(
+              dataNodeId,
+              itemsState2.routine,
+            );
+            if (`error` in widgetActionMenu15) {
+              toast.error(
+                widgetActionMenu15.message || `The routine couldn't be started.`,
+              );
+            } else {
+              toast.success(`Run started`);
+            }
+          } catch {
+            toast.error(`The routine couldn't be started — try again.`);
+          }
+        })();
+      },
+    }),
+  );
+  let widgetActionMenu14: Dynamic =
+    widgetActionMenu8 ??
+    (widgetActionMenu4 &&
+      ((widgetActionMenu15?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        widgetActionMenu4(widgetActionMenu15, `code`)));
+  let documentRuntimeAskClaude: Dynamic = resolveDocumentRuntimeAskClaude({
+    run: run,
+    onViewData:
+      widgetActionMenu5 &&
+      ((..._extraArguments: unknown[]): Dynamic => widgetActionMenu5(dataNodeId)),
+    onSources:
+      widgetActionMenu4 &&
+      ((..._extraArguments: unknown[]): Dynamic =>
+        widgetActionMenu4(dataNodeId, `dependencies`)),
+    onSourceCode:
+      widgetActionMenu14 &&
+      ((..._extraArguments: unknown[]): Dynamic => widgetActionMenu14(dataNodeId)),
+    onAskClaude:
+      widgetActionMenu9 &&
+      ((..._extraArguments: unknown[]): Dynamic => widgetActionMenu9(dataNodeId)),
+    onComment:
+      widgetActionMenu6 &&
+      ((..._extraArguments: unknown[]): Dynamic => widgetActionMenu6(dataNodeId)),
+    onReact:
+      widgetActionMenu7 &&
+      ((..._extraArguments: unknown[]): undefined => {
+        labelRef2.current = `none`;
+        setOpen(false);
+        labelRef.current = `none`;
+        setOpen2(true);
+      }),
+    onDelete:
+      widgetActionMenu10 &&
+      ((..._extraArguments: unknown[]): Dynamic => widgetActionMenu10(dataNodeId)),
+    noun: noun,
+  });
+  return documentRuntimeAskClaude.length === 0 ? null : (
+    <jsxRuntime.Fragment>
+      <Menu.Root open={open} onOpenChange={onOpenChange} modal={false}>
+        <Tooltip
+          content={open || open2 ? undefined : EditorExtensionsMoreActions}
+          shortcut={
+            widgetActionMenu12
+              ? collectPlatformKeyboardAndSaveStatusMods(DocumentRuntimeAlso)
+              : undefined
+          }
+          hoverable={false}
+        >
+          <Menu.Trigger
+            render={
+              <IconButton
+                ref={anchor}
+                variant={`default`}
+                size={EditorHostGlyph.size}
+                icon={
+                  <UiOverlaysAndIconsCustomIcon
+                    name={`DotsHorizontal`}
+                    customSize={EditorHostGlyph.glyph}
+                  />
+                }
+                aria-label={EditorExtensionsMoreActions}
+                aria-keyshortcuts={
+                  widgetActionMenu12
+                    ? collectPlatformKeyboardAndSaveStatusJoin(`formatToolbar`)
+                    : undefined
+                }
+                data-testid={`widget-action-menu`}
+                data-node-id={dataNodeId}
+                onMouseEnter={widgetActionMenu4 ? resolveDocumentRuntimeCatch : undefined}
+                onFocus={widgetActionMenu4 ? resolveDocumentRuntimeCatch : undefined}
+                onKeyDown={(
+                  widgetActionMenu15?: Dynamic,
+                  ..._extraArguments: unknown[]
+                ) =>
+                  resolveDocumentRuntimeTarget(
+                    widgetActionMenu15,
+                    dataNodeId,
+                    widgetActionMenu11,
+                  )
+                }
+              />
+            }
+          />
+        </Tooltip>
+        <Menu.Popup
+          ref={elementRef2}
+          align={`end`}
+          finalFocus={finalFocus}
+          data-testid={`widget-action-menu-popup`}
+        >
+          {renderMenuItems(documentRuntimeAskClaude)}
+        </Menu.Popup>
+      </Menu.Root>
+      {widgetActionMenu7 !== undefined && (
+        <Popover.Root
+          open={open2}
+          onOpenChange={(
+            widgetActionMenu15?: Dynamic,
+            options?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            labelRef.current = widgetActionMenu15 ? `none` : (options?.reason ?? `none`);
+            setOpen2(widgetActionMenu15);
+          }}
+        >
+          <ReactionPicker
+            ref={elementRef}
+            anchor={anchor}
+            side={`bottom`}
+            align={`end`}
+            finalFocus={finalFocus2}
+            onPick={(
+              widgetActionMenu15?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): undefined => {
+              labelRef.current = `none`;
+              setOpen2(false);
+              widgetActionMenu7(dataNodeId, widgetActionMenu15);
+            }}
+          />
+        </Popover.Root>
+      )}
+    </jsxRuntime.Fragment>
+  );
+};
+
+export const WidgetProvenanceFacts: ReactComponentTypes.FC<Dynamic> = ({
+  p: p5,
+  rel: rel,
+  onNavigate: onNavigate,
+  onOpenDependencies: onOpenDependencies,
+}) => {
+  let widgetProvenanceFactsResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  let lastTouched: Dynamic = p5.lastTouched;
+  let widgetProvenanceAuthors2: Dynamic =
+    lastTouched !== undefined &&
+    (lastTouched.action === `publish` || lastTouched.landed === `live`)
+      ? widgetProvenanceAuthors(lastTouched)
+      : undefined;
+  let widgetProvenanceAuthors3: Dynamic =
+    widgetProvenanceAuthors2 !== undefined && widgetProvenanceAuthors2.label !== `unknown`
+      ? widgetProvenanceAuthors2
+      : undefined;
+  let sourcesSlice: Dynamic = p5.sources.slice(0, 3);
+  let difference: number = p5.sources.length - sourcesSlice.length;
+  return (
+    <div className={`flex flex-col gap-1.5`} data-testid={`widget-provenance-facts`}>
+      {p5.published && p5.published.at !== `` && (
+        <div
+          className={`text-primary text-footnote font-medium`}
+          data-testid={`widget-provenance-published`}
+        >
+          {`Published `}
+          {rel(p5.published.at)}
+          {widgetProvenanceAuthors3 && (
+            <span className={`text-secondary font-normal`}>
+              {` `}
+              {`by `}
+              {widgetProvenanceAuthors3.person === undefined ? (
+                widgetProvenanceAuthors3.label
+              ) : (
+                <UserReferenceChip who={widgetProvenanceAuthors3.person} />
+              )}
+            </span>
+          )}
+        </div>
+      )}
+      <div
+        className={`text-muted text-footnote`}
+        data-testid={`widget-provenance-sources`}
+      >
+        {p5.sourcesUnavailable ? (
+          <span
+            data-testid={`widget-provenance-sources-unavail`}
+          >{`Sources unavailable`}</span>
+        ) : p5.sources.length === 0 ? (
+          `No sources`
+        ) : (
+          <jsxRuntime.Fragment>
+            {p5.sources.length}
+            {` `}
+            {p5.sources.length === 1 ? `source` : `sources`}
+            {`:`}
+            {` `}
+            {sourcesSlice.map(
+              (entry?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
+                <Tooltip
+                  content={
+                    entry.kind === `inline`
+                      ? `${entry.ref} — inline sample rows typed in the widget code`
+                      : entry.ref
+                  }
+                  multiline={true}
+                  className={`wrap-anywhere`}
+                  key={entry.ref}
+                >
+                  {
+                    <span
+                      className={`text-code`}
+                      data-testid={`widget-provenance-source`}
+                    >
+                      {index > 0 && `, `}
+                      {entry.ref}
+                      {entry.kind === `inline` && ` · inline`}
+                    </span>
+                  }
+                </Tooltip>
+              ),
+            )}
+            {difference > 0 && `, +${difference} more`}
+          </jsxRuntime.Fragment>
+        )}
+      </div>
+      {onOpenDependencies && (
+        <Button
+          size={widgetProvenanceFactsResult(`sm`)}
+          variant={`ghost`}
+          onClick={(..._extraArguments: unknown[]): undefined => {
+            onNavigate?.();
+            onOpenDependencies();
+          }}
+          data-testid={`widget-provenance-deps-link`}
+          className={`mt-0.5 self-start`}
+        >{`Details →`}</Button>
+      )}
+    </div>
+  );
+};
 
 function useDocumentIframeFocus(
   {
@@ -702,46 +1114,6 @@ function resolveDocumentRuntimeTarget(
   }
 }
 
-function WidgetHoverToolbar(
-  widgetHover?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let {
-    nodeId: dataNodeId,
-    onEdit: widgetHover2,
-    onEscape: widgetHover3,
-  }: Dynamic = widgetHover;
-  let widgetHoverToolbarResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
-  return (
-    <div
-      role={`toolbar`}
-      aria-label={`Widget`}
-      data-testid={`widget-hover-toolbar`}
-      data-node-id={dataNodeId}
-      className={`flex items-center gap-1`}
-      aria-keyshortcuts={collectPlatformKeyboardAndSaveStatusJoin(
-        `formatToolbar`,
-      )}
-      onKeyDown={(widgetHover4?: Dynamic, ..._extraArguments: unknown[]) =>
-        resolveDocumentRuntimeTarget(widgetHover4, dataNodeId, widgetHover3)
-      }
-    >
-      <Button
-        variant={`secondary`}
-        size={widgetHoverToolbarResult(`sm`)}
-        icon={`Edit`}
-        onClick={(..._extraArguments: unknown[]): Dynamic =>
-          widgetHover2(dataNodeId)
-        }
-        data-testid={`widget-hover-edit`}
-      >
-        {DocumentRuntime_Edit}
-      </Button>
-    </div>
-  );
-}
-
 var DocumentRuntimeMemo: Dynamic;
 
 function resolveDocumentRuntimePreventScroll(
@@ -874,302 +1246,6 @@ function resolveDocumentRuntimeCatch(..._extraArguments: unknown[]): undefined {
   }
 }
 
-function WidgetActionMenu(
-  widgetActionMenu?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let {
-    nodeId: dataNodeId,
-    loadHandlers: widgetActionMenu2,
-    onRun: widgetActionMenu3,
-    onOpenPanel: widgetActionMenu4,
-    onViewData: widgetActionMenu5,
-    onComment: widgetActionMenu6,
-    onReact: widgetActionMenu7,
-    onOpenCode: widgetActionMenu8,
-    onAskClaude: widgetActionMenu9,
-    onDelete: widgetActionMenu10,
-    noun = `widget`,
-    onEscape: widgetActionMenu11,
-    chordTarget: widgetActionMenu12 = false,
-    anchorHidden: widgetActionMenu13 = false,
-  }: Dynamic = widgetActionMenu;
-  let [open, setOpen]: Dynamic = (0, React.useState)(false);
-  let [open2, setOpen2]: Dynamic = (0, React.useState)(false);
-  let anchor: Dynamic = (0, React.useRef)(null);
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let labelRef: Dynamic = (0, React.useRef)(`none`);
-  let [itemsState, setItemsState]: Dynamic = (0, React.useState)([]);
-  if (open && widgetActionMenu13) {
-    setOpen(false);
-  }
-  if (open2 && widgetActionMenu13) {
-    setOpen2(false);
-  }
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!open && !open2) return;
-      let setOpen3 = (..._extraArguments: unknown[]): undefined => {
-        setOpen(false);
-        setOpen2(false);
-      };
-      window.addEventListener(`blur`, setOpen3);
-      return (..._extraArguments: unknown[]) =>
-        window.removeEventListener(`blur`, setOpen3);
-    },
-    [open, open2],
-  );
-  let labelRef2: Dynamic = (0, React.useRef)(`none`);
-  let elementRef2: Dynamic = (0, React.useRef)(null);
-  let finalFocus: Dynamic = (0, React.useCallback)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let label: Dynamic = labelRef2.current;
-      if (label !== `escape-key` && label !== `outside-press`) return false;
-      let activeElement = document.activeElement;
-      return (
-        activeElement === null ||
-        activeElement === document.body ||
-        (elementRef2.current?.contains(activeElement) ?? false)
-      );
-    },
-    [],
-  );
-  let finalFocus2: Dynamic = (0, React.useCallback)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let label: Dynamic = labelRef.current;
-      if (label !== `escape-key` && label !== `outside-press`) return false;
-      let activeElement = document.activeElement;
-      return activeElement === null ||
-        activeElement === document.body ||
-        (elementRef.current?.contains(activeElement) ?? false)
-        ? (anchor.current ?? false)
-        : false;
-    },
-    [],
-  );
-  let countRef: Dynamic = (0, React.useRef)(0);
-  let onOpenChange = (
-    widgetActionMenu15?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    labelRef2.current = widgetActionMenu15
-      ? `none`
-      : (options?.reason ?? `none`);
-    setOpen(widgetActionMenu15);
-    if (!widgetActionMenu15) return;
-    let widgetActionMenuResult: number = ++countRef.current;
-    widgetActionMenu2(dataNodeId).then(
-      (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (countRef.current === widgetActionMenuResult) {
-          setItemsState(result);
-        }
-      },
-      (..._extraArguments: unknown[]): undefined => {
-        if (countRef.current === widgetActionMenuResult) {
-          setItemsState([]);
-        }
-      },
-    );
-  };
-  let onOpenChangeRef: Dynamic = (0, React.useRef)(onOpenChange);
-  onOpenChangeRef.current = onOpenChange;
-  let widgetActionMenuRef: Dynamic = (0, React.useRef)(widgetActionMenu13);
-  widgetActionMenuRef.current = widgetActionMenu13;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      EditorHostTell.subscribe(
-        (
-          widgetActionMenu15?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let anchor2: Dynamic = anchor.current;
-          if (
-            widgetActionMenu15.nodeId !== dataNodeId ||
-            anchor2 === null ||
-            widgetActionMenuRef.current
-          )
-            return;
-          let anchorBounds: Dynamic = anchor2.getBoundingClientRect();
-          if (
-            !(
-              widgetActionMenu15.x < anchorBounds.left ||
-              widgetActionMenu15.x > anchorBounds.right ||
-              widgetActionMenu15.y < anchorBounds.top ||
-              widgetActionMenu15.y > anchorBounds.bottom
-            )
-          ) {
-            anchor2.focus({
-              preventScroll: true,
-            });
-            onOpenChangeRef.current(true);
-          }
-        },
-      ),
-    [dataNodeId],
-  );
-  let run: Dynamic = itemsState.map(
-    (itemsState2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-      label: `Run ${itemsState2.label ?? itemsState2.routine.split(`/`).pop() ?? itemsState2.routine}`,
-      onSelect: (..._extraArguments: unknown[]): undefined => {
-        (async (..._extraArguments: unknown[]): Promise<undefined> => {
-          try {
-            let widgetActionMenu15: Dynamic = await widgetActionMenu3(
-              dataNodeId,
-              itemsState2.routine,
-            );
-            if (`error` in widgetActionMenu15) {
-              toast.error(
-                widgetActionMenu15.message ||
-                  `The routine couldn't be started.`,
-              );
-            } else {
-              toast.success(`Run started`);
-            }
-          } catch {
-            toast.error(`The routine couldn't be started — try again.`);
-          }
-        })();
-      },
-    }),
-  );
-  let widgetActionMenu14: Dynamic =
-    widgetActionMenu8 ??
-    (widgetActionMenu4 &&
-      ((widgetActionMenu15?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu4(widgetActionMenu15, `code`)));
-  let documentRuntimeAskClaude: Dynamic = resolveDocumentRuntimeAskClaude({
-    run: run,
-    onViewData:
-      widgetActionMenu5 &&
-      ((..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu5(dataNodeId)),
-    onSources:
-      widgetActionMenu4 &&
-      ((..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu4(dataNodeId, `dependencies`)),
-    onSourceCode:
-      widgetActionMenu14 &&
-      ((..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu14(dataNodeId)),
-    onAskClaude:
-      widgetActionMenu9 &&
-      ((..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu9(dataNodeId)),
-    onComment:
-      widgetActionMenu6 &&
-      ((..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu6(dataNodeId)),
-    onReact:
-      widgetActionMenu7 &&
-      ((..._extraArguments: unknown[]): undefined => {
-        labelRef2.current = `none`;
-        setOpen(false);
-        labelRef.current = `none`;
-        setOpen2(true);
-      }),
-    onDelete:
-      widgetActionMenu10 &&
-      ((..._extraArguments: unknown[]): Dynamic =>
-        widgetActionMenu10(dataNodeId)),
-    noun: noun,
-  });
-  return documentRuntimeAskClaude.length === 0 ? null : (
-    <jsxRuntime.Fragment>
-      <Menu.Root open={open} onOpenChange={onOpenChange} modal={false}>
-        <Tooltip
-          content={open || open2 ? undefined : EditorExtensionsMoreActions}
-          shortcut={
-            widgetActionMenu12
-              ? collectPlatformKeyboardAndSaveStatusMods(DocumentRuntimeAlso)
-              : undefined
-          }
-          hoverable={false}
-        >
-          <Menu.Trigger
-            render={
-              <IconButton
-                ref={anchor}
-                variant={`default`}
-                size={EditorHostGlyph.size}
-                icon={
-                  <UiOverlaysAndIconsCustomIcon
-                    name={`DotsHorizontal`}
-                    customSize={EditorHostGlyph.glyph}
-                  />
-                }
-                aria-label={EditorExtensionsMoreActions}
-                aria-keyshortcuts={
-                  widgetActionMenu12
-                    ? collectPlatformKeyboardAndSaveStatusJoin(`formatToolbar`)
-                    : undefined
-                }
-                data-testid={`widget-action-menu`}
-                data-node-id={dataNodeId}
-                onMouseEnter={
-                  widgetActionMenu4 ? resolveDocumentRuntimeCatch : undefined
-                }
-                onFocus={
-                  widgetActionMenu4 ? resolveDocumentRuntimeCatch : undefined
-                }
-                onKeyDown={(
-                  widgetActionMenu15?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ) =>
-                  resolveDocumentRuntimeTarget(
-                    widgetActionMenu15,
-                    dataNodeId,
-                    widgetActionMenu11,
-                  )
-                }
-              />
-            }
-          />
-        </Tooltip>
-        <Menu.Popup
-          ref={elementRef2}
-          align={`end`}
-          finalFocus={finalFocus}
-          data-testid={`widget-action-menu-popup`}
-        >
-          {renderMenuItems(documentRuntimeAskClaude)}
-        </Menu.Popup>
-      </Menu.Root>
-      {widgetActionMenu7 !== undefined && (
-        <Popover.Root
-          open={open2}
-          onOpenChange={(
-            widgetActionMenu15?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            labelRef.current = widgetActionMenu15
-              ? `none`
-              : (options?.reason ?? `none`);
-            setOpen2(widgetActionMenu15);
-          }}
-        >
-          <ReactionPicker
-            ref={elementRef}
-            anchor={anchor}
-            side={`bottom`}
-            align={`end`}
-            finalFocus={finalFocus2}
-            onPick={(
-              widgetActionMenu15?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              labelRef.current = `none`;
-              setOpen2(false);
-              widgetActionMenu7(dataNodeId, widgetActionMenu15);
-            }}
-          />
-        </Popover.Root>
-      )}
-    </jsxRuntime.Fragment>
-  );
-}
-
 var DocumentRuntimeMemo2: Dynamic;
 
 function resolveDocumentRuntimeLabel(
@@ -1237,110 +1313,6 @@ function useProvenanceTimeFormat(..._extraArguments: unknown[]): Dynamic {
 }
 
 var WidgetProvenanceTrigger: Dynamic;
-
-function WidgetProvenanceFacts(
-  {
-    p: p5,
-    rel: rel,
-    onNavigate: onNavigate,
-    onOpenDependencies: onOpenDependencies,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let widgetProvenanceFactsResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
-  let lastTouched: Dynamic = p5.lastTouched;
-  let widgetProvenanceAuthors2: Dynamic =
-    lastTouched !== undefined &&
-    (lastTouched.action === `publish` || lastTouched.landed === `live`)
-      ? widgetProvenanceAuthors(lastTouched)
-      : undefined;
-  let widgetProvenanceAuthors3: Dynamic =
-    widgetProvenanceAuthors2 !== undefined &&
-    widgetProvenanceAuthors2.label !== `unknown`
-      ? widgetProvenanceAuthors2
-      : undefined;
-  let sourcesSlice: Dynamic = p5.sources.slice(0, 3);
-  let difference: number = p5.sources.length - sourcesSlice.length;
-  return (
-    <div
-      className={`flex flex-col gap-1.5`}
-      data-testid={`widget-provenance-facts`}
-    >
-      {p5.published && p5.published.at !== `` && (
-        <div
-          className={`text-primary text-footnote font-medium`}
-          data-testid={`widget-provenance-published`}
-        >
-          {`Published `}
-          {rel(p5.published.at)}
-          {widgetProvenanceAuthors3 && (
-            <span className={`text-secondary font-normal`}>
-              {` `}
-              {`by `}
-              {widgetProvenanceAuthors3.person === undefined ? (
-                widgetProvenanceAuthors3.label
-              ) : (
-                <UserReferenceChip who={widgetProvenanceAuthors3.person} />
-              )}
-            </span>
-          )}
-        </div>
-      )}
-      <div
-        className={`text-muted text-footnote`}
-        data-testid={`widget-provenance-sources`}
-      >
-        {p5.sourcesUnavailable ? (
-          <span
-            data-testid={`widget-provenance-sources-unavail`}
-          >{`Sources unavailable`}</span>
-        ) : p5.sources.length === 0 ? (
-          `No sources`
-        ) : (
-          <jsxRuntime.Fragment>
-            {p5.sources.length}
-            {` `}
-            {p5.sources.length === 1 ? `source` : `sources`}
-            {`:`}
-            {` `}
-            {sourcesSlice.map(
-              (
-                entry?: Dynamic,
-                index?: Dynamic,
-                ..._extraArguments: unknown[]
-              ) => (
-                <Tooltip
-                  content={entry.kind === `inline` ? `${entry.ref} — inline sample rows typed in the widget code` : entry.ref}
-                  multiline={true}
-                  className={`wrap-anywhere`}
-                  key={entry.ref}
-                >{<span className={`text-code`} data-testid={`widget-provenance-source`}>
-                          {index > 0 && `, `}
-                          {entry.ref}
-                          {entry.kind === `inline` && ` · inline`}
-                        </span>}</Tooltip>
-              ),
-            )}
-            {difference > 0 && `, +${difference} more`}
-          </jsxRuntime.Fragment>
-        )}
-      </div>
-      {onOpenDependencies && (
-        <Button
-          size={widgetProvenanceFactsResult(`sm`)}
-          variant={`ghost`}
-          onClick={(..._extraArguments: unknown[]): undefined => {
-            onNavigate?.();
-            onOpenDependencies();
-          }}
-          data-testid={`widget-provenance-deps-link`}
-          className={`mt-0.5 self-start`}
-        >{`Details →`}</Button>
-      )}
-    </div>
-  );
-}
 
 var documentRuntimeLimit6: number;
 

@@ -19,37 +19,19 @@ import {
   resolveUiOverlaysAndIconsValue9,
   uiLinksAndFoundationOnClickOnPointerEnterOnPointerLeaveOnPointerDownValues,
 } from "./dependencies";
+import type * as ReactComponentTypes from "react";
 
-var badgeAndLinkHrefRouterOptionsTargetRelValues: Dynamic;
-
-function resolveBadgeAndLinkKeys(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input;
-  let state: Dynamic = {};
-  for (let value2 of Object.keys(value) as Dynamic)
-    if (!options.includes(value2)) {
-      state[value2] = value[value2];
-    }
-  return state;
-}
-
-function BadgeAndLinkStamp(
-  {
-    stamp: input,
-    forwardedRef: input2,
-    linkInput: input3,
-    render: input4,
-    body: input5,
-    className: input6,
-    actionClassName: input7,
-    actionDisabled: input8,
-    rest: input9,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const BadgeAndLinkStamp: ReactComponentTypes.FC<Dynamic> = ({
+  stamp: input,
+  forwardedRef: input2,
+  linkInput: input3,
+  render: input4,
+  body: input5,
+  className: input6,
+  actionClassName: input7,
+  actionDisabled: input8,
+  rest: input9,
+}) => {
   let value: Dynamic = (0, React.isValidElement)(input4);
   let value2: Dynamic = resolveUiLinksAndFoundationHref({
     ...input3,
@@ -77,29 +59,67 @@ function BadgeAndLinkStamp(
       ...uiLinksAndFoundationOnClickOnPointerEnterOnPointerLeaveOnPointerDownValues,
     ]);
     return (
-      <a ref={input2} {...input} {...value5} {...value2} className={input6}>{input5}</a>
+      <a ref={input2} {...input} {...value5} {...value2} className={input6}>
+        {input5}
+      </a>
     );
   }
   let value4: Dynamic = resolveBadgeAndLinkKeys(input9, [`href`, `disabled`]);
   return (
-    <BaseButton render={<span {...input} />} nativeButton={false} {...input8 === undefined ? {} : {
-  disabled: input8
-}} ref={input2} {...value4} className={input7}>{input5}</BaseButton>
+    <BaseButton
+      render={<span {...input} />}
+      nativeButton={false}
+      {...(input8 === undefined
+        ? {}
+        : {
+            disabled: input8,
+          })}
+      ref={input2}
+      {...value4}
+      className={input7}
+    >
+      {input5}
+    </BaseButton>
   );
-}
+};
 
-function BadgeAndLinkHidden(
-  { id: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const BadgeAndLinkHidden: ReactComponentTypes.FC<Dynamic> = ({ id: input }) => {
   return (
     <span id={input} hidden={true} className={`sr-only`}>
-      {resolveUiLinksAndFoundationUseContext3(
-        `opensInNewTab`,
-        `(opens in new tab)`,
-      )}
+      {resolveUiLinksAndFoundationUseContext3(`opensInNewTab`, `(opens in new tab)`)}
     </span>
   );
+};
+
+export const BadgeAndLinkFontSize: ReactComponentTypes.FC<Dynamic> = (input) => {
+  return resolveUiOverlaysAndIconsValue9(input) ? (
+    <UiOverlaysAndIconsCustomIcon
+      name={input}
+      size={`sm`}
+      className={`self-center`}
+      style={{
+        fontSize: `1lh`,
+      }}
+    />
+  ) : (
+    <span className={`self-center`}>{input}</span>
+  );
+};
+
+var badgeAndLinkHrefRouterOptionsTargetRelValues: Dynamic;
+
+function resolveBadgeAndLinkKeys(
+  input?: Dynamic,
+  options?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  let value: Dynamic = input;
+  let state: Dynamic = {};
+  for (let value2 of Object.keys(value) as Dynamic)
+    if (!options.includes(value2)) {
+      state[value2] = value[value2];
+    }
+  return state;
 }
 
 var BadgeAndLinkCdsResetCdsTextLink: Dynamic;
@@ -115,24 +135,6 @@ var BadgeAndLinkStyles2: Dynamic;
 var BadgeAndLinkState2: Dynamic;
 
 var BadgeAndLinkState3: Dynamic;
-
-function BadgeAndLinkFontSize(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return resolveUiOverlaysAndIconsValue9(input) ? (
-    <UiOverlaysAndIconsCustomIcon
-      name={input}
-      size={`sm`}
-      className={`self-center`}
-      style={{
-        fontSize: `1lh`,
-      }}
-    />
-  ) : (
-    <span className={`self-center`}>{input}</span>
-  );
-}
 
 var Link: Dynamic;
 
@@ -268,4 +270,4 @@ export function initializeLinkStep1(): void {
   Link.displayName = `TextLink`;
 }
 
-export { BadgeAndLinkHidden, Link };
+export { Link };

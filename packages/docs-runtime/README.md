@@ -22,6 +22,8 @@
 
 TSX 使用 React 标准自动 JSX runtime，不再包装 props 或扩展 JSX 的组件属性检查。应用直接从 `react-dom/client` 引入 `createRoot`；CSS 自定义属性的类型扩展位于 `ambient/react-styles.d.ts`，编辑器渲染边界的 props 位于 `prose-editor/render-boundaries.ts`。动态组件以及需要保持原始 key／children 调用语义的少数位置使用 React 原生元素工厂。恢复代码引用 Base UI 未公开的子路径时，用私有 `#base-ui/` 与 `#base-ui-utils/` 前缀；TypeScript `paths` 读取包内原生声明，`tools/asset-plugin.ts` 的 `nodeModulesPaths()` 在 Vite 与两处 esbuild 构建中解析相同文件。
 
+普通函数组件统一使用 `export const Component: React.FC<Props> = (props) => { … };`，通过 type-only React 命名空间引用类型；简单 props 可直接内联，复杂 props 沿用具名合同。组件集中声明在模块初始化语句之前，保持原先函数声明可供初始化阶段引用的顺序；hooks、默认值与渲染体不随声明形式调整。`forwardRef`、泛型组件及返回操作对象的 JSX 工具函数保留其实际调用合同，不强行标成 `React.FC`。未恢复的 props 类型继续按现有类型债务跟踪。
+
 ### 初始化与模块边界
 
 下文以 `document-app/`、`design-system/`、`platform/` 指代各自入口及实现模块组，具体定义可按函数名定位。

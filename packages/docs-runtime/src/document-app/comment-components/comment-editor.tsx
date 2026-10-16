@@ -45,21 +45,17 @@ import {
   CommentClaudeToggle,
   useCommentComponentsWrapper,
 } from "./comment-reply-sheet";
+import type * as ReactComponentTypes from "react";
 
-var resolveCommentComponentsError: (..._extraArguments: unknown[]) => undefined;
-
-function CommentEditor(
-  {
-    initial: initial,
-    onSave: onSave,
-    onCancel: onCancel,
-    sendToClaude = false,
-    container: container,
-    chrome: chrome,
-    returnAddsLine = false,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const CommentEditor: ReactComponentTypes.FC<Dynamic> = ({
+  initial: initial,
+  onSave: onSave,
+  onCancel: onCancel,
+  sendToClaude = false,
+  container: container,
+  chrome: chrome,
+  returnAddsLine = false,
+}) => {
   let commentEditorResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
   let elementRef: Dynamic = (0, React.useRef)(null);
   let elementRef2: Dynamic = (0, React.useRef)(null);
@@ -85,9 +81,7 @@ function CommentEditor(
   let [busy, setBusy]: Dynamic = (0, React.useState)(false);
   let [initialState, setInitialState]: Dynamic = (0, React.useState)(initial2);
   let label = `${EDIT_BOX_PREFIX}${(0, React.useId)()}`;
-  let onModEnter: Dynamic = async (
-    ..._extraArguments: unknown[]
-  ): Promise<Dynamic> => {
+  let onModEnter: Dynamic = async (..._extraArguments: unknown[]): Promise<Dynamic> => {
     let element: Dynamic = elementRef3.current;
     if (!element || enabledRef2.current) return;
     let typed: Dynamic = commentWords(
@@ -106,15 +100,11 @@ function CommentEditor(
         },
         mapCommentComponentsClaude(element),
       );
-    let body: Dynamic = toClaude
-      ? resolveDataModelSchemasBody(typed, []).body
-      : typed;
-    if (nothingToSee(typed) || body === commentWords(initial2).trim())
-      return onCancel();
+    let body: Dynamic = toClaude ? resolveDataModelSchemasBody(typed, []).body : typed;
+    if (nothingToSee(typed) || body === commentWords(initial2).trim()) return onCancel();
     if (isFrameArtifact() && commentTooLong(body, initial))
       return resolveCommentComponentsError();
-    let activeElement: Dynamic =
-      elementRef.current?.ownerDocument.activeElement;
+    let activeElement: Dynamic = elementRef.current?.ownerDocument.activeElement;
     enabledRef2.current = true;
     setBusy(true);
     try {
@@ -168,10 +158,7 @@ function CommentEditor(
             onEnter: onModEnter,
           }),
       onEscape: onCancel,
-      onUpdate: (
-        commentEditor?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
+      onUpdate: (commentEditor?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         useCommentStore.getState().setEditorDirty(
           label,
           commentEditor
@@ -186,10 +173,7 @@ function CommentEditor(
           mapCommentComponentsClaude(commentEditor);
         setNamed(
           (commentEditor2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            resolveCommentComponentsClaude(
-              commentEditor2,
-              mapCommentComponentsClaude2,
-            )
+            resolveCommentComponentsClaude(commentEditor2, mapCommentComponentsClaude2)
               ? commentEditor2
               : mapCommentComponentsClaude2,
         );
@@ -250,33 +234,48 @@ function CommentEditor(
     sendToClaude ? route : null,
     named,
     busy,
-    (..._extraArguments: unknown[]): Dynamic =>
-      elementRef3.current?.commands.focus(),
+    (..._extraArguments: unknown[]): Dynamic => elementRef3.current?.commands.focus(),
   );
   return chrome === `cds` ? (
-    <span className={`contents`} {...useCommentComponentsWrapper2.wrapper}>{sendToClaude2 && <span id={controlId} hidden={true} data-testid={`comment-route-said`}>
-              {/* BaoCut: 称「agent」，不称 Claude。 */}
-              {`Sends to agent`}
-            </span>}{<CommentCard.EditField ref={elementRef} editor={<div ref={elementRef2} data-chat-editor={true} />} value={initialState} savedValue={initial2} busy={busy} onSave={(..._extraArguments: unknown[]): undefined => void onModEnter()} onCancel={onCancel} sendToClaude={useCommentComponentsWrapper2.sendToClaude} data-testid={`comment-edit`} onClick={(commentEditor?: Dynamic, ..._extraArguments: unknown[]): Dynamic => commentEditor.stopPropagation()} {...returnAddsLine && {
-    onPointerDown: resolveCommentComponentsTarget2,
-    onMouseDown: resolveCommentComponentsTarget2
-  }} />}</span>
+    <span className={`contents`} {...useCommentComponentsWrapper2.wrapper}>
+      {sendToClaude2 && (
+        <span id={controlId} hidden={true} data-testid={`comment-route-said`}>
+          {/* BaoCut: 称「agent」，不称 Claude。 */}
+          {`Sends to agent`}
+        </span>
+      )}
+      {
+        <CommentCard.EditField
+          ref={elementRef}
+          editor={<div ref={elementRef2} data-chat-editor={true} />}
+          value={initialState}
+          savedValue={initial2}
+          busy={busy}
+          onSave={(..._extraArguments: unknown[]): undefined => void onModEnter()}
+          onCancel={onCancel}
+          sendToClaude={useCommentComponentsWrapper2.sendToClaude}
+          data-testid={`comment-edit`}
+          onClick={(commentEditor?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            commentEditor.stopPropagation()
+          }
+          {...(returnAddsLine && {
+            onPointerDown: resolveCommentComponentsTarget2,
+            onMouseDown: resolveCommentComponentsTarget2,
+          })}
+        />
+      }
+    </span>
   ) : (
     <div
       ref={elementRef}
       className={`flex flex-col gap-1`}
-      onClick={(
-        commentEditor?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => commentEditor.stopPropagation()}
+      onClick={(commentEditor?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        commentEditor.stopPropagation()
+      }
       data-testid={`comment-edit`}
     >
       {sendToClaude2 && (
-        <span
-          id={controlId}
-          hidden={true}
-          data-testid={`comment-route-said`}
-        >
+        <span id={controlId} hidden={true} data-testid={`comment-route-said`}>
           {/* BaoCut: 称「agent」，不称 Claude。 */}
           {`Sends to agent`}
         </span>
@@ -308,14 +307,14 @@ function CommentEditor(
       </div>
     </div>
   );
-}
+};
 
-var CommentComponents_BorderStrongTextSecondaryTextCaptionMb2LineClamp2BorderS2Ps2FontNormal: string;
-
-function UseCommentComponentsTextComponent(
-  { text: text, lead: lead, testid: testid, part = false }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentComponentsTextComponent: ReactComponentTypes.FC<Dynamic> = ({
+  text: text,
+  lead: lead,
+  testid: testid,
+  part = false,
+}) => {
   let jsxs = (
     <jsxRuntime.Fragment>
       {lead !== undefined && (
@@ -339,12 +338,13 @@ function UseCommentComponentsTextComponent(
       {jsxs}
     </div>
   );
-}
+};
 
-function ChartLineSwatch(
-  { line: line, testid = `chart-line`, part = false }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const ChartLineSwatch: ReactComponentTypes.FC<Dynamic> = ({
+  line: line,
+  testid = `chart-line`,
+  part = false,
+}) => {
   let jsxs = (
     <jsxRuntime.Fragment>
       {line.color !== undefined && (
@@ -372,12 +372,13 @@ function ChartLineSwatch(
       {jsxs}
     </div>
   );
-}
+};
 
-function UseCommentComponentsFromComponent(
-  { from: from, to: to2, flush = false }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentComponentsFromComponent: ReactComponentTypes.FC<Dynamic> = ({
+  from: from,
+  to: to2,
+  flush = false,
+}) => {
   return (
     <div
       className={resolveUiDesignSystemValue2(
@@ -385,13 +386,15 @@ function UseCommentComponentsFromComponent(
         !flush && `mb-2`,
       )}
     >
-      <div className={`text-muted whitespace-pre-wrap line-through`}>
-        {from}
-      </div>
+      <div className={`text-muted whitespace-pre-wrap line-through`}>{from}</div>
       <div className={`text-primary whitespace-pre-wrap`}>{to2}</div>
     </div>
   );
-}
+};
+
+var resolveCommentComponentsError: (..._extraArguments: unknown[]) => undefined;
+
+var CommentComponents_BorderStrongTextSecondaryTextCaptionMb2LineClamp2BorderS2Ps2FontNormal: string;
 
 function mapCommentComponentsType(
   mapCommentComponentsType2?: Dynamic,
@@ -769,23 +772,4 @@ export function initializeCommentComponentsCommentEditorStep1(): void {
     ).trim());
 }
 
-export {
-  ChartLineSwatch,
-  CommentComponents_Styles,
-  CommentEditor,
-  UseCommentComponentsFromComponent,
-  UseCommentComponentsTextComponent,
-  clearCommentComponentsDoc,
-  isCommentComponentsFirstChild,
-  isCommentComponentsMaps,
-  mapCommentComponentsClaude,
-  mapCommentComponentsType,
-  resolveCommentComponentsClaude,
-  resolveCommentComponentsError,
-  resolveCommentComponentsFrom,
-  resolveCommentComponentsLabel,
-  resolveCommentComponentsPreventDefault,
-  resolveCommentComponentsSchema,
-  resolveCommentComponentsTarget,
-  resolveCommentComponentsTrim,
-};
+export { CommentComponents_Styles, clearCommentComponentsDoc, isCommentComponentsFirstChild, isCommentComponentsMaps, mapCommentComponentsClaude, mapCommentComponentsType, resolveCommentComponentsClaude, resolveCommentComponentsError, resolveCommentComponentsFrom, resolveCommentComponentsLabel, resolveCommentComponentsPreventDefault, resolveCommentComponentsSchema, resolveCommentComponentsTarget, resolveCommentComponentsTrim };

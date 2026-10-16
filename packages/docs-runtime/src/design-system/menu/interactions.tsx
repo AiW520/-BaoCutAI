@@ -7,6 +7,61 @@ import {
   resolveUiDesignSystemValue2,
 } from "../dependencies";
 import { SheetsDataCdsSheetScroll } from "../sheets/geometry";
+import type * as ReactComponentTypes from "react";
+
+export const MenuInteractionsHeader: ReactComponentTypes.FC<Dynamic> = ({
+  header: input,
+  headerClassName: input2,
+  footer: input3,
+  maxVisibleItems: input4,
+  fill: input6 = false,
+  children: input5,
+}) => {
+  let value: Dynamic =
+    input4 === undefined
+      ? undefined
+      : `calc(${input4} * ${MenuInteractionsMessage} + 0.5rem)`;
+  return input || input3 ? (
+    <div
+      className={clsx(
+        `flex min-h-0 flex-col overflow-hidden rounded-[inherit]`,
+        input6 && `flex-1`,
+      )}
+    >
+      {input && (
+        <div
+          className={resolveUiDesignSystemValue2(MenuInteractionsShrink0Px1Pt1, input2)}
+        >
+          {input}
+        </div>
+      )}
+      <div
+        style={{
+          maxHeight: value,
+        }}
+        className={`${MenuInteractionsStyles3}${input ? ` pt-0` : ``}`}
+        {...{
+          [SheetsDataCdsSheetScroll]: ``,
+        }}
+      >
+        {input5}
+      </div>
+      {input3 && <div className={MenuInteractionsMt1Shrink0Px1Pb1}>{input3}</div>}
+    </div>
+  ) : (
+    <div
+      style={{
+        maxHeight: value,
+      }}
+      className={clsx(MenuInteractionsStyles2, input6 && `flex-1`)}
+      {...{
+        [SheetsDataCdsSheetScroll]: ``,
+      }}
+    >
+      {input5}
+    </div>
+  );
+};
 
 var MenuInteractionsCreateContext: Dynamic;
 
@@ -159,56 +214,6 @@ var MenuInteractionsMt1Shrink0Px1Pb1: Dynamic;
 
 var MenuInteractionsMessage: Dynamic;
 
-function MenuInteractionsHeader(
-  {
-    header: input,
-    headerClassName: input2,
-    footer: input3,
-    maxVisibleItems: input4,
-    fill: input6 = false,
-    children: input5,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic =
-    input4 === undefined
-      ? undefined
-      : `calc(${input4} * ${MenuInteractionsMessage} + 0.5rem)`;
-  return input || input3 ? (
-    <div
-      className={clsx(
-        `flex min-h-0 flex-col overflow-hidden rounded-[inherit]`,
-        input6 && `flex-1`,
-      )}
-    >
-      {input && (
-        <div
-          className={resolveUiDesignSystemValue2(
-            MenuInteractionsShrink0Px1Pt1,
-            input2,
-          )}
-        >
-          {input}
-        </div>
-      )}
-      <div style={{
-  maxHeight: value
-}} className={`${MenuInteractionsStyles3}${input ? ` pt-0` : ``}`} {...{
-  [SheetsDataCdsSheetScroll]: ``
-}}>{input5}</div>
-      {input3 && (
-        <div className={MenuInteractionsMt1Shrink0Px1Pb1}>{input3}</div>
-      )}
-    </div>
-  ) : (
-    <div style={{
-  maxHeight: value
-}} className={clsx(MenuInteractionsStyles2, input6 && `flex-1`)} {...{
-  [SheetsDataCdsSheetScroll]: ``
-}}>{input5}</div>
-  );
-}
-
 var MenuInteractionsCreateContext7: Dynamic;
 
 function resolveMenuInteractionsRegister(
@@ -348,25 +353,4 @@ export function initializeMenuInteractionsStep1(): void {
   };
 }
 
-export {
-  MenuInteractionsCreateContext,
-  MenuInteractionsCreateContext2,
-  MenuInteractionsCreateContext3,
-  MenuInteractionsCreateContext4,
-  MenuInteractionsCreateContext5,
-  MenuInteractionsCreateContext6,
-  MenuInteractionsCreateContext7,
-  MenuInteractionsDataCdsFocusesNothing,
-  MenuInteractionsHeader,
-  MenuInteractionsLabel,
-  MenuInteractionsSheetTitle,
-  isMenuInteractionsEscapeKey,
-  resolveMenuInteractionsContextElement,
-  resolveMenuInteractionsRegister,
-  resolveMenuInteractionsWarn,
-  resolveMenuInteractionsWarn2,
-  updateMenuInteractionsIsCanceled,
-  useMenuInteractionsCurrent,
-  useMenuInteractionsIsOpen2,
-  useMenuInteractionsPreventScroll,
-};
+export { MenuInteractionsCreateContext, MenuInteractionsCreateContext2, MenuInteractionsCreateContext3, MenuInteractionsCreateContext4, MenuInteractionsCreateContext5, MenuInteractionsCreateContext6, MenuInteractionsCreateContext7, MenuInteractionsDataCdsFocusesNothing, MenuInteractionsLabel, MenuInteractionsSheetTitle, isMenuInteractionsEscapeKey, resolveMenuInteractionsContextElement, resolveMenuInteractionsRegister, resolveMenuInteractionsWarn, resolveMenuInteractionsWarn2, updateMenuInteractionsIsCanceled, useMenuInteractionsCurrent, useMenuInteractionsIsOpen2, useMenuInteractionsPreventScroll };

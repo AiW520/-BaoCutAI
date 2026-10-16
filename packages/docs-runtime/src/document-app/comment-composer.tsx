@@ -94,11 +94,12 @@ import {
   CommentComposer_ShowWhoReacted,
   ReactionNames,
 } from "./comment-anchors/see-more-pill";
+import type * as ReactComponentTypes from "react";
 
-function WhoReacted(
-  { reactions: reactions, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const WhoReacted: ReactComponentTypes.FC<Dynamic> = ({
+  reactions: reactions,
+  children: children,
+}) => {
   let [pressed, setPressed]: Dynamic = (0, React.useState)(false);
   let ariaControls: Dynamic = (0, React.useId)();
   return Object.values(reactions).some(
@@ -124,44 +125,24 @@ function WhoReacted(
           data-testid={`who-reacted-toggle`}
           onClick={(..._extraArguments: unknown[]): Dynamic =>
             setPressed(
-              (whoReacted?: Dynamic, ..._extraArguments: unknown[]) =>
-                !whoReacted,
+              (whoReacted?: Dynamic, ..._extraArguments: unknown[]) => !whoReacted,
             )
           }
         />
       </div>
-      <div id={ariaControls}>
-        {pressed && <ReactionNames reactions={reactions} />}
-      </div>
+      <div id={ariaControls}>{pressed && <ReactionNames reactions={reactions} />}</div>
     </div>
   ) : (
     children
   );
-}
+};
 
-function ResolvedMark({ t: t5 }: Dynamic, ..._extraArguments: unknown[]) {
-  return (
-    <Tooltip content={resolveCommentAnchorsReplace2(t5)} side={`top`}>
-      <span
-        role={`img`}
-        aria-label={CommentAnchors_Resolved}
-        data-testid={`resolved-mark`}
-        className={`inline-flex size-5 items-center justify-center`}
-      >
-        <UiOverlaysAndIconsCustomIcon
-          name={`CheckCircleFilled`}
-          customSize={14}
-          className={`text-accent`}
-        />
-      </span>
-    </Tooltip>
-  );
-}
-
-function UseCommentComposerLabelComponent(
-  { onClick: onClick, label: label, icon: icon, pinned: pinned }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentComposerLabelComponent: ReactComponentTypes.FC<Dynamic> = ({
+  onClick: onClick,
+  label: label,
+  icon: icon,
+  pinned: pinned,
+}) => {
   return (
     <Tooltip content={label} side={`top`}>
       <IconButton
@@ -175,18 +156,17 @@ function UseCommentComposerLabelComponent(
           commentComposerLabel.stopPropagation();
           onClick();
         }}
-        className={resolveUiDesignSystemValue2(
-          !pinned && CommentAnchors_Styles,
-        )}
+        className={resolveUiDesignSystemValue2(!pinned && CommentAnchors_Styles)}
       />
     </Tooltip>
   );
-}
+};
 
-function UseCommentComposerModalComponent(
-  { onCopyLink: onCopyLink, onEdit: onEdit, onDelete: onDelete }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentComposerModalComponent: ReactComponentTypes.FC<Dynamic> = ({
+  onCopyLink: onCopyLink,
+  onEdit: onEdit,
+  onDelete: onDelete,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   let elementRef2: Dynamic = (0, React.useRef)(null);
   let [useCommentComposerModalState]: Dynamic = (0, React.useState)(
@@ -194,45 +174,62 @@ function UseCommentComposerModalComponent(
       isDataOperationControlRoot(elementRef2, elementRef),
   );
   return (
-    <Menu.Root modal={false} {...useCommentComposerModalState.root}>{<Tooltip content={EditorExtensionsMoreActions}>
-            <Menu.Trigger render={<IconButton
-              ref={elementRef}
-              aria-label={EditorExtensionsMoreActions}
-              size={20}
-              icon={<UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} customSize={14} />}
-              onClick={(commentComposerModal?: Dynamic, ..._extraArguments: unknown[]): Dynamic => commentComposerModal.stopPropagation()}
-            />} />
-          </Tooltip>}{<Menu.Popup
-            ref={elementRef2}
-            align={`end`}
-            finalFocus={useCommentComposerModalState.finalFocus}
-            onClick={(commentComposerModal?: Dynamic, ..._extraArguments: unknown[]): Dynamic => commentComposerModal.stopPropagation()}
-          >
-            {renderMenuItems([{
-      label: `Copy link`,
-      onSelect: onCopyLink
-    }, onEdit && {
-      label: `Edit`,
-      onSelect: onEdit
-    }, onDelete && {
-      label: resolveEditorExtensionsDelete(`comment`),
-      variant: `danger`,
-      separatorBefore: true,
-      onSelect: onDelete
-    }].filter(Boolean))}
-          </Menu.Popup>}</Menu.Root>
+    <Menu.Root modal={false} {...useCommentComposerModalState.root}>
+      {
+        <Tooltip content={EditorExtensionsMoreActions}>
+          <Menu.Trigger
+            render={
+              <IconButton
+                ref={elementRef}
+                aria-label={EditorExtensionsMoreActions}
+                size={20}
+                icon={
+                  <UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} customSize={14} />
+                }
+                onClick={(
+                  commentComposerModal?: Dynamic,
+                  ..._extraArguments: unknown[]
+                ): Dynamic => commentComposerModal.stopPropagation()}
+              />
+            }
+          />
+        </Tooltip>
+      }
+      {
+        <Menu.Popup
+          ref={elementRef2}
+          align={`end`}
+          finalFocus={useCommentComposerModalState.finalFocus}
+          onClick={(
+            commentComposerModal?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): Dynamic => commentComposerModal.stopPropagation()}
+        >
+          {renderMenuItems(
+            [
+              {
+                label: `Copy link`,
+                onSelect: onCopyLink,
+              },
+              onEdit && {
+                label: `Edit`,
+                onSelect: onEdit,
+              },
+              onDelete && {
+                label: resolveEditorExtensionsDelete(`comment`),
+                variant: `danger`,
+                separatorBefore: true,
+                onSelect: onDelete,
+              },
+            ].filter(Boolean),
+          )}
+        </Menu.Popup>
+      }
+    </Menu.Root>
   );
-}
+};
 
-var CommentComposerState: string[][];
-
-var resolveCommentComposerTest: Dynamic;
-
-var resolveCommentComposerValue: (commentComposerValue?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => string;
-
-var filterCommentComposerFilter: Dynamic;
-
-function PendingAsk({ asks: asks }: Dynamic, ..._extraArguments: unknown[]) {
+export const PendingAsk: ReactComponentTypes.FC<Dynamic> = ({ asks: asks }) => {
   let [, setCountState]: Dynamic = (0, React.useState)(0);
   (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
     let setInterval2 = setInterval(
@@ -250,10 +247,7 @@ function PendingAsk({ asks: asks }: Dynamic, ..._extraArguments: unknown[]) {
   );
   let pendingAskResult2: Dynamic = resolvePlatformApiAndAuthUseContext2();
   let parse = Date.parse(pendingAskResult2.now());
-  let filterCommentComposerFilter2: Dynamic = filterCommentComposerFilter(
-    asks,
-    parse,
-  );
+  let filterCommentComposerFilter2: Dynamic = filterCommentComposerFilter(asks, parse);
   let lookup: Dynamic = new (Map as Dynamic)();
   for (let pendingAskResult3 of filterCommentComposerFilter2 as Dynamic) {
     let pendingAskResult4: Dynamic = resolveCommentsEditorChannel(
@@ -280,37 +274,72 @@ function PendingAsk({ asks: asks }: Dynamic, ..._extraArguments: unknown[]) {
   }
   return (
     <jsxRuntime.Fragment>
-      {[...lookup.values()].map(
-        (item?: Dynamic, ..._extraArguments: unknown[]) => {
-          let pendingAskResult3: Dynamic = resolveCommentsEditorLine(
-            item,
-            pendingAskResult,
-          );
-          return (
-            <Tooltip
-              content={pendingAskResult3.via ? `Asked via ${pendingAskResult3.via}` : item.channel ? `Asked in ${item.channel.startsWith(`#`) ? item.channel : `#${item.channel}`}` : item.channelId ? `Asked from Slack channel ${item.channelId}` : `Asked via ${item.label}`}
-              multiline={true}
-              key={resolveCommentsEditorChannel(item, pendingAskResult)}
-            >{<div data-testid={`pending-ask`} className={`text-muted flex cursor-default items-center gap-1.5 text-[12px]`}>
-                      <span className={`bg-accent-blue size-2 shrink-0 animate-pulse rounded-full`} />
-                      <span className={`min-w-0 truncate`}>
-                        {`Waiting on `}
-                        {pendingAskResult3.line}
-                        {item.n > 1 ? ` · ${item.n} asks · oldest ${resolveCommentComposerValue(item.oldest, parse)}` : ` · asked ${resolveCommentComposerValue(item.oldest, parse)}`}
-                      </span>
-                    </div>}</Tooltip>
-          );
-        },
-      )}
+      {[...lookup.values()].map((item?: Dynamic, ..._extraArguments: unknown[]) => {
+        let pendingAskResult3: Dynamic = resolveCommentsEditorLine(
+          item,
+          pendingAskResult,
+        );
+        return (
+          <Tooltip
+            content={
+              pendingAskResult3.via
+                ? `Asked via ${pendingAskResult3.via}`
+                : item.channel
+                  ? `Asked in ${item.channel.startsWith(`#`) ? item.channel : `#${item.channel}`}`
+                  : item.channelId
+                    ? `Asked from Slack channel ${item.channelId}`
+                    : `Asked via ${item.label}`
+            }
+            multiline={true}
+            key={resolveCommentsEditorChannel(item, pendingAskResult)}
+          >
+            {
+              <div
+                data-testid={`pending-ask`}
+                className={`text-muted flex cursor-default items-center gap-1.5 text-[12px]`}
+              >
+                <span
+                  className={`bg-accent-blue size-2 shrink-0 animate-pulse rounded-full`}
+                />
+                <span className={`min-w-0 truncate`}>
+                  {`Waiting on `}
+                  {pendingAskResult3.line}
+                  {item.n > 1
+                    ? ` · ${item.n} asks · oldest ${resolveCommentComposerValue(item.oldest, parse)}`
+                    : ` · asked ${resolveCommentComposerValue(item.oldest, parse)}`}
+                </span>
+              </div>
+            }
+          </Tooltip>
+        );
+      })}
     </jsxRuntime.Fragment>
   );
-}
+};
+
+export const ResolvedMark: ReactComponentTypes.FC<Dynamic> = ({ t: t5 }) => {
+  return (
+    <Tooltip content={resolveCommentAnchorsReplace2(t5)} side={`top`}>
+      <span
+        role={`img`}
+        aria-label={CommentAnchors_Resolved}
+        data-testid={`resolved-mark`}
+        className={`inline-flex size-5 items-center justify-center`}
+      >
+        <UiOverlaysAndIconsCustomIcon
+          name={`CheckCircleFilled`}
+          customSize={14}
+          className={`text-accent`}
+        />
+      </span>
+    </Tooltip>
+  );
+};
 
 // BaoCut: 批注里智能体正在回复时的署名叫 Agent，不叫 Claude。
-function UseCommentComposerTextComponent(
-  { text: text }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentComposerTextComponent: ReactComponentTypes.FC<Dynamic> = ({
+  text: text,
+}) => {
   return (
     <div className={`flex flex-col gap-1`}>
       <div className={`flex items-center gap-2 text-xs`}>
@@ -325,11 +354,11 @@ function UseCommentComposerTextComponent(
       </div>
     </div>
   );
-}
+};
 
-function UseCommentComposerDataClaudeActivityDotsComponent(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
+export const UseCommentComposerDataClaudeActivityDotsComponent: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   return (
     <span
       className={`inline-flex size-4 shrink-0 items-center justify-center`}
@@ -338,11 +367,11 @@ function UseCommentComposerDataClaudeActivityDotsComponent(
       <Dots />
     </span>
   );
-}
+};
 
-function ClaudePendingRow(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
+export const ClaudePendingRow: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   return (
     <div
       role={`status`}
@@ -356,7 +385,16 @@ function ClaudePendingRow(
       </Shimmer>
     </div>
   );
-}
+};
+
+var CommentComposerState: string[][];
+
+var resolveCommentComposerTest: Dynamic;
+
+var resolveCommentComposerValue: (commentComposerValue?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => string;
+
+var filterCommentComposerFilter: Dynamic;
+
 
 var CommentComposerState2: Dynamic;
 
@@ -1542,21 +1580,4 @@ export function initializeCommentComposerStep1(): void {
     }));
 }
 
-export {
-  COMMENT_PROSE_CLASS,
-  ClaudePendingRow,
-  CommentComposerNode,
-  CommentComposerState7,
-  PendingAsk,
-  ResolvedMark,
-  UseCommentComposerDataClaudeActivityDotsComponent,
-  UseCommentComposerLabelComponent,
-  UseCommentComposerModalComponent,
-  UseCommentComposerTextComponent,
-  WhoReacted,
-  filterCommentComposerFilter,
-  resolveCommentComposerMentionNames,
-  resolveCommentComposerPreventScroll,
-  resolveCommentComposerTest,
-  updateCommentComposerExtensions,
-};
+export { COMMENT_PROSE_CLASS, CommentComposerNode, CommentComposerState7, filterCommentComposerFilter, resolveCommentComposerMentionNames, resolveCommentComposerPreventScroll, resolveCommentComposerTest, updateCommentComposerExtensions };

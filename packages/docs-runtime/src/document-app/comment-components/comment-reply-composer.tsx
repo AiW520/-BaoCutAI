@@ -76,44 +76,41 @@ import {
   CommentClaudeToggle,
   CommentComposerCds,
 } from "./comment-reply-sheet";
+import type * as ReactComponentTypes from "react";
 
-function CommentReplyComposer(
-  {
-    onPost: onPost,
-    onPosted: onPosted,
-    onCancel: onCancel,
-    placeholder = `Reply…`,
-    ariaLabel: ariaLabel,
-    submitLabel = `Reply`,
-    layout = `inline`,
-    claudeRoute: claudeRoute,
-    addressClaude: addressClaude,
-    composerChrome = `boxed`,
-    checkboxSeat = `box`,
-    returnAddsLine = false,
-    composerForm: composerForm,
-    foldWhenIdle: foldWhenIdle,
-    autoFocus: autoFocus,
-    initial: initial,
-    enableCCSessions: enableCCSessions,
-    coworkerContainer: coworkerContainer,
-    refPid: refPid,
-    boxId: boxId,
-    lockWhileBusy: lockWhileBusy,
-    holdWhileBusy: holdWhileBusy,
-    heldFromOutside: heldFromOutside,
-    persistent: persistent,
-    draftKey: draftKey,
-    draftPageId: draftPageId,
-    suggestions: suggestions,
-    onHolding: onHolding,
-    onDraftNames: onDraftNames,
-    sendHeld: sendHeld,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let commentReplyComposerResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
+export const CommentReplyComposer: ReactComponentTypes.FC<Dynamic> = ({
+  onPost: onPost,
+  onPosted: onPosted,
+  onCancel: onCancel,
+  placeholder = `Reply…`,
+  ariaLabel: ariaLabel,
+  submitLabel = `Reply`,
+  layout = `inline`,
+  claudeRoute: claudeRoute,
+  addressClaude: addressClaude,
+  composerChrome = `boxed`,
+  checkboxSeat = `box`,
+  returnAddsLine = false,
+  composerForm: composerForm,
+  foldWhenIdle: foldWhenIdle,
+  autoFocus: autoFocus,
+  initial: initial,
+  enableCCSessions: enableCCSessions,
+  coworkerContainer: coworkerContainer,
+  refPid: refPid,
+  boxId: boxId,
+  lockWhileBusy: lockWhileBusy,
+  holdWhileBusy: holdWhileBusy,
+  heldFromOutside: heldFromOutside,
+  persistent: persistent,
+  draftKey: draftKey,
+  draftPageId: draftPageId,
+  suggestions: suggestions,
+  onHolding: onHolding,
+  onDraftNames: onDraftNames,
+  sendHeld: sendHeld,
+}) => {
+  let commentReplyComposerResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
   let elementRef: Dynamic = (0, React.useRef)(null);
   let elementRef2: Dynamic = (0, React.useRef)(null);
   let matchesLayout = layout === `composer`;
@@ -132,13 +129,9 @@ function CommentReplyComposer(
   claudeRouteRef.current = claudeRoute;
   let matchesSendHeldRef: Dynamic = (0, React.useRef)(sendHeld === true);
   matchesSendHeldRef.current = sendHeld === true;
-  let commentReplyComposerHandler: Dynamic = (
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
+  let commentReplyComposerHandler: Dynamic = (..._extraArguments: unknown[]): Dynamic => {
     let claudeRoute3: Dynamic = claudeRouteRef.current;
-    return matchesLayout &&
-      typeof claudeRoute3 == `object` &&
-      claudeRoute3.tag === true
+    return matchesLayout && typeof claudeRoute3 == `object` && claudeRoute3.tag === true
       ? claudeRoute3
       : null;
   };
@@ -155,8 +148,7 @@ function CommentReplyComposer(
     commentReplyComposer?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let children: Dynamic =
-      commentReplyComposer.state.doc.firstChild?.children ?? [];
+    let children: Dynamic = commentReplyComposer.state.doc.firstChild?.children ?? [];
     let childrenIndex: Dynamic = children.findIndex(
       (node?: Dynamic, ..._extraArguments: unknown[]) =>
         !node.isText || commentWords(node.text ?? ``) !== ``,
@@ -190,9 +182,7 @@ function CommentReplyComposer(
         : null;
     return (
       (addressClaude === true &&
-        resolveDataModelSchemasTrim(
-          commentWords(commentReplyComposer.getText()),
-        )) ||
+        resolveDataModelSchemasTrim(commentWords(commentReplyComposer.getText()))) ||
       (isCommentComponentsFirstChild2 !== null &&
         nothingToSee(
           commentWords(
@@ -214,16 +204,12 @@ function CommentReplyComposer(
   let getText4: Dynamic = (
     commentReplyComposer?: Dynamic,
     ..._extraArguments: unknown[]
-  ): Dynamic =>
-    getText3(commentReplyComposer) || getText2(commentReplyComposer);
+  ): Dynamic => getText3(commentReplyComposer) || getText2(commentReplyComposer);
   let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(
     (..._extraArguments: unknown[]): Dynamic =>
       initial
         ? nothingToSee(commentWords(initial))
-        : !(
-            draftKey !== undefined &&
-            useCommentStore.getState().replyDrafts[draftKey]
-          ),
+        : !(draftKey !== undefined && useCommentStore.getState().replyDrafts[draftKey]),
   );
   let [enabledStateState, setEnabledStateState]: Dynamic = (0, React.useState)(
     enabledState,
@@ -278,8 +264,9 @@ function CommentReplyComposer(
     onHoldingRef.current?.(enabled2, enabled2 ? element2 : undefined);
   };
   (0, React.useEffect)(onHolding2, [enabled]);
-  let [matchesAutoFocusState, setMatchesAutoFocusState]: Dynamic = (0,
-  React.useState)(autoFocus === true || addressClaude === true);
+  let [matchesAutoFocusState, setMatchesAutoFocusState]: Dynamic = (0, React.useState)(
+    autoFocus === true || addressClaude === true,
+  );
   let [named, setNamed]: Dynamic = (0, React.useState)(DataModelSchemasClaude);
   let elementRef6: Dynamic = (0, React.useRef)(DataModelSchemasClaude);
   let onDraftNamesRef: Dynamic = (0, React.useRef)(onDraftNames);
@@ -324,10 +311,7 @@ function CommentReplyComposer(
     }
     let commentReplyComposerHandler2: Dynamic =
       countRef.current === 0 ? commentReplyComposerHandler() : null;
-    if (
-      !commentReplyComposerHandler2 ||
-      commentReplyComposerHandler2.disabled === true
-    )
+    if (!commentReplyComposerHandler2 || commentReplyComposerHandler2.disabled === true)
       return;
     let theirTag =
       after.tag === true &&
@@ -343,8 +327,7 @@ function CommentReplyComposer(
     });
     if (commentReplyComposerResult2 === null) return;
     let matchesChecked =
-      commentReplyComposerResult2.checked !==
-      commentReplyComposerHandler2.checked;
+      commentReplyComposerResult2.checked !== commentReplyComposerHandler2.checked;
     commentReplyComposerHandler2.onChange(commentReplyComposerResult2.checked, {
       remember: commentReplyComposerResult2.remember,
     });
@@ -361,10 +344,7 @@ function CommentReplyComposer(
       );
     }
   };
-  let trim: Dynamic = (
-    commentReplyComposer?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) =>
+  let trim: Dynamic = (commentReplyComposer?: Dynamic, ..._extraArguments: unknown[]) =>
     !commentReplyComposer.isEmpty &&
     !(matchesLayout && commentReplyComposer.getText().trim() === ``) &&
     !(
@@ -411,9 +391,8 @@ function CommentReplyComposer(
     (..._extraArguments: unknown[]): Dynamic => {
       let element: Dynamic = elementRef7.current;
       if (!element || items.length === 0) return;
-      let setEnabledState3: Dynamic = (
-        ..._extraArguments: unknown[]
-      ): Dynamic => setEnabledState2(element.clientWidth >= 480);
+      let setEnabledState3: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
+        setEnabledState2(element.clientWidth >= 480);
       setEnabledState3();
       if (typeof ResizeObserver === "undefined") return;
       let resizeObserver = new ResizeObserver(setEnabledState3);
@@ -434,9 +413,7 @@ function CommentReplyComposer(
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       let element: Dynamic = elementRef2.current;
-      if (
-        !(!element || holdWhileBusy !== true || heldFromOutside === undefined)
-      ) {
+      if (!(!element || holdWhileBusy !== true || heldFromOutside === undefined)) {
         if (matchesHoldWhileBusy) {
           setEditable(element, true);
         } else {
@@ -459,8 +436,7 @@ function CommentReplyComposer(
     ).trim();
     if (nothingToSee(trimmedText) || getText2(element)) return;
     let claudeRoute3: Dynamic = claudeRouteRef.current;
-    let mapCommentComponentsClaude2: Dynamic =
-      mapCommentComponentsClaude(element);
+    let mapCommentComponentsClaude2: Dynamic = mapCommentComponentsClaude(element);
     let reduce2: Dynamic = reduce(element);
     let toClaude: Dynamic =
       matchesLayout &&
@@ -473,9 +449,7 @@ function CommentReplyComposer(
       id: commentReplyComposerResult3,
       label: commentReplyComposerResult4,
     } of resolveCommentComponentsLabel(element) as Dynamic) {
-      let entry: Dynamic = resolveCommentsEditorKind(
-        commentReplyComposerResult3,
-      );
+      let entry: Dynamic = resolveCommentsEditorKind(commentReplyComposerResult3);
       if (entry.kind === `cc`) {
         items3.push({
           sessionId: entry.sessionId,
@@ -513,10 +487,7 @@ function CommentReplyComposer(
     }
     let typed2: Dynamic = typed;
     if (toClaude) {
-      ({ body: typed2, to: items2 } = resolveDataModelSchemasBody(
-        typed,
-        items2,
-      ));
+      ({ body: typed2, to: items2 } = resolveDataModelSchemasBody(typed, items2));
     }
     if (isFrameArtifact() && !matchesLayout2 && commentTooLong(typed2))
       return resolveCommentComponentsError();
@@ -534,14 +505,12 @@ function CommentReplyComposer(
     setBusy(true);
     let element2: Dynamic = elementRef7.current;
     let matchesElement: Dynamic =
-      element2 !== null &&
-      element2.contains(element2.ownerDocument.activeElement);
+      element2 !== null && element2.contains(element2.ownerDocument.activeElement);
     if (holdWhileBusy) {
       setEditable(element, true);
     } else {
       onPost2(
-        (..._extraArguments: unknown[]): Dynamic =>
-          element.commands.clearContent(),
+        (..._extraArguments: unknown[]): Dynamic => element.commands.clearContent(),
       );
     }
     let enabled2 = false;
@@ -558,24 +527,17 @@ function CommentReplyComposer(
         );
         if (
           persistent &&
-          !isDocumentFocusedElsewhere(
-            elementRef2.current.view.dom.ownerDocument,
-          )
+          !isDocumentFocusedElsewhere(elementRef2.current.view.dom.ownerDocument)
         ) {
           elementRef2.current.commands.focus();
         }
       }
       enabled2 = true;
-      if (
-        typeof claudeRoute3 == `object` &&
-        (elementRef2.current?.isEmpty ?? true)
-      ) {
+      if (typeof claudeRoute3 == `object` && (elementRef2.current?.isEmpty ?? true)) {
         claudeRoute3.onDraftEnd?.();
       }
     } catch (commentReplyComposerResult3: Dynamic) {
-      if (
-        commentReplyComposerResult3 instanceof (CommentQueuedError as Dynamic)
-      ) {
+      if (commentReplyComposerResult3 instanceof (CommentQueuedError as Dynamic)) {
         if (holdWhileBusy && elementRef2.current) {
           setEditable(elementRef2.current, false);
           onPost2(
@@ -584,18 +546,13 @@ function CommentReplyComposer(
           );
           if (
             persistent &&
-            !isDocumentFocusedElsewhere(
-              elementRef2.current.view.dom.ownerDocument,
-            )
+            !isDocumentFocusedElsewhere(elementRef2.current.view.dom.ownerDocument)
           ) {
             elementRef2.current.commands.focus();
           }
         }
         enabled2 = queued = true;
-        if (
-          typeof claudeRoute3 == `object` &&
-          (elementRef2.current?.isEmpty ?? true)
-        ) {
+        if (typeof claudeRoute3 == `object` && (elementRef2.current?.isEmpty ?? true)) {
           claudeRoute3.onDraftEnd?.();
         }
       } else if (holdWhileBusy) {
@@ -664,8 +621,7 @@ function CommentReplyComposer(
           element3.commands.focus();
         }
         setMatchesAutoFocusState(
-          element4 !== null &&
-            element4.contains(element4.ownerDocument.activeElement),
+          element4 !== null && element4.contains(element4.ownerDocument.activeElement),
         );
       }
     }
@@ -731,8 +687,7 @@ function CommentReplyComposer(
       ed: updateCommentComposerExtensions2,
       cleanup: updateCommentComposerExtensions3,
     }: Dynamic = updateCommentComposerExtensions(element, {
-      placeholder: (..._extraArguments: unknown[]): Dynamic =>
-        placeholderRef.current,
+      placeholder: (..._extraArguments: unknown[]): Dynamic => placeholderRef.current,
       ariaLabel: ariaLabel,
       autoFocus: autoFocus,
       enableCCSessions: enableCCSessions,
@@ -752,9 +707,7 @@ function CommentReplyComposer(
             onBackspaceEmpty: (..._extraArguments: unknown[]) => blur(),
           },
         }),
-      initial: initial
-        ? resolveEditorAnchorsAndMentionsReplaceAll(initial)
-        : undefined,
+      initial: initial ? resolveEditorAnchorsAndMentionsReplaceAll(initial) : undefined,
       ...(plainEnterPosts && {
         onEnter: (..._extraArguments: unknown[]): Dynamic => onPosted2(),
       }),
@@ -789,41 +742,38 @@ function CommentReplyComposer(
         }
       },
     );
-    let commentReplyComposerResult2: Dynamic = updateCommentsEditorDelete(
-      boxId2,
-      {
-        carried: draftKeyRef.current !== undefined,
-        root: (..._extraArguments: unknown[]): Dynamic =>
-          elementRef7.current ?? elementRef.current,
-        holding: (..._extraArguments: unknown[]): Dynamic =>
-          enabledRef2.current || !getText3(updateCommentComposerExtensions2),
-        peek: (..._extraArguments: unknown[]): Dynamic => {
-          let draftKey3: Dynamic = draftKeyRef.current;
-          if (
-            draftKey3 === undefined ||
-            getText3(updateCommentComposerExtensions2) ||
-            (holdWhileBusy === true && enabledRef2.current)
-          )
-            return null;
-          let claudeRoute3: Dynamic = claudeRouteRef.current;
-          return {
-            key: mintedThreadId(draftKey3),
-            pageId: draftPageIdRef.current ?? ``,
-            json: updateCommentComposerExtensions2.getJSON(),
-            ...(enabledRef.current && {
-              told: true,
+    let commentReplyComposerResult2: Dynamic = updateCommentsEditorDelete(boxId2, {
+      carried: draftKeyRef.current !== undefined,
+      root: (..._extraArguments: unknown[]): Dynamic =>
+        elementRef7.current ?? elementRef.current,
+      holding: (..._extraArguments: unknown[]): Dynamic =>
+        enabledRef2.current || !getText3(updateCommentComposerExtensions2),
+      peek: (..._extraArguments: unknown[]): Dynamic => {
+        let draftKey3: Dynamic = draftKeyRef.current;
+        if (
+          draftKey3 === undefined ||
+          getText3(updateCommentComposerExtensions2) ||
+          (holdWhileBusy === true && enabledRef2.current)
+        )
+          return null;
+        let claudeRoute3: Dynamic = claudeRouteRef.current;
+        return {
+          key: mintedThreadId(draftKey3),
+          pageId: draftPageIdRef.current ?? ``,
+          json: updateCommentComposerExtensions2.getJSON(),
+          ...(enabledRef.current && {
+            told: true,
+          }),
+          ...(matchesLayout &&
+            typeof claudeRoute3 == `object` && {
+              box: {
+                checked: claudeRoute3.checked,
+                byPerson: claudeRoute3.byPerson === true,
+              },
             }),
-            ...(matchesLayout &&
-              typeof claudeRoute3 == `object` && {
-                box: {
-                  checked: claudeRoute3.checked,
-                  byPerson: claudeRoute3.byPerson === true,
-                },
-              }),
-          };
-        },
+        };
       },
-    );
+    });
     let draftKey2: Dynamic = draftKeyRef.current;
     let replyDraftItem: Dynamic =
       !initial && draftKey2 !== undefined
@@ -831,8 +781,7 @@ function CommentReplyComposer(
         : undefined;
     if (draftKey2 !== undefined) {
       enabledRef.current =
-        replyDraftItem?.told ??
-        threadClosed(draftKey2, draftPageIdRef.current ?? ``);
+        replyDraftItem?.told ?? threadClosed(draftKey2, draftPageIdRef.current ?? ``);
     }
     if (replyDraftItem) {
       updateCommentComposerExtensions2.commands.setContent(replyDraftItem.json);
@@ -855,10 +804,7 @@ function CommentReplyComposer(
         }
       }
     }
-    if (
-      initial ||
-      (replyDraftItem && !updateCommentComposerExtensions2.isEmpty)
-    ) {
+    if (initial || (replyDraftItem && !updateCommentComposerExtensions2.isEmpty)) {
       setEditorDirty(true);
     }
     onChange(updateCommentComposerExtensions2);
@@ -892,8 +838,7 @@ function CommentReplyComposer(
             options?: Dynamic,
             ..._extraArguments: unknown[]
           ): undefined => {
-            let replyDraftItem: Dynamic =
-              commentReplyComposer.replyDrafts[draftKey2];
+            let replyDraftItem: Dynamic = commentReplyComposer.replyDrafts[draftKey2];
             if (
               replyDraftItem === undefined ||
               replyDraftItem === options.replyDrafts[draftKey2]
@@ -905,13 +850,9 @@ function CommentReplyComposer(
                 if (element.isEmpty || getText(element)) {
                   element.commands.setContent(replyDraftItem.json);
                 } else {
-                  element.commands.insertContentAt(
-                    0,
-                    replyDraftItem.json.content ?? [],
-                    {
-                      updateSelection: false,
-                    },
-                  );
+                  element.commands.insertContentAt(0, replyDraftItem.json.content ?? [], {
+                    updateSelection: false,
+                  });
                 }
                 onChange(element);
               });
@@ -996,9 +937,7 @@ function CommentReplyComposer(
         iconOnly={true}
         icon={`ArrowUp`}
         aria-label={`Send`}
-        aria-keyshortcuts={
-          plainEnterPosts ? `Enter` : `Control+Enter Meta+Enter`
-        }
+        aria-keyshortcuts={plainEnterPosts ? `Enter` : `Control+Enter Meta+Enter`}
         disabled={(enabledState && !busy) || (sendHeld === true && !busy)}
         busy={busy}
         onClick={(..._extraArguments: unknown[]): undefined => void onPosted2()}
@@ -1029,18 +968,10 @@ function CommentReplyComposer(
     let jsxs = matchesLayout4 ? (
       <jsxRuntime.Fragment>
         {items.length > 0 && (
-          <AskSuggestionsMeasure
-            items={items}
-            onPick={onPick}
-            className={`pb-2`}
-          />
+          <AskSuggestionsMeasure items={items} onPick={onPick} className={`pb-2`} />
         )}
         <div className={`flex items-end gap-1`}>
-          <div
-            ref={elementRef}
-            data-chat-editor={true}
-            className={`min-w-0 flex-1`}
-          />
+          <div ref={elementRef} data-chat-editor={true} className={`min-w-0 flex-1`} />
           <span
             role={`presentation`}
             className={`flex shrink-0`}
@@ -1062,10 +993,8 @@ function CommentReplyComposer(
         ): Dynamic => commentReplyComposer.stopPropagation()}
         onFocusCapture={(..._extraArguments: unknown[]): Dynamic =>
           setCountState(
-            (
-              commentReplyComposer?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => commentReplyComposer + 1,
+            (commentReplyComposer?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              commentReplyComposer + 1,
           )
         }
         onFocus={(..._extraArguments: unknown[]): Dynamic =>
@@ -1080,10 +1009,7 @@ function CommentReplyComposer(
             setMatchesAutoFocusState(false);
           }
         }}
-        onMouseDown={(
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
+        onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
           if (
             !matchesRoute ||
             event.button !== 0 ||
@@ -1092,9 +1018,7 @@ function CommentReplyComposer(
             return;
           event.preventDefault();
           let currentTarget: Dynamic = event.currentTarget;
-          if (
-            !currentTarget.contains(currentTarget.ownerDocument.activeElement)
-          ) {
+          if (!currentTarget.contains(currentTarget.ownerDocument.activeElement)) {
             elementRef2.current?.commands.focus();
           }
         }}
@@ -1102,21 +1026,14 @@ function CommentReplyComposer(
         data-chrome={matchesLayout4 ? `sheet` : undefined}
       >
         {matchesLayout5 && (
-          <span
-            id={controlId2}
-            hidden={true}
-            data-testid={`comment-route-said`}
-          >
+          <span id={controlId2} hidden={true} data-testid={`comment-route-said`}>
             {/* BaoCut: 称「agent」，不称 Claude。 */}
             {`Sends to agent`}
           </span>
         )}
         {jsxs ??
           (matchesLayout2 ? (
-            <div
-              className={`relative`}
-              onMouseDown={resolveCommentComponentsTarget3}
-            >
+            <div className={`relative`} onMouseDown={resolveCommentComponentsTarget3}>
               <div
                 ref={elementRef}
                 data-chat-editor={true}
@@ -1130,67 +1047,39 @@ function CommentReplyComposer(
           ) : matchesLayout3 ? (
             <span
               className={`contents`}
-              onPointerDown={
-                sheetSeat ? resolveCommentComponentsTarget : undefined
-              }
+              onPointerDown={sheetSeat ? resolveCommentComponentsTarget : undefined}
             >
               {sheetSeat && items.length > 0 && (
-                <AskSuggestionsMeasure
-                  items={items}
-                  onPick={onPick}
-                  className={`pb-2`}
-                />
+                <AskSuggestionsMeasure items={items} onPick={onPick} className={`pb-2`} />
               )}
               <CommentComposerCds
                 editor={
-                  <div
-                    ref={elementRef}
-                    data-chat-editor={true}
-                    className={`min-w-0`}
-                  />
+                  <div ref={elementRef} data-chat-editor={true} className={`min-w-0`} />
                 }
-                text={
-                  enabledState ? `` : (elementRef2.current?.getText() ?? ``)
-                }
+                text={enabledState ? `` : (elementRef2.current?.getText() ?? ``)}
                 canSubmit={!enabledState && sendHeld !== true}
                 busy={busy}
                 route={sheetSeat ? null : route}
                 named={named}
                 form={composerForm}
                 plainEnterPosts={plainEnterPosts}
-                onSend={(..._extraArguments: unknown[]): undefined =>
-                  void onPosted2()
-                }
+                onSend={(..._extraArguments: unknown[]): undefined => void onPosted2()}
                 onPointerToggle={(..._extraArguments: unknown[]): Dynamic =>
                   elementRef2.current?.commands.focus()
                 }
               />
               {!sheetSeat && items.length > 0 && (
-                <AskSuggestionsMeasure
-                  items={items}
-                  onPick={onPick}
-                  className={`pt-2`}
-                />
+                <AskSuggestionsMeasure items={items} onPick={onPick} className={`pt-2`} />
               )}
             </span>
           ) : (
-            <div
-              className={
-                matchesComposerChrome ? undefined : `rounded-md border`
-              }
-            >
-              <div
-                ref={elementRef}
-                data-chat-editor={true}
-                className={`min-w-0`}
-              />
+            <div className={matchesComposerChrome ? undefined : `rounded-md border`}>
+              <div ref={elementRef} data-chat-editor={true} className={`min-w-0`} />
               <div
                 className={`grid transition-[grid-template-rows,padding,opacity,visibility] duration-150 ease-in-out motion-reduce:transition-none ${label} ${trimmedLabel}`}
                 data-testid={`comment-composer-footer`}
               >
-                <div
-                  className={`flex min-h-0 min-w-0 items-center gap-2 ${label2}`}
-                >
+                <div className={`flex min-h-0 min-w-0 items-center gap-2 ${label2}`}>
                   {route2}
                   {enabledState2 && items.length > 0 && (
                     <AskSuggestionsMeasure
@@ -1228,20 +1117,15 @@ function CommentReplyComposer(
   return (
     <div
       className={matchesComposerChrome ? undefined : `mt-2`}
-      onClick={(
-        commentReplyComposer?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => commentReplyComposer.stopPropagation()}
+      onClick={(commentReplyComposer?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        commentReplyComposer.stopPropagation()
+      }
     >
       <div
         className={`flex items-end${matchesComposerChrome ? `` : ` rounded-md border`}`}
         onMouseDown={resolveCommentComponentsTarget3}
       >
-        <div
-          ref={elementRef}
-          data-chat-editor={true}
-          className={`min-w-0 flex-1`}
-        />
+        <div ref={elementRef} data-chat-editor={true} className={`min-w-0 flex-1`} />
         {(!enabledState || busy) && (
           <Button
             size={commentReplyComposerResult(`xs`)}
@@ -1250,9 +1134,7 @@ function CommentReplyComposer(
             icon={`ArrowUp`}
             aria-label={submitLabel}
             disabled={busy || sendHeld === true}
-            onClick={(..._extraArguments: unknown[]): undefined =>
-              void onPosted2()
-            }
+            onClick={(..._extraArguments: unknown[]): undefined => void onPosted2()}
             className={matchesComposerChrome ? `ml-2` : `m-1`}
           />
         )}
@@ -1269,7 +1151,7 @@ function CommentReplyComposer(
       )}
     </div>
   );
-}
+};
 
 var CommentComponents_Styles2: string;
 
@@ -1625,27 +1507,4 @@ export function initializeCommentComponentsCommentReplyComposerStep1(): void {
   });
 }
 
-export {
-  CommentComponentsState,
-  CommentComponents_CommentCollapsed,
-  CommentComponents_CommentExpanded,
-  CommentComponents_FirstPressEscapeToGoBackToTheText,
-  CommentComponents_Message2,
-  CommentComponents_Message3,
-  CommentComponents_Mx3Mt3Mb3Px3Pb3,
-  CommentComponents_PsMdMs25BorderS,
-  CommentComponents_Styles2,
-  CommentComponents_Styles3,
-  CommentReplyComposer,
-  commentComponentsLimit140,
-  commentComponentsLimit60,
-  commentComponentsSet,
-  mapCommentComponentsReplace,
-  resolveCommentComponentsCount,
-  resolveCommentComponentsPush,
-  resolveCommentComponentsTarget3,
-  resolveCommentComponentsTarget4,
-  resolveCommentComponentsTest,
-  resolveCommentComponentsTrim2,
-  useCommentComponentsState,
-};
+export { CommentComponentsState, CommentComponents_CommentCollapsed, CommentComponents_CommentExpanded, CommentComponents_FirstPressEscapeToGoBackToTheText, CommentComponents_Message2, CommentComponents_Message3, CommentComponents_Mx3Mt3Mb3Px3Pb3, CommentComponents_PsMdMs25BorderS, CommentComponents_Styles2, CommentComponents_Styles3, commentComponentsLimit140, commentComponentsLimit60, commentComponentsSet, mapCommentComponentsReplace, resolveCommentComponentsCount, resolveCommentComponentsPush, resolveCommentComponentsTarget3, resolveCommentComponentsTarget4, resolveCommentComponentsTest, resolveCommentComponentsTrim2, useCommentComponentsState };

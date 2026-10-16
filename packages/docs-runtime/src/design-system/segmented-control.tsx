@@ -28,6 +28,284 @@ import {
   resolveLanguagePickerFlipAt2,
   updateLanguagePickerTransform,
 } from "./language-picker-motion";
+import type * as ReactComponentTypes from "react";
+
+export const SegmentedControl: ReactComponentTypes.FC<Dynamic> = ({
+  segments: input,
+  value: input2,
+  onChange: input3,
+  variant: input14 = `contained`,
+  size: input4,
+  fullWidth: input15 = false,
+  disabled: input5,
+  tooltipSide: input6,
+  tooltipClassName: input7,
+  "aria-label": input8,
+  "aria-required": input9,
+  "aria-invalid": input10,
+  "aria-describedby": input11,
+  thumbPosition: input12,
+  className: input13,
+}) => {
+  let value: Dynamic = (0, React.useRef)(null);
+  useUiTooltipsAndControlsState(value, `SegmentedControl`);
+  let value2: Dynamic = (0, React.useRef)(null);
+  let value3: boolean = isInsideField();
+  let value4: Dynamic = useUiShortcutsAndSizingUseSyncExternalStore();
+  let value5: Dynamic = (0, React.useRef)({
+    live: false,
+    poll: null,
+  });
+  let value6: Dynamic = (0, React.useCallback)(function value11(
+    input16: Dynamic = false,
+    options?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): undefined {
+    let current: Dynamic = value.current;
+    let current2: Dynamic = value2.current;
+    if (!current || !current2) return;
+    let element: Dynamic = current.querySelector(`[data-checked]`);
+    let value12: Dynamic = element ? resolveSegmentedControlWidth(current) : null;
+    let value13: Dynamic = null;
+    if (!input16 || !(value12?.scaled || resolveLanguagePickerFlipAt2(current2))) {
+      value13 = resolveLanguagePickerCorrection(
+        current2,
+        current,
+        element ? resolveSegmentedControlLeft(element, current) : null,
+        {
+          correction: input16,
+        },
+      );
+    }
+    let value14 = (..._extraArguments: unknown[]): undefined => {
+      value13?.();
+      if (!value5.current.live) return;
+      let poll: Dynamic = value5.current.poll;
+      poll?.cancel();
+      value5.current.poll = null;
+      if (!value12 || (!input16 && !poll && !value12.scaled)) return;
+      let {
+        width: value15,
+        still: value16,
+        frames: value17,
+      }: Dynamic = poll ?? {
+        width: value12.width,
+        still: 0,
+        frames: 0,
+      };
+      if (
+        input16 &&
+        ((value16 = value15 === value12.width ? value16 + 1 : 0),
+        (value15 = value12.width),
+        (value17 += 1),
+        value16 >= (value12.scaled ? segmentedControlValue30 : segmentedControlValue2) ||
+          value17 >= segmentedControlValue600)
+      )
+        return;
+      let value18: Dynamic = resolveSegmentedControlRequestAnimationFrame(
+        current,
+        (..._extraArguments: unknown[]): Dynamic => value11(true),
+      );
+      if (value18) {
+        value5.current.poll = {
+          cancel: value18,
+          width: value15,
+          still: value16,
+          frames: value17,
+        };
+      }
+    };
+    if (options) {
+      options.push(value14);
+    } else {
+      value14();
+    }
+  }, []);
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let current: Dynamic = value.current;
+      let current2: Dynamic = value2.current;
+      let value11: Dynamic = resolveUiOverlaysAndIconsValue(current);
+      let value12: boolean = current !== null && value11 !== undefined;
+      let current3: Dynamic = value5.current;
+      current3.live = true;
+      if (!value12 || (current2 !== null && resolveLanguagePickerFlipAt(current2))) {
+        value6();
+      }
+      let value13: Dynamic = value12
+        ? updateSegmentedControlObserver(current, value11, value6)
+        : null;
+      return (..._extraArguments: unknown[]): undefined => {
+        value13?.();
+        current3.live = false;
+        current3.poll?.cancel();
+      };
+    },
+    [
+      input2,
+      input14,
+      input15,
+      input
+        .map((input16?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input16.value)
+        .join(`\0`),
+      value6,
+    ],
+  );
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!input12) return;
+      let value11 = (input16?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let current: Dynamic = value.current;
+        let current2: Dynamic = value2.current;
+        if (!(!current || !current2)) {
+          if (input16 === null) {
+            if (resolveLanguagePickerFlipAt2(current2)) {
+              value6();
+            }
+            return;
+          }
+          updateLanguagePickerTransform(
+            current2,
+            input16,
+            (..._extraArguments: unknown[]): Dynamic =>
+              Array.from<Dynamic, Dynamic>(
+                current.querySelectorAll(`[role="radio"]`),
+                (input17?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                  resolveSegmentedControlLeft(input17, current),
+              ),
+          );
+        }
+      };
+      value11(input12.get());
+      let value12: Dynamic = input12.on(`change`, value11);
+      return (..._extraArguments: unknown[]): undefined => {
+        value12();
+        value11(null);
+      };
+    },
+    [input12, value6],
+  );
+  let value7: Dynamic = (0, React.useCallback)(
+    (input16?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      input3(input16);
+    },
+    [input3],
+  );
+  let value8: boolean = input14 === `contained`;
+  let value9: Dynamic = useTooltipGroup();
+  let value10: Dynamic = (
+    <BaseRadioGroup
+      ref={value}
+      data-cds={`SegmentedControl`}
+      aria-label={input8}
+      aria-required={input9}
+      aria-invalid={input10}
+      aria-describedby={input11}
+      value={input2}
+      onValueChange={value7}
+      disabled={input5}
+      {...resolveUiProviderAndLayersDataSize(input4)}
+      className={resolveUiDesignSystemValue2(
+        `relative inline-flex`,
+        input15 ? `w-full` : `w-fit`,
+        `shrink-0 items-stretch h-control font-sans`,
+        value8 ? `rounded bg-[var(--cds-segmented-control-track)] p-px` : `gap-[1px]`,
+        input13,
+      )}
+    >
+      {
+        <div
+          aria-hidden={true}
+          className={`pointer-events-none absolute inset-0 overflow-clip ${value8 ? `rounded` : ``}`}
+        >
+          <div
+            ref={value2}
+            className={`${SegmentedControlStyles5} ${value8 ? SegmentedControlStyles6 : SegmentedControlStyles7}`}
+          />
+        </div>
+      }
+      {input.map((input16?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+        let value11: Dynamic = input16.icon && input16.label === undefined;
+        let value12: Dynamic = value11
+          ? (input16.tooltip ?? String(input16.value))
+          : input16.tooltip;
+        let value13: Dynamic =
+          typeof input16.tooltip == `string` ? input16.tooltip : String(input16.value);
+        let value14: Dynamic = input16.icon ? (
+          <UiOverlaysAndIconsCustomIcon name={input16.icon} size={`auto`} />
+        ) : null;
+        let value15: Dynamic = (
+          <BaseRadioRoot
+            value={input16.value}
+            disabled={input16.disabled}
+            aria-label={value11 ? value13 : undefined}
+            aria-keyshortcuts={
+              input16.shortcut
+                ? collectUiShortcutsAndSizingModifiers2(input16.shortcut, value4)
+                : undefined
+            }
+            onMouseDown={resolveUiOverlaysAndIconsValue2(undefined)}
+            className={`${SegmentedControlStyles} ${value8 ? SegmentedControlTextSecondary : SegmentedControlStyles4} ${value11 ? SegmentedControlAspectSquare : SegmentedControlPxMd}${input15 ? ` flex-1` : ``}`}
+          >
+            {value14 && input16.indicator ? (
+              <span className={`grid`}>
+                <span
+                  className={`col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]`}
+                >
+                  {value14}
+                </span>
+                <span
+                  aria-hidden={true}
+                  data-cds-part={`indicator`}
+                  className={`relative col-start-1 row-start-1 -me-px -mt-px self-start justify-self-end has-[>[data-cds=Pulse]]:[--cds-page-bg:transparent]`}
+                >
+                  {input16.indicator}
+                </span>
+              </span>
+            ) : (
+              value14
+            )}
+            {input16.label}
+          </BaseRadioRoot>
+        );
+        let value16: Dynamic =
+          input16.disabled && input16.disabledReason ? (
+            <DisabledReasonTooltip
+              reason={input16.disabledReason}
+              side={input6}
+              hoverable={false}
+              wrapperClassName={
+                input15
+                  ? `${SegmentedControlStyles2} ${value11 ? SegmentedControlFlex1 : SegmentedControlStyles3}`
+                  : SegmentedControlStyles2
+              }
+            >
+              {value15}
+            </DisabledReasonTooltip>
+          ) : value12 === undefined ? (
+            value15
+          ) : (
+            <Tooltip
+              content={value12}
+              detail={input16.tooltipDetail}
+              shortcut={input16.shortcut}
+              side={input6}
+              hoverable={input16.tooltipHoverable ?? false}
+              className={input7}
+            >
+              {value15}
+            </Tooltip>
+          );
+        return value3 ? (
+          <BaseLabelableProvider key={input16.value}>{value16}</BaseLabelableProvider>
+        ) : (
+          <React.Fragment key={input16.value}>{value16}</React.Fragment>
+        );
+      })}
+    </BaseRadioGroup>
+  );
+  return value9 ? value10 : <TooltipGroup>{value10}</TooltipGroup>;
+};
 
 var SegmentedControlStyles: Dynamic;
 
@@ -98,252 +376,6 @@ function updateSegmentedControlObserver(
     value2.unobserve(input);
     value3.delete(input);
   };
-}
-
-function SegmentedControl(
-  {
-    segments: input,
-    value: input2,
-    onChange: input3,
-    variant: input14 = `contained`,
-    size: input4,
-    fullWidth: input15 = false,
-    disabled: input5,
-    tooltipSide: input6,
-    tooltipClassName: input7,
-    "aria-label": input8,
-    "aria-required": input9,
-    "aria-invalid": input10,
-    "aria-describedby": input11,
-    thumbPosition: input12,
-    className: input13,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = (0, React.useRef)(null);
-  useUiTooltipsAndControlsState(value, `SegmentedControl`);
-  let value2: Dynamic = (0, React.useRef)(null);
-  let value3: boolean = isInsideField();
-  let value4: Dynamic = useUiShortcutsAndSizingUseSyncExternalStore();
-  let value5: Dynamic = (0, React.useRef)({
-    live: false,
-    poll: null,
-  });
-  let value6: Dynamic = (0, React.useCallback)(function value11(
-    input16: Dynamic = false,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    let current: Dynamic = value.current;
-    let current2: Dynamic = value2.current;
-    if (!current || !current2) return;
-    let element: Dynamic = current.querySelector(`[data-checked]`);
-    let value12: Dynamic = element
-      ? resolveSegmentedControlWidth(current)
-      : null;
-    let value13: Dynamic = null;
-    if (
-      !input16 ||
-      !(value12?.scaled || resolveLanguagePickerFlipAt2(current2))
-    ) {
-      value13 = resolveLanguagePickerCorrection(
-        current2,
-        current,
-        element ? resolveSegmentedControlLeft(element, current) : null,
-        {
-          correction: input16,
-        },
-      );
-    }
-    let value14 = (..._extraArguments: unknown[]): undefined => {
-      value13?.();
-      if (!value5.current.live) return;
-      let poll: Dynamic = value5.current.poll;
-      poll?.cancel();
-      value5.current.poll = null;
-      if (!value12 || (!input16 && !poll && !value12.scaled)) return;
-      let {
-        width: value15,
-        still: value16,
-        frames: value17,
-      }: Dynamic = poll ?? {
-        width: value12.width,
-        still: 0,
-        frames: 0,
-      };
-      if (
-        input16 &&
-        ((value16 = value15 === value12.width ? value16 + 1 : 0),
-        (value15 = value12.width),
-        (value17 += 1),
-        value16 >=
-          (value12.scaled ? segmentedControlValue30 : segmentedControlValue2) ||
-          value17 >= segmentedControlValue600)
-      )
-        return;
-      let value18: Dynamic = resolveSegmentedControlRequestAnimationFrame(
-        current,
-        (..._extraArguments: unknown[]): Dynamic => value11(true),
-      );
-      if (value18) {
-        value5.current.poll = {
-          cancel: value18,
-          width: value15,
-          still: value16,
-          frames: value17,
-        };
-      }
-    };
-    if (options) {
-      options.push(value14);
-    } else {
-      value14();
-    }
-  }, []);
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let current: Dynamic = value.current;
-      let current2: Dynamic = value2.current;
-      let value11: Dynamic = resolveUiOverlaysAndIconsValue(current);
-      let value12: boolean = current !== null && value11 !== undefined;
-      let current3: Dynamic = value5.current;
-      current3.live = true;
-      if (
-        !value12 ||
-        (current2 !== null && resolveLanguagePickerFlipAt(current2))
-      ) {
-        value6();
-      }
-      let value13: Dynamic = value12
-        ? updateSegmentedControlObserver(current, value11, value6)
-        : null;
-      return (..._extraArguments: unknown[]): undefined => {
-        value13?.();
-        current3.live = false;
-        current3.poll?.cancel();
-      };
-    },
-    [
-      input2,
-      input14,
-      input15,
-      input
-        .map(
-          (input16?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            input16.value,
-        )
-        .join(`\0`),
-      value6,
-    ],
-  );
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!input12) return;
-      let value11 = (
-        input16?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        let current: Dynamic = value.current;
-        let current2: Dynamic = value2.current;
-        if (!(!current || !current2)) {
-          if (input16 === null) {
-            if (resolveLanguagePickerFlipAt2(current2)) {
-              value6();
-            }
-            return;
-          }
-          updateLanguagePickerTransform(
-            current2,
-            input16,
-            (..._extraArguments: unknown[]): Dynamic =>
-              Array.from<Dynamic, Dynamic>(
-                current.querySelectorAll(`[role="radio"]`),
-                (input17?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                  resolveSegmentedControlLeft(input17, current),
-              ),
-          );
-        }
-      };
-      value11(input12.get());
-      let value12: Dynamic = input12.on(`change`, value11);
-      return (..._extraArguments: unknown[]): undefined => {
-        value12();
-        value11(null);
-      };
-    },
-    [input12, value6],
-  );
-  let value7: Dynamic = (0, React.useCallback)(
-    (input16?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      input3(input16);
-    },
-    [input3],
-  );
-  let value8: boolean = input14 === `contained`;
-  let value9: Dynamic = useTooltipGroup();
-  let value10: Dynamic = (
-    <BaseRadioGroup
-      ref={value}
-      data-cds={`SegmentedControl`}
-      aria-label={input8}
-      aria-required={input9}
-      aria-invalid={input10}
-      aria-describedby={input11}
-      value={input2}
-      onValueChange={value7}
-      disabled={input5}
-      {...resolveUiProviderAndLayersDataSize(input4)}
-      className={resolveUiDesignSystemValue2(`relative inline-flex`, input15 ? `w-full` : `w-fit`, `shrink-0 items-stretch h-control font-sans`, value8 ? `rounded bg-[var(--cds-segmented-control-track)] p-px` : `gap-[1px]`, input13)}
-    >{<div aria-hidden={true} className={`pointer-events-none absolute inset-0 overflow-clip ${value8 ? `rounded` : ``}`}>
-            <div ref={value2} className={`${SegmentedControlStyles5} ${value8 ? SegmentedControlStyles6 : SegmentedControlStyles7}`} />
-          </div>}{input.map((input16?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-    let value11: Dynamic = input16.icon && input16.label === undefined;
-    let value12: Dynamic = value11 ? input16.tooltip ?? String(input16.value) : input16.tooltip;
-    let value13: Dynamic = typeof input16.tooltip == `string` ? input16.tooltip : String(input16.value);
-    let value14: Dynamic = input16.icon ? <UiOverlaysAndIconsCustomIcon name={input16.icon} size={`auto`} /> : null;
-    let value15: Dynamic = <BaseRadioRoot
-      value={input16.value}
-      disabled={input16.disabled}
-      aria-label={value11 ? value13 : undefined}
-      aria-keyshortcuts={input16.shortcut ? collectUiShortcutsAndSizingModifiers2(input16.shortcut, value4) : undefined}
-      onMouseDown={resolveUiOverlaysAndIconsValue2(undefined)}
-      className={`${SegmentedControlStyles} ${value8 ? SegmentedControlTextSecondary : SegmentedControlStyles4} ${value11 ? SegmentedControlAspectSquare : SegmentedControlPxMd}${input15 ? ` flex-1` : ``}`}
-    >
-                  {value14 && input16.indicator ? <span className={`grid`}>
-                      <span className={`col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]`}>
-                        {value14}
-                      </span>
-                      <span
-                        aria-hidden={true}
-                        data-cds-part={`indicator`}
-                        className={`relative col-start-1 row-start-1 -me-px -mt-px self-start justify-self-end has-[>[data-cds=Pulse]]:[--cds-page-bg:transparent]`}
-                      >
-                        {input16.indicator}
-                      </span>
-                    </span> : value14}
-                  {input16.label}
-                </BaseRadioRoot>;
-    let value16: Dynamic = input16.disabled && input16.disabledReason ? <DisabledReasonTooltip
-      reason={input16.disabledReason}
-      side={input6}
-      hoverable={false}
-      wrapperClassName={input15 ? `${SegmentedControlStyles2} ${value11 ? SegmentedControlFlex1 : SegmentedControlStyles3}` : SegmentedControlStyles2}
-    >
-                    {value15}
-                  </DisabledReasonTooltip> : value12 === undefined ? value15 : <Tooltip
-                    content={value12}
-                    detail={input16.tooltipDetail}
-                    shortcut={input16.shortcut}
-                    side={input6}
-                    hoverable={input16.tooltipHoverable ?? false}
-                    className={input7}
-                  >
-                    {value15}
-                  </Tooltip>;
-    return value3 ? <BaseLabelableProvider key={input16.value}>{value16}</BaseLabelableProvider> : <React.Fragment key={input16.value}>{value16}</React.Fragment>;
-  })}</BaseRadioGroup>
-  );
-  return value9 ? value10 : <TooltipGroup>{value10}</TooltipGroup>;
 }
 
 function resolveSegmentedControlLeft(
@@ -436,5 +468,3 @@ export function initializeSegmentedControlStep1(): void {
   segmentedControlValue600 = 600;
   segmentedControlWeakMap = new (WeakMap as Dynamic)();
 }
-
-export { SegmentedControl };

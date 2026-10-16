@@ -22,19 +22,13 @@ import {
   PagebarStrip,
   TabRailButton,
 } from "../document-app/index";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-var W_COMPARE: number = 164;
-var W_COMPARE_COMFORTABLE: number = 181;
-var NARROW_BAR_PX: number = 600;
-var COMPARE_READOUT: Dynamic = {
-  previous: `vs previous version`,
-  restored: `vs restored version`,
-};
-function VersionBar(
-  { rail: rail, divided = false, onLeave: onLeave }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const VersionBar: ReactComponentTypes.FC<Dynamic> = ({
+  rail: rail,
+  divided = false,
+  onLeave: onLeave,
+}) => {
   (0, React.useLayoutEffect)(
     (..._extraArguments: unknown[]): Dynamic =>
       updatePlatformLiveDocumentAndHistoryBars(),
@@ -42,25 +36,19 @@ function VersionBar(
   );
   let previewState: Dynamic = resolvePlatformLiveDocumentAndHistoryPane();
   let showChanges: Dynamic = resolvePlatformSyncAndRoutingShowChanges();
-  let comfortable: boolean =
-    resolveUiProviderAndLayersUseContext2() === `comfortable`;
+  let comfortable: boolean = resolveUiProviderAndLayersUseContext2() === `comfortable`;
   let measureRef: Dynamic = (0, React.useRef)(null);
   let [barWidth, setBarWidth]: Dynamic = (0, React.useState)(1 / 0);
   (0, React.useLayoutEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let closest: Dynamic = measureRef.current?.closest(
-      `[data-testid="page-action-bar"]`,
-    );
+    let closest: Dynamic = measureRef.current?.closest(`[data-testid="page-action-bar"]`);
     if (!closest) return;
     let versionBarHandler: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
       setBarWidth(closest.clientWidth > 0 ? closest.clientWidth : 1 / 0);
     versionBarHandler();
     if (typeof ResizeObserver === "undefined") return;
-    let resizeObserver: Dynamic = new (ResizeObserver as Dynamic)(
-      versionBarHandler,
-    );
+    let resizeObserver: Dynamic = new (ResizeObserver as Dynamic)(versionBarHandler);
     resizeObserver.observe(closest);
-    return (..._extraArguments: unknown[]): Dynamic =>
-      resizeObserver.disconnect();
+    return (..._extraArguments: unknown[]): Dynamic => resizeObserver.disconnect();
   }, []);
   let narrow: boolean = barWidth < 600;
   let leavePreview: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
@@ -192,11 +180,7 @@ function VersionBar(
           }
           data-testid={`versionbar-restore`}
         >
-          {rail.restoring
-            ? `Restoring…`
-            : narrow
-              ? `Restore`
-              : `Restore this version`}
+          {rail.restoring ? `Restoring…` : narrow ? `Restore` : `Restore this version`}
         </Button>
       ) : rail.isCurrent ? (
         <Button
@@ -206,5 +190,16 @@ function VersionBar(
       ) : null}
     </div>
   );
-}
-export { NARROW_BAR_PX, W_COMPARE, W_COMPARE_COMFORTABLE, VersionBar };
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+var W_COMPARE: number = 164;
+var W_COMPARE_COMFORTABLE: number = 181;
+var NARROW_BAR_PX: number = 600;
+var COMPARE_READOUT: Dynamic = {
+  previous: `vs previous version`,
+  restored: `vs restored version`,
+};
+
+export { NARROW_BAR_PX, W_COMPARE, W_COMPARE_COMFORTABLE };

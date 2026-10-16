@@ -74,19 +74,17 @@ import {
   resolveCommentComponentsTarget5,
   resolveCommentComponentsValue2,
 } from "../comment-components/comment-reply-sheet";
+import type * as ReactComponentTypes from "react";
 
-function SeeMorePill(
-  {
-    children: children,
-    fit = false,
-    tailKey: tailKey,
-    expanded = true,
-    column: column,
-    tallerCap = false,
-    touch = false,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const SeeMorePill: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+  fit = false,
+  tailKey: tailKey,
+  expanded = true,
+  column: column,
+  tallerCap = false,
+  touch = false,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
   let elementRef2: Dynamic = (0, React.useRef)(null);
@@ -170,11 +168,7 @@ function SeeMorePill(
     [expanded],
   );
   return (
-    <div
-      className={
-        fit ? `relative flex min-h-0 flex-col` : `relative flex flex-col`
-      }
-    >
+    <div className={fit ? `relative flex min-h-0 flex-col` : `relative flex flex-col`}>
       <div
         ref={elementRef}
         onScroll={onScroll}
@@ -186,10 +180,7 @@ function SeeMorePill(
         <button
           type={`button`}
           data-testid={`see-more-pill`}
-          onClick={(
-            seeMorePill?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
+          onClick={(seeMorePill?: Dynamic, ..._extraArguments: unknown[]): undefined => {
             seeMorePill.stopPropagation();
             let element: Dynamic = elementRef.current;
             if (element) {
@@ -201,33 +192,18 @@ function SeeMorePill(
       )}
     </div>
   );
-}
+};
 
-function useCommentAnchorsSetTimeout(..._extraArguments: unknown[]): Dynamic {
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let setTimeout2 = window.setTimeout(
-      (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
-      500,
-    );
-    return (..._extraArguments: unknown[]) => window.clearTimeout(setTimeout2);
-  }, []);
-  return enabledState;
-}
-
-function UseCommentAnchorsAutoFocusComponent(
-  { onDelete: onDelete, onCancel: onCancel }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let useCommentAnchorsAutoFocusResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
+export const UseCommentAnchorsAutoFocusComponent: ReactComponentTypes.FC<Dynamic> = ({
+  onDelete: onDelete,
+  onCancel: onCancel,
+}) => {
+  let useCommentAnchorsAutoFocusResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
   let [disabled, setDisabled]: Dynamic = (0, React.useState)(false);
   let useCommentAnchorsSetTimeout2: Dynamic = useCommentAnchorsSetTimeout();
   return (
     <div className={`mt-1 flex flex-col gap-2 border-t pt-2`}>
-      <span
-        className={`text-primary text-[13px]`}
-      >{`Delete this comment?`}</span>
+      <span className={`text-primary text-[13px]`}>{`Delete this comment?`}</span>
       <div className={`flex justify-end gap-2`}>
         <Button
           variant={`secondary`}
@@ -251,10 +227,7 @@ function UseCommentAnchorsAutoFocusComponent(
           ): Promise<undefined> => {
             commentAnchorsAutoFocus.stopPropagation();
             if (
-              !(
-                !useCommentAnchorsSetTimeout2 &&
-                commentAnchorsAutoFocus.detail !== 0
-              )
+              !(!useCommentAnchorsSetTimeout2 && commentAnchorsAutoFocus.detail !== 0)
             ) {
               setDisabled(true);
               try {
@@ -268,12 +241,12 @@ function UseCommentAnchorsAutoFocusComponent(
       </div>
     </div>
   );
-}
+};
 
-function UseCommentAnchorsBusyComponent(
-  { onDelete: onDelete, onCancel: onCancel }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentAnchorsBusyComponent: ReactComponentTypes.FC<Dynamic> = ({
+  onDelete: onDelete,
+  onCancel: onCancel,
+}) => {
   let [busy, setBusy]: Dynamic = (0, React.useState)(false);
   let useCommentAnchorsSetTimeout2: Dynamic = useCommentAnchorsSetTimeout();
   return (
@@ -282,293 +255,30 @@ function UseCommentAnchorsBusyComponent(
       onCancel={onCancel}
       onDelete={(..._extraArguments: unknown[]): undefined => {
         setBusy(true);
-        onDelete().finally(
-          (..._extraArguments: unknown[]): Dynamic => setBusy(false),
-        );
+        onDelete().finally((..._extraArguments: unknown[]): Dynamic => setBusy(false));
       }}
-      onClick={(
-        commentAnchorsBusy?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => commentAnchorsBusy.stopPropagation()}
-      onClickCapture={(
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
+      onClick={(commentAnchorsBusy?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        commentAnchorsBusy.stopPropagation()
+      }
+      onClickCapture={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         if (useCommentAnchorsSetTimeout2 || event.detail === 0) return;
-        let matchedElements: Dynamic =
-          event.currentTarget.querySelectorAll(`button`);
+        let matchedElements: Dynamic = event.currentTarget.querySelectorAll(`button`);
         if (
-          event.target.closest(`button`) ===
-          matchedElements[matchedElements.length - 1]
+          event.target.closest(`button`) === matchedElements[matchedElements.length - 1]
         ) {
           event.stopPropagation();
         }
       }}
     />
   );
-}
+};
 
-function CommentWhen(
-  {
-    r: r5,
-    right: right,
-    rightSeated: rightSeated,
-    expanded: expanded,
-    compact: compact,
-    editing: editing,
-    editToClaude: editToClaude,
-    deleting: deleting,
-    deleteAsk: deleteAsk,
-    me: me2,
-    onReact: onReact,
-    container: container,
-    onSave: onSave,
-    onDelete: onDelete,
-    onCancel: onCancel,
-    dimmed: dimmed,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let commentWhenResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
-  let content: Dynamic = filterCommentAnchorsJoin(r5);
-  return (
-    <div
-      className={resolveUiDesignSystemValue2(
-        `group/row flex flex-col gap-1`,
-        dimmed && `opacity-60`,
-      )}
-      data-unconfirmed={dimmed ? `` : undefined}
-    >
-      <div
-        className={`relative flex items-center gap-x-2 text-xs`}
-        data-comment-meta={``}
-      >
-        {resolveCommentAnchorsActor(r5) ? (
-          <UseCommentAnchorsRoleComponent />
-        ) : (
-          r5.user !== `` && <UseCommentAnchorsUserComponent user={r5.user} />
-        )}
-        <span
-          className={resolveUiDesignSystemValue2(
-            `flex min-w-0 flex-1 items-center gap-x-1`,
-            right !== undefined && `min-h-6`,
-          )}
-        >
-          {(resolveCommentAnchorsActor(r5) || r5.user !== ``) && (
-            <AuthorLoading
-              r={r5}
-              className={`min-w-0 truncate font-semibold`}
-            />
-          )}
-          {r5.at !== `` && (
-            <OverflowTooltip
-              lazy={true}
-              className={resolveUiDesignSystemValue2(
-                `text-muted text-caption whitespace-nowrap`,
-                rightSeated ? CommentAnchors_Styles3 : `shrink-0`,
-              )}
-              data-testid={`comment-when`}
-            >
-              {resolveCommentAnchorsFormat(
-                r5.at,
-                new Date(commentWhenResult.now()),
-                commentWhenResult.locale,
-                commentWhenResult.timeZone,
-              )}
-            </OverflowTooltip>
-          )}
-        </span>
-        {right}
-      </div>
-      {editing && onSave && onCancel ? (
-        <CommentEditor
-          initial={r5.body}
-          onSave={onSave}
-          onCancel={onCancel}
-          sendToClaude={editToClaude}
-          container={container}
-        />
-      ) : (
-        <div
-          className={`text-primary text-[13px] leading-[1.4]`}
-          data-comment-body={``}
-        >
-          <UseCommentAnchorsExpandedComponent
-            expanded={expanded}
-            compact={compact}
-            container={container}
-          >
-            {resolveCommentAnchorsActor(r5)
-              ? r5.body
-              : resolveCommentAnchorsReplace3(r5.body)}
-          </UseCommentAnchorsExpandedComponent>
-          {content && (
-            <Tooltip content={content} multiline={true}>
-              <span
-                className={`text-muted text-caption block truncate`}
-                data-testid={`comment-provenance`}
-              >
-                {content}
-              </span>
-            </Tooltip>
-          )}
-        </div>
-      )}
-      {r5.reactions && (
-        <ReactionPill reactions={r5.reactions} me={me2} onToggle={onReact} />
-      )}
-      {deleting && onDelete && onCancel && (
-        <UseCommentAnchorsAutoFocusComponent onDelete={onDelete} onCancel={onCancel} key={deleteAsk} />
-      )}
-    </div>
-  );
-}
-
-function CommentHeader(
-  {
-    r: r5,
-    right: right,
-    editing: editing,
-    editToClaude: editToClaude,
-    deleting: deleting,
-    deleteAsk: deleteAsk,
-    me: me2,
-    onReact: onReact,
-    container: container,
-    onSave: onSave,
-    onDelete: onDelete,
-    onCancel: onCancel,
-    dimmed: dimmed,
-    compact: compact,
-    cardExpanded: cardExpanded,
-    whoReacted = false,
-    editReturnAddsLine = false,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let commentHeaderResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
-  let commentAnchorsHover: Dynamic = resolveCommentAnchorsHover(r5);
-  let filterCommentAnchorsJoin2: Dynamic = filterCommentAnchorsJoin(r5);
-  let byClaude: Dynamic = resolveCommentAnchorsActor(r5);
-  let count =
-    resolveUiProviderAndLayersUseContext2() === `comfortable` ? 20 : 19;
-  let jsx = (
-    <CommentCard.Comment
-      byClaude={byClaude}
-      authorName={
-        byClaude || r5.user === `` ? undefined : commentAnchorsHover.name
-      }
-      authorTooltip={commentAnchorsHover.hover ?? undefined}
-      identityLoading={commentAnchorsHover.loading}
-      avatar={
-        byClaude || r5.user === `` ? undefined : (
-          <span aria-hidden={`true`} className={`inline-flex`}>
-            <UseCommentAnchorsUserComponent user={r5.user} />
-          </span>
-        )
-      }
-      timestamp={
-        r5.at === `` ? undefined : (
-          <span data-testid={`comment-when`}>
-            {resolveCommentAnchorsFormat(
-              r5.at,
-              new Date(commentHeaderResult.now()),
-              commentHeaderResult.locale,
-              commentHeaderResult.timeZone,
-            )}
-          </span>
-        )
-      }
-      actions={right}
-      footnote={
-        filterCommentAnchorsJoin2 ? (
-          <span data-testid={`comment-provenance`}>
-            {filterCommentAnchorsJoin2}
-          </span>
-        ) : undefined
-      }
-      reactions={
-        r5.reactions &&
-        (whoReacted ? (
-          <WhoReacted reactions={r5.reactions}>
-            <UseCommentAnchorsReactionsComponent
-              reactions={r5.reactions}
-              me={me2}
-              onToggle={onReact}
-            />
-          </WhoReacted>
-        ) : (
-          <UseCommentAnchorsReactionsComponent
-            reactions={r5.reactions}
-            me={me2}
-            onToggle={onReact}
-          />
-        ))
-      }
-      editor={
-        editing && onSave && onCancel ? (
-          <CommentEditor
-            chrome={`cds`}
-            initial={r5.body}
-            onSave={onSave}
-            onCancel={onCancel}
-            sendToClaude={editToClaude}
-            container={container}
-            returnAddsLine={editReturnAddsLine}
-          />
-        ) : undefined
-      }
-      confirm={
-        deleting && onDelete && onCancel ? (
-          <UseCommentAnchorsBusyComponent onDelete={onDelete} onCancel={onCancel} key={deleteAsk} />
-        ) : undefined
-      }
-    >
-      {compact ? (
-        <div
-          className={`[--comment-fade-stop:var(--cds-comment-card-bg,var(--cds-surface-2))]`}
-        >
-          <UseCommentAnchorsExpandedComponent
-            expanded={cardExpanded}
-            compact={true}
-            compactPx={3 * count}
-            container={container}
-          >
-            {byClaude ? r5.body : resolveCommentAnchorsReplace3(r5.body)}
-          </UseCommentAnchorsExpandedComponent>
-        </div>
-      ) : (
-        <div data-comment-body={``}>
-          <UseCommentAnchorsContainerComponent container={container}>
-            {byClaude ? r5.body : resolveCommentAnchorsReplace3(r5.body)}
-          </UseCommentAnchorsContainerComponent>
-        </div>
-      )}
-    </CommentCard.Comment>
-  );
-  return dimmed ? (
-    <div className={`opacity-60`} data-unconfirmed={``}>
-      {jsx}
-    </div>
-  ) : (
-    jsx
-  );
-}
-
-// BaoCut: 表情回应名单里的智能体叫 Agent，不叫 Claude。
-var resolveCommentAnchorsStartsWith: Dynamic;
-
-var isCommentAnchorsStartsWith: Dynamic;
-
-function UseCommentAnchorsPinnedComponent(
-  {
-    onPick: onPick,
-    pinned: pinned,
-    touch: touch,
-    keysOnlyFocusBack = false,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const UseCommentAnchorsPinnedComponent: ReactComponentTypes.FC<Dynamic> = ({
+  onPick: onPick,
+  pinned: pinned,
+  touch: touch,
+  keysOnlyFocusBack = false,
+}) => {
   let [open, onOpenChange]: Dynamic = (0, React.useState)(false);
   let elementRef: Dynamic = (0, React.useRef)(null);
   (0, React.useEffect)(
@@ -584,9 +294,7 @@ function UseCommentAnchorsPinnedComponent(
   );
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
-      <Tooltip
-        content={open ? undefined : EditorExtensionsAskClaude.react.label}
-      >
+      <Tooltip content={open ? undefined : EditorExtensionsAskClaude.react.label}>
         <Popover.Trigger
           render={
             <IconButton
@@ -637,7 +345,373 @@ function UseCommentAnchorsPinnedComponent(
       />
     </Popover.Root>
   );
+};
+
+export const UseCommentAnchorsReactionsComponent: ReactComponentTypes.FC<Dynamic> = ({
+  reactions: reactions,
+  me: me2,
+  onToggle: onToggle,
+  className: className,
+  onClick: onClick,
+  hint: hint,
+}) => {
+  useCommentAnchorsUseSyncExternalStore(reactions);
+  return (
+    <Reactions
+      items={Object.entries(reactions)
+        .filter(([, items]: Dynamic, ..._extraArguments: unknown[]) => items.length > 0)
+        .map(
+          ([emoji, items]: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+            emoji: emoji,
+            count: items.length,
+            mine:
+              !!me2 &&
+              items.some(
+                (item?: Dynamic, ..._extraArguments: unknown[]) =>
+                  item.user === me2 && !item.actor.startsWith(`agent`),
+              ),
+            names:
+              items.map(resolveCommentAnchorsStartsWith).join(`, `) +
+              (hint !== undefined && hint.emoji === emoji ? ` · ${hint.text}` : ``),
+          }),
+        )}
+      onToggle={onToggle}
+      className={className}
+      onClick={onClick}
+    />
+  );
+};
+
+export const ReactionPill: ReactComponentTypes.FC<Dynamic> = ({
+  reactions: reactions,
+  me: me2,
+  onToggle: onToggle,
+}) => {
+  useCommentAnchorsUseSyncExternalStore(reactions);
+  let controlId: Dynamic = (0, React.useId)();
+  let filteredReactionsEntries: Dynamic = Object.entries(reactions).filter(
+    ([, items]: Dynamic, ..._extraArguments: unknown[]) => items.length > 0,
+  );
+  return filteredReactionsEntries.length === 0 ? null : (
+    <div className={`mt-1 flex flex-wrap gap-1`}>
+      {filteredReactionsEntries.map(
+        ([item, items]: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => {
+          let ariaPressed: Dynamic =
+            !!me2 &&
+            items.some(
+              (item2?: Dynamic, ..._extraArguments: unknown[]) =>
+                item2.user === me2 && !item2.actor.startsWith(`agent`),
+            );
+          let content: Dynamic = items.map(resolveCommentAnchorsStartsWith).join(`, `);
+          let ariaLabel = resolveCommentComponentsValue2(item, items.length);
+          let className = `flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] leading-none transition-colors ${ariaPressed ? `border-accent bg-accent text-accent` : `border-strong text-secondary${onToggle ? ` hover:bg-alpha-1` : ``}`}`;
+          let jsxs = (
+            <jsxRuntime.Fragment>
+              <span className={`text-[13px]`}>{item}</span>
+              <span>{items.length}</span>
+            </jsxRuntime.Fragment>
+          );
+          return (
+            <Tooltip content={content} side={`top`} multiline={true} key={item}>
+              {onToggle ? (
+                <button
+                  type={`button`}
+                  data-testid={`reaction-pill`}
+                  aria-pressed={ariaPressed}
+                  aria-label={ariaLabel}
+                  aria-describedby={`${controlId}-${index}`}
+                  onClick={(
+                    reactionPill?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ): undefined => {
+                    reactionPill.stopPropagation();
+                    onToggle(item);
+                  }}
+                  onKeyDown={(
+                    event?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ): undefined =>
+                    void (event.repeat && event.key === `Enter` && event.preventDefault())
+                  }
+                  className={className}
+                >
+                  {jsxs}
+                  <span id={`${controlId}-${index}`} className={`sr-only`}>
+                    {content}
+                  </span>
+                </button>
+              ) : (
+                <span
+                  data-testid={`reaction-pill`}
+                  role={`img`}
+                  aria-label={`${ariaLabel}, ${content}`}
+                  className={className}
+                >
+                  {jsxs}
+                </span>
+              )}
+            </Tooltip>
+          );
+        },
+      )}
+    </div>
+  );
+};
+
+export const CommentWhen: ReactComponentTypes.FC<Dynamic> = ({
+  r: r5,
+  right: right,
+  rightSeated: rightSeated,
+  expanded: expanded,
+  compact: compact,
+  editing: editing,
+  editToClaude: editToClaude,
+  deleting: deleting,
+  deleteAsk: deleteAsk,
+  me: me2,
+  onReact: onReact,
+  container: container,
+  onSave: onSave,
+  onDelete: onDelete,
+  onCancel: onCancel,
+  dimmed: dimmed,
+}) => {
+  let commentWhenResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
+  let content: Dynamic = filterCommentAnchorsJoin(r5);
+  return (
+    <div
+      className={resolveUiDesignSystemValue2(
+        `group/row flex flex-col gap-1`,
+        dimmed && `opacity-60`,
+      )}
+      data-unconfirmed={dimmed ? `` : undefined}
+    >
+      <div
+        className={`relative flex items-center gap-x-2 text-xs`}
+        data-comment-meta={``}
+      >
+        {resolveCommentAnchorsActor(r5) ? (
+          <UseCommentAnchorsRoleComponent />
+        ) : (
+          r5.user !== `` && <UseCommentAnchorsUserComponent user={r5.user} />
+        )}
+        <span
+          className={resolveUiDesignSystemValue2(
+            `flex min-w-0 flex-1 items-center gap-x-1`,
+            right !== undefined && `min-h-6`,
+          )}
+        >
+          {(resolveCommentAnchorsActor(r5) || r5.user !== ``) && (
+            <AuthorLoading r={r5} className={`min-w-0 truncate font-semibold`} />
+          )}
+          {r5.at !== `` && (
+            <OverflowTooltip
+              lazy={true}
+              className={resolveUiDesignSystemValue2(
+                `text-muted text-caption whitespace-nowrap`,
+                rightSeated ? CommentAnchors_Styles3 : `shrink-0`,
+              )}
+              data-testid={`comment-when`}
+            >
+              {resolveCommentAnchorsFormat(
+                r5.at,
+                new Date(commentWhenResult.now()),
+                commentWhenResult.locale,
+                commentWhenResult.timeZone,
+              )}
+            </OverflowTooltip>
+          )}
+        </span>
+        {right}
+      </div>
+      {editing && onSave && onCancel ? (
+        <CommentEditor
+          initial={r5.body}
+          onSave={onSave}
+          onCancel={onCancel}
+          sendToClaude={editToClaude}
+          container={container}
+        />
+      ) : (
+        <div className={`text-primary text-[13px] leading-[1.4]`} data-comment-body={``}>
+          <UseCommentAnchorsExpandedComponent
+            expanded={expanded}
+            compact={compact}
+            container={container}
+          >
+            {resolveCommentAnchorsActor(r5)
+              ? r5.body
+              : resolveCommentAnchorsReplace3(r5.body)}
+          </UseCommentAnchorsExpandedComponent>
+          {content && (
+            <Tooltip content={content} multiline={true}>
+              <span
+                className={`text-muted text-caption block truncate`}
+                data-testid={`comment-provenance`}
+              >
+                {content}
+              </span>
+            </Tooltip>
+          )}
+        </div>
+      )}
+      {r5.reactions && (
+        <ReactionPill reactions={r5.reactions} me={me2} onToggle={onReact} />
+      )}
+      {deleting && onDelete && onCancel && (
+        <UseCommentAnchorsAutoFocusComponent
+          onDelete={onDelete}
+          onCancel={onCancel}
+          key={deleteAsk}
+        />
+      )}
+    </div>
+  );
+};
+
+export const CommentHeader: ReactComponentTypes.FC<Dynamic> = ({
+  r: r5,
+  right: right,
+  editing: editing,
+  editToClaude: editToClaude,
+  deleting: deleting,
+  deleteAsk: deleteAsk,
+  me: me2,
+  onReact: onReact,
+  container: container,
+  onSave: onSave,
+  onDelete: onDelete,
+  onCancel: onCancel,
+  dimmed: dimmed,
+  compact: compact,
+  cardExpanded: cardExpanded,
+  whoReacted = false,
+  editReturnAddsLine = false,
+}) => {
+  let commentHeaderResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
+  let commentAnchorsHover: Dynamic = resolveCommentAnchorsHover(r5);
+  let filterCommentAnchorsJoin2: Dynamic = filterCommentAnchorsJoin(r5);
+  let byClaude: Dynamic = resolveCommentAnchorsActor(r5);
+  let count = resolveUiProviderAndLayersUseContext2() === `comfortable` ? 20 : 19;
+  let jsx = (
+    <CommentCard.Comment
+      byClaude={byClaude}
+      authorName={byClaude || r5.user === `` ? undefined : commentAnchorsHover.name}
+      authorTooltip={commentAnchorsHover.hover ?? undefined}
+      identityLoading={commentAnchorsHover.loading}
+      avatar={
+        byClaude || r5.user === `` ? undefined : (
+          <span aria-hidden={`true`} className={`inline-flex`}>
+            <UseCommentAnchorsUserComponent user={r5.user} />
+          </span>
+        )
+      }
+      timestamp={
+        r5.at === `` ? undefined : (
+          <span data-testid={`comment-when`}>
+            {resolveCommentAnchorsFormat(
+              r5.at,
+              new Date(commentHeaderResult.now()),
+              commentHeaderResult.locale,
+              commentHeaderResult.timeZone,
+            )}
+          </span>
+        )
+      }
+      actions={right}
+      footnote={
+        filterCommentAnchorsJoin2 ? (
+          <span data-testid={`comment-provenance`}>{filterCommentAnchorsJoin2}</span>
+        ) : undefined
+      }
+      reactions={
+        r5.reactions &&
+        (whoReacted ? (
+          <WhoReacted reactions={r5.reactions}>
+            <UseCommentAnchorsReactionsComponent
+              reactions={r5.reactions}
+              me={me2}
+              onToggle={onReact}
+            />
+          </WhoReacted>
+        ) : (
+          <UseCommentAnchorsReactionsComponent
+            reactions={r5.reactions}
+            me={me2}
+            onToggle={onReact}
+          />
+        ))
+      }
+      editor={
+        editing && onSave && onCancel ? (
+          <CommentEditor
+            chrome={`cds`}
+            initial={r5.body}
+            onSave={onSave}
+            onCancel={onCancel}
+            sendToClaude={editToClaude}
+            container={container}
+            returnAddsLine={editReturnAddsLine}
+          />
+        ) : undefined
+      }
+      confirm={
+        deleting && onDelete && onCancel ? (
+          <UseCommentAnchorsBusyComponent
+            onDelete={onDelete}
+            onCancel={onCancel}
+            key={deleteAsk}
+          />
+        ) : undefined
+      }
+    >
+      {compact ? (
+        <div
+          className={`[--comment-fade-stop:var(--cds-comment-card-bg,var(--cds-surface-2))]`}
+        >
+          <UseCommentAnchorsExpandedComponent
+            expanded={cardExpanded}
+            compact={true}
+            compactPx={3 * count}
+            container={container}
+          >
+            {byClaude ? r5.body : resolveCommentAnchorsReplace3(r5.body)}
+          </UseCommentAnchorsExpandedComponent>
+        </div>
+      ) : (
+        <div data-comment-body={``}>
+          <UseCommentAnchorsContainerComponent container={container}>
+            {byClaude ? r5.body : resolveCommentAnchorsReplace3(r5.body)}
+          </UseCommentAnchorsContainerComponent>
+        </div>
+      )}
+    </CommentCard.Comment>
+  );
+  return dimmed ? (
+    <div className={`opacity-60`} data-unconfirmed={``}>
+      {jsx}
+    </div>
+  ) : (
+    jsx
+  );
+};
+
+function useCommentAnchorsSetTimeout(..._extraArguments: unknown[]): Dynamic {
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
+    let setTimeout2 = window.setTimeout(
+      (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
+      500,
+    );
+    return (..._extraArguments: unknown[]) => window.clearTimeout(setTimeout2);
+  }, []);
+  return enabledState;
 }
+
+// BaoCut: 表情回应名单里的智能体叫 Agent，不叫 Claude。
+var resolveCommentAnchorsStartsWith: Dynamic;
+
+var isCommentAnchorsStartsWith: Dynamic;
 
 function useCommentAnchorsUseSyncExternalStore(
   commentAnchorsUseSyncExternalStore?: Dynamic,
@@ -671,105 +745,6 @@ function useCommentAnchorsUseSyncExternalStore(
       }
     },
     [commentAnchorsUseSyncExternalStore],
-  );
-}
-
-function UseCommentAnchorsReactionsComponent(
-  {
-    reactions: reactions,
-    me: me2,
-    onToggle: onToggle,
-    className: className,
-    onClick: onClick,
-    hint: hint,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  useCommentAnchorsUseSyncExternalStore(reactions);
-  return (
-    <Reactions
-      items={Object.entries(reactions)
-        .filter(
-          ([, items]: Dynamic, ..._extraArguments: unknown[]) =>
-            items.length > 0,
-        )
-        .map(
-          (
-            [emoji, items]: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => ({
-            emoji: emoji,
-            count: items.length,
-            mine:
-              !!me2 &&
-              items.some(
-                (item?: Dynamic, ..._extraArguments: unknown[]) =>
-                  item.user === me2 && !item.actor.startsWith(`agent`),
-              ),
-            names:
-              items.map(resolveCommentAnchorsStartsWith).join(`, `) +
-              (hint !== undefined && hint.emoji === emoji
-                ? ` · ${hint.text}`
-                : ``),
-          }),
-        )}
-      onToggle={onToggle}
-      className={className}
-      onClick={onClick}
-    />
-  );
-}
-
-function ReactionPill(
-  { reactions: reactions, me: me2, onToggle: onToggle }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  useCommentAnchorsUseSyncExternalStore(reactions);
-  let controlId: Dynamic = (0, React.useId)();
-  let filteredReactionsEntries: Dynamic = Object.entries(reactions).filter(
-    ([, items]: Dynamic, ..._extraArguments: unknown[]) => items.length > 0,
-  );
-  return filteredReactionsEntries.length === 0 ? null : (
-    <div className={`mt-1 flex flex-wrap gap-1`}>
-      {filteredReactionsEntries.map(
-        (
-          [item, items]: Dynamic,
-          index?: Dynamic,
-          ..._extraArguments: unknown[]
-        ) => {
-          let ariaPressed: Dynamic =
-            !!me2 &&
-            items.some(
-              (item2?: Dynamic, ..._extraArguments: unknown[]) =>
-                item2.user === me2 && !item2.actor.startsWith(`agent`),
-            );
-          let content: Dynamic = items
-            .map(resolveCommentAnchorsStartsWith)
-            .join(`, `);
-          let ariaLabel = resolveCommentComponentsValue2(item, items.length);
-          let className = `flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] leading-none transition-colors ${ariaPressed ? `border-accent bg-accent text-accent` : `border-strong text-secondary${onToggle ? ` hover:bg-alpha-1` : ``}`}`;
-          let jsxs = (
-            <jsxRuntime.Fragment>
-              <span className={`text-[13px]`}>{item}</span>
-              <span>{items.length}</span>
-            </jsxRuntime.Fragment>
-          );
-          return (
-            <Tooltip content={content} side={`top`} multiline={true} key={item}>{onToggle ? <button type={`button`} data-testid={`reaction-pill`} aria-pressed={ariaPressed} aria-label={ariaLabel} aria-describedby={`${controlId}-${index}`} onClick={(reactionPill?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    reactionPill.stopPropagation();
-    onToggle(item);
-  }} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => void (event.repeat && event.key === `Enter` && event.preventDefault())} className={className}>
-                      {jsxs}
-                      <span id={`${controlId}-${index}`} className={`sr-only`}>
-                        {content}
-                      </span>
-                    </button> : <span data-testid={`reaction-pill`} role={`img`} aria-label={`${ariaLabel}, ${content}`} className={className}>
-                      {jsxs}
-                    </span>}</Tooltip>
-          );
-        },
-      )}
-    </div>
   );
 }
 
@@ -1119,12 +1094,4 @@ export function initializeCommentAnchorsSeeMorePillStep1(): void {
   (CommentComposer_ShowWhoReacted = `Show who reacted`);
 }
 
-export {
-  CommentComposer_ShowWhoReacted,
-  CommentHeader,
-  CommentWhen,
-  ReactionChip,
-  ReactionNames,
-  SeeMorePill,
-  UseCommentAnchorsPinnedComponent,
-};
+export { CommentComposer_ShowWhoReacted, ReactionChip, ReactionNames };

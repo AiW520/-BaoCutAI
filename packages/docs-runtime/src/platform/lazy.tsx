@@ -1,5 +1,20 @@
 /** platform-lazy: restored from app-lazy-CIsA5Djd.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
+import type * as ReactComponentTypes from "react";
+
+/* Subsystem: unavailable-pages */
+export const UnavailablePage: ReactComponentTypes.FC<unknown | undefined> = (
+  unavailablePage,
+) => {
+  return <FrameUnavailable what={`This page`} />;
+};
+
+export const SpreadsheetUnavailablePage: ReactComponentTypes.FC<unknown | undefined> = (
+  spreadsheetUnavailablePage,
+) => {
+  return <FrameUnavailable what={`A spreadsheet`} />;
+};
+
 /* Subsystem: version-xml */
 const mapPreloadDependencies: Dynamic = (
   ..._extraArguments: unknown[]
@@ -17976,13 +17991,7 @@ var unavailablePagesModule: Dynamic = createLiveModuleNamespace({
   Workspace: (..._extraArguments: unknown[]): Dynamic => Workspace,
 });
 var unavailablePagesJsxRuntime: Dynamic = loadJsxRuntime();
-/* Subsystem: unavailable-pages */
-function UnavailablePage(
-  unavailablePage?: unknown,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return <FrameUnavailable what={`This page`} />;
-}
+
 var ActionsPage: Dynamic = UnavailablePage;
 var Home: Dynamic = UnavailablePage;
 var ManifestReplay: Dynamic = UnavailablePage;
@@ -18013,12 +18022,7 @@ var spreadsheetPageModule: Dynamic = createLiveModuleNamespace({
   default: (..._extraArguments: unknown[]): Dynamic =>
     SpreadsheetUnavailablePage,
 });
-function SpreadsheetUnavailablePage(
-  spreadsheetUnavailablePage?: unknown,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return <FrameUnavailable what={`A spreadsheet`} />;
-}
+
 var CURRENCY_NAMES: Dynamic = {
   $: `USD`,
   "€": `EUR`,

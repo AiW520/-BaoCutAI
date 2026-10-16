@@ -9,14 +9,9 @@ import {
   UiOverlaysAndIconsCustomIcon,
 } from "../../dependencies";
 import type { DatabaseColumn, DatabaseDetailData } from "../project-contracts";
-const databaseMarkLabels: Readonly<Record<string, string>> = {
-  "ref-dangling": `A source reference no longer resolves`,
-  "adapter-resolve-failed": `A source couldn't be decoded`,
-  "row-keyless": `Rows are missing the unique key`,
-  "row-nonconformant": `Rows don't match the columns`,
-  "overlay-pk-dangling": `An edit points at a row that's gone`,
-};
-export function DatabaseCellValue({ value }: { value: unknown }) {
+import type * as React from "react";
+
+export const DatabaseCellValue: React.FC<{ value: unknown }> = ({ value }) => {
   return value == null ? (
     <span className={`text-muted`}>{`—`}</span>
   ) : typeof value == `number` ? (
@@ -28,8 +23,11 @@ export function DatabaseCellValue({ value }: { value: unknown }) {
       typeof value == `string` ? value : JSON.stringify(value),
     )
   );
-}
-export function DatabaseGrid({ database }: { database: DatabaseDetailData }) {
+};
+
+export const DatabaseGrid: React.FC<{ database: DatabaseDetailData }> = ({
+  database,
+}) => {
   const columnTypeLabel = (databaseDetail: DatabaseColumn) =>
     databaseDetail.type.kind === `literal`
       ? databaseDetail.type.type
@@ -127,4 +125,12 @@ export function DatabaseGrid({ database }: { database: DatabaseDetailData }) {
       )}
     </div>
   );
-}
+};
+
+const databaseMarkLabels: Readonly<Record<string, string>> = {
+  "ref-dangling": `A source reference no longer resolves`,
+  "adapter-resolve-failed": `A source couldn't be decoded`,
+  "row-keyless": `Rows are missing the unique key`,
+  "row-nonconformant": `Rows don't match the columns`,
+  "overlay-pk-dangling": `An edit points at a row that's gone`,
+};

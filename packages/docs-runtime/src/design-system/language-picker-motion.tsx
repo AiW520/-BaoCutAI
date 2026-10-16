@@ -2,11 +2,9 @@
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { resolveUiDesignSystemValue2 } from "./dependencies";
 import { isReducedMotion } from "./presentation";
+import type * as React from "react";
 
-function Dots(
-  { className: input }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const Dots: React.FC<Dynamic> = ({ className: input }) => {
   return (
     <span
       data-cds={`Dots`}
@@ -21,7 +19,7 @@ function Dots(
       <span className={`cds-dot`} />
     </span>
   );
-}
+};
 
 var resolveLanguagePickerValue: (..._extraArguments: unknown[]) => undefined;
 
@@ -230,10 +228,4 @@ export function initializeLanguagePickerMotionStep1(): void {
   languagePickerWeakMap = new (WeakMap as Dynamic)();
 }
 
-export {
-  Dots,
-  resolveLanguagePickerCorrection,
-  resolveLanguagePickerFlipAt,
-  resolveLanguagePickerFlipAt2,
-  updateLanguagePickerTransform,
-};
+export { resolveLanguagePickerCorrection, resolveLanguagePickerFlipAt, resolveLanguagePickerFlipAt2, updateLanguagePickerTransform };

@@ -45,35 +45,28 @@ import {
   jsxRuntime,
   mapPreloadDependencies,
 } from "../bootstrap";
+import type * as ReactComponentTypes from "react";
 
-function ConnectorAuthenticationDialog(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
+export const ConnectorAuthenticationDialog: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   let connectorAuthenticationDialogResult: Dynamic =
     resolvePlatformSyncAndRoutingCompact();
   let error: Dynamic = CommentsStoreHealth(
-    (
-      connectorAuthenticationDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorAuthenticationDialog.authPrompt,
+    (connectorAuthenticationDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorAuthenticationDialog.authPrompt,
   );
   let connectorAuthenticationDialogResult2: Dynamic = CommentsStoreHealth(
-    (
-      connectorAuthenticationDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorAuthenticationDialog.dismissPrompt,
+    (connectorAuthenticationDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorAuthenticationDialog.dismissPrompt,
   );
   let connectorAuthenticationDialogResult3: Dynamic = CommentsStoreHealth(
-    (
-      connectorAuthenticationDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorAuthenticationDialog.clearPrompt,
+    (connectorAuthenticationDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorAuthenticationDialog.clearPrompt,
   );
   let connectorAuthenticationDialogResult4: Dynamic = CommentsStoreHealth(
-    (
-      connectorAuthenticationDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorAuthenticationDialog.reconnect,
+    (connectorAuthenticationDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorAuthenticationDialog.reconnect,
   );
   let [disabled, setDisabled]: Dynamic = (0, React.useState)(false);
   (0, React.useEffect)(
@@ -122,14 +115,9 @@ function ConnectorAuthenticationDialog(
       onOpenChange={(
         connectorAuthenticationDialog?: Dynamic,
         ..._extraArguments: unknown[]
-      ) =>
-        !connectorAuthenticationDialog && connectorAuthenticationDialogResult5()
-      }
+      ) => !connectorAuthenticationDialog && connectorAuthenticationDialogResult5()}
     >
-      <UiDialogsRoot.Popup
-        size={`sm`}
-        data-testid={`connector-reconnect-modal`}
-      >
+      <UiDialogsRoot.Popup size={`sm`} data-testid={`connector-reconnect-modal`}>
         <div className={`mb-2 flex items-center gap-2`}>
           <UiOverlaysAndIconsCustomIcon
             name={`Connectors`}
@@ -174,9 +162,7 @@ function ConnectorAuthenticationDialog(
             variant={`brand`}
             size={connectorAuthenticationDialogResult(`sm`)}
             disabled={disabled}
-            onClick={(..._extraArguments: unknown[]): undefined =>
-              void getState()
-            }
+            onClick={(..._extraArguments: unknown[]): undefined => void getState()}
             data-testid={`connector-reconnect-cta`}
           >
             {disabled ? `Waiting…` : `Reconnect ${slug2}`}
@@ -191,14 +177,12 @@ function ConnectorAuthenticationDialog(
       </UiDialogsRoot.Popup>
     </UiDialogsRoot.Root>
   );
-}
+};
 
-function SupportCodeCopyButton(
-  { code: code }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let supportCodeCopyButtonResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
+export const SupportCodeCopyButton: ReactComponentTypes.FC<Dynamic> = ({
+  code: code,
+}) => {
+  let supportCodeCopyButtonResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
   let [labelState, setLabelState]: Dynamic = (0, React.useState)(`idle`);
   let elementRef: Dynamic = (0, React.useRef)(null);
   let codePartsSliceText: Dynamic = code.split(`-`).slice(0, 3).join(`-`);
@@ -207,11 +191,7 @@ function SupportCodeCopyButton(
     ..._extraArguments: unknown[]
   ): Promise<undefined> => {
     if (
-      await loadPlatformSyncAndRoutingClipboard(
-        code,
-        undefined,
-        supportCodeCopyButton,
-      )
+      await loadPlatformSyncAndRoutingClipboard(code, undefined, supportCodeCopyButton)
     ) {
       setLabelState(`copied`);
       return;
@@ -256,7 +236,465 @@ function SupportCodeCopyButton(
       </Button>
     </span>
   );
-}
+};
+
+export const RouteErrorFallback: ReactComponentTypes.FC<Dynamic> = ({
+  message: message,
+  stack: stack,
+  internal: internal,
+}) => {
+  let internal2: Dynamic = useCommentsStoreUseSyncExternalStore() || internal;
+  let code: Dynamic = liveSupportCode();
+  return (
+    <div
+      className={`flex h-full flex-col items-center justify-center gap-4 p-8 text-center`}
+      role={`alert`}
+      data-testid={internal2 ? `error-boundary-internal` : `error-boundary-external`}
+    >
+      <UiOverlaysAndIconsCustomIcon
+        name={`Warning`}
+        size={`xxl`}
+        className={`text-warning`}
+      />
+      <div>
+        <div
+          className={`text-primary font-medium`}
+        >{`Something went wrong loading this page.`}</div>
+        {internal2 ? (
+          <div className={`text-muted mt-1 max-w-md text-sm`}>{message}</div>
+        ) : null}
+      </div>
+      <SupportCodeCopyButton code={code} />
+      {internal2 ? (
+        <pre
+          className={`bg-alpha-2 text-muted max-h-40 max-w-2xl overflow-auto rounded p-3 text-left text-[11px]`}
+          data-testid={`error-boundary-stack`}
+        >
+          {stack}
+        </pre>
+      ) : null}
+      <div className={`flex gap-2`}>
+        <button
+          type={`button`}
+          onClick={(..._extraArguments: unknown[]) => location.reload()}
+          className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary flex items-center gap-1.5 rounded px-3 py-1.5 text-sm`}
+        >
+          <UiOverlaysAndIconsCustomIcon name={`ArrowClockwise`} customSize={14} />
+          {` Refresh`}
+        </button>
+        {internal2 ? (
+          <button
+            type={`button`}
+            onClick={(..._extraArguments: unknown[]) =>
+              navigator.clipboard.writeText(stack)
+            }
+            className={`border-strong hover:bg-alpha-2 flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm`}
+          >
+            <UiOverlaysAndIconsCustomIcon name={`Copy`} customSize={14} />
+            {` Copy stack`}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+export const ConnectorPermissionDialog: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let connectorPermissionDialogResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  let connectorPermissionDialogResult2: Dynamic = PlatformSyncAndRoutingPrompt(
+    (connectorPermissionDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorPermissionDialog.prompt,
+  );
+  let connectorPermissionDialogResult3: Dynamic = PlatformSyncAndRoutingPrompt(
+    (connectorPermissionDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorPermissionDialog.decide,
+  );
+  let connectorPermissionDialogResult4: Dynamic = CommentsStoreHealth(
+    (connectorPermissionDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorPermissionDialog.health,
+  );
+  let connectorPermissionDialogResult5: Dynamic = CommentsStoreHealth(
+    (connectorPermissionDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorPermissionDialog.load,
+  );
+  let connectorPermissionDialogResult6: Dynamic = CommentsStoreHealth(
+    (connectorPermissionDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      connectorPermissionDialog.reconnect,
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (connectorPermissionDialogResult2?.uses.length) {
+        connectorPermissionDialogResult5(connectorPermissionDialogResult2.uses);
+      }
+    },
+    [connectorPermissionDialogResult2, connectorPermissionDialogResult5],
+  );
+  if (!connectorPermissionDialogResult2) return null;
+  let replace: Dynamic = connectorPermissionDialogResult2.owner.replace(/@.*/, ``);
+  return (
+    <UiDialogsRoot.Root
+      open={true}
+      onOpenChange={(
+        connectorPermissionDialog?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic =>
+        !connectorPermissionDialog && connectorPermissionDialogResult3(`cancel`)
+      }
+    >
+      <UiDialogsRoot.Popup size={`md`}>
+        <div className={`mb-3 flex items-start`}>
+          <div className={`flex-1`}>
+            <UiDialogsRoot.Title className={`text-primary`}>
+              {`Run `}
+              <code className={`text-[13px]`}>
+                {connectorPermissionDialogResult2.agentId}
+              </code>
+              {`?`}
+            </UiDialogsRoot.Title>
+            <UiDialogsRoot.Description className={`text-secondary text-[11px]`}>
+              {`This routine belongs to `}
+              <b>{replace}</b>
+              {`. Running it will use `}
+              <b>{`your`}</b>
+              {` `}
+              {`connectors.`}
+            </UiDialogsRoot.Description>
+          </div>
+          <UiDialogsRoot.Close
+            render={
+              <button type={`button`} className={`text-secondary hover:text-primary p-1`}>
+                <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
+              </button>
+            }
+          />
+        </div>
+        <div className={`border-strong rounded border px-2 py-1.5`}>
+          <div
+            className={`text-muted text-[10px] font-semibold tracking-[0.6px] uppercase`}
+          >{`Uses`}</div>
+          {connectorPermissionDialogResult2.uses.length === 0 ? (
+            <div
+              className={`text-secondary py-1 text-[11px]`}
+            >{`none observed yet — first run may use connectors`}</div>
+          ) : (
+            connectorPermissionDialogResult2.uses.map(
+              (use?: Dynamic, ..._extraArguments: unknown[]) => {
+                let matchesConnected =
+                  connectorPermissionDialogResult4[use]?.connected === true;
+                return (
+                  <div className={`flex items-center gap-2 py-1 text-[12px]`} key={use}>
+                    {
+                      <UiOverlaysAndIconsCustomIcon
+                        name={`Connectors`}
+                        size={`xs`}
+                        className={`text-secondary shrink-0`}
+                      />
+                    }
+                    {
+                      <span className={`text-primary flex-1`}>
+                        {CommentsStoreBigQuery[use] ?? use}
+                      </span>
+                    }
+                    {matchesConnected ? (
+                      <span
+                        className={`text-success flex items-center gap-1 text-[10px]`}
+                      >
+                        <UiOverlaysAndIconsCustomIcon
+                          name={`CheckCircleFilled`}
+                          customSize={11}
+                        />
+                        {` connected`}
+                      </span>
+                    ) : (
+                      <Button
+                        size={connectorPermissionDialogResult(`xs`)}
+                        variant={`secondary`}
+                        onClick={(..._extraArguments: unknown[]): undefined =>
+                          void connectorPermissionDialogResult6(use)
+                        }
+                      >{`Connect`}</Button>
+                    )}
+                  </div>
+                );
+              },
+            )
+          )}
+        </div>
+        <div className={`mt-4 flex justify-end gap-2`}>
+          <Button
+            size={connectorPermissionDialogResult(`xs`)}
+            variant={`secondary`}
+            onClick={(..._extraArguments: unknown[]): Dynamic =>
+              connectorPermissionDialogResult3(`cancel`)
+            }
+          >{`Cancel`}</Button>
+          <Button
+            size={connectorPermissionDialogResult(`xs`)}
+            variant={`secondary`}
+            onClick={(..._extraArguments: unknown[]): Dynamic =>
+              connectorPermissionDialogResult3(`allow`)
+            }
+          >{`Allow`}</Button>
+        </div>
+        <div
+          className={`text-muted mt-2 text-[10px]`}
+        >{`You won't be asked again for this routine.`}</div>
+      </UiDialogsRoot.Popup>
+    </UiDialogsRoot.Root>
+  );
+};
+
+export const AccessDeniedPage: ReactComponentTypes.FC<Dynamic> = (accessDeniedPage) => {
+  let accessDeniedPageResult: Dynamic = PlatformApiAndAuthUser(
+    (accessDeniedPage2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      accessDeniedPage2.user?.email,
+  );
+  if (accessDeniedPage.denied && accessDeniedPage.name)
+    return (
+      <div
+        data-testid={`access-denied`}
+        className={`bg-surface-0 flex h-full flex-col items-center justify-center gap-3 px-6`}
+      >
+        <div
+          className={`text-primary text-lg font-medium`}
+        >{`You don’t have access to this project`}</div>
+        <div
+          className={`text-muted max-w-md text-center text-sm`}
+        >{`"${accessDeniedPage.name}" hasn’t been shared with you (or doesn’t exist). Ask the person who sent you the link to add you.`}</div>
+        {accessDeniedPageResult && (
+          <div className={`text-muted text-xs`}>
+            {`Signed in as `}
+            <span className={`text-secondary font-medium`}>{accessDeniedPageResult}</span>
+          </div>
+        )}
+        <ObservabilityBrowserAndOperationEventsHref
+          href={`/`}
+          className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary mt-2 rounded-md px-4 py-1.5 text-sm`}
+        >{`Back to home`}</ObservabilityBrowserAndOperationEventsHref>
+        {false}
+      </div>
+    );
+  let label = accessDeniedPage.name
+    ? accessDeniedPage.missing
+      ? `It doesn’t exist — it may have been deleted, or the link may be wrong.`
+      : `Something went wrong loading it. Try again in a moment.`
+    : `The page you’re looking for doesn’t exist.`;
+  return (
+    <div
+      className={`bg-surface-0 flex h-full flex-col items-center justify-center gap-3 px-6`}
+    >
+      <div className={`text-primary text-lg font-medium`}>
+        {accessDeniedPage.name ? `Can’t open ${accessDeniedPage.name}` : `Page not found`}
+      </div>
+      <div className={`text-muted max-w-md text-center text-sm`}>{label}</div>
+      <ObservabilityBrowserAndOperationEventsHref
+        href={`/`}
+        className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary mt-2 rounded-md px-4 py-1.5 text-sm`}
+      >{`Back to home`}</ObservabilityBrowserAndOperationEventsHref>
+      {false}
+    </div>
+  );
+};
+
+export const FilePeekDialog: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let {
+    target: filePeekDialogResult,
+    open: filePeekDialogResult2,
+    close: onClick,
+  }: Dynamic = PlatformSyncAndRoutingAssign();
+  let [files, setFiles]: Dynamic = (0, React.useState)([]);
+  let match: Dynamic = filePeekDialogResult?.path.match(
+    /^((projects|skills|users)\/[^/]+)(?:\/versions\/([^/]+))?\/(.+)$/,
+  );
+  let matchItem: Dynamic = match?.[1] ?? ``;
+  let matchesMatchItem = match?.[2] === `users`;
+  let matchItem2: Dynamic = match?.[3] ?? `main`;
+  let active: Dynamic = match?.[4] ?? ``;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (matchItem && !matchesMatchItem) {
+        loadPlatformApiAndAuthFiles(matchItem, matchItem2).then(
+          setFiles,
+          (..._extraArguments: unknown[]): Dynamic => setFiles([]),
+        );
+      } else {
+        setFiles([]);
+      }
+    },
+    [matchItem, matchesMatchItem, matchItem2],
+  );
+  if (!filePeekDialogResult) return null;
+  let pop: Dynamic = filePeekDialogResult.path.split(`.`).pop() ?? ``;
+  return (
+    <div
+      className={`bg-backdrop fixed inset-0 z-50 flex items-center justify-center`}
+      onClick={onClick}
+      data-testid={`peek-modal`}
+    >
+      <div
+        className={`bg-surface-popover flex h-[85vh] w-[min(1280px,94vw)] flex-col rounded-lg shadow-xl`}
+        onClick={(filePeekDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+          filePeekDialog.stopPropagation()
+        }
+      >
+        <div className={`flex items-center gap-2 border-b px-3 py-2 text-xs`}>
+          <span className={`text-secondary flex-1 truncate font-mono`}>
+            {matchItem}
+            {`/`}
+            {active}
+          </span>
+          <TooltipGroup>
+            <Tooltip content={`Open`}>
+              <button
+                type={`button`}
+                onClick={(..._extraArguments: unknown[]): undefined => {
+                  onClick();
+                  if (match) {
+                    window.open(
+                      `/${matchItem}?path=${encodeURIComponent(active)}${matchesMatchItem ? `` : `&target=${matchItem2}`}`,
+                      `_blank`,
+                      `noopener`,
+                    );
+                  }
+                }}
+                aria-label={`Open`}
+                className={`text-secondary hover:text-primary cursor-pointer p-1`}
+              >
+                <UiOverlaysAndIconsCustomIcon name={`ArrowOutSquare`} customSize={14} />
+              </button>
+            </Tooltip>
+            <Tooltip content={`Close`}>
+              <button
+                type={`button`}
+                data-testid={`peek-modal-close`}
+                onClick={onClick}
+                aria-label={`Close`}
+                className={`text-secondary hover:text-primary cursor-pointer p-1`}
+              >
+                <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
+              </button>
+            </Tooltip>
+          </TooltipGroup>
+        </div>
+        <div className={`flex min-h-0 flex-1`}>
+          <aside className={`w-52 shrink-0 overflow-y-auto border-r p-1.5`}>
+            <PeekFileTree
+              files={files}
+              active={active}
+              onOpen={(
+                filePeekDialog?: Dynamic,
+                ..._extraArguments: unknown[]
+              ): Dynamic =>
+                filePeekDialogResult2(
+                  matchesMatchItem
+                    ? `${matchItem}/${filePeekDialog}`
+                    : `${matchItem}/versions/${matchItem2}/${filePeekDialog}`,
+                )
+              }
+            />
+          </aside>
+          <div className={`flex-1 overflow-auto`}>
+            {pop === `md` ? (
+              <React.Suspense
+                fallback={<div className={`text-muted p-4 text-xs`}>{`Loading…`}</div>}
+              >
+                <LazyMarkdownRenderer
+                  path={filePeekDialogResult.path}
+                  selection={filePeekDialogResult.hash}
+                />
+              </React.Suspense>
+            ) : (
+              <div className={`text-secondary p-4 text-xs`}>
+                {`Preview not available for .`}
+                {pop}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const PeekFileTree: ReactComponentTypes.FC<Dynamic> = (peekFileTree) => {
+  let items: Dynamic = [];
+  let lookup: Dynamic = new (Map as Dynamic)();
+  for (let peekFileTreeResult of peekFileTree.files as Dynamic) {
+    let peekFileTreeResultIndex: Dynamic = peekFileTreeResult.indexOf(`/`);
+    if (peekFileTreeResultIndex < 0) {
+      items.push(peekFileTreeResult);
+    } else {
+      (
+        lookup.get(peekFileTreeResult.slice(0, peekFileTreeResultIndex)) ??
+        lookup
+          .set(peekFileTreeResult.slice(0, peekFileTreeResultIndex), [])
+          .get(peekFileTreeResult.slice(0, peekFileTreeResultIndex))
+      ).push(peekFileTreeResult);
+    }
+  }
+  let split: Dynamic = (
+    peekFileTree2?: Dynamic,
+    options: Dynamic = false,
+    ..._extraArguments: unknown[]
+  ) => (
+    <div
+      onClick={(..._extraArguments: unknown[]): Dynamic =>
+        peekFileTree.onOpen(peekFileTree2)
+      }
+      className={`flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 text-[11px] ${options ? `pl-5` : `pl-2`} ${peekFileTree.active === peekFileTree2 ? `bg-alpha-2 text-primary` : `text-primary`}`}
+      key={peekFileTree2}
+    >
+      {
+        <UiOverlaysAndIconsCustomIcon
+          name={`File`}
+          size={`xs`}
+          className={`text-muted`}
+        />
+      }
+      {<span className={`flex-1 truncate`}>{peekFileTree2.split(`/`).pop()}</span>}
+    </div>
+  );
+  return (
+    <jsxRuntime.Fragment>
+      {items.map((item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => split(item))}
+      {[...lookup].map(([item, item2]: Dynamic, ..._extraArguments: unknown[]) => (
+        <details open={peekFileTree.active.startsWith(`${item}/`)} key={item}>
+          {
+            <summary
+              className={`text-primary flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 pl-2 text-[11px]`}
+            >
+              <UiOverlaysAndIconsCustomIcon
+                name={`Folder`}
+                size={`xs`}
+                className={`text-muted`}
+              />
+              <span className={`flex-1 truncate`}>{item}</span>
+            </summary>
+          }
+          {item2.map(
+            (item3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              split(item3, true),
+          )}
+        </details>
+      ))}
+    </jsxRuntime.Fragment>
+  );
+};
+
+export const MarkdownViewerUnavailable: ReactComponentTypes.FC<unknown | undefined> = (
+  markdownViewerUnavailable,
+) => {
+  return (
+    <div
+      className={`text-muted p-4 text-xs`}
+      data-testid={`peek-markdown-unavailable`}
+    >{`Couldn’t load the markdown viewer — refresh to try again.`}</div>
+  );
+};
 
 var EMPTY_ERROR_ORIGINS: Dynamic;
 
@@ -327,458 +765,7 @@ var routeErrorReporter: Dynamic;
 
 var RouteErrorBoundary: Dynamic;
 
-function RouteErrorFallback(
-  { message: message, stack: stack, internal: internal }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let internal2: Dynamic = useCommentsStoreUseSyncExternalStore() || internal;
-  let code: Dynamic = liveSupportCode();
-  return (
-    <div
-      className={`flex h-full flex-col items-center justify-center gap-4 p-8 text-center`}
-      role={`alert`}
-      data-testid={
-        internal2 ? `error-boundary-internal` : `error-boundary-external`
-      }
-    >
-      <UiOverlaysAndIconsCustomIcon
-        name={`Warning`}
-        size={`xxl`}
-        className={`text-warning`}
-      />
-      <div>
-        <div
-          className={`text-primary font-medium`}
-        >{`Something went wrong loading this page.`}</div>
-        {internal2 ? (
-          <div className={`text-muted mt-1 max-w-md text-sm`}>{message}</div>
-        ) : null}
-      </div>
-      <SupportCodeCopyButton code={code} />
-      {internal2 ? (
-        <pre
-          className={`bg-alpha-2 text-muted max-h-40 max-w-2xl overflow-auto rounded p-3 text-left text-[11px]`}
-          data-testid={`error-boundary-stack`}
-        >
-          {stack}
-        </pre>
-      ) : null}
-      <div className={`flex gap-2`}>
-        <button
-          type={`button`}
-          onClick={(..._extraArguments: unknown[]) => location.reload()}
-          className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary flex items-center gap-1.5 rounded px-3 py-1.5 text-sm`}
-        >
-          <UiOverlaysAndIconsCustomIcon
-            name={`ArrowClockwise`}
-            customSize={14}
-          />
-          {` Refresh`}
-        </button>
-        {internal2 ? (
-          <button
-            type={`button`}
-            onClick={(..._extraArguments: unknown[]) =>
-              navigator.clipboard.writeText(stack)
-            }
-            className={`border-strong hover:bg-alpha-2 flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm`}
-          >
-            <UiOverlaysAndIconsCustomIcon name={`Copy`} customSize={14} />
-            {` Copy stack`}
-          </button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ConnectorPermissionDialog(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  let connectorPermissionDialogResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
-  let connectorPermissionDialogResult2: Dynamic = PlatformSyncAndRoutingPrompt(
-    (
-      connectorPermissionDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorPermissionDialog.prompt,
-  );
-  let connectorPermissionDialogResult3: Dynamic = PlatformSyncAndRoutingPrompt(
-    (
-      connectorPermissionDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorPermissionDialog.decide,
-  );
-  let connectorPermissionDialogResult4: Dynamic = CommentsStoreHealth(
-    (
-      connectorPermissionDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorPermissionDialog.health,
-  );
-  let connectorPermissionDialogResult5: Dynamic = CommentsStoreHealth(
-    (
-      connectorPermissionDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorPermissionDialog.load,
-  );
-  let connectorPermissionDialogResult6: Dynamic = CommentsStoreHealth(
-    (
-      connectorPermissionDialog?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => connectorPermissionDialog.reconnect,
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (connectorPermissionDialogResult2?.uses.length) {
-        connectorPermissionDialogResult5(connectorPermissionDialogResult2.uses);
-      }
-    },
-    [connectorPermissionDialogResult2, connectorPermissionDialogResult5],
-  );
-  if (!connectorPermissionDialogResult2) return null;
-  let replace: Dynamic = connectorPermissionDialogResult2.owner.replace(
-    /@.*/,
-    ``,
-  );
-  return (
-    <UiDialogsRoot.Root
-      open={true}
-      onOpenChange={(
-        connectorPermissionDialog?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic =>
-        !connectorPermissionDialog && connectorPermissionDialogResult3(`cancel`)
-      }
-    >
-      <UiDialogsRoot.Popup size={`md`}>
-        <div className={`mb-3 flex items-start`}>
-          <div className={`flex-1`}>
-            <UiDialogsRoot.Title className={`text-primary`}>
-              {`Run `}
-              <code className={`text-[13px]`}>
-                {connectorPermissionDialogResult2.agentId}
-              </code>
-              {`?`}
-            </UiDialogsRoot.Title>
-            <UiDialogsRoot.Description className={`text-secondary text-[11px]`}>
-              {`This routine belongs to `}
-              <b>{replace}</b>
-              {`. Running it will use `}
-              <b>{`your`}</b>
-              {` `}
-              {`connectors.`}
-            </UiDialogsRoot.Description>
-          </div>
-          <UiDialogsRoot.Close
-            render={
-              <button
-                type={`button`}
-                className={`text-secondary hover:text-primary p-1`}
-              >
-                <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
-              </button>
-            }
-          />
-        </div>
-        <div className={`border-strong rounded border px-2 py-1.5`}>
-          <div
-            className={`text-muted text-[10px] font-semibold tracking-[0.6px] uppercase`}
-          >{`Uses`}</div>
-          {connectorPermissionDialogResult2.uses.length === 0 ? (
-            <div
-              className={`text-secondary py-1 text-[11px]`}
-            >{`none observed yet — first run may use connectors`}</div>
-          ) : (
-            connectorPermissionDialogResult2.uses.map(
-              (use?: Dynamic, ..._extraArguments: unknown[]) => {
-                let matchesConnected =
-                  connectorPermissionDialogResult4[use]?.connected === true;
-                return (
-                  <div className={`flex items-center gap-2 py-1 text-[12px]`} key={use}>{<UiOverlaysAndIconsCustomIcon name={`Connectors`} size={`xs`} className={`text-secondary shrink-0`} />}{<span className={`text-primary flex-1`}>
-                            {CommentsStoreBigQuery[use] ?? use}
-                          </span>}{matchesConnected ? <span className={`text-success flex items-center gap-1 text-[10px]`}>
-                              <UiOverlaysAndIconsCustomIcon name={`CheckCircleFilled`} customSize={11} />
-                              {` connected`}
-                            </span> : <Button
-                              size={connectorPermissionDialogResult(`xs`)}
-                              variant={`secondary`}
-                              onClick={(..._extraArguments: unknown[]): undefined => void connectorPermissionDialogResult6(use)}
-                            >{`Connect`}</Button>}</div>
-                );
-              },
-            )
-          )}
-        </div>
-        <div className={`mt-4 flex justify-end gap-2`}>
-          <Button
-            size={connectorPermissionDialogResult(`xs`)}
-            variant={`secondary`}
-            onClick={(..._extraArguments: unknown[]): Dynamic =>
-              connectorPermissionDialogResult3(`cancel`)
-            }
-          >{`Cancel`}</Button>
-          <Button
-            size={connectorPermissionDialogResult(`xs`)}
-            variant={`secondary`}
-            onClick={(..._extraArguments: unknown[]): Dynamic =>
-              connectorPermissionDialogResult3(`allow`)
-            }
-          >{`Allow`}</Button>
-        </div>
-        <div
-          className={`text-muted mt-2 text-[10px]`}
-        >{`You won't be asked again for this routine.`}</div>
-      </UiDialogsRoot.Popup>
-    </UiDialogsRoot.Root>
-  );
-}
-
-function AccessDeniedPage(
-  accessDeniedPage?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let accessDeniedPageResult: Dynamic = PlatformApiAndAuthUser(
-    (accessDeniedPage2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      accessDeniedPage2.user?.email,
-  );
-  if (accessDeniedPage.denied && accessDeniedPage.name)
-    return (
-      <div
-        data-testid={`access-denied`}
-        className={`bg-surface-0 flex h-full flex-col items-center justify-center gap-3 px-6`}
-      >
-        <div
-          className={`text-primary text-lg font-medium`}
-        >{`You don’t have access to this project`}</div>
-        <div
-          className={`text-muted max-w-md text-center text-sm`}
-        >{`"${accessDeniedPage.name}" hasn’t been shared with you (or doesn’t exist). Ask the person who sent you the link to add you.`}</div>
-        {accessDeniedPageResult && (
-          <div className={`text-muted text-xs`}>
-            {`Signed in as `}
-            <span className={`text-secondary font-medium`}>
-              {accessDeniedPageResult}
-            </span>
-          </div>
-        )}
-        <ObservabilityBrowserAndOperationEventsHref
-          href={`/`}
-          className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary mt-2 rounded-md px-4 py-1.5 text-sm`}
-        >{`Back to home`}</ObservabilityBrowserAndOperationEventsHref>
-        {false}
-      </div>
-    );
-  let label = accessDeniedPage.name
-    ? accessDeniedPage.missing
-      ? `It doesn’t exist — it may have been deleted, or the link may be wrong.`
-      : `Something went wrong loading it. Try again in a moment.`
-    : `The page you’re looking for doesn’t exist.`;
-  return (
-    <div
-      className={`bg-surface-0 flex h-full flex-col items-center justify-center gap-3 px-6`}
-    >
-      <div className={`text-primary text-lg font-medium`}>
-        {accessDeniedPage.name
-          ? `Can’t open ${accessDeniedPage.name}`
-          : `Page not found`}
-      </div>
-      <div className={`text-muted max-w-md text-center text-sm`}>{label}</div>
-      <ObservabilityBrowserAndOperationEventsHref
-        href={`/`}
-        className={`bg-fill-primary hover:bg-fill-primary-hover text-on-primary mt-2 rounded-md px-4 py-1.5 text-sm`}
-      >{`Back to home`}</ObservabilityBrowserAndOperationEventsHref>
-      {false}
-    </div>
-  );
-}
-
-function MarkdownViewerUnavailable(
-  markdownViewerUnavailable?: unknown,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={`text-muted p-4 text-xs`}
-      data-testid={`peek-markdown-unavailable`}
-    >{`Couldn’t load the markdown viewer — refresh to try again.`}</div>
-  );
-}
-
 var LazyMarkdownRenderer: Dynamic;
-
-function FilePeekDialog(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  let {
-    target: filePeekDialogResult,
-    open: filePeekDialogResult2,
-    close: onClick,
-  }: Dynamic = PlatformSyncAndRoutingAssign();
-  let [files, setFiles]: Dynamic = (0, React.useState)([]);
-  let match: Dynamic = filePeekDialogResult?.path.match(
-    /^((projects|skills|users)\/[^/]+)(?:\/versions\/([^/]+))?\/(.+)$/,
-  );
-  let matchItem: Dynamic = match?.[1] ?? ``;
-  let matchesMatchItem = match?.[2] === `users`;
-  let matchItem2: Dynamic = match?.[3] ?? `main`;
-  let active: Dynamic = match?.[4] ?? ``;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (matchItem && !matchesMatchItem) {
-        loadPlatformApiAndAuthFiles(matchItem, matchItem2).then(
-          setFiles,
-          (..._extraArguments: unknown[]): Dynamic => setFiles([]),
-        );
-      } else {
-        setFiles([]);
-      }
-    },
-    [matchItem, matchesMatchItem, matchItem2],
-  );
-  if (!filePeekDialogResult) return null;
-  let pop: Dynamic = filePeekDialogResult.path.split(`.`).pop() ?? ``;
-  return (
-    <div
-      className={`bg-backdrop fixed inset-0 z-50 flex items-center justify-center`}
-      onClick={onClick}
-      data-testid={`peek-modal`}
-    >
-      <div
-        className={`bg-surface-popover flex h-[85vh] w-[min(1280px,94vw)] flex-col rounded-lg shadow-xl`}
-        onClick={(
-          filePeekDialog?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic => filePeekDialog.stopPropagation()}
-      >
-        <div className={`flex items-center gap-2 border-b px-3 py-2 text-xs`}>
-          <span className={`text-secondary flex-1 truncate font-mono`}>
-            {matchItem}
-            {`/`}
-            {active}
-          </span>
-          <TooltipGroup>
-            <Tooltip content={`Open`}>
-              <button
-                type={`button`}
-                onClick={(..._extraArguments: unknown[]): undefined => {
-                  onClick();
-                  if (match) {
-                    window.open(
-                      `/${matchItem}?path=${encodeURIComponent(active)}${matchesMatchItem ? `` : `&target=${matchItem2}`}`,
-                      `_blank`,
-                      `noopener`,
-                    );
-                  }
-                }}
-                aria-label={`Open`}
-                className={`text-secondary hover:text-primary cursor-pointer p-1`}
-              >
-                <UiOverlaysAndIconsCustomIcon
-                  name={`ArrowOutSquare`}
-                  customSize={14}
-                />
-              </button>
-            </Tooltip>
-            <Tooltip content={`Close`}>
-              <button
-                type={`button`}
-                data-testid={`peek-modal-close`}
-                onClick={onClick}
-                aria-label={`Close`}
-                className={`text-secondary hover:text-primary cursor-pointer p-1`}
-              >
-                <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
-              </button>
-            </Tooltip>
-          </TooltipGroup>
-        </div>
-        <div className={`flex min-h-0 flex-1`}>
-          <aside className={`w-52 shrink-0 overflow-y-auto border-r p-1.5`}>
-            <PeekFileTree
-              files={files}
-              active={active}
-              onOpen={(
-                filePeekDialog?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic =>
-                filePeekDialogResult2(
-                  matchesMatchItem
-                    ? `${matchItem}/${filePeekDialog}`
-                    : `${matchItem}/versions/${matchItem2}/${filePeekDialog}`,
-                )
-              }
-            />
-          </aside>
-          <div className={`flex-1 overflow-auto`}>
-            {pop === `md` ? (
-              <React.Suspense
-                fallback={
-                  <div className={`text-muted p-4 text-xs`}>{`Loading…`}</div>
-                }
-              >
-                <LazyMarkdownRenderer
-                  path={filePeekDialogResult.path}
-                  selection={filePeekDialogResult.hash}
-                />
-              </React.Suspense>
-            ) : (
-              <div className={`text-secondary p-4 text-xs`}>
-                {`Preview not available for .`}
-                {pop}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PeekFileTree(peekFileTree?: Dynamic, ..._extraArguments: unknown[]) {
-  let items: Dynamic = [];
-  let lookup: Dynamic = new (Map as Dynamic)();
-  for (let peekFileTreeResult of peekFileTree.files as Dynamic) {
-    let peekFileTreeResultIndex: Dynamic = peekFileTreeResult.indexOf(`/`);
-    if (peekFileTreeResultIndex < 0) {
-      items.push(peekFileTreeResult);
-    } else {
-      (
-        lookup.get(peekFileTreeResult.slice(0, peekFileTreeResultIndex)) ??
-        lookup
-          .set(peekFileTreeResult.slice(0, peekFileTreeResultIndex), [])
-          .get(peekFileTreeResult.slice(0, peekFileTreeResultIndex))
-      ).push(peekFileTreeResult);
-    }
-  }
-  let split: Dynamic = (
-    peekFileTree2?: Dynamic,
-    options: Dynamic = false,
-    ..._extraArguments: unknown[]
-  ) => (
-    <div
-      onClick={(..._extraArguments: unknown[]): Dynamic => peekFileTree.onOpen(peekFileTree2)}
-      className={`flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 text-[11px] ${options ? `pl-5` : `pl-2`} ${peekFileTree.active === peekFileTree2 ? `bg-alpha-2 text-primary` : `text-primary`}`}
-      key={peekFileTree2}
-    >{<UiOverlaysAndIconsCustomIcon name={`File`} size={`xs`} className={`text-muted`} />}{<span className={`flex-1 truncate`}>
-              {peekFileTree2.split(`/`).pop()}
-            </span>}</div>
-  );
-  return (
-    <jsxRuntime.Fragment>
-      {items.map(
-        (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => split(item),
-      )}
-      {[...lookup].map(
-        ([item, item2]: Dynamic, ..._extraArguments: unknown[]) => (
-          <details open={peekFileTree.active.startsWith(`${item}/`)} key={item}>{<summary className={`text-primary flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 pl-2 text-[11px]`}>
-                    <UiOverlaysAndIconsCustomIcon name={`Folder`} size={`xs`} className={`text-muted`} />
-                    <span className={`flex-1 truncate`}>{item}</span>
-                  </summary>}{item2.map((item3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => split(item3, true))}</details>
-        ),
-      )}
-    </jsxRuntime.Fragment>
-  );
-}
 
 function DocumentContextMenuInstaller(
   ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
@@ -1062,14 +1049,4 @@ export function initializeConnectionAndErrorsConnectorPermissionDialogStep1(): v
   (ReactDom = weather(loadReactDom(), 1));
 }
 
-export {
-  AccessDeniedPage,
-  ConnectorAuthenticationDialog,
-  ConnectorPermissionDialog,
-  DocumentContextMenuInstaller,
-  FilePeekDialog,
-  ReactDom,
-  RouteErrorBoundary,
-  SupportCodeCopyButton,
-  extractErrorDetails,
-};
+export { DocumentContextMenuInstaller, ReactDom, RouteErrorBoundary, extractErrorDetails };

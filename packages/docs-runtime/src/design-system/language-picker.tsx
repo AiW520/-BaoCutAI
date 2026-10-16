@@ -11,6 +11,120 @@ import {
 } from "./dependencies";
 import { Skeleton } from "./skeleton";
 import { TextInput } from "./text-input";
+import type * as ReactComponentTypes from "react";
+
+export const LanguagePickerOption: ReactComponentTypes.FC<Dynamic> = ({
+  option: input,
+  checked: input2,
+  isTabStop: input3,
+  lang: input4,
+  disabled: input5,
+  descriptionLang: input6,
+  onSelect: input7,
+  onKeyDown: input8,
+}) => {
+  return (
+    <button
+      type={`button`}
+      role={`radio`}
+      aria-checked={input2}
+      tabIndex={input3 ? 0 : -1}
+      lang={input4}
+      disabled={input5}
+      onClick={(..._extraArguments: unknown[]): Dynamic => input7(input.value)}
+      onKeyDown={input8}
+      className={resolveUiDesignSystemValue2(
+        LanguagePickerPxMdPySm,
+        `flex items-start justify-between gap-sm rounded-lg text-left disabled:opacity-disabled`,
+        input2 ? `bg-accent-muted` : `hover:bg-fill-ghost-hover`,
+      )}
+    >
+      <span className={`flex min-w-0 flex-col`}>
+        <span className={`truncate text-body font-medium first-letter:uppercase`}>
+          {input.label}
+        </span>
+        {input.description !== undefined && (
+          <span
+            className={`truncate text-footnote font-normal text-secondary`}
+            lang={input6}
+          >
+            {input.description}
+          </span>
+        )}
+      </span>
+      {input2 && (
+        <UiOverlaysAndIconsCustomIcon
+          name={`Check`}
+          size={`sm`}
+          className={`mt-0.5 shrink-0 text-accent`}
+        />
+      )}
+    </button>
+  );
+};
+
+export const LanguagePickerSkeleton: ReactComponentTypes.FC<Dynamic> = ({
+  count: input,
+  className: input2,
+}) => {
+  let value: Dynamic = (0, React.useRef)(null);
+  let value2: Dynamic = (0, React.useRef)(null);
+  let { overflowing: value3 }: Dynamic = useLanguagePickerContainerRef({
+    containerRef: value,
+    contentRef: value2,
+    frozen: false,
+  });
+  return (
+    <div
+      data-cds={`LanguagePickerSkeleton`}
+      className={resolveUiDesignSystemValue2(LanguagePickerFlexMinH0FlexColGapMd, input2)}
+    >
+      {value3 ? (
+        <Skeleton className={`h-control shrink-0 rounded`} />
+      ) : (
+        <div className={`sr-only`}>
+          <Skeleton />
+        </div>
+      )}
+      <div
+        ref={value}
+        aria-hidden={true}
+        className={resolveUiDesignSystemValue2(
+          LanguagePickerM1MinH24,
+          value3 && `h-96`,
+          `overflow-hidden`,
+        )}
+        style={LanguagePickerMaxHeight}
+      >
+        <div ref={value2} className={`p-1`}>
+          <div className={LanguagePickerGridGridCols1GapXMdGapYXsSmGridCols2MdGridCols3}>
+            {Array.from<Dynamic, Dynamic>(
+              {
+                length: input,
+              },
+              (
+                input3?: unknown,
+                options?: Dynamic,
+                ..._extraArguments: unknown[]
+              ): Dynamic => (
+                <div
+                  className={resolveUiDesignSystemValue2(
+                    LanguagePickerPxMdPySm,
+                    `flex flex-col`,
+                  )}
+                  key={options}
+                >
+                  {<Skeleton width={96} className={`h-[1lh] text-body`} />}
+                  {<Skeleton width={64} className={`h-[1lh] text-footnote`} />}
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 var LanguagePickerSearchLanguages: Dynamic;
 
@@ -106,123 +220,7 @@ function resolveLanguagePickerSome(
 
 var LanguagePickerStyles: Dynamic;
 
-function LanguagePickerOption(
-  {
-    option: input,
-    checked: input2,
-    isTabStop: input3,
-    lang: input4,
-    disabled: input5,
-    descriptionLang: input6,
-    onSelect: input7,
-    onKeyDown: input8,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <button
-      type={`button`}
-      role={`radio`}
-      aria-checked={input2}
-      tabIndex={input3 ? 0 : -1}
-      lang={input4}
-      disabled={input5}
-      onClick={(..._extraArguments: unknown[]): Dynamic => input7(input.value)}
-      onKeyDown={input8}
-      className={resolveUiDesignSystemValue2(
-        LanguagePickerPxMdPySm,
-        `flex items-start justify-between gap-sm rounded-lg text-left disabled:opacity-disabled`,
-        input2 ? `bg-accent-muted` : `hover:bg-fill-ghost-hover`,
-      )}
-    >
-      <span className={`flex min-w-0 flex-col`}>
-        <span
-          className={`truncate text-body font-medium first-letter:uppercase`}
-        >
-          {input.label}
-        </span>
-        {input.description !== undefined && (
-          <span
-            className={`truncate text-footnote font-normal text-secondary`}
-            lang={input6}
-          >
-            {input.description}
-          </span>
-        )}
-      </span>
-      {input2 && (
-        <UiOverlaysAndIconsCustomIcon
-          name={`Check`}
-          size={`sm`}
-          className={`mt-0.5 shrink-0 text-accent`}
-        />
-      )}
-    </button>
-  );
-}
-
 var LanguagePicker: Dynamic;
-
-function LanguagePickerSkeleton(
-  { count: input, className: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = (0, React.useRef)(null);
-  let value2: Dynamic = (0, React.useRef)(null);
-  let { overflowing: value3 }: Dynamic = useLanguagePickerContainerRef({
-    containerRef: value,
-    contentRef: value2,
-    frozen: false,
-  });
-  return (
-    <div
-      data-cds={`LanguagePickerSkeleton`}
-      className={resolveUiDesignSystemValue2(
-        LanguagePickerFlexMinH0FlexColGapMd,
-        input2,
-      )}
-    >
-      {value3 ? (
-        <Skeleton className={`h-control shrink-0 rounded`} />
-      ) : (
-        <div className={`sr-only`}>
-          <Skeleton />
-        </div>
-      )}
-      <div
-        ref={value}
-        aria-hidden={true}
-        className={resolveUiDesignSystemValue2(
-          LanguagePickerM1MinH24,
-          value3 && `h-96`,
-          `overflow-hidden`,
-        )}
-        style={LanguagePickerMaxHeight}
-      >
-        <div ref={value2} className={`p-1`}>
-          <div
-            className={
-              LanguagePickerGridGridCols1GapXMdGapYXsSmGridCols2MdGridCols3
-            }
-          >
-            {Array.from<Dynamic, Dynamic>(
-              {
-                length: input,
-              },
-              (
-                input3?: unknown,
-                options?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => (
-                <div className={resolveUiDesignSystemValue2(LanguagePickerPxMdPySm, `flex flex-col`)} key={options}>{<Skeleton width={96} className={`h-[1lh] text-body`} />}{<Skeleton width={64} className={`h-[1lh] text-footnote`} />}</div>
-              ),
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeLanguagePickerStep1(): void {
@@ -557,4 +555,4 @@ export function initializeLanguagePickerStep1(): void {
   LanguagePicker.displayName = `LanguagePicker`;
 }
 
-export { LanguagePicker, LanguagePickerSkeleton };
+export { LanguagePicker };

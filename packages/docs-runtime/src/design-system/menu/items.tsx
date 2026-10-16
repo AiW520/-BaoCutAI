@@ -47,22 +47,17 @@ import {
   resolveMenuPopupsTabularNums,
   useMenuPopupsLabel,
 } from "./popup";
+import type * as ReactComponentTypes from "react";
 
-var MenuPopupsIcon: Dynamic;
-
-var MenuPopupsIcon2: Dynamic;
-
-function MenuPopupsActionsRef(
-  { actionsRef: input, ...input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const MenuPopupsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
+  actionsRef: input,
+  ...input2
+}) => {
   let [value, value2]: Dynamic = (0, React.useState)(
     input2.open ?? input2.defaultOpen ?? false,
   );
   let value3: Dynamic = (0, React.useRef)(value);
-  let value4: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
-    input2.onOpenChange,
-  );
+  let value4: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(input2.onOpenChange);
   let { sheet: value5 }: Dynamic = resolveSheetsUseContext2();
   let value6: Dynamic = (0, React.useContext)(SheetsCreateContext);
   let value7: Dynamic = value6?.treeId;
@@ -75,17 +70,9 @@ function MenuPopupsActionsRef(
   );
   let [value10, value11]: Dynamic = (0, React.useState)(null);
   let value12: Dynamic = (0, React.useCallback)(
-    (
-      input3?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
+    (input3?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       if (!(value5 && resolveMenuPopupsCancel(input3, options, value7))) {
-        if (
-          value5 &&
-          !input3 &&
-          value6?.refusesAmbientClose(options) === true
-        ) {
+        if (value5 && !input3 && value6?.refusesAmbientClose(options) === true) {
           options.cancel();
           return;
         }
@@ -155,36 +142,33 @@ function MenuPopupsActionsRef(
       <MenuInteractionsCreateContext2.Provider value={value22}>
         <MenuInteractionsCreateContext6.Provider value={value19}>
           <MenuInteractionsCreateContext5.Provider value={value15}>
-            <BaseMenuSubmenuRoot {...input2} actionsRef={value15} onOpenChange={value12} />
+            <BaseMenuSubmenuRoot
+              {...input2}
+              actionsRef={value15}
+              onOpenChange={value12}
+            />
           </MenuInteractionsCreateContext5.Provider>
         </MenuInteractionsCreateContext6.Provider>
       </MenuInteractionsCreateContext2.Provider>
     </MenuInteractionsCreateContext.Provider>
   );
-}
+};
 
-function MenuPopupsView(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-): Dynamic {
+export const MenuPopupsView: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   return (
-    <BaseSeparator
-      className={`compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border`}
-    />
+    <BaseSeparator className={`compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border`} />
   );
-}
+};
 
-var MenuPopupsCompactPx2ComfortablePx25Py1TextFootnoteFontMediumTextMuted: Dynamic;
-
-function MenuPopupsLabel(
-  { children: input, className: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const MenuPopupsLabel: ReactComponentTypes.FC<Dynamic> = ({
+  children: input,
+  className: input2,
+}) => {
   let value: Dynamic = resolveSheetsSheet();
-  let value2: boolean =
-    (0, React.useContext)(MenuInteractionsCreateContext) !== null;
-  let { label: value3 }: Dynamic = (0, React.useContext)(
-    MenuInteractionsCreateContext2,
-  );
+  let value2: boolean = (0, React.useContext)(MenuInteractionsCreateContext) !== null;
+  let { label: value3 }: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext2);
   return (
     <div
       role={`presentation`}
@@ -202,12 +186,12 @@ function MenuPopupsLabel(
       {input}
     </div>
   );
-}
+};
 
-function MenuPopupsView2(
-  { children: input, className: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const MenuPopupsView2: ReactComponentTypes.FC<Dynamic> = ({
+  children: input,
+  className: input2,
+}) => {
   return (
     <BaseMenuGroupLabel
       className={resolveUiDesignSystemValue2(
@@ -218,7 +202,13 @@ function MenuPopupsView2(
       {input}
     </BaseMenuGroupLabel>
   );
-}
+};
+
+var MenuPopupsIcon: Dynamic;
+
+var MenuPopupsIcon2: Dynamic;
+
+var MenuPopupsCompactPx2ComfortablePx25Py1TextFootnoteFontMediumTextMuted: Dynamic;
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeMenuItemsStep1(): void {
@@ -509,4 +499,4 @@ export function initializeMenuItemsStep1(): void {
   (MenuPopupsView2 as Dynamic).displayName = `Menu.GroupLabel`;
 }
 
-export { MenuPopupsActionsRef, MenuPopupsIcon, MenuPopupsIcon2, MenuPopupsLabel, MenuPopupsView, MenuPopupsView2 };
+export { MenuPopupsIcon, MenuPopupsIcon2 };

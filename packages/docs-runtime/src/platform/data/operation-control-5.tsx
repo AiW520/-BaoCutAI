@@ -57,6 +57,144 @@ import {
   resolveDataOperationControlValue32,
   updateDataOperationControlLeft,
 } from "./operation-control-4";
+import type * as ReactComponentTypes from "react";
+
+export const PaneResizeHandle: ReactComponentTypes.FC<Dynamic> = (paneResizeHandle) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let [paneResizeHandleState, setPaneResizeHandleState]: Dynamic = (0, React.useState)(
+    null,
+  );
+  if (paneResizeHandle.tap) {
+    let { onTap: tap, content: tap2, detail: tap3 }: Dynamic = paneResizeHandle.tap;
+    return (
+      <div
+        onPointerDown={(
+          paneResizeHandle2?: Dynamic,
+          ..._extraArguments: unknown[]
+        ): undefined => {
+          if (!elementRef.current) {
+            elementRef.current = {
+              pointerId: paneResizeHandle2.pointerId,
+              x: paneResizeHandle2.clientX,
+              y: paneResizeHandle2.clientY,
+              moved: false,
+            };
+            paneResizeHandle.onPointerDown(paneResizeHandle2);
+          }
+        }}
+        onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          let element: Dynamic = elementRef.current;
+          if (!element) return;
+          let pointerId: Dynamic = event.nativeEvent.pointerId;
+          if (!(pointerId !== undefined && pointerId !== element.pointerId)) {
+            elementRef.current = null;
+            if (!element.moved) {
+              tap();
+            }
+          }
+        }}
+        onPointerCancel={(
+          paneResizeHandle2?: Dynamic,
+          ..._extraArguments: unknown[]
+        ): undefined => {
+          if (elementRef.current?.pointerId === paneResizeHandle2.pointerId) {
+            elementRef.current = null;
+          }
+        }}
+        onPointerMove={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          let element: Dynamic = elementRef.current;
+          if (element && event.pointerId !== element.pointerId) return;
+          if (
+            element &&
+            Math.hypot(event.clientX - element.x, event.clientY - element.y) >= 3
+          ) {
+            element.moved = true;
+          }
+          let currentTargetBounds: Dynamic = event.currentTarget.getBoundingClientRect();
+          setPaneResizeHandleState({
+            y: event.clientY - currentTargetBounds.top,
+            top: currentTargetBounds.top,
+            edgeX:
+              paneResizeHandle.side === `left`
+                ? currentTargetBounds.left
+                : currentTargetBounds.right,
+          });
+        }}
+        onPointerLeave={(..._extraArguments: unknown[]): Dynamic =>
+          setPaneResizeHandleState(null)
+        }
+        onDoubleClick={paneResizeHandle.onDoubleClick}
+        className={`absolute z-10 touch-none select-none ${DataOperationControlLeft[paneResizeHandle.side]}`}
+      >
+        {paneResizeHandleState !== null && (
+          <jsxRuntime.Fragment>
+            <div
+              style={{
+                top: paneResizeHandleState.y - 14,
+              }}
+              className={`bg-alpha-4 pointer-events-none absolute h-7 w-[3px] rounded-full ${paneResizeHandle.side === `left` ? `right-0` : `left-0`}`}
+            />
+            {(0, ReactDOM.createPortal)(
+              <div
+                style={{
+                  top: paneResizeHandleState.top + paneResizeHandleState.y - 22,
+                  left:
+                    paneResizeHandle.side === `left`
+                      ? paneResizeHandleState.edgeX - 8
+                      : paneResizeHandleState.edgeX + 8,
+                  transform:
+                    paneResizeHandle.side === `left` ? `translateX(-100%)` : undefined,
+                }}
+                className={`bg-fill-primary pointer-events-none fixed z-50 w-max rounded-lg px-2.5 py-1.5 shadow-md`}
+              >
+                <div className={`text-on-primary text-[13px] leading-tight font-medium`}>
+                  {tap2}
+                </div>
+                {tap3 && (
+                  <div className={`text-on-primary text-xs leading-tight opacity-60`}>
+                    {tap3}
+                  </div>
+                )}
+              </div>,
+              (document as Dynamic).body,
+            )}
+          </jsxRuntime.Fragment>
+        )}
+      </div>
+    );
+  }
+  let style: Dynamic = {
+    ...(paneResizeHandle.bordered ? DataOperationControlCdsRingOuter : {}),
+    ...(paneResizeHandle.dragging
+      ? {
+          "--cds-resize-pill-force": `1`,
+        }
+      : {}),
+  };
+  return (
+    <PlatformKeyboardAndSaveStatusOrientation
+      side={DataOperationControlLeft2[paneResizeHandle.side]}
+      aria-label={paneResizeHandle.label}
+      aria-valuenow={paneResizeHandle[`aria-valuenow`]}
+      aria-valuemin={paneResizeHandle[`aria-valuemin`]}
+      aria-valuemax={paneResizeHandle[`aria-valuemax`]}
+      aria-valuetext={paneResizeHandle[`aria-valuetext`]}
+      onPointerDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (event.currentTarget === event.currentTarget.ownerDocument.activeElement) {
+          event.currentTarget.blur();
+        }
+        paneResizeHandle.onPointerDown(event);
+      }}
+      onDoubleClick={paneResizeHandle.onDoubleClick}
+      onResizeStart={paneResizeHandle.onResizeStart}
+      onResize={paneResizeHandle.onResize ?? resolveDataOperationControlValue38}
+      onResizeEnd={paneResizeHandle.onResizeEnd}
+      data-testid={`pane-resize-handle`}
+      className={`z-10 touch-none select-none ${paneResizeHandle.dragging ? DataOperationControlStyles11 : ``}`}
+      style={style}
+    />
+  );
+};
 
 function resolveDataOperationControlValue33(
   dataOperationControlValue33?: Dynamic,
@@ -2254,169 +2392,6 @@ var DataOperationControlCdsRingOuter: {
 
 var resolveDataOperationControlValue38: (..._extraArguments: unknown[]) => undefined;
 
-function PaneResizeHandle(
-  paneResizeHandle?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let [paneResizeHandleState, setPaneResizeHandleState]: Dynamic = (0,
-  React.useState)(null);
-  if (paneResizeHandle.tap) {
-    let {
-      onTap: tap,
-      content: tap2,
-      detail: tap3,
-    }: Dynamic = paneResizeHandle.tap;
-    return (
-      <div
-        onPointerDown={(
-          paneResizeHandle2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          if (!elementRef.current) {
-            elementRef.current = {
-              pointerId: paneResizeHandle2.pointerId,
-              x: paneResizeHandle2.clientX,
-              y: paneResizeHandle2.clientY,
-              moved: false,
-            };
-            paneResizeHandle.onPointerDown(paneResizeHandle2);
-          }
-        }}
-        onClick={(
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let element: Dynamic = elementRef.current;
-          if (!element) return;
-          let pointerId: Dynamic = event.nativeEvent.pointerId;
-          if (!(pointerId !== undefined && pointerId !== element.pointerId)) {
-            elementRef.current = null;
-            if (!element.moved) {
-              tap();
-            }
-          }
-        }}
-        onPointerCancel={(
-          paneResizeHandle2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          if (elementRef.current?.pointerId === paneResizeHandle2.pointerId) {
-            elementRef.current = null;
-          }
-        }}
-        onPointerMove={(
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let element: Dynamic = elementRef.current;
-          if (element && event.pointerId !== element.pointerId) return;
-          if (
-            element &&
-            Math.hypot(event.clientX - element.x, event.clientY - element.y) >=
-              3
-          ) {
-            element.moved = true;
-          }
-          let currentTargetBounds: Dynamic =
-            event.currentTarget.getBoundingClientRect();
-          setPaneResizeHandleState({
-            y: event.clientY - currentTargetBounds.top,
-            top: currentTargetBounds.top,
-            edgeX:
-              paneResizeHandle.side === `left`
-                ? currentTargetBounds.left
-                : currentTargetBounds.right,
-          });
-        }}
-        onPointerLeave={(..._extraArguments: unknown[]): Dynamic =>
-          setPaneResizeHandleState(null)
-        }
-        onDoubleClick={paneResizeHandle.onDoubleClick}
-        className={`absolute z-10 touch-none select-none ${DataOperationControlLeft[paneResizeHandle.side]}`}
-      >
-        {paneResizeHandleState !== null && (
-          <jsxRuntime.Fragment>
-            <div
-              style={{
-                top: paneResizeHandleState.y - 14,
-              }}
-              className={`bg-alpha-4 pointer-events-none absolute h-7 w-[3px] rounded-full ${paneResizeHandle.side === `left` ? `right-0` : `left-0`}`}
-            />
-            {(0, ReactDOM.createPortal)(
-              <div
-                style={{
-                  top: paneResizeHandleState.top + paneResizeHandleState.y - 22,
-                  left:
-                    paneResizeHandle.side === `left`
-                      ? paneResizeHandleState.edgeX - 8
-                      : paneResizeHandleState.edgeX + 8,
-                  transform:
-                    paneResizeHandle.side === `left`
-                      ? `translateX(-100%)`
-                      : undefined,
-                }}
-                className={`bg-fill-primary pointer-events-none fixed z-50 w-max rounded-lg px-2.5 py-1.5 shadow-md`}
-              >
-                <div
-                  className={`text-on-primary text-[13px] leading-tight font-medium`}
-                >
-                  {tap2}
-                </div>
-                {tap3 && (
-                  <div
-                    className={`text-on-primary text-xs leading-tight opacity-60`}
-                  >
-                    {tap3}
-                  </div>
-                )}
-              </div>,
-              (document as Dynamic).body,
-            )}
-          </jsxRuntime.Fragment>
-        )}
-      </div>
-    );
-  }
-  let style: Dynamic = {
-    ...(paneResizeHandle.bordered ? DataOperationControlCdsRingOuter : {}),
-    ...(paneResizeHandle.dragging
-      ? {
-          "--cds-resize-pill-force": `1`,
-        }
-      : {}),
-  };
-  return (
-    <PlatformKeyboardAndSaveStatusOrientation
-      side={DataOperationControlLeft2[paneResizeHandle.side]}
-      aria-label={paneResizeHandle.label}
-      aria-valuenow={paneResizeHandle[`aria-valuenow`]}
-      aria-valuemin={paneResizeHandle[`aria-valuemin`]}
-      aria-valuemax={paneResizeHandle[`aria-valuemax`]}
-      aria-valuetext={paneResizeHandle[`aria-valuetext`]}
-      onPointerDown={(
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (
-          event.currentTarget ===
-          event.currentTarget.ownerDocument.activeElement
-        ) {
-          event.currentTarget.blur();
-        }
-        paneResizeHandle.onPointerDown(event);
-      }}
-      onDoubleClick={paneResizeHandle.onDoubleClick}
-      onResizeStart={paneResizeHandle.onResizeStart}
-      onResize={paneResizeHandle.onResize ?? resolveDataOperationControlValue38}
-      onResizeEnd={paneResizeHandle.onResizeEnd}
-      data-testid={`pane-resize-handle`}
-      className={`z-10 touch-none select-none ${paneResizeHandle.dragging ? DataOperationControlStyles11 : ``}`}
-      style={style}
-    />
-  );
-}
-
 function isDataOperationControlRoot(
   ref?: Dynamic,
   ref2?: Dynamic,
@@ -2836,36 +2811,4 @@ export function initializeDataOperationControl5Step1(): void {
     !Array.isArray(dataOperationControlValue39));
 }
 
-export {
-  CopyLinkFallbackUrl,
-  DataOperationControlLnBody,
-  DataOperationControlRoomReadDenied,
-  PaneResizeHandle,
-  dataOperationControlValue1,
-  isDataOperationControlRoot,
-  loadDataOperationControlBid,
-  loadDataOperationControlDialect,
-  loadDataOperationControlDoc,
-  loadDataOperationControlKind,
-  loadDataOperationControlNode,
-  loadDataOperationControlReady,
-  resolveDataOperationControlAbsent,
-  resolveDataOperationControlBadRequest,
-  resolveDataOperationControlByKey,
-  resolveDataOperationControlDataBaseUiFocusGuard,
-  resolveDataOperationControlDetail,
-  resolveDataOperationControlEndsWith,
-  resolveDataOperationControlEngineBound,
-  resolveDataOperationControlIsFinite,
-  resolveDataOperationControlKind3,
-  resolveDataOperationControlLevel2,
-  resolveDataOperationControlPush,
-  resolveDataOperationControlSess3,
-  resolveDataOperationControlText3,
-  resolveDataOperationControlValue33,
-  resolveDataOperationControlValue34,
-  resolveDataOperationControlValue35,
-  resolveDataOperationControlValue39,
-  useDataOperationControlRawStart,
-  useDataOperationControlWidth,
-};
+export { CopyLinkFallbackUrl, DataOperationControlLnBody, DataOperationControlRoomReadDenied, dataOperationControlValue1, isDataOperationControlRoot, loadDataOperationControlBid, loadDataOperationControlDialect, loadDataOperationControlDoc, loadDataOperationControlKind, loadDataOperationControlNode, loadDataOperationControlReady, resolveDataOperationControlAbsent, resolveDataOperationControlBadRequest, resolveDataOperationControlByKey, resolveDataOperationControlDataBaseUiFocusGuard, resolveDataOperationControlDetail, resolveDataOperationControlEndsWith, resolveDataOperationControlEngineBound, resolveDataOperationControlIsFinite, resolveDataOperationControlKind3, resolveDataOperationControlLevel2, resolveDataOperationControlPush, resolveDataOperationControlSess3, resolveDataOperationControlText3, resolveDataOperationControlValue33, resolveDataOperationControlValue34, resolveDataOperationControlValue35, resolveDataOperationControlValue39, useDataOperationControlRawStart, useDataOperationControlWidth };

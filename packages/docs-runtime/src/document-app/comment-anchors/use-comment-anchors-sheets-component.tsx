@@ -19,6 +19,187 @@ import {
   resolveCommentSessionCommentOnly,
   resolveCommentSessionLabel,
 } from "../comment-session/ask-suggestions-measure";
+import type * as ReactComponentTypes from "react";
+
+export const ClaudeTypingIndicator: ReactComponentTypes.FC<Dynamic> = ({
+  className: className,
+}) => {
+  let reduceMotion: Dynamic = usePlatformSyncAndRoutingUseSyncExternalStore(
+    `(prefers-reduced-motion: reduce)`,
+  );
+  let [sheets, setSheets]: Dynamic = (0, React.useState)(CommentAnchorsState3);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (sheets) return;
+      let enabled = true;
+      resolveCommentAnchorsResolve2().then(
+        (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          if (enabled && result) {
+            setSheets(result);
+          }
+        },
+      );
+      return (..._extraArguments: unknown[]): undefined => {
+        enabled = false;
+      };
+    },
+    [sheets],
+  );
+  return (
+    <span
+      aria-hidden={`true`}
+      data-claude-writing-mark={sheets ? `playing` : `dot`}
+      className={resolveUiDesignSystemValue2(
+        `relative block shrink-0 select-none`,
+        className,
+      )}
+      style={CommentAnchorsWidth}
+    >
+      {sheets ? (
+        <UseCommentAnchorsSheetsComponent sheets={sheets} reduceMotion={reduceMotion} />
+      ) : (
+        <UseCommentAnchorsDataHeldDotComponent />
+      )}
+    </span>
+  );
+};
+
+export const UseCommentAnchorsSheetsComponent: ReactComponentTypes.FC<Dynamic> = ({
+  sheets: sheets,
+  reduceMotion: reduceMotion,
+}) => {
+  let {
+    WRITING_SHEETS: sheets2,
+    WRITING_STAGES: sheets3,
+    SHEET_FRAME_MS: sheets4,
+    LOOP_REST_FRAME: sheets5,
+  }: Dynamic = sheets;
+  let [sheetItemState, setSheetItemState]: Dynamic = (0, React.useState)(sheets3[0]);
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  let lookupRef: Dynamic = (0, React.useRef)(new (Map as Dynamic)());
+  let label: Dynamic = reduceMotion ? `loop` : sheetItemState;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let lookupEntry: Dynamic = lookupRef.current.get(sheetItemState);
+      if (!lookupEntry || reduceMotion || typeof lookupEntry.animate != `function`)
+        return;
+      let { frames: sheetItem }: Dynamic = sheets2[sheetItemState];
+      let sheetItem2: Dynamic = sheets3[sheets3.indexOf(sheetItemState) + 1];
+      let animate: Dynamic = lookupEntry.animate(
+        [
+          {
+            transform: resolveCommentAnchorsValue2(0),
+          },
+          {
+            transform: resolveCommentAnchorsValue2(sheetItem - 1),
+          },
+        ],
+        {
+          duration: sheets4 * sheetItem,
+          iterations: sheetItem2 ? 1 : 1 / 0,
+          easing: `steps(${sheetItem}, jump-none)`,
+          fill: `forwards`,
+        },
+      );
+      let enabled = true;
+      let useCommentAnchorsSheetsHandler: Dynamic =
+        (commentAnchorsSheets?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        (..._extraArguments: unknown[]): undefined => {
+          if (enabled) {
+            commentAnchorsSheets();
+          }
+        };
+      animate.ready
+        .then(
+          useCommentAnchorsSheetsHandler(
+            (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
+          ),
+        )
+        .catch((..._extraArguments: unknown[]): undefined => {});
+      if (sheetItem2) {
+        animate.finished
+          .then(
+            useCommentAnchorsSheetsHandler(
+              (..._extraArguments: unknown[]): Dynamic => setSheetItemState(sheetItem2),
+            ),
+          )
+          .catch((..._extraArguments: unknown[]): undefined => {});
+      }
+      return (..._extraArguments: unknown[]): undefined => {
+        enabled = false;
+        animate.cancel();
+      };
+    },
+    [sheetItemState, reduceMotion, sheets2, sheets3, sheets4],
+  );
+  return (
+    <jsxRuntime.Fragment>
+      {!enabledState && !reduceMotion ? <UseCommentAnchorsDataHeldDotComponent /> : null}
+      {sheets3.map((dataStage?: Dynamic, ..._extraArguments: unknown[]) => {
+        let matchesDataStage = dataStage === label;
+        let { url: sheetItem, frames: sheetItem2 }: Dynamic = sheets2[dataStage];
+        return (
+          <span
+            data-stage={dataStage}
+            data-live={matchesDataStage ? `` : undefined}
+            className={`absolute inset-0 m-auto overflow-clip`}
+            style={{
+              ...CommentAnchorsWidth,
+              opacity: matchesDataStage ? undefined : 0.001,
+              zIndex: matchesDataStage ? 1 : undefined,
+            }}
+            key={dataStage}
+          >
+            {
+              <span className={`block`}>
+                <span
+                  ref={(
+                    commentAnchorsSheets?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ): undefined => {
+                    if (commentAnchorsSheets) {
+                      lookupRef.current.set(dataStage, commentAnchorsSheets);
+                    } else {
+                      lookupRef.current.delete(dataStage);
+                    }
+                  }}
+                  className={`block`}
+                  style={{
+                    width: commentAnchorsLimit20,
+                    height: sheetItem2 * commentAnchorsLimit20,
+                    backgroundImage: `url(${sheetItem})`,
+                    backgroundSize: `100% 100%`,
+                    backgroundRepeat: `no-repeat`,
+                    transform: resolveCommentAnchorsValue2(
+                      matchesDataStage && reduceMotion ? sheets5 : 0,
+                    ),
+                    ...(matchesDataStage && !reduceMotion && CommentAnchorsWillChange),
+                  }}
+                />
+              </span>
+            }
+          </span>
+        );
+      })}
+    </jsxRuntime.Fragment>
+  );
+};
+
+export const UseCommentAnchorsDataHeldDotComponent: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let width = commentAnchorsLimit20 * commentAnchorsLimit0_35;
+  return (
+    <span
+      data-held-dot={``}
+      className={`bg-clay absolute inset-0 m-auto block rounded-full`}
+      style={{
+        width: width,
+        height: width,
+      }}
+    />
+  );
+};
 
 function mapCommentAnchorsPush(
   items?: Dynamic,
@@ -586,185 +767,7 @@ function resolveCommentAnchorsResolve2(..._extraArguments: unknown[]): Dynamic {
   return CommentAnchorsState4;
 }
 
-function ClaudeTypingIndicator(
-  { className: className }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let reduceMotion: Dynamic = usePlatformSyncAndRoutingUseSyncExternalStore(
-    `(prefers-reduced-motion: reduce)`,
-  );
-  let [sheets, setSheets]: Dynamic = (0, React.useState)(CommentAnchorsState3);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (sheets) return;
-      let enabled = true;
-      resolveCommentAnchorsResolve2().then(
-        (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          if (enabled && result) {
-            setSheets(result);
-          }
-        },
-      );
-      return (..._extraArguments: unknown[]): undefined => {
-        enabled = false;
-      };
-    },
-    [sheets],
-  );
-  return (
-    <span
-      aria-hidden={`true`}
-      data-claude-writing-mark={sheets ? `playing` : `dot`}
-      className={resolveUiDesignSystemValue2(
-        `relative block shrink-0 select-none`,
-        className,
-      )}
-      style={CommentAnchorsWidth}
-    >
-      {sheets ? (
-        <UseCommentAnchorsSheetsComponent
-          sheets={sheets}
-          reduceMotion={reduceMotion}
-        />
-      ) : (
-        <UseCommentAnchorsDataHeldDotComponent />
-      )}
-    </span>
-  );
-}
-
-function UseCommentAnchorsDataHeldDotComponent(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  let width = commentAnchorsLimit20 * commentAnchorsLimit0_35;
-  return (
-    <span
-      data-held-dot={``}
-      className={`bg-clay absolute inset-0 m-auto block rounded-full`}
-      style={{
-        width: width,
-        height: width,
-      }}
-    />
-  );
-}
-
 var resolveCommentAnchorsValue2: (commentAnchorsValue2?: Dynamic, ..._extraArguments: unknown[]) => string;
-
-function UseCommentAnchorsSheetsComponent(
-  { sheets: sheets, reduceMotion: reduceMotion }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let {
-    WRITING_SHEETS: sheets2,
-    WRITING_STAGES: sheets3,
-    SHEET_FRAME_MS: sheets4,
-    LOOP_REST_FRAME: sheets5,
-  }: Dynamic = sheets;
-  let [sheetItemState, setSheetItemState]: Dynamic = (0, React.useState)(
-    sheets3[0],
-  );
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  let lookupRef: Dynamic = (0, React.useRef)(new (Map as Dynamic)());
-  let label: Dynamic = reduceMotion ? `loop` : sheetItemState;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let lookupEntry: Dynamic = lookupRef.current.get(sheetItemState);
-      if (
-        !lookupEntry ||
-        reduceMotion ||
-        typeof lookupEntry.animate != `function`
-      )
-        return;
-      let { frames: sheetItem }: Dynamic = sheets2[sheetItemState];
-      let sheetItem2: Dynamic = sheets3[sheets3.indexOf(sheetItemState) + 1];
-      let animate: Dynamic = lookupEntry.animate(
-        [
-          {
-            transform: resolveCommentAnchorsValue2(0),
-          },
-          {
-            transform: resolveCommentAnchorsValue2(sheetItem - 1),
-          },
-        ],
-        {
-          duration: sheets4 * sheetItem,
-          iterations: sheetItem2 ? 1 : 1 / 0,
-          easing: `steps(${sheetItem}, jump-none)`,
-          fill: `forwards`,
-        },
-      );
-      let enabled = true;
-      let useCommentAnchorsSheetsHandler: Dynamic =
-        (
-          commentAnchorsSheets?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic =>
-        (..._extraArguments: unknown[]): undefined => {
-          if (enabled) {
-            commentAnchorsSheets();
-          }
-        };
-      animate.ready
-        .then(
-          useCommentAnchorsSheetsHandler(
-            (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
-          ),
-        )
-        .catch((..._extraArguments: unknown[]): undefined => {});
-      if (sheetItem2) {
-        animate.finished
-          .then(
-            useCommentAnchorsSheetsHandler(
-              (..._extraArguments: unknown[]): Dynamic =>
-                setSheetItemState(sheetItem2),
-            ),
-          )
-          .catch((..._extraArguments: unknown[]): undefined => {});
-      }
-      return (..._extraArguments: unknown[]): undefined => {
-        enabled = false;
-        animate.cancel();
-      };
-    },
-    [sheetItemState, reduceMotion, sheets2, sheets3, sheets4],
-  );
-  return (
-    <jsxRuntime.Fragment>
-      {!enabledState && !reduceMotion ? (
-        <UseCommentAnchorsDataHeldDotComponent />
-      ) : null}
-      {sheets3.map((dataStage?: Dynamic, ..._extraArguments: unknown[]) => {
-        let matchesDataStage = dataStage === label;
-        let { url: sheetItem, frames: sheetItem2 }: Dynamic =
-          sheets2[dataStage];
-        return (
-          <span data-stage={dataStage} data-live={matchesDataStage ? `` : undefined} className={`absolute inset-0 m-auto overflow-clip`} style={{
-  ...CommentAnchorsWidth,
-  opacity: matchesDataStage ? undefined : 0.001,
-  zIndex: matchesDataStage ? 1 : undefined
-}} key={dataStage}>{<span className={`block`}>
-                    <span ref={(commentAnchorsSheets?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      if (commentAnchorsSheets) {
-        lookupRef.current.set(dataStage, commentAnchorsSheets);
-      } else {
-        lookupRef.current.delete(dataStage);
-      }
-    }} className={`block`} style={{
-      width: commentAnchorsLimit20,
-      height: sheetItem2 * commentAnchorsLimit20,
-      backgroundImage: `url(${sheetItem})`,
-      backgroundSize: `100% 100%`,
-      backgroundRepeat: `no-repeat`,
-      transform: resolveCommentAnchorsValue2(matchesDataStage && reduceMotion ? sheets5 : 0),
-      ...(matchesDataStage && !reduceMotion && CommentAnchorsWillChange)
-    }} />
-                  </span>}</span>
-        );
-      })}
-    </jsxRuntime.Fragment>
-  );
-}
 
 var CommentAnchorsHour: {
     hour: string;
@@ -1097,26 +1100,4 @@ export function initializeCommentAnchorsUseCommentAnchorsSheetsComponentStep1():
   });
 }
 
-export {
-  ClaudeTypingIndicator,
-  CommentAnchorsAvatarUrl,
-  CommentAnchorsState5,
-  filterCommentAnchorsFilter,
-  isCommentAnchorsPeople,
-  loadCommentAnchorsList,
-  loadCommentAnchorsValue,
-  mapCommentAnchorsKey,
-  mapCommentAnchorsPush,
-  resolveCommentAnchorsAttrs,
-  resolveCommentAnchorsEvery2,
-  resolveCommentAnchorsFormat,
-  resolveCommentAnchorsIssued,
-  resolveCommentAnchorsLast,
-  resolveCommentAnchorsOpenedDirectly,
-  resolveCommentAnchorsPush,
-  resolveCommentAnchorsSplit,
-  resolveCommentAnchorsText,
-  resolveCommentAnchorsValue,
-  resolveCommentAnchorsWhole,
-  useCommentAnchorsCurrent,
-};
+export { CommentAnchorsAvatarUrl, CommentAnchorsState5, filterCommentAnchorsFilter, isCommentAnchorsPeople, loadCommentAnchorsList, loadCommentAnchorsValue, mapCommentAnchorsKey, mapCommentAnchorsPush, resolveCommentAnchorsAttrs, resolveCommentAnchorsEvery2, resolveCommentAnchorsFormat, resolveCommentAnchorsIssued, resolveCommentAnchorsLast, resolveCommentAnchorsOpenedDirectly, resolveCommentAnchorsPush, resolveCommentAnchorsSplit, resolveCommentAnchorsText, resolveCommentAnchorsValue, resolveCommentAnchorsWhole, useCommentAnchorsCurrent };

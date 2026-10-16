@@ -15,25 +15,23 @@ import {
   useContainerStore,
 } from "../../platform/index";
 import { Workspace } from "../../platform/lazy";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-var FULL_UUID_PATTERN: Dynamic =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-var SHORT_UUID_PATTERN: Dynamic = /^[0-9a-f]{8}-[0-9a-f]{4}$/;
-var PROJECT_GATE_RETRY_MS: Dynamic = [250, 750];
-function ProjectsRouteGate(..._extraArguments: unknown[]): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const ProjectsRouteGate: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   let routeProject: Dynamic =
-    (
-      resolveObservabilityBrowserAndOperationEventsUseContext2()[`*`] ?? ``
-    ).split(`/`)[0] ?? ``;
+    (resolveObservabilityBrowserAndOperationEventsUseContext2()[`*`] ?? ``).split(
+      `/`,
+    )[0] ?? ``;
   let isCanonicalId: Dynamic = FULL_UUID_PATTERN.test(routeProject);
-  let [, navigate]: Dynamic =
-    resolveObservabilityBrowserAndOperationEventsValue48();
+  let [, navigate]: Dynamic = resolveObservabilityBrowserAndOperationEventsValue48();
   let [showProjectsRoute, setShowProjectsRoute]: Dynamic = (0, React.useState)(
     !isCanonicalId,
   );
-  let [previousRouteProject, setPreviousRouteProject]: Dynamic = (0,
-  React.useState)(routeProject);
+  let [previousRouteProject, setPreviousRouteProject]: Dynamic = (0, React.useState)(
+    routeProject,
+  );
   if (previousRouteProject !== routeProject) {
     setPreviousRouteProject(routeProject);
     setShowProjectsRoute(!isCanonicalId);
@@ -88,12 +86,7 @@ function ProjectsRouteGate(..._extraArguments: unknown[]): Dynamic {
       try {
         projectPart = decodeURI(projectPart);
       } catch {}
-      if (
-        !(
-          pathParts[1]?.toLowerCase() !== `projects` ||
-          projectPart !== routeProject
-        )
-      ) {
+      if (!(pathParts[1]?.toLowerCase() !== `projects` || projectPart !== routeProject)) {
         navigate(projectDestination(legacyProjectId), {
           replace: true,
         });
@@ -116,10 +109,7 @@ function ProjectsRouteGate(..._extraArguments: unknown[]): Dynamic {
           projectPart = decodeURI(projectPart);
         } catch {}
         if (
-          !(
-            pathParts[1]?.toLowerCase() !== `projects` ||
-            projectPart !== routeProject
-          )
+          !(pathParts[1]?.toLowerCase() !== `projects` || projectPart !== routeProject)
         ) {
           navigate(projectDestination(canonicalId), {
             replace: true,
@@ -178,9 +168,7 @@ function ProjectsRouteGate(..._extraArguments: unknown[]): Dynamic {
   return showProjectsRoute ? (
     <Workspace />
   ) : (
-    <div
-      className={`text-muted flex h-full flex-col items-center justify-center`}
-    >
+    <div className={`text-muted flex h-full flex-col items-center justify-center`}>
       <UiOverlaysAndIconsCustomIcon
         name={`Spinner`}
         size={`md`}
@@ -189,5 +177,11 @@ function ProjectsRouteGate(..._extraArguments: unknown[]): Dynamic {
       />
     </div>
   );
-}
-export { ProjectsRouteGate };
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+var FULL_UUID_PATTERN: Dynamic =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var SHORT_UUID_PATTERN: Dynamic = /^[0-9a-f]{8}-[0-9a-f]{4}$/;
+var PROJECT_GATE_RETRY_MS: Dynamic = [250, 750];

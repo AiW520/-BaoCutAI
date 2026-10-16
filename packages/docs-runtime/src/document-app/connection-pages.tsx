@@ -14,24 +14,17 @@ import {
 import {
   ClaudeLogo,
 } from "./document-recovery";
+import type * as ReactComponentTypes from "react";
 
-function SignInRequiredPage(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
+export const SignInRequiredPage: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   return (
-    <div
-      className={`bg-surface-0 flex h-screen items-center justify-center px-6`}
-    >
-      <div
-        className={`bg-surface-1 w-full max-w-sm rounded-lg border p-8 shadow-xs`}
-      >
+    <div className={`bg-surface-0 flex h-screen items-center justify-center px-6`}>
+      <div className={`bg-surface-1 w-full max-w-sm rounded-lg border p-8 shadow-xs`}>
         <div className={`mb-5 flex items-center gap-2`}>
-          <ClaudeLogo
-            className={`size-5 shrink-0 text-[var(--cds-fill-brand)]`}
-          />
-          <span
-            className={`text-primary text-sm font-semibold`}
-          >{`Bongo`}</span>
+          <ClaudeLogo className={`size-5 shrink-0 text-[var(--cds-fill-brand)]`} />
+          <span className={`text-primary text-sm font-semibold`}>{`Bongo`}</span>
         </div>
         <h1
           className={`text-primary text-heading mb-2 flex items-center gap-1.5 font-semibold`}
@@ -50,41 +43,13 @@ function SignInRequiredPage(
       </div>
     </div>
   );
-}
+};
 
-function ConnectionPage(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  return (
-    <ConnectionPageLayout>
-      <ConnectionStatusCard />
-    </ConnectionPageLayout>
-  );
-}
-
-function ConnectionPageLayout(
-  { children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={`bg-surface-0 flex h-screen items-center justify-center px-6`}
-    >
-      <div
-        className={`bg-surface-1 w-full max-w-[420px] rounded-lg border p-8 shadow-xs`}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function ConnectionStatusCard(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
+export const ConnectionStatusCard: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
   let connectionStatusCardResult: Dynamic = CommentsStoreClaude(
-    (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      response.status,
+    (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic => response.status,
   );
   let connectionStatusCardResult2: Dynamic = CommentsStoreClaude(
     (connectionStatusCard?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -164,9 +129,7 @@ function ConnectionStatusCard(
   ) : (
     <jsxRuntime.Fragment>
       <div className={`mb-5 flex items-center gap-2`}>
-        <ClaudeLogo
-          className={`size-5 shrink-0 text-[var(--cds-fill-brand)]`}
-        />
+        <ClaudeLogo className={`size-5 shrink-0 text-[var(--cds-fill-brand)]`} />
         <span className={`text-primary text-sm font-semibold`}>{`Bongo`}</span>
       </div>
       <h1
@@ -191,23 +154,18 @@ function ConnectionStatusCard(
       )}
     </jsxRuntime.Fragment>
   );
-}
+};
 
-function PendingSignInInstructions(
-  { authorizeUrl: authorizeUrl }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const PendingSignInInstructions: ReactComponentTypes.FC<Dynamic> = ({
+  authorizeUrl: authorizeUrl,
+}) => {
   let pendingSignInInstructionsResult: Dynamic = CommentsStoreClaude(
-    (
-      pendingSignInInstructions?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => pendingSignInInstructions.load,
+    (pendingSignInInstructions?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      pendingSignInInstructions.load,
   );
   return (
     <div className={`mt-4`} data-testid={`pending-signin`}>
-      <p
-        className={`text-secondary flex items-start gap-1.5 text-xs leading-relaxed`}
-      >
+      <p className={`text-secondary flex items-start gap-1.5 text-xs leading-relaxed`}>
         <span
           className={`border-strong mt-0.5 inline-block size-3 shrink-0 animate-spin rounded-full border-[1.5px] border-t-transparent`}
         />
@@ -216,10 +174,7 @@ function PendingSignInInstructions(
       <p className={`text-secondary mt-2 text-xs leading-relaxed`}>
         {`If a new tab didn’t open,`}
         {` `}
-        <Link
-          external={true}
-          href={authorizeUrl}
-        >{`open the sign-in page here`}</Link>
+        <Link external={true} href={authorizeUrl}>{`open the sign-in page here`}</Link>
         {` `}
         {`(and allow pop-ups for this site). Already signed in?`}
         {` `}
@@ -232,7 +187,31 @@ function PendingSignInInstructions(
       </p>
     </div>
   );
-}
+};
+
+export const ConnectionPage: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  return (
+    <ConnectionPageLayout>
+      <ConnectionStatusCard />
+    </ConnectionPageLayout>
+  );
+};
+
+export const ConnectionPageLayout: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+}) => {
+  return (
+    <div className={`bg-surface-0 flex h-screen items-center justify-center px-6`}>
+      <div
+        className={`bg-surface-1 w-full max-w-[420px] rounded-lg border p-8 shadow-xs`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 var asManifestObject: Dynamic;
 
@@ -273,4 +252,4 @@ export function initializeConnectionPagesStep1(): void {
       : {});
 }
 
-export { ConnectionPage, SignInRequiredPage, asManifestObject };
+export { asManifestObject };

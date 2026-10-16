@@ -17,17 +17,13 @@ import {
   tabsPlaceRowOnScreen,
   writeTabsPlace,
 } from "./place-write";
-var React: Dynamic = toModuleNamespace(loadReact(), 1);
-var jsxRuntime: Dynamic = loadJsxRuntime();
-var TABS_PLACE_ROW_COPY: Dynamic = {
-  label: `Show on page`,
-  oneTab: `Tabs show beside the text once this Doc has two tabs or two headings.`,
-  ...TABS_PLACE_FAILURE_COPY,
-};
-function TabsPlaceRow(
-  { seat: seat, shown: shown, why: why }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+import type * as ReactComponentTypes from "react";
+
+export const TabsPlaceRow: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  shown: shown,
+  why: why,
+}) => {
   let [failure, setFailure]: Dynamic = (0, React.useState)(null);
   let seatRef: Dynamic = (0, React.useRef)(false);
   let controlId: Dynamic = (0, React.useId)();
@@ -38,8 +34,7 @@ function TabsPlaceRow(
   seatRef2.current = seat;
   let { pid: seat2 }: Dynamic = seat;
   (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      tabsPlaceRowOnScreen(seat2, setFailure),
+    (..._extraArguments: unknown[]): Dynamic => tabsPlaceRowOnScreen(seat2, setFailure),
     [seat2],
   );
   let callback: Dynamic = (0, React.useCallback)(
@@ -109,12 +104,23 @@ function TabsPlaceRow(
         <p
           id={controlId}
           role={failure ? `alert` : undefined}
-          className={failure ? `text-footnote text-danger pt-1` : `text-footnote text-muted pt-1`}
+          className={
+            failure ? `text-footnote text-danger pt-1` : `text-footnote text-muted pt-1`
+          }
           data-testid={failure ? `tabs-place-error` : `tabs-place-why`}
           key={(failure ? `alert:` : `why:`) + TABSPLACEROWCOPYItem2}
-        >{TABSPLACEROWCOPYItem2}</p>
+        >
+          {TABSPLACEROWCOPYItem2}
+        </p>
       ) : null}
     </div>
   );
-}
-export { TabsPlaceRow };
+};
+
+var React: Dynamic = toModuleNamespace(loadReact(), 1);
+var jsxRuntime: Dynamic = loadJsxRuntime();
+var TABS_PLACE_ROW_COPY: Dynamic = {
+  label: `Show on page`,
+  oneTab: `Tabs show beside the text once this Doc has two tabs or two headings.`,
+  ...TABS_PLACE_FAILURE_COPY,
+};

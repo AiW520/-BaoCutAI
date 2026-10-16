@@ -48,28 +48,434 @@ import {
 import {
   resolveDocumentLinksOpen,
 } from "./document-links";
+import type * as ReactComponentTypes from "react";
 
-function LinkPopoverIconButton(
-  linkPopoverIconButton?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const OpenCommentsReminder: ReactComponentTypes.FC<Dynamic> = ({
+  count: count,
+  pulse: pulse,
+  onClose: onClose,
+}) => {
+  let label = count === 1 ? `1 open comment is` : `${count} open comments are`;
+  let label2 = count === 1 ? `The comment stays` : `The comments stay`;
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let setTimeout2 = setTimeout(
+        (..._extraArguments: unknown[]): undefined =>
+          void (isDocumentFocusedElsewhere(document) || elementRef.current?.focus()),
+        documentUploadsLimit500,
+      );
+      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
+    },
+    [pulse],
+  );
+  return (
+    <UiDialogsRoot.Root
+      open={true}
+      onOpenChange={(
+        openCommentsReminder?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => !openCommentsReminder && onClose(false)}
+    >
+      <PhoneDialogPopup size={`sm`} initialFocus={false}>
+        <UiDialogsRoot.Header
+          showClose={true}
+        >{`Delete commented text?`}</UiDialogsRoot.Header>
+        <div className={`text-secondary px-lg pb-md text-body`}>
+          {`This deletes text that `}
+          {label}
+          {` attached to. `}
+          {label2}
+          {` in the comments panel but will no longer point at anything in the document, and Undo will not re-attach`}
+          {` `}
+          {count === 1 ? `it` : `them`}
+          {`.`}
+        </div>
+        <UiDialogsRoot.Footer align={`end`}>
+          <UiDialogsRoot.Close ref={elementRef} render={<Button>{`Cancel`}</Button>} />
+          <Button
+            variant={`danger`}
+            onClick={(..._extraArguments: unknown[]): Dynamic => onClose(true)}
+          >{`Delete anyway`}</Button>
+        </UiDialogsRoot.Footer>
+      </PhoneDialogPopup>
+    </UiDialogsRoot.Root>
+  );
+};
+
+export const UseDocumentUploadsUrlComponent: ReactComponentTypes.FC<Dynamic> = ({
+  url: url,
+  fromMention = false,
+  onClose: onClose,
+}) => {
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  let matchesProtocol = url.protocol === `http:` || url.protocol === `https:`;
+  let origin: Dynamic = matchesProtocol ? url.origin : `${url.protocol}${url.pathname}`;
+  let total: Dynamic = matchesProtocol
+    ? url.pathname + url.search + url.hash
+    : url.search;
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      setEnabledState(false);
+      let setTimeout2 = setTimeout(
+        (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
+        400,
+      );
+      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
+    },
+    [url.href],
+  );
+  let onClick = (..._extraArguments: unknown[]): undefined => {
+    if (enabledState) {
+      resolveDocumentLinksOpen(url.href);
+      onClose(true);
+    }
+  };
+  let fromMention2: Dynamic =
+    fromMention &&
+    matchesProtocol &&
+    resolvePlatformArtifactLinksIncludes2(url.origin) !== null &&
+    url.pathname.startsWith(`/code/artifact/`) &&
+    resolvePlatformArtifactLinksTest2(url.pathname.slice(15)) &&
+    url.search === `` &&
+    url.hash === ``;
+  return (
+    <UiDialogsRoot.Root
+      open={true}
+      onOpenChange={(
+        documentUploadsUrl?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => !documentUploadsUrl && onClose(false)}
+    >
+      <PhoneDialogPopup size={`sm`}>
+        <UiDialogsRoot.Header showClose={true}>
+          {fromMention2 ? `Open this document?` : `Open external link?`}
+        </UiDialogsRoot.Header>
+        <div className={`text-secondary px-lg pb-md text-body`}>
+          <div className={`mb-sm`}>
+            {fromMention2
+              ? `This mention opens another document, in a new browser tab, at`
+              : `This document wants to open a link to`}
+          </div>
+          <div
+            className={`bg-surface-1 rounded-card p-sm max-h-40 overflow-auto font-mono text-sm`}
+          >
+            <div className={`font-medium break-all`}>{origin}</div>
+            {total && <div className={`text-muted mt-xs text-xs break-all`}>{total}</div>}
+          </div>
+        </div>
+        <UiDialogsRoot.Footer align={`end`}>
+          <UiDialogsRoot.Close render={<Button autoFocus={true}>{`Cancel`}</Button>} />
+          <Button
+            variant={`primary`}
+            disabled={!enabledState}
+            onClick={onClick}
+          >{`Open`}</Button>
+        </UiDialogsRoot.Footer>
+      </PhoneDialogPopup>
+    </UiDialogsRoot.Root>
+  );
+};
+
+export const TypeEditorPopover: ReactComponentTypes.FC<Dynamic> = ({
+  anchor: anchor,
+  typeRef: typeRef,
+  container: container,
+  loadClaudeJson: loadClaudeJson,
+  onDone: onDone,
+}) => {
+  let typeEditorPopoverResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  let matchesTypeRef = typeRef === null;
+  let countRef: Dynamic = (0, React.useRef)(0);
+  let typeEditorPopoverHandler: Dynamic = (
+    typeEditorPopover?: Dynamic,
+    options?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Dynamic => ({
+    k: countRef.current++,
+    l: typeEditorPopover,
+    c: options,
+  });
+  let slice: Dynamic = (
+    typeEditorPopover?: Dynamic,
+    options?: Dynamic,
+    context?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Dynamic => {
+    let typeEditorPopoverSlice: Dynamic = typeEditorPopover.slice();
+    typeEditorPopoverSlice[options] = {
+      ...typeEditorPopoverSlice[options],
+      ...context,
+    };
+    return typeEditorPopoverSlice;
+  };
+  let [typeRefState, setTypeRefState]: Dynamic = (0, React.useState)(typeRef ?? ``);
+  let [itemsState, setItemsState]: Dynamic = (0, React.useState)([
+    typeEditorPopoverHandler(``, `neutral`),
+  ]);
+  let [typeEditorPopoverState, setTypeEditorPopoverState]: Dynamic = (0, React.useState)(
+    null,
+  );
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  let [labelState, setLabelState]: Dynamic = (0, React.useState)(``);
+  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
+    let enabled2 = true;
+    loadClaudeJson().then(
+      (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (enabled2)
+          if (typeRef) {
+            let typeItem: Dynamic =
+              result.types && Object.hasOwn(result.types, typeRef)
+                ? result.types[typeRef]
+                : null;
+            setTypeEditorPopoverState(typeItem);
+            if (typeItem?.enum?.length) {
+              let typeItemItem: Dynamic = typeItem[`x-display`] ?? {};
+              setItemsState(
+                typeItem.enum.map(
+                  (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                    typeEditorPopoverHandler(
+                      String(result2),
+                      ENUM_COLORS.includes(typeItemItem[result2]?.color ?? ``)
+                        ? typeItemItem[result2].color
+                        : `neutral`,
+                    ),
+                ),
+              );
+            }
+          } else if (!result.types || Object.keys(result.types).length === 0) {
+            setTypeRefState(DEFAULT_STATUS_ENUM.name);
+            setItemsState(
+              DEFAULT_STATUS_ENUM.opts.map(
+                (opt?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                  typeEditorPopoverHandler(opt.l, opt.c),
+              ),
+            );
+          }
+      },
+    );
+    return (..._extraArguments: unknown[]): undefined => {
+      enabled2 = false;
+    };
+  }, []);
+  let enabled = !CommentsActionsAndSelectionState3.test(typeRefState);
+  return (
+    <div
+      role={`dialog`}
+      aria-label={matchesTypeRef ? `New dropdown type` : `Edit type: ${typeRef}`}
+      className={`border-strong bg-surface-popover fixed z-[2147483646] flex w-[300px] flex-col gap-2 rounded-md border p-2 text-sm shadow-md duration-100`}
+      style={{
+        top: anchor.top + anchor.height + 4,
+        left: anchor.left,
+      }}
+      data-testid={`type-editor-popover`}
+    >
+      <div
+        className={`text-muted flex items-center justify-between text-[11px] font-semibold tracking-wide uppercase`}
+      >
+        <span>
+          {matchesTypeRef
+            ? `New dropdown type`
+            : `Edit type: ${resolvePlatformSessionAndSourcesReplace(typeRef)}`}
+        </span>
+        <button
+          type={`button`}
+          aria-label={`Close`}
+          className={`text-muted hover:text-primary -m-1 p-1`}
+          onClick={(..._extraArguments: unknown[]): Dynamic => onDone(null)}
+        >
+          <UiOverlaysAndIconsCustomIcon name={`X`} size={`sm`} />
+        </button>
+      </div>
+      <div className={`flex max-h-[280px] flex-col gap-1.5 overflow-auto`}>
+        {itemsState.map(
+          (
+            itemsState2?: Dynamic,
+            index?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): Dynamic => (
+            <div className={`flex items-center gap-2`} key={itemsState2.k}>
+              {
+                <div className={`flex flex-none gap-[5px] p-[2px]`}>
+                  {ENUM_COLORS.map(
+                    (ariaLabel?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
+                      <button
+                        type={`button`}
+                        aria-label={ariaLabel}
+                        aria-pressed={itemsState2.c === ariaLabel}
+                        onClick={(..._extraArguments: unknown[]): Dynamic =>
+                          setItemsState(
+                            (
+                              typeEditorPopover?: Dynamic,
+                              ..._extraArguments: unknown[]
+                            ): Dynamic =>
+                              slice(typeEditorPopover, index, {
+                                c: ariaLabel,
+                              }),
+                          )
+                        }
+                        className={`relative h-[14px] w-[14px] cursor-pointer rounded-[3px] transition-transform hover:scale-[1.15]`}
+                        style={{
+                          background: DocumentUploadsNeutral[ariaLabel],
+                          boxShadow:
+                            itemsState2.c === ariaLabel
+                              ? `0 0 0 1px #fff, 0 0 0 2px #3d3929`
+                              : undefined,
+                        }}
+                        key={ariaLabel}
+                      >
+                        {itemsState2.c === ariaLabel && (
+                          <UiOverlaysAndIconsCustomIcon
+                            name={`Check`}
+                            size={`xs`}
+                            className={`absolute inset-0 m-auto text-white drop-shadow-sm`}
+                          />
+                        )}
+                      </button>
+                    ),
+                  )}
+                </div>
+              }
+              {
+                <input
+                  value={itemsState2.l}
+                  placeholder={`Option`}
+                  maxLength={80}
+                  className={`border-strong bg-surface-0 focus:border-accent min-w-0 flex-1 rounded border px-1.5 py-1 text-sm`}
+                  onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                    setItemsState(
+                      (
+                        typeEditorPopover?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): Dynamic =>
+                        slice(typeEditorPopover, index, {
+                          l: event.target.value,
+                        }),
+                    )
+                  }
+                />
+              }
+              {
+                <button
+                  type={`button`}
+                  aria-label={`Remove`}
+                  className={`text-muted hover:text-danger flex-none px-1`}
+                  onClick={(..._extraArguments: unknown[]): Dynamic =>
+                    setItemsState(
+                      (
+                        typeEditorPopover?: Dynamic,
+                        ..._extraArguments: unknown[]
+                      ): Dynamic =>
+                        typeEditorPopover.filter(
+                          (
+                            item?: unknown,
+                            index2?: Dynamic,
+                            ..._extraArguments: unknown[]
+                          ) => index2 !== index,
+                        ),
+                    )
+                  }
+                >{`×`}</button>
+              }
+            </div>
+          ),
+        )}
+        <Button
+          size={typeEditorPopoverResult(`sm`)}
+          variant={`secondary`}
+          onClick={(..._extraArguments: unknown[]): Dynamic =>
+            setItemsState(
+              (typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => [
+                ...typeEditorPopover,
+                typeEditorPopoverHandler(``, `neutral`),
+              ],
+            )
+          }
+        >{`+ Add option`}</Button>
+      </div>
+      <div className={`border-strong -mx-2 border-t`} />
+      <div className={`flex items-center gap-2`}>
+        <input
+          value={typeRefState}
+          placeholder={`type-name`}
+          readOnly={!matchesTypeRef}
+          aria-invalid={matchesTypeRef && typeRefState.length > 0 && enabled}
+          className={
+            `border-strong bg-surface-0 min-w-0 flex-1 rounded border px-1.5 py-1 font-mono text-sm ` +
+            (matchesTypeRef ? `` : `text-muted`) +
+            (matchesTypeRef && typeRefState.length > 0 && enabled ? ` border-danger` : ``)
+          }
+          onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            matchesTypeRef && setTypeRefState(event.target.value)
+          }
+        />
+        <Button
+          size={typeEditorPopoverResult(`sm`)}
+          variant={`primary`}
+          disabled={enabledState || enabled}
+          onClick={(..._extraArguments: unknown[]): Dynamic => {
+            setLabelState(``);
+            if (enabled) return;
+            let filteredMappedItemsState: Dynamic = itemsState
+              .map(
+                (itemsState2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+                  l: itemsState2.l.trim().slice(0, 80),
+                  c: itemsState2.c,
+                }),
+              )
+              .filter(
+                (mappedItemsState?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                  mappedItemsState.l,
+              );
+            if (!filteredMappedItemsState.length)
+              return setLabelState(`at least one option required`);
+            if (filteredMappedItemsState.length > 64)
+              return setLabelState(`max 64 options`);
+            if (
+              new (Set as Dynamic)(
+                filteredMappedItemsState.map(
+                  (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => item.l,
+                ),
+              ).size !== filteredMappedItemsState.length
+            )
+              return setLabelState(`option labels must be unique`);
+            setEnabledState(true);
+            let typeEditorPopoverResult2: Dynamic = enumSchema(
+              filteredMappedItemsState,
+              typeEditorPopoverState,
+            );
+            api.types.define(container, typeRefState, typeEditorPopoverResult2).then(
+              (..._extraArguments: unknown[]): Dynamic => onDone(typeRefState),
+              (error?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+                setLabelState(error instanceof Error ? error.message : `save failed`);
+                setEnabledState(false);
+              },
+            );
+          }}
+        >{`Save`}</Button>
+      </div>
+      {labelState && <div className={`text-danger text-xs`}>{labelState}</div>}
+    </div>
+  );
+};
+
+export const LinkPopoverIconButton: ReactComponentTypes.FC<Dynamic> = (
+  linkPopoverIconButton,
+) => {
   return (
     <Button
       size={`xs`}
       variant={`ghost`}
       iconOnly={true}
       icon={
-        <UiOverlaysAndIconsCustomIcon
-          name={linkPopoverIconButton.icon}
-          size={`sm`}
-        />
+        <UiOverlaysAndIconsCustomIcon name={linkPopoverIconButton.icon} size={`sm`} />
       }
       aria-label={linkPopoverIconButton.label}
       disabled={linkPopoverIconButton.disabled}
       onClick={linkPopoverIconButton.onClick}
     />
   );
-}
+};
 
 var documentUploadsLimit20: number;
 
@@ -396,380 +802,7 @@ async function handleHostDropFiles(
 
 var documentUploadsLimit500: number;
 
-function OpenCommentsReminder(
-  { count: count, pulse: pulse, onClose: onClose }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let label = count === 1 ? `1 open comment is` : `${count} open comments are`;
-  let label2 = count === 1 ? `The comment stays` : `The comments stay`;
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let setTimeout2 = setTimeout(
-        (..._extraArguments: unknown[]): undefined =>
-          void (
-            isDocumentFocusedElsewhere(document) || elementRef.current?.focus()
-          ),
-        documentUploadsLimit500,
-      );
-      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
-    },
-    [pulse],
-  );
-  return (
-    <UiDialogsRoot.Root
-      open={true}
-      onOpenChange={(
-        openCommentsReminder?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => !openCommentsReminder && onClose(false)}
-    >
-      <PhoneDialogPopup size={`sm`} initialFocus={false}>
-        <UiDialogsRoot.Header
-          showClose={true}
-        >{`Delete commented text?`}</UiDialogsRoot.Header>
-        <div className={`text-secondary px-lg pb-md text-body`}>
-          {`This deletes text that `}
-          {label}
-          {` attached to. `}
-          {label2}
-          {` in the comments panel but will no longer point at anything in the document, and Undo will not re-attach`}
-          {` `}
-          {count === 1 ? `it` : `them`}
-          {`.`}
-        </div>
-        <UiDialogsRoot.Footer align={`end`}>
-          <UiDialogsRoot.Close
-            ref={elementRef}
-            render={<Button>{`Cancel`}</Button>}
-          />
-          <Button
-            variant={`danger`}
-            onClick={(..._extraArguments: unknown[]): Dynamic => onClose(true)}
-          >{`Delete anyway`}</Button>
-        </UiDialogsRoot.Footer>
-      </PhoneDialogPopup>
-    </UiDialogsRoot.Root>
-  );
-}
-
-function UseDocumentUploadsUrlComponent(
-  { url: url, fromMention = false, onClose: onClose }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  let matchesProtocol = url.protocol === `http:` || url.protocol === `https:`;
-  let origin: Dynamic = matchesProtocol
-    ? url.origin
-    : `${url.protocol}${url.pathname}`;
-  let total: Dynamic = matchesProtocol
-    ? url.pathname + url.search + url.hash
-    : url.search;
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      setEnabledState(false);
-      let setTimeout2 = setTimeout(
-        (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
-        400,
-      );
-      return (..._extraArguments: unknown[]) => clearTimeout(setTimeout2);
-    },
-    [url.href],
-  );
-  let onClick = (..._extraArguments: unknown[]): undefined => {
-    if (enabledState) {
-      resolveDocumentLinksOpen(url.href);
-      onClose(true);
-    }
-  };
-  let fromMention2: Dynamic =
-    fromMention &&
-    matchesProtocol &&
-    resolvePlatformArtifactLinksIncludes2(url.origin) !== null &&
-    url.pathname.startsWith(`/code/artifact/`) &&
-    resolvePlatformArtifactLinksTest2(url.pathname.slice(15)) &&
-    url.search === `` &&
-    url.hash === ``;
-  return (
-    <UiDialogsRoot.Root
-      open={true}
-      onOpenChange={(
-        documentUploadsUrl?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => !documentUploadsUrl && onClose(false)}
-    >
-      <PhoneDialogPopup size={`sm`}>
-        <UiDialogsRoot.Header showClose={true}>
-          {fromMention2 ? `Open this document?` : `Open external link?`}
-        </UiDialogsRoot.Header>
-        <div className={`text-secondary px-lg pb-md text-body`}>
-          <div className={`mb-sm`}>
-            {fromMention2
-              ? `This mention opens another document, in a new browser tab, at`
-              : `This document wants to open a link to`}
-          </div>
-          <div
-            className={`bg-surface-1 rounded-card p-sm max-h-40 overflow-auto font-mono text-sm`}
-          >
-            <div className={`font-medium break-all`}>{origin}</div>
-            {total && (
-              <div className={`text-muted mt-xs text-xs break-all`}>
-                {total}
-              </div>
-            )}
-          </div>
-        </div>
-        <UiDialogsRoot.Footer align={`end`}>
-          <UiDialogsRoot.Close
-            render={<Button autoFocus={true}>{`Cancel`}</Button>}
-          />
-          <Button
-            variant={`primary`}
-            disabled={!enabledState}
-            onClick={onClick}
-          >{`Open`}</Button>
-        </UiDialogsRoot.Footer>
-      </PhoneDialogPopup>
-    </UiDialogsRoot.Root>
-  );
-}
-
 var DocumentUploadsNeutral: Dynamic;
-
-function TypeEditorPopover(
-  {
-    anchor: anchor,
-    typeRef: typeRef,
-    container: container,
-    loadClaudeJson: loadClaudeJson,
-    onDone: onDone,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let typeEditorPopoverResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let matchesTypeRef = typeRef === null;
-  let countRef: Dynamic = (0, React.useRef)(0);
-  let typeEditorPopoverHandler: Dynamic = (
-    typeEditorPopover?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => ({
-    k: countRef.current++,
-    l: typeEditorPopover,
-    c: options,
-  });
-  let slice: Dynamic = (
-    typeEditorPopover?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
-    let typeEditorPopoverSlice: Dynamic = typeEditorPopover.slice();
-    typeEditorPopoverSlice[options] = {
-      ...typeEditorPopoverSlice[options],
-      ...context,
-    };
-    return typeEditorPopoverSlice;
-  };
-  let [typeRefState, setTypeRefState]: Dynamic = (0, React.useState)(
-    typeRef ?? ``,
-  );
-  let [itemsState, setItemsState]: Dynamic = (0, React.useState)([
-    typeEditorPopoverHandler(``, `neutral`),
-  ]);
-  let [typeEditorPopoverState, setTypeEditorPopoverState]: Dynamic = (0,
-  React.useState)(null);
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  let [labelState, setLabelState]: Dynamic = (0, React.useState)(``);
-  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let enabled2 = true;
-    loadClaudeJson().then(
-      (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (enabled2)
-          if (typeRef) {
-            let typeItem: Dynamic =
-              result.types && Object.hasOwn(result.types, typeRef)
-                ? result.types[typeRef]
-                : null;
-            setTypeEditorPopoverState(typeItem);
-            if (typeItem?.enum?.length) {
-              let typeItemItem: Dynamic = typeItem[`x-display`] ?? {};
-              setItemsState(
-                typeItem.enum.map(
-                  (result2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    typeEditorPopoverHandler(
-                      String(result2),
-                      ENUM_COLORS.includes(typeItemItem[result2]?.color ?? ``)
-                        ? typeItemItem[result2].color
-                        : `neutral`,
-                    ),
-                ),
-              );
-            }
-          } else if (!result.types || Object.keys(result.types).length === 0) {
-            setTypeRefState(DEFAULT_STATUS_ENUM.name);
-            setItemsState(
-              DEFAULT_STATUS_ENUM.opts.map(
-                (opt?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                  typeEditorPopoverHandler(opt.l, opt.c),
-              ),
-            );
-          }
-      },
-    );
-    return (..._extraArguments: unknown[]): undefined => {
-      enabled2 = false;
-    };
-  }, []);
-  let enabled = !CommentsActionsAndSelectionState3.test(typeRefState);
-  return (
-    <div
-      role={`dialog`}
-      aria-label={
-        matchesTypeRef ? `New dropdown type` : `Edit type: ${typeRef}`
-      }
-      className={`border-strong bg-surface-popover fixed z-[2147483646] flex w-[300px] flex-col gap-2 rounded-md border p-2 text-sm shadow-md duration-100`}
-      style={{
-        top: anchor.top + anchor.height + 4,
-        left: anchor.left,
-      }}
-      data-testid={`type-editor-popover`}
-    >
-      <div
-        className={`text-muted flex items-center justify-between text-[11px] font-semibold tracking-wide uppercase`}
-      >
-        <span>
-          {matchesTypeRef
-            ? `New dropdown type`
-            : `Edit type: ${resolvePlatformSessionAndSourcesReplace(typeRef)}`}
-        </span>
-        <button
-          type={`button`}
-          aria-label={`Close`}
-          className={`text-muted hover:text-primary -m-1 p-1`}
-          onClick={(..._extraArguments: unknown[]): Dynamic => onDone(null)}
-        >
-          <UiOverlaysAndIconsCustomIcon name={`X`} size={`sm`} />
-        </button>
-      </div>
-      <div className={`flex max-h-[280px] flex-col gap-1.5 overflow-auto`}>
-        {itemsState.map(
-          (
-            itemsState2?: Dynamic,
-            index?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => (
-            <div className={`flex items-center gap-2`} key={itemsState2.k}>{<div className={`flex flex-none gap-[5px] p-[2px]`}>
-                      {ENUM_COLORS.map((ariaLabel?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <button type={`button`} aria-label={ariaLabel} aria-pressed={itemsState2.c === ariaLabel} onClick={(..._extraArguments: unknown[]): Dynamic => setItemsState((typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => slice(typeEditorPopover, index, {
-      c: ariaLabel
-    }))} className={`relative h-[14px] w-[14px] cursor-pointer rounded-[3px] transition-transform hover:scale-[1.15]`} style={{
-      background: DocumentUploadsNeutral[ariaLabel],
-      boxShadow: itemsState2.c === ariaLabel ? `0 0 0 1px #fff, 0 0 0 2px #3d3929` : undefined
-    }} key={ariaLabel}>{itemsState2.c === ariaLabel && <UiOverlaysAndIconsCustomIcon name={`Check`} size={`xs`} className={`absolute inset-0 m-auto text-white drop-shadow-sm`} />}</button>)}
-                    </div>}{<input value={itemsState2.l} placeholder={`Option`} maxLength={80} className={`border-strong bg-surface-0 focus:border-accent min-w-0 flex-1 rounded border px-1.5 py-1 text-sm`} onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => setItemsState((typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => slice(typeEditorPopover, index, {
-    l: event.target.value
-  }))} />}{<button
-    type={`button`}
-    aria-label={`Remove`}
-    className={`text-muted hover:text-danger flex-none px-1`}
-    onClick={(..._extraArguments: unknown[]): Dynamic => setItemsState((typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => typeEditorPopover.filter((item?: unknown, index2?: Dynamic, ..._extraArguments: unknown[]) => index2 !== index))}
-  >{`×`}</button>}</div>
-          ),
-        )}
-        <Button
-          size={typeEditorPopoverResult(`sm`)}
-          variant={`secondary`}
-          onClick={(..._extraArguments: unknown[]): Dynamic =>
-            setItemsState(
-              (
-                typeEditorPopover?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => [
-                ...typeEditorPopover,
-                typeEditorPopoverHandler(``, `neutral`),
-              ],
-            )
-          }
-        >{`+ Add option`}</Button>
-      </div>
-      <div className={`border-strong -mx-2 border-t`} />
-      <div className={`flex items-center gap-2`}>
-        <input
-          value={typeRefState}
-          placeholder={`type-name`}
-          readOnly={!matchesTypeRef}
-          aria-invalid={matchesTypeRef && typeRefState.length > 0 && enabled}
-          className={
-            `border-strong bg-surface-0 min-w-0 flex-1 rounded border px-1.5 py-1 font-mono text-sm ` +
-            (matchesTypeRef ? `` : `text-muted`) +
-            (matchesTypeRef && typeRefState.length > 0 && enabled
-              ? ` border-danger`
-              : ``)
-          }
-          onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            matchesTypeRef && setTypeRefState(event.target.value)
-          }
-        />
-        <Button
-          size={typeEditorPopoverResult(`sm`)}
-          variant={`primary`}
-          disabled={enabledState || enabled}
-          onClick={(..._extraArguments: unknown[]): Dynamic => {
-            setLabelState(``);
-            if (enabled) return;
-            let filteredMappedItemsState: Dynamic = itemsState
-              .map(
-                (
-                  itemsState2?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): Dynamic => ({
-                  l: itemsState2.l.trim().slice(0, 80),
-                  c: itemsState2.c,
-                }),
-              )
-              .filter(
-                (
-                  mappedItemsState?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): Dynamic => mappedItemsState.l,
-              );
-            if (!filteredMappedItemsState.length)
-              return setLabelState(`at least one option required`);
-            if (filteredMappedItemsState.length > 64)
-              return setLabelState(`max 64 options`);
-            if (
-              new (Set as Dynamic)(
-                filteredMappedItemsState.map(
-                  (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    item.l,
-                ),
-              ).size !== filteredMappedItemsState.length
-            )
-              return setLabelState(`option labels must be unique`);
-            setEnabledState(true);
-            let typeEditorPopoverResult2: Dynamic = enumSchema(
-              filteredMappedItemsState,
-              typeEditorPopoverState,
-            );
-            api.types
-              .define(container, typeRefState, typeEditorPopoverResult2)
-              .then(
-                (..._extraArguments: unknown[]): Dynamic =>
-                  onDone(typeRefState),
-                (error?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-                  setLabelState(
-                    error instanceof Error ? error.message : `save failed`,
-                  );
-                  setEnabledState(false);
-                },
-              );
-          }}
-        >{`Save`}</Button>
-      </div>
-      {labelState && <div className={`text-danger text-xs`}>{labelState}</div>}
-    </div>
-  );
-}
 
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializeDocumentUploadsStep1(): void {
@@ -819,13 +852,4 @@ export function initializeDocumentUploadsStep1(): void {
   });
 }
 
-export {
-  LinkPopoverIconButton,
-  OpenCommentsReminder,
-  TypeEditorPopover,
-  UseDocumentUploadsUrlComponent,
-  handleHostDropFiles,
-  resolveDocumentUploadsError,
-  resolveDocumentUploadsThen2,
-  resolveDocumentUploadsValue,
-};
+export { handleHostDropFiles, resolveDocumentUploadsError, resolveDocumentUploadsThen2, resolveDocumentUploadsValue };

@@ -28,6 +28,358 @@ import {
   isFrameGesturesValue,
   resolveFrameGesturesCls,
 } from "../frame/gestures-state-2";
+import type * as ReactComponentTypes from "react";
+
+export const FunctionRunDialog: ReactComponentTypes.FC<Dynamic> = ({
+  container: container,
+  runRef: runRef,
+  onClose: onClose,
+}) => {
+  let runRefSlice: Dynamic = runRef.startsWith(`run:`) ? runRef.slice(4) : runRef;
+  let functionRunDialogResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
+  let controlId: Dynamic = (0, React.useId)();
+  let functionRunDialogResult2: Dynamic = PlatformLiveDocumentAndHistoryEntries(
+    (functionRunDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      functionRunDialog.entries[controlId]?.run ?? null,
+  );
+  let functionRunDialogResult3: Dynamic = PlatformLiveDocumentAndHistoryEntries(
+    (functionRunDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      functionRunDialog.entries[controlId]?.fn ?? null,
+  );
+  let functionRunDialogResult4: Dynamic = PlatformLiveDocumentAndHistoryEntries(
+    (functionRunDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      functionRunDialog.entries[controlId]?.err ?? null,
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      PlatformLiveDocumentAndHistoryEntries.getState().load(
+        controlId,
+        container,
+        runRefSlice,
+      );
+    },
+    [controlId, container, runRefSlice],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): Dynamic =>
+        PlatformLiveDocumentAndHistoryEntries.getState().release(controlId),
+    [controlId],
+  );
+  let onClick = (..._extraArguments: unknown[]): undefined => {
+    let id2: Dynamic =
+      functionRunDialogResult3 === null
+        ? undefined
+        : (functionRunDialogResult3.id ?? functionRunDialogResult2?.runner.name);
+    if (id2) {
+      updateDataModelSchemasPath({
+        file: `.function/${id2}`,
+      });
+    }
+    onClose();
+  };
+  let configurationEntry: Dynamic = functionRunDialogResult2
+    ? Object.entries(functionRunDialogResult2.configuration).find(
+        ([, items]: Dynamic, ..._extraArguments: unknown[]) =>
+          typeof items == `string` &&
+          items.length >= 24 &&
+          /\b(select|from)\b/i.test(items),
+      )
+    : undefined;
+  let widgetBridgeIcon: Dynamic = functionRunDialogResult3
+    ? resolveWidgetBridgeIcon(functionRunDialogResult3)
+    : [];
+  return (
+    <UiDialogsRoot.Root
+      open={true}
+      onOpenChange={(
+        functionRunDialog?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => !functionRunDialog && onClose()}
+    >
+      <UiDialogsRoot.Popup size={`md`}>
+        <UiDialogsRoot.Header showClose={true}>{`Sources`}</UiDialogsRoot.Header>
+        <div className={`px-lg pb-md flex flex-col gap-3`}>
+          {functionRunDialogResult4 ? (
+            <p className={`text-muted text-body`}>{`No run found for this card.`}</p>
+          ) : functionRunDialogResult2 ? (
+            <jsxRuntime.Fragment>
+              <UseWidgetBridgeLabelComponent label={`Run`}>
+                <UseWidgetBridgeIconComponent icon={`Play`} onClick={onClick}>
+                  {`run/`}
+                  {runRefSlice.slice(0, 4)}
+                  {`/`}
+                  {resolveWidgetBridgeIsNaN(
+                    functionRunDialogResult2.timing.endedAt,
+                    functionRunDialogResult.locale,
+                    functionRunDialogResult.timeZone,
+                  )}
+                </UseWidgetBridgeIconComponent>
+              </UseWidgetBridgeLabelComponent>
+              <UseWidgetBridgeLabelComponent label={`Inputs`}>
+                {widgetBridgeIcon.map(
+                  (widgetBridgeIcon2?: Dynamic, ..._extraArguments: unknown[]) => (
+                    <UseWidgetBridgeIconComponent
+                      icon={widgetBridgeIcon2.icon}
+                      key={widgetBridgeIcon2.label}
+                    >
+                      {widgetBridgeIcon2.label}
+                    </UseWidgetBridgeIconComponent>
+                  ),
+                )}
+                {widgetBridgeIcon.length === 0 && (
+                  <span className={`text-muted text-[11px]`}>{`—`}</span>
+                )}
+              </UseWidgetBridgeLabelComponent>
+              {configurationEntry && (
+                <UseWidgetBridgeLabelComponent label={`Query (SQL)`}>
+                  <div className={`flex min-w-0 flex-col gap-2`}>
+                    <pre
+                      className={`text-secondary max-h-40 overflow-auto font-mono whitespace-pre-wrap`}
+                    >
+                      {String(configurationEntry[1])}
+                    </pre>
+                    <div>
+                      <UseWidgetBridgeIconComponent icon={`CodeBrackets`}>
+                        {`args.`}
+                        {configurationEntry[0]}
+                      </UseWidgetBridgeIconComponent>
+                    </div>
+                  </div>
+                </UseWidgetBridgeLabelComponent>
+              )}
+            </jsxRuntime.Fragment>
+          ) : (
+            <p className={`text-muted text-body`}>{`Loading…`}</p>
+          )}
+        </div>
+        <UiDialogsRoot.Footer align={`end`}>
+          <Button
+            variant={`secondary`}
+            disabled={!functionRunDialogResult2}
+            onClick={onClick}
+          >{`See run`}</Button>
+          <UiDialogsRoot.Close render={<Button variant={`primary`}>{`Close`}</Button>} />
+        </UiDialogsRoot.Footer>
+      </UiDialogsRoot.Popup>
+    </UiDialogsRoot.Root>
+  );
+};
+
+export const WidgetSampleProblems: ReactComponentTypes.FC<Dynamic> = (
+  widgetSampleProblems,
+) => {
+  let problemsSlice: Dynamic = widgetSampleProblems.problems.slice(0, 12);
+  let total: Dynamic =
+    widgetSampleProblems.problems.length -
+    problemsSlice.length +
+    widgetSampleProblems.more;
+  return (
+    <ul
+      data-testid={`widget-sample-problems`}
+      className={`text-secondary mt-1 max-h-[20vh] list-disc overflow-auto pl-5 font-mono leading-snug`}
+    >
+      {problemsSlice.map(
+        (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
+          <li key={index}>{resolveWidgetBridgeRule(item)}</li>
+        ),
+      )}
+      {total > 0 && (
+        <li>
+          {`+`}
+          {total}
+          {` more`}
+        </li>
+      )}
+    </ul>
+  );
+};
+
+export const UseWidgetBridgeLabelComponent: ReactComponentTypes.FC<Dynamic> = ({
+  label: label,
+  children: children,
+}) => {
+  return (
+    <div className={`flex items-start gap-4`}>
+      <div className={`text-muted text-body w-24 shrink-0 pt-0.5`}>{label}</div>
+      <div className={`flex min-w-0 flex-1 flex-wrap items-start gap-1.5`}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+export const UseWidgetBridgeIconComponent: ReactComponentTypes.FC<Dynamic> = ({
+  icon: icon,
+  onClick: onClick,
+  children: children,
+}) => {
+  let className = `bg-surface-0 text-muted inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[10px]`;
+  return onClick ? (
+    <button
+      type={`button`}
+      onClick={onClick}
+      className={`${className} hover:text-secondary`}
+    >
+      <UiOverlaysAndIconsCustomIcon name={icon} customSize={10} />
+      {children}
+    </button>
+  ) : (
+    <span className={className}>
+      <UiOverlaysAndIconsCustomIcon name={icon} customSize={10} />
+      {children}
+    </span>
+  );
+};
+
+export const WidgetSampleCard: ReactComponentTypes.FC<Dynamic> = (widgetSampleCard) => {
+  let widgetSampleCardResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  let { view: widgetSampleCard2 }: Dynamic = widgetSampleCard;
+  let matchesPhase =
+    widgetSampleCard2.phase === `proposal` ||
+    widgetSampleCard2.phase === `inserting` ||
+    widgetSampleCard2.phase === `refused`;
+  let sourcePartsCount: Dynamic = matchesPhase
+    ? widgetSampleCard2.source.split(`
+`).length
+    : 0;
+  let total: Dynamic =
+    widgetSampleCard2.phase === `refused`
+      ? widgetSampleCard2.problems.length + widgetSampleCard2.more
+      : 0;
+  return (
+    <div
+      data-testid={`widget-sample-card`}
+      data-phase={widgetSampleCard2.phase}
+      role={`dialog`}
+      aria-label={`Widget proposal`}
+      className={`border-strong bg-surface-popover text-primary fixed right-4 bottom-4 z-50 flex w-[min(560px,calc(100vw-2rem))] flex-col gap-2 rounded-lg border p-3 shadow-lg`}
+    >
+      <div className={`text-footnote text-secondary flex items-center gap-2`}>
+        <span className={`font-medium`}>{`/widget`}</span>
+        <Tooltip content={widgetSampleCard2.request} multiline={true}>
+          <span className={`truncate`}>{widgetSampleCard2.request}</span>
+        </Tooltip>
+        {widgetSampleCard2.attempt > 1 && (
+          <span>
+            {`· attempt `}
+            {widgetSampleCard2.attempt}
+          </span>
+        )}
+      </div>
+      {widgetSampleCard2.phase === `generating` && (
+        <div
+          data-testid={`widget-sample-generating`}
+          className={`text-body py-2`}
+        >{`Claude is writing the widget…`}</div>
+      )}
+      {widgetSampleCard2.phase === `inserting` && (
+        <div
+          data-testid={`widget-sample-inserting`}
+          className={`text-body py-2`}
+        >{`Inserting…`}</div>
+      )}
+      {matchesPhase && (
+        <pre
+          data-testid={`widget-sample-source`}
+          className={`bg-fill-secondary text-caption max-h-[40vh] overflow-auto rounded p-2 font-mono leading-snug`}
+        >
+          {widgetSampleCard2.source}
+        </pre>
+      )}
+      {widgetSampleCard2.phase === `proposal` && (
+        <div className={`text-footnote text-secondary`}>
+          {sourcePartsCount}
+          {` lines`}
+          {widgetSampleCard2.truncated
+            ? ` · the reply hit the length limit — Try again may do better`
+            : ``}
+          {`. Nothing is added to the document until you press Insert; the document checks the code when you do.`}
+          {widgetSampleCard2.note ? (
+            <div className={`text-warning mt-1`}>{widgetSampleCard2.note}</div>
+          ) : null}
+          {widgetSampleCard2.problems && widgetSampleCard2.problems.length > 0 ? (
+            <div data-testid={`widget-sample-preflight`} className={`text-warning mt-1`}>
+              {`The document's checks will likely refuse this source as written (Insert still lets the document decide):`}
+              <WidgetSampleProblems problems={widgetSampleCard2.problems} more={0} />
+            </div>
+          ) : null}
+        </div>
+      )}
+      {widgetSampleCard2.phase === `refused` && (
+        <div data-testid={`widget-sample-refused`} className={`text-footnote`}>
+          <div className={`text-warning`}>
+            {total === 0
+              ? `The document's checks did not accept Claude's code (no details were given), so it was not inserted.`
+              : total === 1
+                ? `The document's checks found a problem in Claude's code, so it was not inserted:`
+                : `The document's checks found ${total} problems in Claude's code, so it was not inserted:`}
+          </div>
+          {total > 0 && (
+            <WidgetSampleProblems
+              problems={widgetSampleCard2.problems}
+              more={widgetSampleCard2.more}
+            />
+          )}
+          {widgetSampleCard2.note ? (
+            <div className={`text-warning mt-1`}>{widgetSampleCard2.note}</div>
+          ) : null}
+          <div className={`text-secondary mt-1`}>
+            {widgetSampleCard2.canRetry
+              ? `Try again shows Claude this code and the problems and asks for a corrected version. `
+              : ``}
+            {`Insert as draft keeps this code (`}
+            {sourcePartsCount}
+            {` `}
+            {sourcePartsCount === 1 ? `line` : `lines`}
+            {`) in the document as an unpublished draft.`}
+          </div>
+        </div>
+      )}
+      {widgetSampleCard2.phase === `failed` && (
+        <div data-testid={`widget-sample-failed`} className={`text-body py-2`}>
+          {widgetSampleCard2.words}
+        </div>
+      )}
+      <div className={`flex justify-end gap-2`}>
+        <Button
+          variant={`ghost`}
+          size={widgetSampleCardResult(`sm`)}
+          onClick={widgetSampleCard.onDiscard}
+          disabled={widgetSampleCard2.phase === `inserting`}
+        >
+          {widgetSampleCard2.phase === `refused` ? `Dismiss` : `Discard`}
+        </Button>
+        {widgetSampleCard2.phase === `refused` && (
+          <Button
+            variant={`secondary`}
+            size={widgetSampleCardResult(`sm`)}
+            onClick={widgetSampleCard.onInsertDraft}
+            data-testid={`widget-sample-insert-draft`}
+          >{`Insert as draft`}</Button>
+        )}
+        {(widgetSampleCard2.phase === `proposal` ||
+          widgetSampleCard2.phase === `failed` ||
+          widgetSampleCard2.phase === `refused`) &&
+          widgetSampleCard2.canRetry && (
+            <Button
+              variant={`secondary`}
+              size={widgetSampleCardResult(`sm`)}
+              onClick={widgetSampleCard.onRetry}
+            >{`Try again`}</Button>
+          )}
+        {widgetSampleCard2.phase === `proposal` && (
+          <Button
+            variant={`primary`}
+            size={widgetSampleCardResult(`sm`)}
+            onClick={widgetSampleCard.onInsert}
+            data-testid={`widget-sample-insert`}
+          >{`Insert`}</Button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 function isWidgetBridgeWhere(
   widgetBridgeWhere?: unknown,
@@ -377,184 +729,6 @@ function installWidgetBridgeResume(
     }
   };
   return subscribe2;
-}
-
-function FunctionRunDialog(
-  { container: container, runRef: runRef, onClose: onClose }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let runRefSlice: Dynamic = runRef.startsWith(`run:`)
-    ? runRef.slice(4)
-    : runRef;
-  let functionRunDialogResult: Dynamic = resolvePlatformApiAndAuthUseContext2();
-  let controlId: Dynamic = (0, React.useId)();
-  let functionRunDialogResult2: Dynamic = PlatformLiveDocumentAndHistoryEntries(
-    (functionRunDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      functionRunDialog.entries[controlId]?.run ?? null,
-  );
-  let functionRunDialogResult3: Dynamic = PlatformLiveDocumentAndHistoryEntries(
-    (functionRunDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      functionRunDialog.entries[controlId]?.fn ?? null,
-  );
-  let functionRunDialogResult4: Dynamic = PlatformLiveDocumentAndHistoryEntries(
-    (functionRunDialog?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      functionRunDialog.entries[controlId]?.err ?? null,
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      PlatformLiveDocumentAndHistoryEntries.getState().load(
-        controlId,
-        container,
-        runRefSlice,
-      );
-    },
-    [controlId, container, runRefSlice],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): Dynamic =>
-        PlatformLiveDocumentAndHistoryEntries.getState().release(controlId),
-    [controlId],
-  );
-  let onClick = (..._extraArguments: unknown[]): undefined => {
-    let id2: Dynamic =
-      functionRunDialogResult3 === null
-        ? undefined
-        : (functionRunDialogResult3.id ??
-          functionRunDialogResult2?.runner.name);
-    if (id2) {
-      updateDataModelSchemasPath({
-        file: `.function/${id2}`,
-      });
-    }
-    onClose();
-  };
-  let configurationEntry: Dynamic = functionRunDialogResult2
-    ? Object.entries(functionRunDialogResult2.configuration).find(
-        ([, items]: Dynamic, ..._extraArguments: unknown[]) =>
-          typeof items == `string` &&
-          items.length >= 24 &&
-          /\b(select|from)\b/i.test(items),
-      )
-    : undefined;
-  let widgetBridgeIcon: Dynamic = functionRunDialogResult3
-    ? resolveWidgetBridgeIcon(functionRunDialogResult3)
-    : [];
-  return (
-    <UiDialogsRoot.Root
-      open={true}
-      onOpenChange={(
-        functionRunDialog?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => !functionRunDialog && onClose()}
-    >
-      <UiDialogsRoot.Popup size={`md`}>
-        <UiDialogsRoot.Header
-          showClose={true}
-        >{`Sources`}</UiDialogsRoot.Header>
-        <div className={`px-lg pb-md flex flex-col gap-3`}>
-          {functionRunDialogResult4 ? (
-            <p
-              className={`text-muted text-body`}
-            >{`No run found for this card.`}</p>
-          ) : functionRunDialogResult2 ? (
-            <jsxRuntime.Fragment>
-              <UseWidgetBridgeLabelComponent label={`Run`}>
-                <UseWidgetBridgeIconComponent icon={`Play`} onClick={onClick}>
-                  {`run/`}
-                  {runRefSlice.slice(0, 4)}
-                  {`/`}
-                  {resolveWidgetBridgeIsNaN(
-                    functionRunDialogResult2.timing.endedAt,
-                    functionRunDialogResult.locale,
-                    functionRunDialogResult.timeZone,
-                  )}
-                </UseWidgetBridgeIconComponent>
-              </UseWidgetBridgeLabelComponent>
-              <UseWidgetBridgeLabelComponent label={`Inputs`}>
-                {widgetBridgeIcon.map(
-                  (
-                    widgetBridgeIcon2?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ) => (
-                    <UseWidgetBridgeIconComponent icon={widgetBridgeIcon2.icon} key={widgetBridgeIcon2.label}>{widgetBridgeIcon2.label}</UseWidgetBridgeIconComponent>
-                  ),
-                )}
-                {widgetBridgeIcon.length === 0 && (
-                  <span className={`text-muted text-[11px]`}>{`—`}</span>
-                )}
-              </UseWidgetBridgeLabelComponent>
-              {configurationEntry && (
-                <UseWidgetBridgeLabelComponent label={`Query (SQL)`}>
-                  <div className={`flex min-w-0 flex-col gap-2`}>
-                    <pre
-                      className={`text-secondary max-h-40 overflow-auto font-mono whitespace-pre-wrap`}
-                    >
-                      {String(configurationEntry[1])}
-                    </pre>
-                    <div>
-                      <UseWidgetBridgeIconComponent icon={`CodeBrackets`}>
-                        {`args.`}
-                        {configurationEntry[0]}
-                      </UseWidgetBridgeIconComponent>
-                    </div>
-                  </div>
-                </UseWidgetBridgeLabelComponent>
-              )}
-            </jsxRuntime.Fragment>
-          ) : (
-            <p className={`text-muted text-body`}>{`Loading…`}</p>
-          )}
-        </div>
-        <UiDialogsRoot.Footer align={`end`}>
-          <Button
-            variant={`secondary`}
-            disabled={!functionRunDialogResult2}
-            onClick={onClick}
-          >{`See run`}</Button>
-          <UiDialogsRoot.Close
-            render={<Button variant={`primary`}>{`Close`}</Button>}
-          />
-        </UiDialogsRoot.Footer>
-      </UiDialogsRoot.Popup>
-    </UiDialogsRoot.Root>
-  );
-}
-
-function UseWidgetBridgeLabelComponent(
-  { label: label, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div className={`flex items-start gap-4`}>
-      <div className={`text-muted text-body w-24 shrink-0 pt-0.5`}>{label}</div>
-      <div className={`flex min-w-0 flex-1 flex-wrap items-start gap-1.5`}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function UseWidgetBridgeIconComponent(
-  { icon: icon, onClick: onClick, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let className = `bg-surface-0 text-muted inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[10px]`;
-  return onClick ? (
-    <button
-      type={`button`}
-      onClick={onClick}
-      className={`${className} hover:text-secondary`}
-    >
-      <UiOverlaysAndIconsCustomIcon name={icon} customSize={10} />
-      {children}
-    </button>
-  ) : (
-    <span className={className}>
-      <UiOverlaysAndIconsCustomIcon name={icon} customSize={10} />
-      {children}
-    </span>
-  );
 }
 
 function resolveWidgetBridgeIcon(
@@ -925,195 +1099,6 @@ function resolveWidgetBridgeRule(
     ` — ` +
     error.message +
     (error.fix ? ` — fix: ` + error.fix.slice(0, 200) : ``)
-  );
-}
-
-function WidgetSampleProblems(
-  widgetSampleProblems?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let problemsSlice: Dynamic = widgetSampleProblems.problems.slice(0, 12);
-  let total: Dynamic =
-    widgetSampleProblems.problems.length -
-    problemsSlice.length +
-    widgetSampleProblems.more;
-  return (
-    <ul
-      data-testid={`widget-sample-problems`}
-      className={`text-secondary mt-1 max-h-[20vh] list-disc overflow-auto pl-5 font-mono leading-snug`}
-    >
-      {problemsSlice.map(
-        (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
-          <li key={index}>{resolveWidgetBridgeRule(item)}</li>
-        ),
-      )}
-      {total > 0 && (
-        <li>
-          {`+`}
-          {total}
-          {` more`}
-        </li>
-      )}
-    </ul>
-  );
-}
-
-function WidgetSampleCard(
-  widgetSampleCard?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let widgetSampleCardResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let { view: widgetSampleCard2 }: Dynamic = widgetSampleCard;
-  let matchesPhase =
-    widgetSampleCard2.phase === `proposal` ||
-    widgetSampleCard2.phase === `inserting` ||
-    widgetSampleCard2.phase === `refused`;
-  let sourcePartsCount: Dynamic = matchesPhase
-    ? widgetSampleCard2.source.split(`
-`).length
-    : 0;
-  let total: Dynamic =
-    widgetSampleCard2.phase === `refused`
-      ? widgetSampleCard2.problems.length + widgetSampleCard2.more
-      : 0;
-  return (
-    <div
-      data-testid={`widget-sample-card`}
-      data-phase={widgetSampleCard2.phase}
-      role={`dialog`}
-      aria-label={`Widget proposal`}
-      className={`border-strong bg-surface-popover text-primary fixed right-4 bottom-4 z-50 flex w-[min(560px,calc(100vw-2rem))] flex-col gap-2 rounded-lg border p-3 shadow-lg`}
-    >
-      <div className={`text-footnote text-secondary flex items-center gap-2`}>
-        <span className={`font-medium`}>{`/widget`}</span>
-        <Tooltip content={widgetSampleCard2.request} multiline={true}>
-          <span className={`truncate`}>{widgetSampleCard2.request}</span>
-        </Tooltip>
-        {widgetSampleCard2.attempt > 1 && (
-          <span>
-            {`· attempt `}
-            {widgetSampleCard2.attempt}
-          </span>
-        )}
-      </div>
-      {widgetSampleCard2.phase === `generating` && (
-        <div
-          data-testid={`widget-sample-generating`}
-          className={`text-body py-2`}
-        >{`Claude is writing the widget…`}</div>
-      )}
-      {widgetSampleCard2.phase === `inserting` && (
-        <div
-          data-testid={`widget-sample-inserting`}
-          className={`text-body py-2`}
-        >{`Inserting…`}</div>
-      )}
-      {matchesPhase && (
-        <pre
-          data-testid={`widget-sample-source`}
-          className={`bg-fill-secondary text-caption max-h-[40vh] overflow-auto rounded p-2 font-mono leading-snug`}
-        >
-          {widgetSampleCard2.source}
-        </pre>
-      )}
-      {widgetSampleCard2.phase === `proposal` && (
-        <div className={`text-footnote text-secondary`}>
-          {sourcePartsCount}
-          {` lines`}
-          {widgetSampleCard2.truncated
-            ? ` · the reply hit the length limit — Try again may do better`
-            : ``}
-          {`. Nothing is added to the document until you press Insert; the document checks the code when you do.`}
-          {widgetSampleCard2.note ? (
-            <div className={`text-warning mt-1`}>{widgetSampleCard2.note}</div>
-          ) : null}
-          {widgetSampleCard2.problems &&
-          widgetSampleCard2.problems.length > 0 ? (
-            <div
-              data-testid={`widget-sample-preflight`}
-              className={`text-warning mt-1`}
-            >
-              {`The document's checks will likely refuse this source as written (Insert still lets the document decide):`}
-              <WidgetSampleProblems
-                problems={widgetSampleCard2.problems}
-                more={0}
-              />
-            </div>
-          ) : null}
-        </div>
-      )}
-      {widgetSampleCard2.phase === `refused` && (
-        <div data-testid={`widget-sample-refused`} className={`text-footnote`}>
-          <div className={`text-warning`}>
-            {total === 0
-              ? `The document's checks did not accept Claude's code (no details were given), so it was not inserted.`
-              : total === 1
-                ? `The document's checks found a problem in Claude's code, so it was not inserted:`
-                : `The document's checks found ${total} problems in Claude's code, so it was not inserted:`}
-          </div>
-          {total > 0 && (
-            <WidgetSampleProblems
-              problems={widgetSampleCard2.problems}
-              more={widgetSampleCard2.more}
-            />
-          )}
-          {widgetSampleCard2.note ? (
-            <div className={`text-warning mt-1`}>{widgetSampleCard2.note}</div>
-          ) : null}
-          <div className={`text-secondary mt-1`}>
-            {widgetSampleCard2.canRetry
-              ? `Try again shows Claude this code and the problems and asks for a corrected version. `
-              : ``}
-            {`Insert as draft keeps this code (`}
-            {sourcePartsCount}
-            {` `}
-            {sourcePartsCount === 1 ? `line` : `lines`}
-            {`) in the document as an unpublished draft.`}
-          </div>
-        </div>
-      )}
-      {widgetSampleCard2.phase === `failed` && (
-        <div data-testid={`widget-sample-failed`} className={`text-body py-2`}>
-          {widgetSampleCard2.words}
-        </div>
-      )}
-      <div className={`flex justify-end gap-2`}>
-        <Button
-          variant={`ghost`}
-          size={widgetSampleCardResult(`sm`)}
-          onClick={widgetSampleCard.onDiscard}
-          disabled={widgetSampleCard2.phase === `inserting`}
-        >
-          {widgetSampleCard2.phase === `refused` ? `Dismiss` : `Discard`}
-        </Button>
-        {widgetSampleCard2.phase === `refused` && (
-          <Button
-            variant={`secondary`}
-            size={widgetSampleCardResult(`sm`)}
-            onClick={widgetSampleCard.onInsertDraft}
-            data-testid={`widget-sample-insert-draft`}
-          >{`Insert as draft`}</Button>
-        )}
-        {(widgetSampleCard2.phase === `proposal` ||
-          widgetSampleCard2.phase === `failed` ||
-          widgetSampleCard2.phase === `refused`) &&
-          widgetSampleCard2.canRetry && (
-            <Button
-              variant={`secondary`}
-              size={widgetSampleCardResult(`sm`)}
-              onClick={widgetSampleCard.onRetry}
-            >{`Try again`}</Button>
-          )}
-        {widgetSampleCard2.phase === `proposal` && (
-          <Button
-            variant={`primary`}
-            size={widgetSampleCardResult(`sm`)}
-            onClick={widgetSampleCard.onInsert}
-            data-testid={`widget-sample-insert`}
-          >{`Insert`}</Button>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -1572,44 +1557,4 @@ export function initializeWidgetBridgeWidgetSampleCardStep1(): void {
   (widgetBridgeLimit10002 = 1e3);
 }
 
-export {
-  FunctionRunDialog,
-  WidgetBridgeCode,
-  WidgetBridgeHost,
-  WidgetBridgeNonce,
-  WidgetSampleCard,
-  installWidgetBridgeResume,
-  isWidgetBridgeLastDocPos,
-  isWidgetBridgeWhere,
-  loadWidgetBridgeEnsure,
-  resolveWidgetBridgeClickX,
-  resolveWidgetBridgeCode,
-  resolveWidgetBridgeCode2,
-  resolveWidgetBridgeCode3,
-  resolveWidgetBridgeEntries,
-  resolveWidgetBridgeEntries2,
-  resolveWidgetBridgeFlatMap,
-  resolveWidgetBridgeJson,
-  resolveWidgetBridgeJson2,
-  resolveWidgetBridgeLabel,
-  resolveWidgetBridgeLineY,
-  resolveWidgetBridgeRailH,
-  resolveWidgetBridgeRailH2,
-  resolveWidgetBridgeRule,
-  resolveWidgetBridgeSlack,
-  resolveWidgetBridgeTarget,
-  resolveWidgetBridgeTest,
-  resolveWidgetBridgeValue,
-  resolveWidgetBridgeValue2,
-  resolveWidgetBridgeValue3,
-  resolveWidgetBridgeValue4,
-  updateWidgetBridgeDelete,
-  updateWidgetBridgeRef,
-  updateWidgetBridgeTop,
-  useWidgetBridgeCurrent,
-  useWidgetBridgeStickPx,
-  widgetBridgeLimit1000,
-  widgetBridgeLimit10000,
-  widgetBridgeLimit10002,
-  widgetBridgeLimit20000,
-};
+export { WidgetBridgeCode, WidgetBridgeHost, WidgetBridgeNonce, installWidgetBridgeResume, isWidgetBridgeLastDocPos, isWidgetBridgeWhere, loadWidgetBridgeEnsure, resolveWidgetBridgeClickX, resolveWidgetBridgeCode, resolveWidgetBridgeCode2, resolveWidgetBridgeCode3, resolveWidgetBridgeEntries, resolveWidgetBridgeEntries2, resolveWidgetBridgeFlatMap, resolveWidgetBridgeJson, resolveWidgetBridgeJson2, resolveWidgetBridgeLabel, resolveWidgetBridgeLineY, resolveWidgetBridgeRailH, resolveWidgetBridgeRailH2, resolveWidgetBridgeRule, resolveWidgetBridgeSlack, resolveWidgetBridgeTarget, resolveWidgetBridgeTest, resolveWidgetBridgeValue, resolveWidgetBridgeValue2, resolveWidgetBridgeValue3, resolveWidgetBridgeValue4, updateWidgetBridgeDelete, updateWidgetBridgeRef, updateWidgetBridgeTop, useWidgetBridgeCurrent, useWidgetBridgeStickPx, widgetBridgeLimit1000, widgetBridgeLimit10000, widgetBridgeLimit10002, widgetBridgeLimit20000 };

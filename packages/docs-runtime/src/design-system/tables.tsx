@@ -13,16 +13,14 @@ import {
   resolveUiOverlaysAndIconsValue4,
 } from "./dependencies";
 import { BadgeAndLinkHidden } from "./link";
+import type * as ReactComponentTypes from "react";
 
-function TablesLink(
-  {
-    Link: InputComponent,
-    linkOptions: input2,
-    "aria-current": input3,
-    ...input4
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const TablesLink: ReactComponentTypes.FC<Dynamic> = ({
+  Link: InputComponent,
+  linkOptions: input2,
+  "aria-current": input3,
+  ...input4
+}) => {
   let value: Dynamic = input4[`aria-hidden`]
     ? {
         ...input4,
@@ -32,18 +30,20 @@ function TablesLink(
   if (InputComponent) {
     let { href: value2, ...value3 }: Dynamic = value;
     return (
-      <InputComponent href={resolveUiLinksAndFoundationItContainsAControlCharacter(value2) ?? value2} {...value3} />
+      <InputComponent
+        href={resolveUiLinksAndFoundationItContainsAControlCharacter(value2) ?? value2}
+        {...value3}
+      />
     );
   }
-  return (
-    <TablesHref linkOptions={input2} aria-current={input3} {...value} />
-  );
-}
+  return <TablesHref linkOptions={input2} aria-current={input3} {...value} />;
+};
 
-function TablesHref(
-  { href: input, linkOptions: input2, ...input3 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const TablesHref: ReactComponentTypes.FC<Dynamic> = ({
+  href: input,
+  linkOptions: input2,
+  ...input3
+}) => {
   let value: Dynamic = resolveUiLinksAndFoundationHref({
     ...input2,
     href: input,
@@ -57,7 +57,7 @@ function TablesHref(
       {value3 && <BadgeAndLinkHidden id={value2} />}
     </jsxRuntime.Fragment>
   );
-}
+};
 
 function resolveTablesPreventDefault(
   event?: Dynamic,

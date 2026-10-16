@@ -36,113 +36,11 @@ import {
 import {
   asManifestObject,
 } from "./connection-pages";
+import type * as ReactComponentTypes from "react";
 
-function detectDoorDialect(
-  detectDoorDialect2?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let asManifestObject2: Dynamic = asManifestObject(
-    asManifestObject(detectDoorDialect2).door,
-  );
-  return asManifestObject2.dialect === `final` ||
-    (asManifestObject2.dialect === undefined &&
-      asManifestObject2.envelope !== undefined &&
-      asManifestObject2.envelope !== null)
-    ? `final`
-    : `legacy`;
-}
-
-var doorDialectRequest: Dynamic;
-
-var cachedDoorDialect: Dynamic;
-
-function loadDoorDialect(
-  doorDialect: Dynamic = apiFetcher,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  doorDialectRequest ??= doorDialect(`/api/v3/manifest`, {
-    method: `GET`,
-  })
-    .then(async (response?: Dynamic, ..._extraArguments: unknown[]) =>
-      response.ok ? detectDoorDialect(await response.json()) : undefined,
-    )
-    .then(
-      (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        (cachedDoorDialect ??= result),
-    )
-    .catch((..._extraArguments: unknown[]): undefined => undefined);
-  return doorDialectRequest;
-}
-
-function getDoorDialect(
-  doorDialect: Dynamic = apiFetcher,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  if (cachedDoorDialect === undefined) {
-    loadDoorDialect(doorDialect);
-  }
-  return cachedDoorDialect;
-}
-
-function setDoorDialect(
-  doorDialect?: Dynamic,
-  ..._extraArguments: unknown[]
-): undefined {
-  cachedDoorDialect = doorDialect;
-}
-
-var runReviewModule: Dynamic;
-
-var RUN_SOURCE_SURFACE_NAMES: Dynamic;
-
-var formatRunSourceSurface: Dynamic;
-
-function runSourceOf(
-  runSource?: unknown,
-  ..._extraArguments: unknown[]
-): RunSource | null {
-  let source = (runSource as { source?: unknown } | null | undefined)?.source;
-  if (typeof source != `object` || !source || Array.isArray(source))
-    return null;
-  let source2: Record<string, unknown> = source as Record<string, unknown>;
-  return typeof source2.surface != `string` ||
-    typeof source2.id != `string` ||
-    typeof source2.attested != `boolean`
-    ? null
-    : {
-        surface: source2.surface,
-        id: source2.id,
-        attested: source2.attested,
-      };
-}
-
-var sanitizeChipTitle: Dynamic;
-
-function RunSourceChip(
-  { source: source, action: action }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let runSourceSurface: Dynamic = formatRunSourceSurface(source.surface);
-  let label = action === undefined ? `from` : `${action} from`;
-  return (
-    <span
-      data-testid={`run-source-chip`}
-      title={sanitizeChipTitle(source.id)}
-      className={`bg-alpha-1 text-secondary text-caption inline-flex w-fit shrink-0 items-center gap-1 rounded px-1.5 py-0.5`}
-    >
-      {source.attested
-        ? `${label} ${runSourceSurface} ✓`
-        : action === undefined
-          ? `reported from ${runSourceSurface}`
-          : `reportedly ${label} ${runSourceSurface}`}
-    </span>
-  );
-}
-
-function DeclaredOutputsLine(
-  { outputs: outputs }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const DeclaredOutputsLine: ReactComponentTypes.FC<Dynamic> = ({
+  outputs: outputs,
+}) => {
   if (outputs.length === 0) return null;
   let lookup: Dynamic = new (Map as Dynamic)();
   let enabled = true;
@@ -156,25 +54,32 @@ function DeclaredOutputsLine(
         let enabled2 = !enabled;
         enabled = false;
         return (
-          <span key={`${item}#${lookupEntry}`}>{enabled2 && <span className={`text-secondary`}>{` · `}</span>}{<span className={`whitespace-pre-wrap`} data-testid={`review-output-target`}>
-                    {resolveDataContentAndReferencesReplace(resolvePlatformSessionAndSourcesToUpperCase(item))}
-                  </span>}</span>
+          <span key={`${item}#${lookupEntry}`}>
+            {enabled2 && <span className={`text-secondary`}>{` · `}</span>}
+            {
+              <span
+                className={`whitespace-pre-wrap`}
+                data-testid={`review-output-target`}
+              >
+                {resolveDataContentAndReferencesReplace(
+                  resolvePlatformSessionAndSourcesToUpperCase(item),
+                )}
+              </span>
+            }
+          </span>
         );
       })}
     </p>
   );
-}
+};
 
-function ApproveReviewDialog(
-  {
-    review: review,
-    busy: busy,
-    onClose: onClose,
-    onApprove: onApprove,
-    portalClassName: portalClassName,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const ApproveReviewDialog: ReactComponentTypes.FC<Dynamic> = ({
+  review: review,
+  busy: busy,
+  onClose: onClose,
+  onApprove: onApprove,
+  portalClassName: portalClassName,
+}) => {
   let source: Dynamic =
     review === null ? null : (review.source ?? runSourceOf(review.pinnedPlane));
   return (
@@ -209,9 +114,8 @@ function ApproveReviewDialog(
               ) : (
                 <span
                   title={
-                    resolvePlatformSyncAndRoutingScheduled2(
-                      review.provenance,
-                    ) || undefined
+                    resolvePlatformSyncAndRoutingScheduled2(review.provenance) ||
+                    undefined
                   }
                 >
                   {resolvePlatformSyncAndRoutingScheduled(review.provenance)}
@@ -239,9 +143,8 @@ function ApproveReviewDialog(
                   </p>
                 )}
                 {review.routine.schedule !== undefined &&
-                  (resolveDataContentAndReferencesRule(
-                    review.routine.schedule,
-                  ) === null ? (
+                  (resolveDataContentAndReferencesRule(review.routine.schedule) ===
+                  null ? (
                     <p
                       className={`text-secondary text-xs`}
                       data-testid={`review-routine-schedule`}
@@ -264,10 +167,7 @@ function ApproveReviewDialog(
                   ))}
                 {review.routine.source != null && (
                   <span data-testid={`review-routine-source`}>
-                    <RunSourceChip
-                      source={review.routine.source}
-                      action={`defined`}
-                    />
+                    <RunSourceChip source={review.routine.source} action={`defined`} />
                   </span>
                 )}
                 {review.routine.connector !== undefined &&
@@ -372,30 +272,24 @@ function ApproveReviewDialog(
                 <pre
                   className={`bg-alpha-1 max-h-40 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap`}
                 >
+                  {resolveDataContentAndReferencesReplace2(review.routine.parameters)}
+                </pre>
+              </div>
+            )}
+            {review.routine != null && review.pinnedPlane?.params !== undefined && (
+              <div className={`flex flex-col gap-1`} data-testid={`review-run-params`}>
+                <div
+                  className={`text-secondary text-xs`}
+                >{`Parameters this run carries:`}</div>
+                <pre
+                  className={`bg-alpha-1 max-h-40 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap`}
+                >
                   {resolveDataContentAndReferencesReplace2(
-                    review.routine.parameters,
+                    JSON.stringify(review.pinnedPlane.params, null, 2),
                   )}
                 </pre>
               </div>
             )}
-            {review.routine != null &&
-              review.pinnedPlane?.params !== undefined && (
-                <div
-                  className={`flex flex-col gap-1`}
-                  data-testid={`review-run-params`}
-                >
-                  <div
-                    className={`text-secondary text-xs`}
-                  >{`Parameters this run carries:`}</div>
-                  <pre
-                    className={`bg-alpha-1 max-h-40 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap`}
-                  >
-                    {resolveDataContentAndReferencesReplace2(
-                      JSON.stringify(review.pinnedPlane.params, null, 2),
-                    )}
-                  </pre>
-                </div>
-              )}
             {review.pinnedPlane === undefined ? (
               <p
                 className={`text-danger text-xs`}
@@ -417,9 +311,7 @@ function ApproveReviewDialog(
           </div>
         )}
         <UiDialogsRoot.Footer align={`end`}>
-          <UiDialogsRoot.Close
-            render={<Button disabled={busy}>{`Cancel`}</Button>}
-          />
+          <UiDialogsRoot.Close render={<Button disabled={busy}>{`Cancel`}</Button>} />
           <Button
             variant={`primary`}
             busy={busy}
@@ -437,7 +329,246 @@ function ApproveReviewDialog(
       </UiDialogsRoot.Popup>
     </UiDialogsRoot.Root>
   );
+};
+
+export const SupportReportDialog: ReactComponentTypes.FC<Dynamic> = ({
+  open: open,
+  onOpenChange: onOpenChange,
+  source: source,
+  container: container,
+}) => {
+  let initialFocus: Dynamic = (0, React.useRef)(null);
+  let [labelState, setLabelState]: Dynamic = (0, React.useState)(``);
+  let [includePageUrl, setIncludePageUrl]: Dynamic = (0, React.useState)(true);
+  let [disabled, setDisabled]: Dynamic = (0, React.useState)(false);
+  let [supportReportDialogState, setSupportReportDialogState]: Dynamic = (0,
+  React.useState)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (!open) {
+        setLabelState(``);
+        setIncludePageUrl(true);
+        setDisabled(false);
+        setSupportReportDialogState(null);
+      }
+    },
+    [open],
+  );
+  let matchesTrimmedLabelStateCount = labelState.trim().length > 0;
+  let success = async (..._extraArguments: unknown[]): Promise<undefined> => {
+    setDisabled(true);
+    setSupportReportDialogState(null);
+    try {
+      await resolvePlatformSyncAndRoutingFeedback({
+        text: labelState.trim(),
+        source: source,
+        include_page_url: includePageUrl,
+        container: container,
+      });
+      onOpenChange(false);
+      toast.success(
+        <span>
+          {`Posted to`}
+          {` `}
+          <a
+            href={SUPPORT_SLACK_URL}
+            target={`_blank`}
+            rel={`noreferrer`}
+            className={`underline underline-offset-2`}
+          >{`#bongo-feedback`}</a>
+        </span>,
+      );
+    } catch (error: Dynamic) {
+      setSupportReportDialogState(error instanceof Error ? error.message : String(error));
+    } finally {
+      setDisabled(false);
+    }
+  };
+  return (
+    <UiDialogsRoot.Root
+      open={open}
+      onOpenChange={(
+        supportReportDialog?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => !disabled && onOpenChange(supportReportDialog)}
+    >
+      <UiDialogsRoot.Popup size={`md`} initialFocus={initialFocus}>
+        <UiDialogsRoot.Header showClose={true}>{`Send feedback`}</UiDialogsRoot.Header>
+        <div className={`flex flex-col gap-3`}>
+          <TextArea
+            ref={initialFocus}
+            aria-label={`Feedback`}
+            placeholder={`What's working, what's not?`}
+            rows={5}
+            maxLength={4e3}
+            value={labelState}
+            onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              setLabelState(event.target.value);
+              if (supportReportDialogState) {
+                setSupportReportDialogState(null);
+              }
+            }}
+          />
+          <Checkbox
+            label={`Include a link to this page`}
+            checked={includePageUrl}
+            onCheckedChange={(
+              supportReportDialog?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): Dynamic => setIncludePageUrl(supportReportDialog === true)}
+          />
+          {supportReportDialogState && (
+            <p className={`text-danger text-sm`}>
+              {`Couldn't send feedback. `}
+              {supportReportDialogState}
+            </p>
+          )}
+        </div>
+        <UiDialogsRoot.Footer align={`end`}>
+          <UiDialogsRoot.Close render={<Button disabled={disabled}>{`Cancel`}</Button>} />
+          <Button
+            variant={`primary`}
+            busy={disabled}
+            disabled={!matchesTrimmedLabelStateCount || disabled}
+            onClick={(..._extraArguments: unknown[]): undefined => void success()}
+          >{`Send`}</Button>
+        </UiDialogsRoot.Footer>
+      </UiDialogsRoot.Popup>
+    </UiDialogsRoot.Root>
+  );
+};
+
+export const RunSourceChip: ReactComponentTypes.FC<Dynamic> = ({
+  source: source,
+  action: action,
+}) => {
+  let runSourceSurface: Dynamic = formatRunSourceSurface(source.surface);
+  let label = action === undefined ? `from` : `${action} from`;
+  return (
+    <span
+      data-testid={`run-source-chip`}
+      title={sanitizeChipTitle(source.id)}
+      className={`bg-alpha-1 text-secondary text-caption inline-flex w-fit shrink-0 items-center gap-1 rounded px-1.5 py-0.5`}
+    >
+      {source.attested
+        ? `${label} ${runSourceSurface} ✓`
+        : action === undefined
+          ? `reported from ${runSourceSurface}`
+          : `reportedly ${label} ${runSourceSurface}`}
+    </span>
+  );
+};
+
+export const DebugReportFloatingButton: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let debugReportFloatingButtonResult: Dynamic = useCommentsStoreUseSyncExternalStore();
+  let debugReportFloatingButtonResult2: Dynamic = resolvePlatformSyncAndRoutingValue20();
+  let debugReportFloatingButtonResult3: Dynamic =
+    debugReportFloatingButtonResult && !debugReportFloatingButtonResult2;
+  let useDebugReportContext2: Dynamic = useDebugReportContext(
+    debugReportFloatingButtonResult3,
+  );
+  return !debugReportFloatingButtonResult3 || !useDebugReportContext2 ? null : (
+    <div
+      className={`fixed right-3 bottom-3 z-30 print:hidden`}
+      data-testid={`debug-bug-fab`}
+    >
+      <Tooltip content={COPY_DEBUG_REPORT_LABEL} side={`left`}>
+        <IconButton
+          data-testid={`debug-bug-fab-button`}
+          aria-label={COPY_DEBUG_REPORT_LABEL}
+          variant={`default`}
+          size={28}
+          icon={<UiOverlaysAndIconsCustomIcon customIcon={BUG_ICON} size={`sm`} />}
+          className={DEBUG_BUTTON_REVEAL_CLASS}
+          onClick={openDebugReportDialog}
+        />
+      </Tooltip>
+    </div>
+  );
+};
+
+function detectDoorDialect(
+  detectDoorDialect2?: Dynamic,
+  ..._extraArguments: unknown[]
+) {
+  let asManifestObject2: Dynamic = asManifestObject(
+    asManifestObject(detectDoorDialect2).door,
+  );
+  return asManifestObject2.dialect === `final` ||
+    (asManifestObject2.dialect === undefined &&
+      asManifestObject2.envelope !== undefined &&
+      asManifestObject2.envelope !== null)
+    ? `final`
+    : `legacy`;
 }
+
+var doorDialectRequest: Dynamic;
+
+var cachedDoorDialect: Dynamic;
+
+function loadDoorDialect(
+  doorDialect: Dynamic = apiFetcher,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  doorDialectRequest ??= doorDialect(`/api/v3/manifest`, {
+    method: `GET`,
+  })
+    .then(async (response?: Dynamic, ..._extraArguments: unknown[]) =>
+      response.ok ? detectDoorDialect(await response.json()) : undefined,
+    )
+    .then(
+      (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        (cachedDoorDialect ??= result),
+    )
+    .catch((..._extraArguments: unknown[]): undefined => undefined);
+  return doorDialectRequest;
+}
+
+function getDoorDialect(
+  doorDialect: Dynamic = apiFetcher,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  if (cachedDoorDialect === undefined) {
+    loadDoorDialect(doorDialect);
+  }
+  return cachedDoorDialect;
+}
+
+function setDoorDialect(
+  doorDialect?: Dynamic,
+  ..._extraArguments: unknown[]
+): undefined {
+  cachedDoorDialect = doorDialect;
+}
+
+var runReviewModule: Dynamic;
+
+var RUN_SOURCE_SURFACE_NAMES: Dynamic;
+
+var formatRunSourceSurface: Dynamic;
+
+function runSourceOf(
+  runSource?: unknown,
+  ..._extraArguments: unknown[]
+): RunSource | null {
+  let source = (runSource as { source?: unknown } | null | undefined)?.source;
+  if (typeof source != `object` || !source || Array.isArray(source))
+    return null;
+  let source2: Record<string, unknown> = source as Record<string, unknown>;
+  return typeof source2.surface != `string` ||
+    typeof source2.id != `string` ||
+    typeof source2.attested != `boolean`
+    ? null
+    : {
+        surface: source2.surface,
+        id: source2.id,
+        attested: source2.attested,
+      };
+}
+
+var sanitizeChipTitle: Dynamic;
 
 var IconButtonBase: Dynamic;
 
@@ -492,162 +623,7 @@ function useDebugReportContext(
   return hasDebugReportContextState || hasDebugReportContext();
 }
 
-function DebugReportFloatingButton(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  let debugReportFloatingButtonResult: Dynamic =
-    useCommentsStoreUseSyncExternalStore();
-  let debugReportFloatingButtonResult2: Dynamic =
-    resolvePlatformSyncAndRoutingValue20();
-  let debugReportFloatingButtonResult3: Dynamic =
-    debugReportFloatingButtonResult && !debugReportFloatingButtonResult2;
-  let useDebugReportContext2: Dynamic = useDebugReportContext(
-    debugReportFloatingButtonResult3,
-  );
-  return !debugReportFloatingButtonResult3 || !useDebugReportContext2 ? null : (
-    <div
-      className={`fixed right-3 bottom-3 z-30 print:hidden`}
-      data-testid={`debug-bug-fab`}
-    >
-      <Tooltip content={COPY_DEBUG_REPORT_LABEL} side={`left`}>
-        <IconButton
-          data-testid={`debug-bug-fab-button`}
-          aria-label={COPY_DEBUG_REPORT_LABEL}
-          variant={`default`}
-          size={28}
-          icon={
-            <UiOverlaysAndIconsCustomIcon customIcon={BUG_ICON} size={`sm`} />
-          }
-          className={DEBUG_BUTTON_REVEAL_CLASS}
-          onClick={openDebugReportDialog}
-        />
-      </Tooltip>
-    </div>
-  );
-}
-
 var SUPPORT_SLACK_URL: string;
-
-function SupportReportDialog(
-  {
-    open: open,
-    onOpenChange: onOpenChange,
-    source: source,
-    container: container,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let initialFocus: Dynamic = (0, React.useRef)(null);
-  let [labelState, setLabelState]: Dynamic = (0, React.useState)(``);
-  let [includePageUrl, setIncludePageUrl]: Dynamic = (0, React.useState)(true);
-  let [disabled, setDisabled]: Dynamic = (0, React.useState)(false);
-  let [supportReportDialogState, setSupportReportDialogState]: Dynamic = (0,
-  React.useState)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (!open) {
-        setLabelState(``);
-        setIncludePageUrl(true);
-        setDisabled(false);
-        setSupportReportDialogState(null);
-      }
-    },
-    [open],
-  );
-  let matchesTrimmedLabelStateCount = labelState.trim().length > 0;
-  let success = async (..._extraArguments: unknown[]): Promise<undefined> => {
-    setDisabled(true);
-    setSupportReportDialogState(null);
-    try {
-      await resolvePlatformSyncAndRoutingFeedback({
-        text: labelState.trim(),
-        source: source,
-        include_page_url: includePageUrl,
-        container: container,
-      });
-      onOpenChange(false);
-      toast.success(
-        <span>
-          {`Posted to`}
-          {` `}
-          <a
-            href={SUPPORT_SLACK_URL}
-            target={`_blank`}
-            rel={`noreferrer`}
-            className={`underline underline-offset-2`}
-          >{`#bongo-feedback`}</a>
-        </span>,
-      );
-    } catch (error: Dynamic) {
-      setSupportReportDialogState(
-        error instanceof Error ? error.message : String(error),
-      );
-    } finally {
-      setDisabled(false);
-    }
-  };
-  return (
-    <UiDialogsRoot.Root
-      open={open}
-      onOpenChange={(
-        supportReportDialog?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => !disabled && onOpenChange(supportReportDialog)}
-    >
-      <UiDialogsRoot.Popup size={`md`} initialFocus={initialFocus}>
-        <UiDialogsRoot.Header
-          showClose={true}
-        >{`Send feedback`}</UiDialogsRoot.Header>
-        <div className={`flex flex-col gap-3`}>
-          <TextArea
-            ref={initialFocus}
-            aria-label={`Feedback`}
-            placeholder={`What's working, what's not?`}
-            rows={5}
-            maxLength={4e3}
-            value={labelState}
-            onChange={(
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              setLabelState(event.target.value);
-              if (supportReportDialogState) {
-                setSupportReportDialogState(null);
-              }
-            }}
-          />
-          <Checkbox
-            label={`Include a link to this page`}
-            checked={includePageUrl}
-            onCheckedChange={(
-              supportReportDialog?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => setIncludePageUrl(supportReportDialog === true)}
-          />
-          {supportReportDialogState && (
-            <p className={`text-danger text-sm`}>
-              {`Couldn't send feedback. `}
-              {supportReportDialogState}
-            </p>
-          )}
-        </div>
-        <UiDialogsRoot.Footer align={`end`}>
-          <UiDialogsRoot.Close
-            render={<Button disabled={disabled}>{`Cancel`}</Button>}
-          />
-          <Button
-            variant={`primary`}
-            busy={disabled}
-            disabled={!matchesTrimmedLabelStateCount || disabled}
-            onClick={(..._extraArguments: unknown[]): undefined =>
-              void success()
-            }
-          >{`Send`}</Button>
-        </UiDialogsRoot.Footer>
-      </UiDialogsRoot.Popup>
-    </UiDialogsRoot.Root>
-  );
-}
 
 var DOC_FONTS_FEATURE: string;
 
@@ -805,22 +781,4 @@ export function initializeRunReviewStep1(): void {
     !Array.isArray(fontSettingsObject));
 }
 
-export {
-  BUG_ICON,
-  DEFAULT_DOCUMENT_FONTS,
-  DISPLAY_PROPERTY,
-  DOC_FONTS_FEATURE,
-  DebugReportFloatingButton,
-  HEADING_FONT_PROPERTY,
-  IconButton,
-  RunSourceChip,
-  SUPPORT_SLACK_URL,
-  SupportReportDialog,
-  TEXT_FONT_PROPERTY,
-  UntippedIconButton,
-  getDoorDialect,
-  isFontSettingsObject,
-  runReviewModule,
-  runSourceOf,
-  setDoorDialect,
-};
+export { BUG_ICON, DEFAULT_DOCUMENT_FONTS, DISPLAY_PROPERTY, DOC_FONTS_FEATURE, HEADING_FONT_PROPERTY, IconButton, SUPPORT_SLACK_URL, TEXT_FONT_PROPERTY, UntippedIconButton, getDoorDialect, isFontSettingsObject, runReviewModule, runSourceOf, setDoorDialect };

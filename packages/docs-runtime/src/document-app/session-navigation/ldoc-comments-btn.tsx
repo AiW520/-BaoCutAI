@@ -42,26 +42,14 @@ import {
 import {
   resolveSessionNavigationThen3,
 } from "./create-file-placement-waiter";
+import type * as ReactComponentTypes from "react";
 
-var SessionNavigationDefault: Dynamic;
-
-var SessionNavigationDefault2: Dynamic;
-
-var SessionNavigationState4: Dynamic;
-
-var SessionNavigationPanel: Dynamic;
-
-var SessionNavigationNodeId: Dynamic;
-
-function LdocCommentsBtn(
-  {
-    fileId: fileId,
-    embed = false,
-    narrow = false,
-    blockedReason: blockedReason,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const LdocCommentsBtn: ReactComponentTypes.FC<Dynamic> = ({
+  fileId: fileId,
+  embed = false,
+  narrow = false,
+  blockedReason: blockedReason,
+}) => {
   let mode: Dynamic = useCommentStore(
     (ldocCommentsBtn?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
       ldocCommentsBtn.commentMode,
@@ -69,8 +57,8 @@ function LdocCommentsBtn(
   let Count: Dynamic = useThreads(fileId).length;
   let reason: Dynamic = PlatformSyncAndRoutingAssign2(
     (ldocCommentsBtn?: Dynamic, ..._extraArguments: unknown[]) =>
-      isPlatformLiveDocumentAndHistoryKind(ldocCommentsBtn.preview, true)
-        .kind === `pinned`,
+      isPlatformLiveDocumentAndHistoryKind(ldocCommentsBtn.preview, true).kind ===
+      `pinned`,
   )
     ? `Comments aren't available for this view`
     : blockedReason;
@@ -97,11 +85,10 @@ function LdocCommentsBtn(
           onClick={(..._extraArguments: unknown[]): undefined => {
             let storeState: Dynamic = useCommentStore.getState();
             if (embed) {
-              let { next: ldocCommentsBtnResult2 }: Dynamic =
-                resolveCommentsEditorLabel({
-                  mode: storeState.commentMode,
-                  narrow: narrow,
-                });
+              let { next: ldocCommentsBtnResult2 }: Dynamic = resolveCommentsEditorLabel({
+                mode: storeState.commentMode,
+                narrow: narrow,
+              });
               if (ldocCommentsBtnResult2 === `hidden`) {
                 storeState.setDraftAnchor(null);
                 storeState.setDraftY(null);
@@ -143,12 +130,11 @@ function LdocCommentsBtn(
       </Tooltip>
     </DisabledReasonTooltip>
   );
-}
+};
 
-function RoomviewEmbedCommentsSeat(
-  { fileId: fileId }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const RoomviewEmbedCommentsSeat: ReactComponentTypes.FC<Dynamic> = ({
+  fileId: fileId,
+}) => {
   let drafting: Dynamic = useCommentStore(
     (roomviewEmbedCommentsSeat?: Dynamic, ..._extraArguments: unknown[]) =>
       roomviewEmbedCommentsSeat.draftAnchor !== null ||
@@ -157,9 +143,7 @@ function RoomviewEmbedCommentsSeat(
   let elementRef: Dynamic = (0, React.useRef)(null);
   let [narrow, setNarrow]: Dynamic = (0, React.useState)(false);
   (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let closest: Dynamic = elementRef.current?.closest(
-      `[data-testid="roomview-embed"]`,
-    );
+    let closest: Dynamic = elementRef.current?.closest(`[data-testid="roomview-embed"]`);
     if (!closest) return;
     let resizeObserver = new ResizeObserver(
       (
@@ -184,11 +168,7 @@ function RoomviewEmbedCommentsSeat(
     return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
   }, []);
   return (
-    <div
-      ref={elementRef}
-      className={`flex`}
-      data-testid={`roomview-embed-comments-seat`}
-    >
+    <div ref={elementRef} className={`flex`} data-testid={`roomview-embed-comments-seat`}>
       <LdocCommentsBtn
         fileId={fileId}
         embed={true}
@@ -201,7 +181,74 @@ function RoomviewEmbedCommentsSeat(
       />
     </div>
   );
-}
+};
+
+export const HistoryRailUnavailable: ReactComponentTypes.FC<Dynamic> = ({
+  besideBar: besideBar,
+}) => {
+  return (
+    <div
+      className={
+        besideBar
+          ? `bg-surface-panel text-secondary text-footnote flex h-full w-80 shrink-0 items-start border-l p-4`
+          : `text-secondary text-footnote flex w-80 shrink-0 items-start border-l p-4`
+      }
+      data-testid={`history-rail-unavailable`}
+    >
+      {resolveSessionNavigationValue4(`version history`)}
+    </div>
+  );
+};
+
+export const RoutineEditorUnavailable: ReactComponentTypes.FC<unknown | undefined> = (
+  routineEditorUnavailable,
+) => {
+  return (
+    <div
+      className={`text-muted text-body p-lg`}
+      data-testid={`routine-editor-unavailable`}
+    >
+      {resolveSessionNavigationValue4(`this routine`)}
+    </div>
+  );
+};
+
+export const UseSessionNavigationWhatComponent: ReactComponentTypes.FC<Dynamic> = ({
+  what: what,
+  onClose: onClose,
+  testId: testId,
+}) => {
+  let useSessionNavigationWhatResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  return (
+    <div
+      className={`bg-surface-popover border-strong text-secondary text-footnote z-popover rounded-card fixed top-1/3 left-1/2 flex w-max max-w-sm -translate-x-1/2 items-start gap-2 border p-3 shadow-xl`}
+      role={`alertdialog`}
+      data-testid={testId}
+    >
+      <span className={`min-w-0 flex-1`}>{resolveSessionNavigationValue4(what)}</span>
+      {onClose && (
+        <Button
+          size={useSessionNavigationWhatResult(`sm`)}
+          variant={`ghost`}
+          onClick={onClose}
+          aria-label={`Dismiss`}
+        >
+          <UiOverlaysAndIconsCustomIcon name={`X`} size={`xs`} />
+        </Button>
+      )}
+    </div>
+  );
+};
+
+var SessionNavigationDefault: Dynamic;
+
+var SessionNavigationDefault2: Dynamic;
+
+var SessionNavigationState4: Dynamic;
+
+var SessionNavigationPanel: Dynamic;
+
+var SessionNavigationNodeId: Dynamic;
 
 var SessionNavigationThen: Dynamic;
 
@@ -222,38 +269,6 @@ var sessionNavigationLimit4: number;
 var SessionNavigation_TheTabYouWereOnHasBeenDeletedOrIsNoLongerAvailable: string;
 
 var resolveSessionNavigationValue4: (sessionNavigationValue4?: Dynamic, ..._extraArguments: unknown[]) => string;
-
-function HistoryRailUnavailable(
-  { besideBar: besideBar }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={
-        besideBar
-          ? `bg-surface-panel text-secondary text-footnote flex h-full w-80 shrink-0 items-start border-l p-4`
-          : `text-secondary text-footnote flex w-80 shrink-0 items-start border-l p-4`
-      }
-      data-testid={`history-rail-unavailable`}
-    >
-      {resolveSessionNavigationValue4(`version history`)}
-    </div>
-  );
-}
-
-function RoutineEditorUnavailable(
-  routineEditorUnavailable?: unknown,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <div
-      className={`text-muted text-body p-lg`}
-      data-testid={`routine-editor-unavailable`}
-    >
-      {resolveSessionNavigationValue4(`this routine`)}
-    </div>
-  );
-}
 
 function useSessionNavigationOpen(
   { open: open, onOpenChange: onOpenChange }: Dynamic,
@@ -281,35 +296,6 @@ function useSessionNavigationReview(
       testId={`approve-review-unavailable`}
     />
   ) : null;
-}
-
-function UseSessionNavigationWhatComponent(
-  { what: what, onClose: onClose, testId: testId }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let useSessionNavigationWhatResult: Dynamic =
-    resolvePlatformSyncAndRoutingCompact();
-  return (
-    <div
-      className={`bg-surface-popover border-strong text-secondary text-footnote z-popover rounded-card fixed top-1/3 left-1/2 flex w-max max-w-sm -translate-x-1/2 items-start gap-2 border p-3 shadow-xl`}
-      role={`alertdialog`}
-      data-testid={testId}
-    >
-      <span className={`min-w-0 flex-1`}>
-        {resolveSessionNavigationValue4(what)}
-      </span>
-      {onClose && (
-        <Button
-          size={useSessionNavigationWhatResult(`sm`)}
-          variant={`ghost`}
-          onClick={onClose}
-          aria-label={`Dismiss`}
-        >
-          <UiOverlaysAndIconsCustomIcon name={`X`} size={`xs`} />
-        </Button>
-      )}
-    </div>
-  );
 }
 
 var SessionNavigationThen3: Dynamic;
@@ -651,29 +637,4 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
     }));
 }
 
-export {
-  LdocCommentsBtn,
-  RoomviewEmbedCommentsSeat,
-  SessionNavigationDefault,
-  SessionNavigationDefault2,
-  SessionNavigationDefault3,
-  SessionNavigationDefault4,
-  SessionNavigationDocLanguageDialog,
-  SessionNavigationNodeId,
-  SessionNavigationPanel,
-  SessionNavigationRightRail,
-  SessionNavigationState4,
-  SessionNavigationThen,
-  SessionNavigationThen2,
-  SessionNavigationThen3,
-  SessionNavigationThen4,
-  SessionNavigationThen5,
-  SessionNavigation_TheTabYouWereOnHasBeenDeletedOrIsNoLongerAvailable,
-  resolveSessionNavigationClosest,
-  resolveSessionNavigationFrame2,
-  resolveSessionNavigationMatches,
-  resolveSessionNavigationPath,
-  resolveSessionNavigationValue5,
-  sessionNavigationLimit20002,
-  sessionNavigationLimit4,
-};
+export { SessionNavigationDefault, SessionNavigationDefault2, SessionNavigationDefault3, SessionNavigationDefault4, SessionNavigationDocLanguageDialog, SessionNavigationNodeId, SessionNavigationPanel, SessionNavigationRightRail, SessionNavigationState4, SessionNavigationThen, SessionNavigationThen2, SessionNavigationThen3, SessionNavigationThen4, SessionNavigationThen5, SessionNavigation_TheTabYouWereOnHasBeenDeletedOrIsNoLongerAvailable, resolveSessionNavigationClosest, resolveSessionNavigationFrame2, resolveSessionNavigationMatches, resolveSessionNavigationPath, resolveSessionNavigationValue5, sessionNavigationLimit20002, sessionNavigationLimit4 };

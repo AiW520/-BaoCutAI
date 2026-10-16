@@ -45,33 +45,18 @@ import {
   DocumentSelection_Message,
   DocumentSelection_NotAvailableAtTheCursor,
 } from "../document-selection/create-heading-normalization-plugin";
+import type * as ReactComponentTypes from "react";
 
-var DocumentTabs_Styles: string;
-
-function PagebarSeparator(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  return (
-    <span
-      aria-hidden={`true`}
-      className={`bg-border mx-0.5 h-4.5 w-px shrink-0 self-center`}
-    />
-  );
-}
-
-function PagebarMenuSection(
-  {
-    label: label,
-    leading: leading,
-    children: children,
-    trailing: trailing,
-    density = `compact`,
-    readOnly = false,
-    rule = true,
-    "data-testid": dataTestid,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const PagebarMenuSection: ReactComponentTypes.FC<Dynamic> = ({
+  label: label,
+  leading: leading,
+  children: children,
+  trailing: trailing,
+  density = `compact`,
+  readOnly = false,
+  rule = true,
+  "data-testid": dataTestid,
+}) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
   let {
     ref: pagebarMenuSectionResult,
@@ -79,10 +64,7 @@ function PagebarMenuSection(
     onFocus: onFocus,
   }: Dynamic = useRovingToolbar();
   let pagebarMenuSectionResult2: Dynamic = (0, React.useCallback)(
-    (
-      pagebarMenuSection?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
+    (pagebarMenuSection?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       elementRef.current = pagebarMenuSection;
       pagebarMenuSectionResult(pagebarMenuSection);
     },
@@ -125,11 +107,25 @@ function PagebarMenuSection(
     <UiProviderAndLayersDensity
       density={density}
       render={
-        <header ref={pagebarMenuSectionResult2} role={`toolbar`} aria-label={label} tabIndex={-1} {...enabledState ? {
-  role: `none`,
-  "aria-label": undefined,
-  tabIndex: undefined
-} : null} onKeyDown={onKeyDown} onFocus={onFocus} data-testid={dataTestid} data-collapsed={enabledState2 ? `` : undefined} data-rule={rule ? `` : undefined} className={`tb-root flex h-10 shrink-0 items-center gap-1 px-1 pointer-coarse:h-12 pointer-coarse:gap-1.5 pointer-coarse:px-2`} />
+        <header
+          ref={pagebarMenuSectionResult2}
+          role={`toolbar`}
+          aria-label={label}
+          tabIndex={-1}
+          {...(enabledState
+            ? {
+                role: `none`,
+                "aria-label": undefined,
+                tabIndex: undefined,
+              }
+            : null)}
+          onKeyDown={onKeyDown}
+          onFocus={onFocus}
+          data-testid={dataTestid}
+          data-collapsed={enabledState2 ? `` : undefined}
+          data-rule={rule ? `` : undefined}
+          className={`tb-root flex h-10 shrink-0 items-center gap-1 px-1 pointer-coarse:h-12 pointer-coarse:gap-1.5 pointer-coarse:px-2`}
+        />
       }
     >
       <TooltipGroup>
@@ -161,29 +157,11 @@ function PagebarMenuSection(
       </TooltipGroup>
     </UiProviderAndLayersDensity>
   );
-}
+};
 
-function canClosePagebarOnFocusLeave(
-  ref?: Dynamic,
-  ref2?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (..._extraArguments: unknown[]) => {
-    let ownerDocument: Dynamic = ref.current?.ownerDocument ?? document;
-    let activeElement: Dynamic = ownerDocument.activeElement;
-    return !(
-      activeElement !== null &&
-      activeElement !== ownerDocument.body &&
-      !(ref.current?.contains(activeElement) ?? false) &&
-      !(ref2?.current?.contains(activeElement) ?? false)
-    );
-  };
-}
-
-function PagebarMenuTrigger(
-  pagebarMenuTrigger?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
+export const PagebarMenuTrigger: ReactComponentTypes.FC<Dynamic> = (
+  pagebarMenuTrigger,
+) => {
   let {
     label: ariaLabel,
     tip: tip,
@@ -213,8 +191,7 @@ function PagebarMenuTrigger(
   let finalFocus: Dynamic =
     typeof canClosePagebarOnFocusLeave2 == `function`
       ? (..._extraArguments: unknown[]): Dynamic => {
-          let canClosePagebarOnFocusLeave3: Dynamic =
-            canClosePagebarOnFocusLeave2();
+          let canClosePagebarOnFocusLeave3: Dynamic = canClosePagebarOnFocusLeave2();
           if (canClosePagebarOnFocusLeave3 && !disabled) {
             setEnabledState2(true);
           }
@@ -223,19 +200,16 @@ function PagebarMenuTrigger(
       : canClosePagebarOnFocusLeave2;
   let icon: Dynamic = pagebarMenuTrigger.icon ?? pagebarMenuTrigger.glyph;
   let name: Dynamic =
-    pagebarMenuTrigger.readout === undefined ||
-    pagebarMenuTrigger.readout === ``
+    pagebarMenuTrigger.readout === undefined || pagebarMenuTrigger.readout === ``
       ? ariaLabel
       : pagebarMenuTrigger.readout + `, ` + ariaLabel;
-  let disabledTabActionAccessibility2: Dynamic = disabledTabActionAccessibility(
-    {
-      disabled: disabled,
-      name: name,
-      reason: disabledTip ?? tip,
-      expanded: false,
-      hasPopup: `menu`,
-    },
-  );
+  let disabledTabActionAccessibility2: Dynamic = disabledTabActionAccessibility({
+    disabled: disabled,
+    name: name,
+    reason: disabledTip ?? tip,
+    expanded: false,
+    hasPopup: `menu`,
+  });
   let jsx =
     pagebarMenuTrigger.readout === undefined ? (
       <Menu.Trigger
@@ -261,7 +235,10 @@ function PagebarMenuTrigger(
               {...disabledTabActionAccessibility2.inner}
               data-testid={dataTestid}
               className={`shrink-0`}
-            >{useContext || pagebarMenuTrigger.iconOnly === true ? null : ariaLabel}{pagebarMenuTrigger.caret === true ? <TabCaretIcon /> : null}</Button>
+            >
+              {useContext || pagebarMenuTrigger.iconOnly === true ? null : ariaLabel}
+              {pagebarMenuTrigger.caret === true ? <TabCaretIcon /> : null}
+            </Button>
           )
         }
       />
@@ -275,7 +252,10 @@ function PagebarMenuTrigger(
             {...disabledTabActionAccessibility2.inner}
             data-testid={dataTestid}
             className={`shrink-0 tabular-nums`}
-          >{pagebarMenuTrigger.readout}{<TabCaretIcon />}</Button>
+          >
+            {pagebarMenuTrigger.readout}
+            {<TabCaretIcon />}
+          </Button>
         }
       />
     );
@@ -323,18 +303,53 @@ function PagebarMenuTrigger(
         shortcut={disabled ? undefined : pagebarMenuTrigger2}
         side={side}
         hoverable={false}
-        open={
-          !disabled && (pagebarMenuTrigger8 || enabledState2)
-            ? false
-            : undefined
-        }
+        open={!disabled && (pagebarMenuTrigger8 || enabledState2) ? false : undefined}
       >
-        <span ref={elementRef} tabIndex={disabled ? 0 : undefined} {...disabledTabActionAccessibility2.props} onPointerEnter={enabledState2 ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(false) : undefined} onBlur={enabledState2 ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(false) : undefined} onFocus={enabledState2 ? (pagebarMenuTrigger9?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  let relatedTarget: Dynamic = pagebarMenuTrigger9.relatedTarget;
-  if (relatedTarget && relatedTarget.isConnected && !elementRef2.current?.contains(relatedTarget) && !elementRef.current?.contains(relatedTarget)) {
-    setEnabledState2(false);
-  }
-} : undefined} data-tb-icon={pagebarMenuTrigger.readout === undefined && pagebarMenuTrigger.caret !== true && (useContext || pagebarMenuTrigger.iconOnly === true) ? `` : undefined} data-tb-readout={pagebarMenuTrigger.readout === undefined ? undefined : ``} className={className}>{jsx}{disabledTabActionAccessibility2.mirror}</span>
+        <span
+          ref={elementRef}
+          tabIndex={disabled ? 0 : undefined}
+          {...disabledTabActionAccessibility2.props}
+          onPointerEnter={
+            enabledState2
+              ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(false)
+              : undefined
+          }
+          onBlur={
+            enabledState2
+              ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(false)
+              : undefined
+          }
+          onFocus={
+            enabledState2
+              ? (
+                  pagebarMenuTrigger9?: Dynamic,
+                  ..._extraArguments: unknown[]
+                ): undefined => {
+                  let relatedTarget: Dynamic = pagebarMenuTrigger9.relatedTarget;
+                  if (
+                    relatedTarget &&
+                    relatedTarget.isConnected &&
+                    !elementRef2.current?.contains(relatedTarget) &&
+                    !elementRef.current?.contains(relatedTarget)
+                  ) {
+                    setEnabledState2(false);
+                  }
+                }
+              : undefined
+          }
+          data-tb-icon={
+            pagebarMenuTrigger.readout === undefined &&
+            pagebarMenuTrigger.caret !== true &&
+            (useContext || pagebarMenuTrigger.iconOnly === true)
+              ? ``
+              : undefined
+          }
+          data-tb-readout={pagebarMenuTrigger.readout === undefined ? undefined : ``}
+          className={className}
+        >
+          {jsx}
+          {disabledTabActionAccessibility2.mirror}
+        </span>
       </Tooltip>
       <Menu.Popup
         ref={elementRef2}
@@ -347,6 +362,496 @@ function PagebarMenuTrigger(
       </Menu.Popup>
     </Menu.Root>
   );
+};
+
+export const PagebarStrip: ReactComponentTypes.FC<Dynamic> = ({
+  items: items,
+  moreLabel = `More`,
+  footer = null,
+  onMenuClose: onMenuClose,
+}) => {
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let enabledRef: Dynamic = (0, React.useRef)(false);
+  let [amountState, setAmountState]: Dynamic = (0, React.useState)(1 / 0);
+  (0, React.useLayoutEffect)((..._extraArguments: unknown[]): Dynamic => {
+    let element: Dynamic = elementRef.current;
+    if (!element) return;
+    let setAmountState2 = (..._extraArguments: unknown[]): undefined => {
+      setAmountState(element.clientWidth > 0 ? element.clientWidth : 1 / 0);
+    };
+    setAmountState2();
+    if (typeof ResizeObserver === "undefined") return;
+    let resizeObserver = new ResizeObserver(setAmountState2);
+    resizeObserver.observe(element);
+    return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
+  }, []);
+  let matchesFooter = footer != null && footer !== false;
+  let documentTabsValue2: Dynamic = resolveDocumentTabsValue2(
+    resolveUiProviderAndLayersUseContext2() === `comfortable`,
+  );
+  let resolveDocumentTabsReduce2: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      resolveDocumentTabsReduce(items, amountState, matchesFooter, documentTabsValue2),
+    [items, amountState, matchesFooter, documentTabsValue2],
+  );
+  let { shown: filterDocumentTabsShown2, folded: filterDocumentTabsShown3 }: Dynamic = (0,
+  React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      filterDocumentTabsShown(items, resolveDocumentTabsReduce2),
+    [items, resolveDocumentTabsReduce2],
+  );
+  return (
+    <div
+      ref={elementRef}
+      className={`relative flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-clip pointer-coarse:gap-1.5`}
+      data-testid={`pagebar-strip`}
+      data-folded={filterDocumentTabsShown3.length || undefined}
+    >
+      {filterDocumentTabsShown2.map((event?: Dynamic, ..._extraArguments: unknown[]) => (
+        <span className={`contents`} key={event.key}>
+          {event.node}
+        </span>
+      ))}
+      {filterDocumentTabsShown3.length > 0 || matchesFooter ? (
+        <span
+          className={`contents`}
+          onPointerDownCapture={(..._extraArguments: unknown[]): undefined => {
+            enabledRef.current = true;
+          }}
+          onKeyDownCapture={(
+            event?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            if (event.currentTarget.contains(event.target)) {
+              enabledRef.current = false;
+            }
+          }}
+        >
+          <PagebarMenuTrigger
+            icon={`DotsHorizontal`}
+            label={moreLabel}
+            iconOnly={true}
+            tip={moreLabel}
+            align={`end`}
+            data-testid={`pagebar-more`}
+            onOpenChange={(
+              pagebarStrip?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): undefined => {
+              if (!pagebarStrip && enabledRef.current) {
+                onMenuClose?.();
+              }
+            }}
+          >
+            {filterDocumentTabsShown3.map(
+              (event?: Dynamic, ..._extraArguments: unknown[]) => (
+                <span className={`contents`} key={event.key}>
+                  {event.row}
+                </span>
+              ),
+            )}
+            {filterDocumentTabsShown3.length > 0 && matchesFooter ? (
+              <Menu.Separator />
+            ) : null}
+            {matchesFooter ? footer : null}
+          </PagebarMenuTrigger>
+        </span>
+      ) : null}
+    </div>
+  );
+};
+
+export const Pagebar: ReactComponentTypes.FC<Dynamic> = ({
+  tabs: tabs,
+  pageSkill: pageSkill,
+  docFont: docFont,
+  docLayout: docLayout,
+  status: status,
+  posture: posture,
+  surface: surface,
+  preview: preview,
+  image: image,
+  format: format,
+  onCommand: onCommand,
+  onMenuClose: onMenuClose,
+}) => {
+  let scrolled: Dynamic = DocumentSelectionState(
+    (pagebar?: Dynamic, ..._extraArguments: unknown[]): Dynamic => pagebar.scrolled,
+  );
+  let panel: Dynamic = DocumentSelectionState(
+    (pagebar?: Dynamic, ..._extraArguments: unknown[]): Dynamic => pagebar.panel,
+  );
+  let documentTabsEditable = resolveDocumentTabsEditable(format);
+  let matchesDocumentTabsEditable = documentTabsEditable === null;
+  let rail: Dynamic = resolvePlatformLiveDocumentAndHistoryRail();
+  let useDocumentTabsVia2: Dynamic = useDocumentTabsVia();
+  let matchesCondition = useUiProviderAndLayersComfortable(`compact`) === `comfortable`;
+  let width = matchesCondition ? 32 : 24;
+  let width2 = matchesCondition ? 52 : 40;
+  let keySeat: Dynamic = (pagebar?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+    onCommand(pagebar, useDocumentTabsVia2.via(), useDocumentTabsVia2.keySeat());
+  let record: Dynamic = {
+    onOpenChange: (pagebar?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (!pagebar && useDocumentTabsVia2.via() === `pointer`) {
+        onMenuClose();
+      }
+    },
+  };
+  let pagebarHandler: Dynamic = (pagebar?: Dynamic, ..._extraArguments: unknown[]) =>
+    !matchesDocumentTabsEditable || format === null
+      ? {
+          disabled: true,
+          tip: documentTabsEditable ?? undefined,
+        }
+      : format.inserts.includes(pagebar)
+        ? {
+            disabled: false,
+            tip: undefined,
+          }
+        : {
+            disabled: true,
+            tip: DocumentSelection_NotAvailableAtTheCursor,
+          };
+  let pagebarHandler2: Dynamic = (
+    pagebar?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Dynamic =>
+    pagebar.k === `insert`
+      ? pagebarHandler(pagebar.id)
+      : {
+          disabled: !matchesDocumentTabsEditable,
+          tip: documentTabsEditable ?? undefined,
+        };
+  let resolveDocumentTabsValue7: Dynamic = (
+    key?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Dynamic => {
+    let DocumentSelectionLabel42: Dynamic = DocumentSelectionLabel4.find(
+      (DocumentSelectionLabel43?: Dynamic, ..._extraArguments: unknown[]) =>
+        DocumentSelectionLabel43.id === key,
+    );
+    let pagebarHandler5: Dynamic = pagebarHandler2(DocumentSelectionLabel42.cmd);
+    let onClick: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
+      keySeat(DocumentSelectionLabel42.cmd);
+    let glyph: Dynamic = resolveDocumentTabsValue(key);
+    return {
+      key: key,
+      width: width,
+      node: (
+        <TabRailButton
+          iconOnly={true}
+          glyph={glyph}
+          label={DocumentSelectionLabel42.label}
+          disabled={pagebarHandler5.disabled}
+          disabledTip={pagebarHandler5.tip}
+          onMouseDown={resolveDocumentTabsPreventDefault}
+          onClick={onClick}
+          data-testid={`pagebar-${key}`}
+        />
+      ),
+      row: (
+        <PagebarCommandItem
+          icon={glyph}
+          label={DocumentSelectionLabel42.label}
+          disabled={pagebarHandler5.disabled}
+          description={pagebarHandler5.tip}
+          onClick={onClick}
+        />
+      ),
+    };
+  };
+  let pagebarHandler3: Dynamic = (..._extraArguments: unknown[]) => {
+    if (image === undefined) return null;
+    let documentTabsEditable2: Dynamic =
+      documentTabsEditable ??
+      (format !== null && !format.caret ? `Not available at the cursor` : image.whyNot);
+    let disabled = documentTabsEditable2 !== null;
+    return {
+      key: `image`,
+      width: width,
+      node: (
+        <TabRailButton
+          iconOnly={true}
+          icon={`Image`}
+          label={`Image`}
+          disabled={disabled}
+          disabledTip={documentTabsEditable2 ?? undefined}
+          onMouseDown={resolveDocumentTabsPreventDefault}
+          onClick={image.onPick}
+          data-testid={`pagebar-image`}
+        />
+      ),
+      row: (
+        <PagebarCommandItem
+          icon={`Image`}
+          label={`Image`}
+          disabled={disabled}
+          description={documentTabsEditable2 ?? undefined}
+          onClick={image.onPick}
+        />
+      ),
+    };
+  };
+  let node = (
+    <PagebarMenuTrigger
+      icon={`Add`}
+      label={`Insert`}
+      iconOnly={true}
+      caret={true}
+      shortcut={`/`}
+      disabled={!matchesDocumentTabsEditable}
+      disabledTip={documentTabsEditable ?? undefined}
+      data-testid={`pagebar-insert`}
+      footer={
+        <div
+          className={`text-footnote text-muted border-border border-t px-3 py-1.5`}
+          data-testid={`pagebar-insert-hint`}
+        >
+          {DocumentTabs_TypeInTheDocumentForMore}
+        </div>
+      }
+      {...record}
+    >
+      {
+        <Menu.Group>
+          {DocumentSelectionLabel3.flatMap(
+            (
+              DocumentSelectionLabel32?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): Dynamic => {
+              if (
+                matchesDocumentTabsEditable &&
+                format !== null &&
+                !resolveDocumentTabsIncludes(DocumentSelectionLabel32.cmd, format)
+              )
+                return [];
+              let pagebarHandler5: Dynamic = pagebarHandler2(
+                DocumentSelectionLabel32.cmd,
+              );
+              return [
+                <Menu.Item
+                  icon={resolveDocumentTabsValue(DocumentSelectionLabel32.id)}
+                  disabled={pagebarHandler5.disabled}
+                  description={pagebarHandler5.tip}
+                  onClick={(..._extraArguments: unknown[]): Dynamic =>
+                    keySeat(DocumentSelectionLabel32.cmd)
+                  }
+                  data-testid={`pagebar-insert-${DocumentSelectionLabel32.id}`}
+                  key={DocumentSelectionLabel32.id}
+                >
+                  {DocumentSelectionLabel32.label}
+                </Menu.Item>,
+              ];
+            },
+          )}
+        </Menu.Group>
+      }
+    </PagebarMenuTrigger>
+  );
+  let pagebarHandler4: Dynamic = posture === `none` ? null : pagebarHandler3();
+  let items: Dynamic =
+    posture === `none`
+      ? []
+      : [
+          resolveDocumentTabsValue7(`table`),
+          ...(pagebarHandler4 ? [pagebarHandler4] : []),
+          resolveDocumentTabsValue7(`checkbox`),
+          {
+            key: `insert`,
+            width: width2,
+            node: node,
+            row: null,
+            pin: true,
+          },
+        ];
+  return (
+    <PagebarMenuSection
+      label={`Document actions`}
+      data-testid={`page-action-bar`}
+      rule={resolveDocumentTabsPreview({
+        surface: surface,
+        preview: preview,
+        scrolled: scrolled,
+        panel: panel,
+      })}
+      leading={
+        <jsxRuntime.Fragment>
+          {tabs == null ? null : <span className={`ml-0.5 inline-flex`}>{tabs}</span>}
+          {tabs != null && !preview ? pageSkill : null}
+          {tabs != null && !preview ? docFont : null}
+          {tabs != null && !preview ? docLayout : null}
+          {tabs == null ? null : status}
+          {tabs != null && items.length > 0 ? <PagebarSeparator /> : null}
+        </jsxRuntime.Fragment>
+      }
+    >
+      {preview && rail !== null ? (
+        <UseDocumentTabsFallbackComponent
+          rail={rail}
+          divided={tabs != null}
+          onLeave={onMenuClose}
+        />
+      ) : items.length > 0 ? (
+        <div className={`contents`} {...useDocumentTabsVia2.props}>
+          {<PagebarStrip items={items} onMenuClose={onMenuClose} />}
+        </div>
+      ) : null}
+    </PagebarMenuSection>
+  );
+};
+
+export const PagebarImageInput: ReactComponentTypes.FC<Dynamic> = ({
+  inputRef: inputRef,
+  focusTarget: focusTarget,
+}) => {
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let showPicker = (
+        pagebarImageInput: Dynamic = false,
+        ..._extraArguments: unknown[]
+      ) => {
+        let input: Dynamic = inputRef.current;
+        if (input === null) return false;
+        if (!pagebarImageInput) {
+          input.click();
+          return true;
+        }
+        if (typeof input.showPicker != `function`) return false;
+        try {
+          input.showPicker();
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      DataModelSchemasDragging.getState().setImagePicker(showPicker);
+      return (..._extraArguments: unknown[]): undefined => {
+        if (DataModelSchemasDragging.getState().imagePicker === showPicker) {
+          DataModelSchemasDragging.getState().setImagePicker(null);
+        }
+      };
+    },
+    [inputRef],
+  );
+  return (
+    <input
+      ref={inputRef}
+      type={`file`}
+      accept={`image/*,video/mp4,video/webm`}
+      multiple={true}
+      hidden={true}
+      data-testid={`pagebar-image-input`}
+      onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let items: Dynamic = [...(event.currentTarget.files ?? [])];
+        event.currentTarget.value = ``;
+        let onPick: Dynamic = DataModelSchemasDragging.getState().intercept?.onPick;
+        if (!(items.length === 0 || onPick === undefined)) {
+          focusTarget();
+          onPick(items);
+        }
+      }}
+    />
+  );
+};
+
+export const PagebarMenuFit: ReactComponentTypes.FC<Dynamic> = ({
+  value: value,
+  onPick: onPick,
+  testid: testid,
+}) => {
+  return (
+    <Menu.Group>
+      <Menu.Item
+        checkedRole={`radio`}
+        checked={value === `fit`}
+        onClick={(..._extraArguments: unknown[]): Dynamic => onPick(`fit`)}
+        data-testid={`${testid}-fit`}
+      >
+        {resolveEditorHostValue20(`fit`)}
+      </Menu.Item>
+      <Menu.Separator />
+      {EditorHostState31.map((item?: Dynamic, ..._extraArguments: unknown[]) => (
+        <Menu.Item
+          checkedRole={`radio`}
+          checked={value === item}
+          onClick={(..._extraArguments: unknown[]): Dynamic => onPick(item)}
+          data-testid={`${testid}-${item}`}
+          key={item}
+        >
+          {<span className={`tabular-nums`}>{resolveEditorHostValue20(item)}</span>}
+        </Menu.Item>
+      ))}
+    </Menu.Group>
+  );
+};
+
+export const PagebarSeparator: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  return (
+    <span
+      aria-hidden={`true`}
+      className={`bg-border mx-0.5 h-4.5 w-px shrink-0 self-center`}
+    />
+  );
+};
+
+export const PagebarCommandItem: ReactComponentTypes.FC<Dynamic> = ({
+  icon: icon,
+  label: label,
+  shortcut: shortcut,
+  pressed: pressed,
+  disabled: disabled,
+  description: description,
+  onClick: onClick,
+}) => {
+  return (
+    <Menu.Item
+      icon={icon}
+      shortcut={shortcut}
+      checked={pressed}
+      checkedRole={pressed === undefined ? undefined : `checkbox`}
+      disabled={disabled}
+      description={description}
+      onClick={onClick}
+    >
+      {label}
+    </Menu.Item>
+  );
+};
+
+export const UseDocumentTabsFallbackComponent: ReactComponentTypes.FC<Dynamic> = (
+  documentTabsFallback,
+) => {
+  let [useDocumentTabsFallbackState]: Dynamic = (0, React.useState)(
+    resolvePlatformLiveDocumentAndHistoryComponent,
+  );
+  return (
+    <React.Suspense fallback={null}>
+      {renderReactJsx(useDocumentTabsFallbackState ?? DocumentTabsDefault, {
+        ...documentTabsFallback,
+      })}
+    </React.Suspense>
+  );
+};
+
+var DocumentTabs_Styles: string;
+
+function canClosePagebarOnFocusLeave(
+  ref?: Dynamic,
+  ref2?: Dynamic,
+  ..._extraArguments: unknown[]
+): Dynamic {
+  return (..._extraArguments: unknown[]) => {
+    let ownerDocument: Dynamic = ref.current?.ownerDocument ?? document;
+    let activeElement: Dynamic = ownerDocument.activeElement;
+    return !(
+      activeElement !== null &&
+      activeElement !== ownerDocument.body &&
+      !(ref.current?.contains(activeElement) ?? false) &&
+      !(ref2?.current?.contains(activeElement) ?? false)
+    );
+  };
 }
 
 var DocumentTabsTable: Dynamic;
@@ -450,138 +955,6 @@ function filterDocumentTabsShown(
   };
 }
 
-function PagebarStrip(
-  {
-    items: items,
-    moreLabel = `More`,
-    footer = null,
-    onMenuClose: onMenuClose,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let enabledRef: Dynamic = (0, React.useRef)(false);
-  let [amountState, setAmountState]: Dynamic = (0, React.useState)(1 / 0);
-  (0, React.useLayoutEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let element: Dynamic = elementRef.current;
-    if (!element) return;
-    let setAmountState2 = (..._extraArguments: unknown[]): undefined => {
-      setAmountState(element.clientWidth > 0 ? element.clientWidth : 1 / 0);
-    };
-    setAmountState2();
-    if (typeof ResizeObserver === "undefined") return;
-    let resizeObserver = new ResizeObserver(setAmountState2);
-    resizeObserver.observe(element);
-    return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
-  }, []);
-  let matchesFooter = footer != null && footer !== false;
-  let documentTabsValue2: Dynamic = resolveDocumentTabsValue2(
-    resolveUiProviderAndLayersUseContext2() === `comfortable`,
-  );
-  let resolveDocumentTabsReduce2: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      resolveDocumentTabsReduce(
-        items,
-        amountState,
-        matchesFooter,
-        documentTabsValue2,
-      ),
-    [items, amountState, matchesFooter, documentTabsValue2],
-  );
-  let {
-    shown: filterDocumentTabsShown2,
-    folded: filterDocumentTabsShown3,
-  }: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      filterDocumentTabsShown(items, resolveDocumentTabsReduce2),
-    [items, resolveDocumentTabsReduce2],
-  );
-  return (
-    <div
-      ref={elementRef}
-      className={`relative flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-clip pointer-coarse:gap-1.5`}
-      data-testid={`pagebar-strip`}
-      data-folded={filterDocumentTabsShown3.length || undefined}
-    >
-      {filterDocumentTabsShown2.map(
-        (event?: Dynamic, ..._extraArguments: unknown[]) => (
-          <span className={`contents`} key={event.key}>{event.node}</span>
-        ),
-      )}
-      {filterDocumentTabsShown3.length > 0 || matchesFooter ? (
-        <span
-          className={`contents`}
-          onPointerDownCapture={(..._extraArguments: unknown[]): undefined => {
-            enabledRef.current = true;
-          }}
-          onKeyDownCapture={(
-            event?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            if (event.currentTarget.contains(event.target)) {
-              enabledRef.current = false;
-            }
-          }}
-        >
-          <PagebarMenuTrigger
-            icon={`DotsHorizontal`}
-            label={moreLabel}
-            iconOnly={true}
-            tip={moreLabel}
-            align={`end`}
-            data-testid={`pagebar-more`}
-            onOpenChange={(
-              pagebarStrip?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              if (!pagebarStrip && enabledRef.current) {
-                onMenuClose?.();
-              }
-            }}
-          >
-            {filterDocumentTabsShown3.map(
-              (event?: Dynamic, ..._extraArguments: unknown[]) => (
-                <span className={`contents`} key={event.key}>{event.row}</span>
-              ),
-            )}
-            {filterDocumentTabsShown3.length > 0 && matchesFooter ? (
-              <Menu.Separator />
-            ) : null}
-            {matchesFooter ? footer : null}
-          </PagebarMenuTrigger>
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function PagebarCommandItem(
-  {
-    icon: icon,
-    label: label,
-    shortcut: shortcut,
-    pressed: pressed,
-    disabled: disabled,
-    description: description,
-    onClick: onClick,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <Menu.Item
-      icon={icon}
-      shortcut={shortcut}
-      checked={pressed}
-      checkedRole={pressed === undefined ? undefined : `checkbox`}
-      disabled={disabled}
-      description={description}
-      onClick={onClick}
-    >
-      {label}
-    </Menu.Item>
-  );
-}
-
 function resolveDocumentTabsValue3(
   documentTabsValue3?: unknown,
   ..._extraArguments: unknown[]
@@ -590,22 +963,6 @@ function resolveDocumentTabsValue3(
 }
 
 var DocumentTabsDefault: Dynamic;
-
-function UseDocumentTabsFallbackComponent(
-  documentTabsFallback?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [useDocumentTabsFallbackState]: Dynamic = (0, React.useState)(
-    resolvePlatformLiveDocumentAndHistoryComponent,
-  );
-  return (
-    <React.Suspense fallback={null}>
-      {renderReactJsx(useDocumentTabsFallbackState ?? DocumentTabsDefault, {
-  ...documentTabsFallback
-})}
-    </React.Suspense>
-  );
-}
 
 function resolveDocumentTabsPreview(
   documentTabsPreview?: Dynamic,
@@ -675,285 +1032,6 @@ function useDocumentTabsVia(..._extraArguments: unknown[]): Dynamic {
   };
 }
 
-function Pagebar(
-  {
-    tabs: tabs,
-    pageSkill: pageSkill,
-    docFont: docFont,
-    docLayout: docLayout,
-    status: status,
-    posture: posture,
-    surface: surface,
-    preview: preview,
-    image: image,
-    format: format,
-    onCommand: onCommand,
-    onMenuClose: onMenuClose,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let scrolled: Dynamic = DocumentSelectionState(
-    (pagebar?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      pagebar.scrolled,
-  );
-  let panel: Dynamic = DocumentSelectionState(
-    (pagebar?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      pagebar.panel,
-  );
-  let documentTabsEditable = resolveDocumentTabsEditable(format);
-  let matchesDocumentTabsEditable = documentTabsEditable === null;
-  let rail: Dynamic = resolvePlatformLiveDocumentAndHistoryRail();
-  let useDocumentTabsVia2: Dynamic = useDocumentTabsVia();
-  let matchesCondition =
-    useUiProviderAndLayersComfortable(`compact`) === `comfortable`;
-  let width = matchesCondition ? 32 : 24;
-  let width2 = matchesCondition ? 52 : 40;
-  let keySeat: Dynamic = (
-    pagebar?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    onCommand(
-      pagebar,
-      useDocumentTabsVia2.via(),
-      useDocumentTabsVia2.keySeat(),
-    );
-  let record: Dynamic = {
-    onOpenChange: (
-      pagebar?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
-      if (!pagebar && useDocumentTabsVia2.via() === `pointer`) {
-        onMenuClose();
-      }
-    },
-  };
-  let pagebarHandler: Dynamic = (
-    pagebar?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) =>
-    !matchesDocumentTabsEditable || format === null
-      ? {
-          disabled: true,
-          tip: documentTabsEditable ?? undefined,
-        }
-      : format.inserts.includes(pagebar)
-        ? {
-            disabled: false,
-            tip: undefined,
-          }
-        : {
-            disabled: true,
-            tip: DocumentSelection_NotAvailableAtTheCursor,
-          };
-  let pagebarHandler2: Dynamic = (
-    pagebar?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    pagebar.k === `insert`
-      ? pagebarHandler(pagebar.id)
-      : {
-          disabled: !matchesDocumentTabsEditable,
-          tip: documentTabsEditable ?? undefined,
-        };
-  let resolveDocumentTabsValue7: Dynamic = (
-    key?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
-    let DocumentSelectionLabel42: Dynamic = DocumentSelectionLabel4.find(
-      (DocumentSelectionLabel43?: Dynamic, ..._extraArguments: unknown[]) =>
-        DocumentSelectionLabel43.id === key,
-    );
-    let pagebarHandler5: Dynamic = pagebarHandler2(
-      DocumentSelectionLabel42.cmd,
-    );
-    let onClick: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
-      keySeat(DocumentSelectionLabel42.cmd);
-    let glyph: Dynamic = resolveDocumentTabsValue(key);
-    return {
-      key: key,
-      width: width,
-      node: (
-        <TabRailButton
-          iconOnly={true}
-          glyph={glyph}
-          label={DocumentSelectionLabel42.label}
-          disabled={pagebarHandler5.disabled}
-          disabledTip={pagebarHandler5.tip}
-          onMouseDown={resolveDocumentTabsPreventDefault}
-          onClick={onClick}
-          data-testid={`pagebar-${key}`}
-        />
-      ),
-      row: (
-        <PagebarCommandItem
-          icon={glyph}
-          label={DocumentSelectionLabel42.label}
-          disabled={pagebarHandler5.disabled}
-          description={pagebarHandler5.tip}
-          onClick={onClick}
-        />
-      ),
-    };
-  };
-  let pagebarHandler3: Dynamic = (..._extraArguments: unknown[]) => {
-    if (image === undefined) return null;
-    let documentTabsEditable2: Dynamic =
-      documentTabsEditable ??
-      (format !== null && !format.caret
-        ? `Not available at the cursor`
-        : image.whyNot);
-    let disabled = documentTabsEditable2 !== null;
-    return {
-      key: `image`,
-      width: width,
-      node: (
-        <TabRailButton
-          iconOnly={true}
-          icon={`Image`}
-          label={`Image`}
-          disabled={disabled}
-          disabledTip={documentTabsEditable2 ?? undefined}
-          onMouseDown={resolveDocumentTabsPreventDefault}
-          onClick={image.onPick}
-          data-testid={`pagebar-image`}
-        />
-      ),
-      row: (
-        <PagebarCommandItem
-          icon={`Image`}
-          label={`Image`}
-          disabled={disabled}
-          description={documentTabsEditable2 ?? undefined}
-          onClick={image.onPick}
-        />
-      ),
-    };
-  };
-  let node = (
-    <PagebarMenuTrigger icon={`Add`} label={`Insert`} iconOnly={true} caret={true} shortcut={`/`} disabled={!matchesDocumentTabsEditable} disabledTip={documentTabsEditable ?? undefined} data-testid={`pagebar-insert`} footer={<div className={`text-footnote text-muted border-border border-t px-3 py-1.5`} data-testid={`pagebar-insert-hint`}>
-            {DocumentTabs_TypeInTheDocumentForMore}
-          </div>} {...record}>{<Menu.Group>
-            {DocumentSelectionLabel3.flatMap((DocumentSelectionLabel32?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-      if (matchesDocumentTabsEditable && format !== null && !resolveDocumentTabsIncludes(DocumentSelectionLabel32.cmd, format)) return [];
-      let pagebarHandler5: Dynamic = pagebarHandler2(DocumentSelectionLabel32.cmd);
-      return [<Menu.Item
-        icon={resolveDocumentTabsValue(DocumentSelectionLabel32.id)}
-        disabled={pagebarHandler5.disabled}
-        description={pagebarHandler5.tip}
-        onClick={(..._extraArguments: unknown[]): Dynamic => keySeat(DocumentSelectionLabel32.cmd)}
-        data-testid={`pagebar-insert-${DocumentSelectionLabel32.id}`}
-        key={DocumentSelectionLabel32.id}
-      >{DocumentSelectionLabel32.label}</Menu.Item>];
-    })}
-          </Menu.Group>}</PagebarMenuTrigger>
-  );
-  let pagebarHandler4: Dynamic = posture === `none` ? null : pagebarHandler3();
-  let items: Dynamic =
-    posture === `none`
-      ? []
-      : [
-          resolveDocumentTabsValue7(`table`),
-          ...(pagebarHandler4 ? [pagebarHandler4] : []),
-          resolveDocumentTabsValue7(`checkbox`),
-          {
-            key: `insert`,
-            width: width2,
-            node: node,
-            row: null,
-            pin: true,
-          },
-        ];
-  return (
-    <PagebarMenuSection
-      label={`Document actions`}
-      data-testid={`page-action-bar`}
-      rule={resolveDocumentTabsPreview({
-        surface: surface,
-        preview: preview,
-        scrolled: scrolled,
-        panel: panel,
-      })}
-      leading={
-        <jsxRuntime.Fragment>
-          {tabs == null ? null : (
-            <span className={`ml-0.5 inline-flex`}>{tabs}</span>
-          )}
-          {tabs != null && !preview ? pageSkill : null}
-          {tabs != null && !preview ? docFont : null}
-          {tabs != null && !preview ? docLayout : null}
-          {tabs == null ? null : status}
-          {tabs != null && items.length > 0 ? <PagebarSeparator /> : null}
-        </jsxRuntime.Fragment>
-      }
-    >
-      {preview && rail !== null ? (
-        <UseDocumentTabsFallbackComponent
-          rail={rail}
-          divided={tabs != null}
-          onLeave={onMenuClose}
-        />
-      ) : items.length > 0 ? (
-        <div className={`contents`} {...useDocumentTabsVia2.props}>{<PagebarStrip items={items} onMenuClose={onMenuClose} />}</div>
-      ) : null}
-    </PagebarMenuSection>
-  );
-}
-
-function PagebarImageInput(
-  { inputRef: inputRef, focusTarget: focusTarget }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let showPicker = (
-        pagebarImageInput: Dynamic = false,
-        ..._extraArguments: unknown[]
-      ) => {
-        let input: Dynamic = inputRef.current;
-        if (input === null) return false;
-        if (!pagebarImageInput) {
-          input.click();
-          return true;
-        }
-        if (typeof input.showPicker != `function`) return false;
-        try {
-          input.showPicker();
-          return true;
-        } catch {
-          return false;
-        }
-      };
-      DataModelSchemasDragging.getState().setImagePicker(showPicker);
-      return (..._extraArguments: unknown[]): undefined => {
-        if (DataModelSchemasDragging.getState().imagePicker === showPicker) {
-          DataModelSchemasDragging.getState().setImagePicker(null);
-        }
-      };
-    },
-    [inputRef],
-  );
-  return (
-    <input
-      ref={inputRef}
-      type={`file`}
-      accept={`image/*,video/mp4,video/webm`}
-      multiple={true}
-      hidden={true}
-      data-testid={`pagebar-image-input`}
-      onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        let items: Dynamic = [...(event.currentTarget.files ?? [])];
-        event.currentTarget.value = ``;
-        let onPick: Dynamic =
-          DataModelSchemasDragging.getState().intercept?.onPick;
-        if (!(items.length === 0 || onPick === undefined)) {
-          focusTarget();
-          onPick(items);
-        }
-      }}
-    />
-  );
-}
-
 var DocumentTabsState2: Dynamic;
 
 function installDocumentTabsAddEventListener(
@@ -985,38 +1063,6 @@ function useDocumentTabsUseSyncExternalStore(
     (..._extraArguments: unknown[]) => false,
   );
   return documentTabsUseSyncExternalStore && !useSyncExternalStore;
-}
-
-function PagebarMenuFit(
-  { value: value, onPick: onPick, testid: testid }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <Menu.Group>
-      <Menu.Item
-        checkedRole={`radio`}
-        checked={value === `fit`}
-        onClick={(..._extraArguments: unknown[]): Dynamic => onPick(`fit`)}
-        data-testid={`${testid}-fit`}
-      >
-        {resolveEditorHostValue20(`fit`)}
-      </Menu.Item>
-      <Menu.Separator />
-      {EditorHostState31.map(
-        (item?: Dynamic, ..._extraArguments: unknown[]) => (
-          <Menu.Item
-            checkedRole={`radio`}
-            checked={value === item}
-            onClick={(..._extraArguments: unknown[]): Dynamic => onPick(item)}
-            data-testid={`${testid}-${item}`}
-            key={item}
-          >{<span className={`tabular-nums`}>
-                    {resolveEditorHostValue20(item)}
-                  </span>}</Menu.Item>
-        ),
-      )}
-    </Menu.Group>
-  );
 }
 
 var resolveDocumentTabsSend: Dynamic;
@@ -1470,29 +1516,4 @@ export function initializeDocumentTabsPagebarStep1(): void {
   (DocumentTabs_VersionHistory = `version_history`);
 }
 
-export {
-  DocumentTabsCheck,
-  DocumentTabsDocx,
-  DocumentTabsUndo,
-  DocumentTabs_SetLanguage,
-  DocumentTabs_VersionHistory,
-  Pagebar,
-  PagebarCommandItem,
-  PagebarImageInput,
-  PagebarMenuFit,
-  PagebarMenuTrigger,
-  PagebarSeparator,
-  PagebarStrip,
-  canClosePagebarOnFocusLeave,
-  resolveDocumentTabsCanUndo,
-  resolveDocumentTabsCommentSelectionDisabled,
-  resolveDocumentTabsFormat,
-  resolveDocumentTabsPhone,
-  resolveDocumentTabsProseOpen,
-  resolveDocumentTabsShell,
-  resolveDocumentTabsValue5,
-  resolveDocumentTabsValue6,
-  useDocumentTabsFocusVisible,
-  useDocumentTabsPreventScroll,
-  useDocumentTabsUseSyncExternalStore,
-};
+export { DocumentTabsCheck, DocumentTabsDocx, DocumentTabsUndo, DocumentTabs_SetLanguage, DocumentTabs_VersionHistory, canClosePagebarOnFocusLeave, resolveDocumentTabsCanUndo, resolveDocumentTabsCommentSelectionDisabled, resolveDocumentTabsFormat, resolveDocumentTabsPhone, resolveDocumentTabsProseOpen, resolveDocumentTabsShell, resolveDocumentTabsValue5, resolveDocumentTabsValue6, useDocumentTabsFocusVisible, useDocumentTabsPreventScroll, useDocumentTabsUseSyncExternalStore };

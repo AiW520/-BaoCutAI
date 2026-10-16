@@ -50,6 +50,382 @@ import {
 import {
   assignDocumentSourcePromptState,
 } from "../source-prompt-cache";
+import type * as ReactComponentTypes from "react";
+
+export const DocumentCommentsHeadless: ReactComponentTypes.FC<Dynamic> = ({
+  container: container,
+  version: version,
+  fsEntryId: fsEntryId,
+  path: path,
+  collapsed = false,
+  iconLane = true,
+  phone = false,
+  railSeated = false,
+  forceList = false,
+  readOnly = false,
+  commentOnly = false,
+  resolveOwnOnly: resolveOwnOnly,
+  covered = false,
+  room: room,
+  widgetNodes: widgetNodes,
+  nodeName: nodeName,
+  widgetBlockOf: widgetBlockOf,
+  blockKindOf: blockKindOf,
+  askOffer: askOffer,
+  onOpenNodeLog: onOpenNodeLog,
+  onRevealNode: onRevealNode,
+  onOverhang: onOverhang,
+  onCardSpans: onCardSpans,
+  onScrollDoc: onScrollDoc,
+  sheetScrollRef: sheetScrollRef,
+  onComposeExit: onComposeExit,
+  handFocusOut: handFocusOut,
+  onStageForClaude: onStageForClaude,
+  railSync: railSync,
+  railWheelMountedRef: railWheelMountedRef,
+}) => {
+  let documentCommentsHeadlessResult: Dynamic = useCommentStore(
+    (documentCommentsHeadless?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      documentCommentsHeadless.commentMode,
+  );
+  let documentCommentsHeadlessResult2: Dynamic = useCommentStore(
+    (documentCommentsHeadless?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      documentCommentsHeadless.draftAnchor,
+  );
+  let documentCommentsHeadlessResult3: Dynamic = useCommentStore(
+    (documentCommentsHeadless?: Dynamic, ..._extraArguments: unknown[]) =>
+      documentCommentsHeadless.quietPost !== null ||
+      documentCommentsHeadless.surfaceCarrier.length > 0,
+  );
+  let container2 = `${container}@${version}`;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (room) {
+        setCommentRoomDoor(room.pid);
+        return (..._extraArguments: unknown[]) => setCommentRoomDoor(null);
+      }
+    },
+    [room?.pid],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!room || !fsEntryId) return;
+      let enabled = true;
+      let documentCommentsHeadlessResult7: Dynamic;
+      let refetch = (..._extraArguments: unknown[]): undefined => {
+        let storeState: Dynamic = useCommentStore.getState();
+        storeState
+          .refetch(container2, fsEntryId)
+          .catch((..._extraArguments: unknown[]): undefined => {});
+        for (let documentCommentsHeadlessResult8 of (widgetNodes ?? []) as Dynamic)
+          storeState
+            .refetch(container2, documentCommentsHeadlessResult8)
+            .catch((..._extraArguments: unknown[]): undefined => {});
+      };
+      let lookup: Dynamic = new (Map as Dynamic)();
+      preloadModule(
+        async (..._extraArguments: unknown[]): Promise<Dynamic> => {
+          let { subscribeProjectFeed: subscribeProjectFeed2 }: Dynamic = await import(
+            "../../platform/index"
+          ).then(
+            (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              result.PlatformApiAndAuthFEEDTOPIC,
+          );
+          return {
+            subscribeProjectFeed: subscribeProjectFeed2,
+          };
+        },
+        mapPreloadDependencies([0, 1, 2, 3]),
+        import.meta.url,
+      ).then(
+        (
+          { subscribeProjectFeed: subscribeProjectFeed2 }: Dynamic,
+          ..._extraArguments: unknown[]
+        ): undefined => {
+          if (enabled) {
+            documentCommentsHeadlessResult7 = subscribeProjectFeed2(
+              room.pid,
+              (entry?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+                if (entry.kind === `recovered`) {
+                  let storeState: Dynamic = useCommentStore.getState();
+                  storeState.clearWorkingFor(fsEntryId);
+                  for (let documentCommentsHeadlessResult8 of (widgetNodes ??
+                    []) as Dynamic)
+                    storeState.clearWorkingFor(documentCommentsHeadlessResult8);
+                  lookup.clear();
+                  refetch();
+                  return;
+                }
+                if (entry.kind === `access-changed`) {
+                  refetch();
+                  return;
+                }
+                if (entry.kind === `presence`) {
+                  let frame: Dynamic = entry.frame;
+                  let body: Dynamic = frame.body ?? {};
+                  if (
+                    resolvePlatformApiAndAuthInternal(frame.channel) &&
+                    frame.agent?.running !== undefined &&
+                    typeof body.threadId == `string`
+                  ) {
+                    if (frame.agent.running) {
+                      lookup.set(frame.connId, body.threadId);
+                    } else {
+                      lookup.delete(frame.connId);
+                    }
+                    handleCommentStatusLine({
+                      rootId: body.threadId,
+                      state: frame.agent.running ? `working` : `done`,
+                      text: `responding…`,
+                    });
+                  }
+                  return;
+                }
+                if (entry.kind === `presence-leave`) {
+                  let rootId: Dynamic = lookup.get(entry.connId);
+                  if (rootId !== undefined) {
+                    lookup.delete(entry.connId);
+                    handleCommentStatusLine({
+                      rootId: rootId,
+                      state: `done`,
+                    });
+                  }
+                  return;
+                }
+                if (
+                  entry.kind === `envelope` &&
+                  entry.envelope.diff.some(
+                    (diff?: Dynamic, ..._extraArguments: unknown[]) =>
+                      diff.address?.ref?.object === `utterance`,
+                  )
+                ) {
+                  refetch();
+                }
+              },
+            );
+          }
+        },
+      );
+      return (..._extraArguments: unknown[]): undefined => {
+        enabled = false;
+        documentCommentsHeadlessResult7?.();
+      };
+    },
+    [room?.pid, container2, fsEntryId, widgetNodes],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (!widgetNodes?.length) return;
+      let storeState: Dynamic = useCommentStore.getState();
+      for (let documentCommentsHeadlessResult7 of widgetNodes as Dynamic)
+        storeState
+          .fetch(container2, documentCommentsHeadlessResult7)
+          .catch((..._extraArguments: unknown[]): undefined => {});
+    },
+    [container2, widgetNodes],
+  );
+  let [seeded, setSeeded]: Dynamic = (0, React.useState)(false);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      setSeeded(false);
+      if (!fsEntryId) return;
+      let enabled = true;
+      let setSeeded2 = (..._extraArguments: unknown[]): undefined => {
+        if (enabled) {
+          setSeeded(true);
+        }
+      };
+      useCommentStore
+        .getState()
+        .fetch(container2, fsEntryId)
+        .then(setSeeded2, setSeeded2);
+      return (..._extraArguments: unknown[]): undefined => {
+        enabled = false;
+      };
+    },
+    [container2, fsEntryId],
+  );
+  let items: Dynamic = useThreads(fsEntryId ?? ``);
+  let items2: Dynamic = useThreadsJoined(widgetNodes ?? DocumentRuntimeState4);
+  let documentCommentsHeadlessResult4: Dynamic = useCommentStore(
+    (documentCommentsHeadless?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      documentCommentsHeadless.mutGen,
+  );
+  let documentCommentsHeadlessResult5: Dynamic = useCommentStore(
+    (documentCommentsHeadless?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      documentCommentsHeadless.foldConnected,
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (documentCommentsHeadlessResult5 || !fsEntryId) return;
+      let enabled = true;
+      Promise.all([
+        api.comments.list(container2, fsEntryId, true),
+        ...(widgetNodes ?? []).map(
+          (widgetNode?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            api.comments
+              .list(container2, widgetNode, true)
+              .catch((..._extraArguments: unknown[]): Dynamic => []),
+        ),
+      ]).then(
+        (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          if (!(!enabled || useCommentStore.getState().foldConnected)) {
+            useCommentStore.getState().setResolvedIds(
+              result
+                .flat()
+                .filter(
+                  (flat?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                    flat.resolved && !flat.deleted,
+                )
+                .map(
+                  (filteredFlat?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+                    id: filteredFlat.id,
+                    resolveId: filteredFlat.resolveId,
+                  }),
+                ),
+            );
+          }
+        },
+        (..._extraArguments: unknown[]): undefined => {},
+      );
+      return (..._extraArguments: unknown[]): undefined => {
+        enabled = false;
+      };
+    },
+    [
+      documentCommentsHeadlessResult5,
+      container2,
+      fsEntryId,
+      documentCommentsHeadlessResult4,
+      items,
+      widgetNodes,
+      items2,
+    ],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): undefined => {
+        let storeState: Dynamic = useCommentStore.getState();
+        storeState.setDraftAnchor(null);
+        storeState.setDraftY(null);
+        storeState.setPresent(null);
+        storeState.setFolded(DataModelSchemasFreeze);
+        storeState.setRects({}, []);
+        storeState.setDocExtent(null);
+        storeState.setDocScrollMax(null);
+        if (!storeState.foldConnected) {
+          storeState.setResolvedIds([]);
+        }
+        assignDocumentSourcePromptState(null);
+      },
+    [],
+  );
+  let handFocusOutRef: Dynamic = (0, React.useRef)(handFocusOut);
+  handFocusOutRef.current = handFocusOut;
+  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
+    let handFocusOut2 = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (
+        !resolvePlatformKeyboardAndSaveStatusRepeat(event) ||
+        event.target?.closest(`input, textarea, [contenteditable]`) ||
+        PlatformSyncAndRoutingAssign2.getState().preview
+      )
+        return;
+      event.preventDefault();
+      let storeState: Dynamic = useCommentStore.getState();
+      if (storeState.commentMode === `hidden`) {
+        storeState.setCommentMode(`margin`);
+        resolveCommentComponentsKey(document, `shown`);
+      } else {
+        let activeElement = document.activeElement;
+        if (resolveCommentComponentsActiveElement(document)) {
+          handFocusOutRef.current?.(`tabs`);
+        }
+        storeState.setDraftAnchor(null);
+        storeState.setDraftY(null);
+        (0, ReactDom.flushSync)(
+          (..._extraArguments: unknown[]): Dynamic => storeState.setCommentMode(`hidden`),
+        );
+        if (resolveCommentComponentsIsConnected(activeElement, document)) {
+          handFocusOutRef.current?.(`tabs`);
+        }
+        resolveCommentComponentsKey(document, `hidden`);
+      }
+    };
+    window.addEventListener(`keydown`, handFocusOut2);
+    return (..._extraArguments: unknown[]) =>
+      window.removeEventListener(`keydown`, handFocusOut2);
+  }, []);
+  if (!fsEntryId) return null;
+  let matchesDocumentCommentsHeadlessResult =
+    documentCommentsHeadlessResult === `hidden` && !documentCommentsHeadlessResult2;
+  if (matchesDocumentCommentsHeadlessResult && !documentCommentsHeadlessResult3)
+    return null;
+  let mode = forceList || documentCommentsHeadlessResult === `list` ? `list` : `margin`;
+  if (
+    (mode === `margin` || (forceList && documentCommentsHeadlessResult !== `list`)) &&
+    items.length + items2.length === 0 &&
+    !documentCommentsHeadlessResult2 &&
+    documentSourcePromptLimit0 === 0 &&
+    !documentCommentsHeadlessResult3
+  )
+    return null;
+  let documentCommentsHeadlessResult6: Dynamic =
+    documentCommentsHeadlessResult3 &&
+    (matchesDocumentCommentsHeadlessResult ||
+      ((mode === `margin` || (forceList && documentCommentsHeadlessResult !== `list`)) &&
+        items.length + items2.length === 0 &&
+        !documentCommentsHeadlessResult2 &&
+        documentSourcePromptLimit0 === 0));
+  let jsx = (
+    <DocumentFrame
+      container={container2}
+      fsEntryId={fsEntryId}
+      path={path}
+      mode={mode}
+      peek={mode === `margin` && collapsed && !documentCommentsHeadlessResult2}
+      iconLane={iconLane}
+      phone={phone}
+      composeFloat={
+        mode === `margin` &&
+        !!documentCommentsHeadlessResult2 &&
+        (collapsed || !railSeated)
+      }
+      railSeated={railSeated}
+      forceList={forceList}
+      readOnly={readOnly}
+      commentOnly={commentOnly}
+      resolveOwnOnly={resolveOwnOnly}
+      covered={covered}
+      seeded={seeded}
+      initialFilter={items.length + items2.length === 0 ? `all` : `open`}
+      listPopover={mode === `list` && collapsed}
+      room={room}
+      widgetNodes={widgetNodes}
+      nodeName={nodeName}
+      widgetBlockOf={widgetBlockOf}
+      blockKindOf={blockKindOf}
+      askOffer={askOffer}
+      onOpenNodeLog={onOpenNodeLog}
+      onRevealNode={onRevealNode}
+      onOverhang={onOverhang}
+      onCardSpans={onCardSpans}
+      onScrollDoc={onScrollDoc}
+      sheetScrollRef={sheetScrollRef}
+      onComposeExit={onComposeExit}
+      handFocusOut={handFocusOut}
+      onStageForClaude={onStageForClaude}
+      railSync={railSync}
+      railWheelMountedRef={railWheelMountedRef}
+    />
+  );
+  return documentCommentsHeadlessResult6 ? (
+    <div hidden={true} data-testid={`ldoc-comments-headless`}>
+      {jsx}
+    </div>
+  ) : (
+    jsx
+  );
+};
 
 function isDocumentSourcePromptFsId(
   documentSourcePromptFsId?: Dynamic,
@@ -227,403 +603,6 @@ function resolveDocumentSourcePromptTarget3(
   return exact === undefined ? undefined : quoteWords(exact);
 }
 
-function DocumentCommentsHeadless(
-  {
-    container: container,
-    version: version,
-    fsEntryId: fsEntryId,
-    path: path,
-    collapsed = false,
-    iconLane = true,
-    phone = false,
-    railSeated = false,
-    forceList = false,
-    readOnly = false,
-    commentOnly = false,
-    resolveOwnOnly: resolveOwnOnly,
-    covered = false,
-    room: room,
-    widgetNodes: widgetNodes,
-    nodeName: nodeName,
-    widgetBlockOf: widgetBlockOf,
-    blockKindOf: blockKindOf,
-    askOffer: askOffer,
-    onOpenNodeLog: onOpenNodeLog,
-    onRevealNode: onRevealNode,
-    onOverhang: onOverhang,
-    onCardSpans: onCardSpans,
-    onScrollDoc: onScrollDoc,
-    sheetScrollRef: sheetScrollRef,
-    onComposeExit: onComposeExit,
-    handFocusOut: handFocusOut,
-    onStageForClaude: onStageForClaude,
-    railSync: railSync,
-    railWheelMountedRef: railWheelMountedRef,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let documentCommentsHeadlessResult: Dynamic = useCommentStore(
-    (
-      documentCommentsHeadless?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => documentCommentsHeadless.commentMode,
-  );
-  let documentCommentsHeadlessResult2: Dynamic = useCommentStore(
-    (
-      documentCommentsHeadless?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => documentCommentsHeadless.draftAnchor,
-  );
-  let documentCommentsHeadlessResult3: Dynamic = useCommentStore(
-    (documentCommentsHeadless?: Dynamic, ..._extraArguments: unknown[]) =>
-      documentCommentsHeadless.quietPost !== null ||
-      documentCommentsHeadless.surfaceCarrier.length > 0,
-  );
-  let container2 = `${container}@${version}`;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (room) {
-        setCommentRoomDoor(room.pid);
-        return (..._extraArguments: unknown[]) => setCommentRoomDoor(null);
-      }
-    },
-    [room?.pid],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!room || !fsEntryId) return;
-      let enabled = true;
-      let documentCommentsHeadlessResult7: Dynamic;
-      let refetch = (..._extraArguments: unknown[]): undefined => {
-        let storeState: Dynamic = useCommentStore.getState();
-        storeState
-          .refetch(container2, fsEntryId)
-          .catch((..._extraArguments: unknown[]): undefined => {});
-        for (let documentCommentsHeadlessResult8 of (widgetNodes ??
-          []) as Dynamic)
-          storeState
-            .refetch(container2, documentCommentsHeadlessResult8)
-            .catch((..._extraArguments: unknown[]): undefined => {});
-      };
-      let lookup: Dynamic = new (Map as Dynamic)();
-      preloadModule(
-        async (..._extraArguments: unknown[]): Promise<Dynamic> => {
-          let { subscribeProjectFeed: subscribeProjectFeed2 }: Dynamic =
-            await import("../../platform/index").then(
-              (result?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                result.PlatformApiAndAuthFEEDTOPIC,
-            );
-          return {
-            subscribeProjectFeed: subscribeProjectFeed2,
-          };
-        },
-        mapPreloadDependencies([0, 1, 2, 3]),
-        import.meta.url,
-      ).then(
-        (
-          { subscribeProjectFeed: subscribeProjectFeed2 }: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          if (enabled) {
-            documentCommentsHeadlessResult7 = subscribeProjectFeed2(
-              room.pid,
-              (entry?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-                if (entry.kind === `recovered`) {
-                  let storeState: Dynamic = useCommentStore.getState();
-                  storeState.clearWorkingFor(fsEntryId);
-                  for (let documentCommentsHeadlessResult8 of (widgetNodes ??
-                    []) as Dynamic)
-                    storeState.clearWorkingFor(documentCommentsHeadlessResult8);
-                  lookup.clear();
-                  refetch();
-                  return;
-                }
-                if (entry.kind === `access-changed`) {
-                  refetch();
-                  return;
-                }
-                if (entry.kind === `presence`) {
-                  let frame: Dynamic = entry.frame;
-                  let body: Dynamic = frame.body ?? {};
-                  if (
-                    resolvePlatformApiAndAuthInternal(frame.channel) &&
-                    frame.agent?.running !== undefined &&
-                    typeof body.threadId == `string`
-                  ) {
-                    if (frame.agent.running) {
-                      lookup.set(frame.connId, body.threadId);
-                    } else {
-                      lookup.delete(frame.connId);
-                    }
-                    handleCommentStatusLine({
-                      rootId: body.threadId,
-                      state: frame.agent.running ? `working` : `done`,
-                      text: `responding…`,
-                    });
-                  }
-                  return;
-                }
-                if (entry.kind === `presence-leave`) {
-                  let rootId: Dynamic = lookup.get(entry.connId);
-                  if (rootId !== undefined) {
-                    lookup.delete(entry.connId);
-                    handleCommentStatusLine({
-                      rootId: rootId,
-                      state: `done`,
-                    });
-                  }
-                  return;
-                }
-                if (
-                  entry.kind === `envelope` &&
-                  entry.envelope.diff.some(
-                    (diff?: Dynamic, ..._extraArguments: unknown[]) =>
-                      diff.address?.ref?.object === `utterance`,
-                  )
-                ) {
-                  refetch();
-                }
-              },
-            );
-          }
-        },
-      );
-      return (..._extraArguments: unknown[]): undefined => {
-        enabled = false;
-        documentCommentsHeadlessResult7?.();
-      };
-    },
-    [room?.pid, container2, fsEntryId, widgetNodes],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (!widgetNodes?.length) return;
-      let storeState: Dynamic = useCommentStore.getState();
-      for (let documentCommentsHeadlessResult7 of widgetNodes as Dynamic)
-        storeState
-          .fetch(container2, documentCommentsHeadlessResult7)
-          .catch((..._extraArguments: unknown[]): undefined => {});
-    },
-    [container2, widgetNodes],
-  );
-  let [seeded, setSeeded]: Dynamic = (0, React.useState)(false);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      setSeeded(false);
-      if (!fsEntryId) return;
-      let enabled = true;
-      let setSeeded2 = (..._extraArguments: unknown[]): undefined => {
-        if (enabled) {
-          setSeeded(true);
-        }
-      };
-      useCommentStore
-        .getState()
-        .fetch(container2, fsEntryId)
-        .then(setSeeded2, setSeeded2);
-      return (..._extraArguments: unknown[]): undefined => {
-        enabled = false;
-      };
-    },
-    [container2, fsEntryId],
-  );
-  let items: Dynamic = useThreads(fsEntryId ?? ``);
-  let items2: Dynamic = useThreadsJoined(widgetNodes ?? DocumentRuntimeState4);
-  let documentCommentsHeadlessResult4: Dynamic = useCommentStore(
-    (
-      documentCommentsHeadless?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => documentCommentsHeadless.mutGen,
-  );
-  let documentCommentsHeadlessResult5: Dynamic = useCommentStore(
-    (
-      documentCommentsHeadless?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => documentCommentsHeadless.foldConnected,
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (documentCommentsHeadlessResult5 || !fsEntryId) return;
-      let enabled = true;
-      Promise.all([
-        api.comments.list(container2, fsEntryId, true),
-        ...(widgetNodes ?? []).map(
-          (widgetNode?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-            api.comments
-              .list(container2, widgetNode, true)
-              .catch((..._extraArguments: unknown[]): Dynamic => []),
-        ),
-      ]).then(
-        (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-          if (!(!enabled || useCommentStore.getState().foldConnected)) {
-            useCommentStore.getState().setResolvedIds(
-              result
-                .flat()
-                .filter(
-                  (flat?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    flat.resolved && !flat.deleted,
-                )
-                .map(
-                  (
-                    filteredFlat?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic => ({
-                    id: filteredFlat.id,
-                    resolveId: filteredFlat.resolveId,
-                  }),
-                ),
-            );
-          }
-        },
-        (..._extraArguments: unknown[]): undefined => {},
-      );
-      return (..._extraArguments: unknown[]): undefined => {
-        enabled = false;
-      };
-    },
-    [
-      documentCommentsHeadlessResult5,
-      container2,
-      fsEntryId,
-      documentCommentsHeadlessResult4,
-      items,
-      widgetNodes,
-      items2,
-    ],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): undefined => {
-        let storeState: Dynamic = useCommentStore.getState();
-        storeState.setDraftAnchor(null);
-        storeState.setDraftY(null);
-        storeState.setPresent(null);
-        storeState.setFolded(DataModelSchemasFreeze);
-        storeState.setRects({}, []);
-        storeState.setDocExtent(null);
-        storeState.setDocScrollMax(null);
-        if (!storeState.foldConnected) {
-          storeState.setResolvedIds([]);
-        }
-        assignDocumentSourcePromptState(null);
-      },
-    [],
-  );
-  let handFocusOutRef: Dynamic = (0, React.useRef)(handFocusOut);
-  handFocusOutRef.current = handFocusOut;
-  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let handFocusOut2 = (
-      event?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
-      if (
-        !resolvePlatformKeyboardAndSaveStatusRepeat(event) ||
-        event.target?.closest(`input, textarea, [contenteditable]`) ||
-        PlatformSyncAndRoutingAssign2.getState().preview
-      )
-        return;
-      event.preventDefault();
-      let storeState: Dynamic = useCommentStore.getState();
-      if (storeState.commentMode === `hidden`) {
-        storeState.setCommentMode(`margin`);
-        resolveCommentComponentsKey(document, `shown`);
-      } else {
-        let activeElement = document.activeElement;
-        if (resolveCommentComponentsActiveElement(document)) {
-          handFocusOutRef.current?.(`tabs`);
-        }
-        storeState.setDraftAnchor(null);
-        storeState.setDraftY(null);
-        (0, ReactDom.flushSync)(
-          (..._extraArguments: unknown[]): Dynamic =>
-            storeState.setCommentMode(`hidden`),
-        );
-        if (resolveCommentComponentsIsConnected(activeElement, document)) {
-          handFocusOutRef.current?.(`tabs`);
-        }
-        resolveCommentComponentsKey(document, `hidden`);
-      }
-    };
-    window.addEventListener(`keydown`, handFocusOut2);
-    return (..._extraArguments: unknown[]) =>
-      window.removeEventListener(`keydown`, handFocusOut2);
-  }, []);
-  if (!fsEntryId) return null;
-  let matchesDocumentCommentsHeadlessResult =
-    documentCommentsHeadlessResult === `hidden` &&
-    !documentCommentsHeadlessResult2;
-  if (matchesDocumentCommentsHeadlessResult && !documentCommentsHeadlessResult3)
-    return null;
-  let mode =
-    forceList || documentCommentsHeadlessResult === `list` ? `list` : `margin`;
-  if (
-    (mode === `margin` ||
-      (forceList && documentCommentsHeadlessResult !== `list`)) &&
-    items.length + items2.length === 0 &&
-    !documentCommentsHeadlessResult2 &&
-    documentSourcePromptLimit0 === 0 &&
-    !documentCommentsHeadlessResult3
-  )
-    return null;
-  let documentCommentsHeadlessResult6: Dynamic =
-    documentCommentsHeadlessResult3 &&
-    (matchesDocumentCommentsHeadlessResult ||
-      ((mode === `margin` ||
-        (forceList && documentCommentsHeadlessResult !== `list`)) &&
-        items.length + items2.length === 0 &&
-        !documentCommentsHeadlessResult2 &&
-        documentSourcePromptLimit0 === 0));
-  let jsx = (
-    <DocumentFrame
-      container={container2}
-      fsEntryId={fsEntryId}
-      path={path}
-      mode={mode}
-      peek={mode === `margin` && collapsed && !documentCommentsHeadlessResult2}
-      iconLane={iconLane}
-      phone={phone}
-      composeFloat={
-        mode === `margin` &&
-        !!documentCommentsHeadlessResult2 &&
-        (collapsed || !railSeated)
-      }
-      railSeated={railSeated}
-      forceList={forceList}
-      readOnly={readOnly}
-      commentOnly={commentOnly}
-      resolveOwnOnly={resolveOwnOnly}
-      covered={covered}
-      seeded={seeded}
-      initialFilter={items.length + items2.length === 0 ? `all` : `open`}
-      listPopover={mode === `list` && collapsed}
-      room={room}
-      widgetNodes={widgetNodes}
-      nodeName={nodeName}
-      widgetBlockOf={widgetBlockOf}
-      blockKindOf={blockKindOf}
-      askOffer={askOffer}
-      onOpenNodeLog={onOpenNodeLog}
-      onRevealNode={onRevealNode}
-      onOverhang={onOverhang}
-      onCardSpans={onCardSpans}
-      onScrollDoc={onScrollDoc}
-      sheetScrollRef={sheetScrollRef}
-      onComposeExit={onComposeExit}
-      handFocusOut={handFocusOut}
-      onStageForClaude={onStageForClaude}
-      railSync={railSync}
-      railWheelMountedRef={railWheelMountedRef}
-    />
-  );
-  return documentCommentsHeadlessResult6 ? (
-    <div hidden={true} data-testid={`ldoc-comments-headless`}>
-      {jsx}
-    </div>
-  ) : (
-    jsx
-  );
-}
-
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializeRoomDocumentPageDocumentCommentsHeadlessStep1(): void {
   (DocumentSourcePrompt_WholeDocument = `Whole document`);
@@ -642,13 +621,4 @@ export function initializeRoomDocumentPageDocumentCommentsHeadlessStep1(): void 
   });
 }
 
-export {
-  DocumentCommentsHeadless,
-  DocumentSourcePrompt_WholeDocument,
-  documentSourcePromptSet,
-  isDocumentSourcePromptFsId,
-  isDocumentSourcePromptIsCollapsed,
-  resolveDocumentSourcePromptCells,
-  resolveDocumentSourcePromptTarget3,
-  resolveDocumentSourcePromptValue2,
-};
+export { DocumentSourcePrompt_WholeDocument, documentSourcePromptSet, isDocumentSourcePromptFsId, isDocumentSourcePromptIsCollapsed, resolveDocumentSourcePromptCells, resolveDocumentSourcePromptTarget3, resolveDocumentSourcePromptValue2 };

@@ -44,6 +44,549 @@ import {
   useCommentsActionsAndSelectionAccount,
   useCommentsActionsAndSelectionPlatform,
 } from "../../platform/index";
+import type * as ReactComponentTypes from "react";
+
+export const ArtifactReferenceChip: ReactComponentTypes.FC<Dynamic> = (props) => {
+  let ref: Dynamic = resolveCommentsActionsAndSelectionNoun(props.refStr);
+  let reference: Dynamic = useArtifactReference(props.refStr, props.container);
+  let restricted: boolean = reference !== null && `restricted` in reference;
+  let resolvedLabel: Dynamic =
+    reference !== null && `label` in reference
+      ? reference.parentTab === undefined
+        ? reference.label
+        : `${reference.parentTab} \u00b7 ${reference.label}`
+      : null;
+  let fallbackLabel: Dynamic = resolveEditorAnchorsAndMentionsStartsWith(
+    props.refStr,
+    props.container,
+  );
+  let label: Dynamic = restricted
+    ? `Restricted`
+    : (resolvedLabel ?? props.label ?? fallbackLabel);
+  return props.kind === `user` ? (
+    <span
+      style={{
+        display: `contents`,
+      }}
+      onClick={(
+        artifactReferenceChip?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => artifactReferenceChip.stopPropagation()}
+    >
+      <UserReferenceChip who={props.refStr.slice(6)} label={props.label} />
+    </span>
+  ) : (
+    <Tooltip content={fallbackLabel}>
+      <button
+        type={`button`}
+        onClick={(
+          artifactReferenceChip?: Dynamic,
+          ..._extraArguments: unknown[]
+        ): Dynamic => {
+          artifactReferenceChip.stopPropagation();
+          if (!restricted) {
+            if (props.kind === `run` && ref?.container === undefined) {
+              let artifactReferenceChipResult: Dynamic =
+                resolveEditorAnchorsAndMentionsRoutines(props.refStr);
+              if (artifactReferenceChipResult && props.onDrillRun)
+                return props.onDrillRun(artifactReferenceChipResult);
+              let replace: Dynamic = props.refStr.replace(/^runs?[:/]/, ``);
+              (window as Dynamic).dispatchEvent(
+                new (CustomEvent as Dynamic)(`bongo:openRuns`, {
+                  detail: {
+                    runId: replace,
+                  },
+                }),
+              );
+              return;
+            }
+            if (props.kind === `node`) {
+              location.hash = props.refStr;
+              return;
+            }
+            if (ref !== null) {
+              let artifactReferenceChipResult: Dynamic =
+                resolveCommentsActionsAndSelectionValue7(props.refStr, props.container);
+              if (artifactReferenceChipResult !== null)
+                return updateDataModelSchemasHerePath(artifactReferenceChipResult);
+              if (ref.container !== undefined) return;
+            }
+            updateDataModelSchemasHerePath(
+              `claude://${props.refStr.replace(/^routine:/, `routines/`).replace(/^table:/, `tables/`)}`,
+            );
+          }
+        }}
+        data-ref-chip={props.kind}
+        data-restricted={restricted ? `true` : undefined}
+        style={{
+          display: `inline-flex`,
+          alignItems: `center`,
+          padding: `1px 7px`,
+          fontSize: `var(--cds-font-size-footnote, 13px)`,
+          lineHeight: 1.5,
+          verticalAlign: `baseline`,
+          borderRadius: 999,
+          fontFamily: `inherit`,
+          fontWeight: 500,
+          cursor: restricted ? `default` : `pointer`,
+        }}
+        className={
+          restricted
+            ? `text-secondary bg-[var(--cds-neutral-50,#f5f4ed)]`
+            : `text-primary bg-[var(--cds-neutral-50,#f5f4ed)] hover:bg-[var(--cds-neutral-100,#e1e0d9)]`
+        }
+      >
+        {label}
+      </button>
+    </Tooltip>
+  );
+};
+
+export const DrillFrame: ReactComponentTypes.FC<Dynamic> = (props) => {
+  let mode: Dynamic = resolvePlatformApiAndAuthUseContext2();
+  let [expanded, setExpanded]: Dynamic = (0, React.useState)(false);
+  let frame: Dynamic = props.frame;
+  let actor: Dynamic =
+    frame.actor && !frame.summary.includes(frame.actor) ? frame.actor : null;
+  let summary: Dynamic = (
+    <jsxRuntime.Fragment>
+      <span className={`text-muted w-3 shrink-0`}>
+        {frame.expandable ? (expanded ? `▾` : `▸`) : `·`}
+      </span>
+      {frame.kind && <span className={`text-muted shrink-0`}>{frame.kind}</span>}
+      <span className={`text-primary truncate`}>{frame.summary}</span>
+      {actor &&
+        (actor.includes(`@`) && !actor.startsWith(`agent:`) ? (
+          <UserReferenceChip who={actor} />
+        ) : (
+          <span className={`text-muted shrink-0`}>{actor}</span>
+        ))}
+      {frame.at && (
+        <span className={`text-muted shrink-0`}>
+          {resolvePlatformSessionAndSourcesWeekday(
+            frame.at,
+            Date.parse(mode.now()),
+            mode.locale,
+            mode.timeZone,
+          )}
+        </span>
+      )}
+    </jsxRuntime.Fragment>
+  );
+  let reference: Dynamic = drillReferenceKind(frame.ref);
+  let detail: Dynamic = reference && (
+    <Tooltip
+      content={
+        reference.kind === `routine`
+          ? `Open routine:${reference.name}`
+          : `Open this run's routine`
+      }
+    >
+      <button
+        type={`button`}
+        data-testid={`drill-open`}
+        aria-label={
+          reference.kind === `routine`
+            ? `Open routine ${reference.name}`
+            : `Open this run's routine`
+        }
+        onClick={(..._extraArguments: unknown[]): undefined =>
+          void loadPlatformLiveDocumentAndHistoryFile(props.container, reference)
+        }
+        className={`text-muted hover:text-primary hover:bg-alpha-1 flex size-5 shrink-0 items-center justify-center self-center rounded`}
+      >
+        <UiOverlaysAndIconsCustomIcon name={`ArrowOutSquare`} customSize={11} />
+      </button>
+    </Tooltip>
+  );
+  return (
+    <div className={`text-caption font-mono leading-relaxed`}>
+      {frame.expandable ? (
+        <div className={`flex items-stretch gap-0.5`}>
+          <button
+            type={`button`}
+            data-testid={`drill-frame`}
+            data-ref={frame.ref}
+            onClick={(..._extraArguments: unknown[]): Dynamic => setExpanded(!expanded)}
+            className={`hover:bg-alpha-1 flex min-w-0 flex-1 items-baseline gap-1.5 rounded px-1 py-0.5 text-left`}
+          >
+            {summary}
+          </button>
+          {detail}
+        </div>
+      ) : (
+        <div className={`flex items-stretch gap-0.5`}>
+          <div
+            data-testid={`drill-frame`}
+            data-ref={frame.ref}
+            className={`flex min-w-0 flex-1 items-baseline gap-1.5 px-1 py-0.5`}
+          >
+            {summary}
+          </div>
+          {detail}
+        </div>
+      )}
+      {frame.detail && (
+        <details className={`text-muted pl-8`}>
+          <summary className={`cursor-pointer select-none`}>{`params`}</summary>
+          <pre
+            className={`text-caption max-h-40 overflow-auto break-all whitespace-pre-wrap`}
+          >
+            {frame.detail}
+          </pre>
+        </details>
+      )}
+      {frame.expandable && expanded && (
+        <div className={`border-strong/40 ml-1.5 border-l pl-3`}>
+          <DrillChildren
+            container={props.container}
+            refStr={frame.ref}
+            depth={props.depth + 1}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const DrillChildren: ReactComponentTypes.FC<Dynamic> = (props) => {
+  let [allowDeep, setAllowDeep]: Dynamic = (0, React.useState)(false);
+  let tooDeep: boolean = props.depth >= MAX_DRILL_DEPTH && !allowDeep;
+  let slot: Dynamic = (0, React.useId)();
+  let level: Dynamic = PlatformLiveDocumentAndHistoryLevels(
+    (drillChildren?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      drillChildren.levels[slot] ?? null,
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (!tooDeep) {
+        PlatformLiveDocumentAndHistoryLevels.getState().load(
+          slot,
+          props.container,
+          props.refStr,
+        );
+      }
+    },
+    [slot, props.container, props.refStr, tooDeep],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): Dynamic =>
+        PlatformLiveDocumentAndHistoryLevels.getState().release(slot),
+    [slot],
+  );
+  if (tooDeep)
+    return (
+      <button
+        type={`button`}
+        data-testid={`drill-more`}
+        className={`text-muted hover:text-primary text-caption px-1 py-0.5 font-mono`}
+        onClick={(..._extraArguments: unknown[]): Dynamic => setAllowDeep(true)}
+      >{`show more…`}</button>
+    );
+  if (level === null) return <DrillStatus>{`…`}</DrillStatus>;
+  if (`error` in level) return <DrillStatus>{level.message}</DrillStatus>;
+  if (level.empty) return <DrillStatus empty={true}>{level.empty.reason}</DrillStatus>;
+  if (level.frames.length === 0)
+    return <DrillStatus empty={true}>{`No further dependencies recorded.`}</DrillStatus>;
+  let depth: Dynamic = allowDeep ? 0 : props.depth;
+  let counts: Dynamic = new (Map as Dynamic)();
+  return (
+    <jsxRuntime.Fragment>
+      {level.frames.map((entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+        let label: string = `${entry.kind}|${entry.ref}`;
+        let countEntry: Dynamic = counts.get(label) ?? 0;
+        counts.set(label, countEntry + 1);
+        return (
+          <DrillFrame
+            container={props.container}
+            frame={entry}
+            depth={depth}
+            key={countEntry ? `${label}#${countEntry}` : label}
+          />
+        );
+      })}
+    </jsxRuntime.Fragment>
+  );
+};
+
+export const MentionHoverCard: ReactComponentTypes.FC<Dynamic> = ({
+  principal: principal,
+  anchor: anchor,
+}) => {
+  let emailPrincipal: boolean =
+    resolveEditorAnchorsAndMentionsOther(principal) === `email`;
+  let preferredName: Dynamic = useCommentsActionsAndSelectionAccount(principal);
+  let account: Dynamic = useCommentsActionsAndSelectionPlatform(principal);
+  let email: Dynamic =
+    resolveEditorAnchorsAndMentionsEmail2(principal) ?? (account?.email || undefined);
+  let name: Dynamic = preferredName || account?.name || undefined;
+  let emailLabel: Dynamic = resolvePlatformApiAndAuthToLowerCase3(email);
+  let label: Dynamic = emailPrincipal
+    ? (emailLabel ?? resolveEditorAnchorsAndMentionsEmail(principal))
+    : resolveEditorAnchorsAndMentionsEmail(principal, name);
+  let avatar: Dynamic =
+    resolvePlatformApiAndAuthValue39(email) ?? (account?.avatarUrl || undefined);
+  let profile: Dynamic = resolvePlatformApiAndAuthToLowerCase2(email);
+  let showName: Dynamic = emailPrincipal || name !== undefined;
+  let cardRef: Dynamic = (0, React.useRef)(null);
+  let anchorRef: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (emailPrincipal) {
+        PlatformApiAndAuthPriming.getState().primeExact([principal]);
+      }
+    },
+    [emailPrincipal, principal],
+  );
+  let roleDescription: string = [profile?.title, profile?.team, profile?.org]
+    .filter(Boolean)
+    .join(` · `);
+  let locationDescription: string = [
+    profile?.building,
+    profile?.floor ? `Floor ${profile.floor}` : ``,
+  ]
+    .filter(Boolean)
+    .join(` · `);
+  let placement: string = ``;
+  if (profile?.tz)
+    try {
+      placement = `${new (Intl.DateTimeFormat as Dynamic)(undefined, {
+        hour: `numeric`,
+        minute: `2-digit`,
+        timeZone: profile.tz,
+        timeZoneName: `short`,
+      }).format(new (Date as Dynamic)())} local`;
+    } catch {}
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let card: Dynamic = cardRef.current;
+      if (!showName || card === null) return;
+      let element: Dynamic = filterEditorChipsAndNodeViewsOnce(
+        document,
+        {
+          label: label,
+          principal: emailPrincipal ? principal : undefined,
+          email: email,
+          photoUrl: avatar,
+          role: roleDescription,
+          desk: locationDescription,
+          local: placement,
+        },
+        {
+          onCopy: (
+            mentionHoverCard?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            (navigator as Dynamic).clipboard
+              ?.writeText(mentionHoverCard)
+              .then((..._extraArguments: unknown[]): undefined => {
+                let matchedElement: Dynamic = element.querySelector(`button.cp`);
+                if (matchedElement !== null) {
+                  matchedElement.textContent = `Copied`;
+                  if (anchorRef.current !== null) {
+                    clearTimeout(anchorRef.current);
+                  }
+                  anchorRef.current = setTimeout(
+                    (..._extraArguments: unknown[]): undefined => {
+                      matchedElement.textContent = `Copy email`;
+                    },
+                    1200,
+                  );
+                }
+              });
+          },
+        },
+      );
+      card.replaceChildren(element);
+      return (..._extraArguments: unknown[]): undefined => {
+        if (anchorRef.current !== null) {
+          clearTimeout(anchorRef.current);
+        }
+        anchorRef.current = null;
+        card.replaceChildren();
+      };
+    },
+    [
+      showName,
+      label,
+      emailPrincipal,
+      principal,
+      email,
+      avatar,
+      roleDescription,
+      locationDescription,
+      placement,
+    ],
+  );
+  if (!showName) return null;
+  let left: number = Math.max(
+    8,
+    Math.min(anchor.left, (window as Dynamic).innerWidth - 268 - 8),
+  );
+  return (
+    <div
+      ref={cardRef}
+      className={`bg-surface-3 border-weak shadow-md text-footnote fixed z-50 rounded-lg border px-3.5 py-3`}
+      style={{
+        ...(anchor.bottom + 8 + 180 < (window as Dynamic).innerHeight
+          ? {
+              top: anchor.bottom + 6,
+              left: left,
+            }
+          : {
+              bottom: (window as Dynamic).innerHeight - anchor.top + 6,
+              left: left,
+            }),
+        width: 268,
+      }}
+      data-testid={`person-hover-card`}
+    />
+  );
+};
+
+export const MentionHoverAnchor: ReactComponentTypes.FC<Dynamic> = ({
+  principal: principal,
+  children: children,
+}) => {
+  let [anchor, setAnchor]: Dynamic = (0, React.useState)(null);
+  let showTimer: Dynamic = (0, React.useRef)(null);
+  let hideTimer: Dynamic = (0, React.useRef)(null);
+  let clearTimer = (ref?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (ref.current !== null) {
+      clearTimeout(ref.current);
+    }
+    ref.current = null;
+  };
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): undefined => {
+        clearTimer(showTimer);
+        clearTimer(hideTimer);
+      },
+    [],
+  );
+  let hide = (..._extraArguments: unknown[]): undefined => {
+    clearTimer(hideTimer);
+    hideTimer.current = setTimeout(
+      (..._extraArguments: unknown[]): Dynamic => setAnchor(null),
+      200,
+    );
+  };
+  return (
+    <span
+      onMouseEnter={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        clearTimer(hideTimer);
+        clearTimer(showTimer);
+        let currentTarget: Dynamic = event.currentTarget;
+        showTimer.current = setTimeout(
+          (..._extraArguments: unknown[]): Dynamic =>
+            setAnchor(currentTarget.getBoundingClientRect()),
+          250,
+        );
+      }}
+      onMouseLeave={(..._extraArguments: unknown[]): undefined => {
+        clearTimer(showTimer);
+        hide();
+      }}
+    >
+      {children}
+      {anchor !== null && (
+        <span
+          onMouseEnter={(..._extraArguments: unknown[]): Dynamic => clearTimer(hideTimer)}
+          onMouseLeave={hide}
+        >
+          <MentionHoverCard principal={principal} anchor={anchor} />
+        </span>
+      )}
+    </span>
+  );
+};
+
+export const MentionName: ReactComponentTypes.FC<Dynamic> = ({
+  principal: principal,
+}) => {
+  let preferredName: Dynamic = useCommentsActionsAndSelectionAccount(principal);
+  let account: Dynamic = useCommentsActionsAndSelectionPlatform(principal);
+  if (preferredName === null && account === undefined)
+    return (
+      <jsxRuntime.Fragment>
+        {`@`}
+        {LOADING_MENTION_TEXT}
+      </jsxRuntime.Fragment>
+    );
+  let label: Dynamic = preferredName || account?.name;
+  return label ? (
+    <jsxRuntime.Fragment>
+      {`@`}
+      {label}
+    </jsxRuntime.Fragment>
+  ) : (
+    <span
+      title={EditorAnchorsAndMentionsMessage}
+      aria-label={`@${EditorAnchorsAndMentionsSomeone}, ${EditorAnchorsAndMentionsMessage}`}
+    >
+      {`@`}
+      {EditorAnchorsAndMentionsSomeone}
+    </span>
+  );
+};
+
+export const UserReferenceChip: ReactComponentTypes.FC<Dynamic> = ({
+  who: who,
+  label: label,
+}) => {
+  let isPrincipal: Dynamic = resolveEditorAnchorsAndMentionsPlatform(who);
+  let email: Dynamic = isPrincipal
+    ? getCommentsActionsAndSelectionToLowerCase(who)?.email || null
+    : who;
+  let label2: Dynamic = label ?? resolvePlatformSessionAndSourcesValue(who);
+  let chip: Dynamic = (
+    <span
+      data-ref-chip={`user`}
+      style={{
+        display: `inline-block`,
+        padding: `0 3px`,
+        fontSize: `.96em`,
+        lineHeight: 1.35,
+        verticalAlign: `baseline`,
+        borderRadius: 3,
+        background: `color-mix(in oklch, var(--cds-blue-450) 14%, transparent)`,
+        fontWeight: 500,
+      }}
+    >
+      {isPrincipal && label == null ? <MentionName principal={who} /> : `@${label2}`}
+    </span>
+  );
+  return email ? <Tooltip content={email}>{chip}</Tooltip> : chip;
+};
+
+export const DrillReferenceChip: ReactComponentTypes.FC<Dynamic> = (props) => {
+  return (
+    <DrillFrame
+      container={props.container}
+      frame={{
+        ref: props.refStr,
+        kind: ``,
+        summary: props.label ?? props.refStr,
+        expandable: true,
+      }}
+      depth={0}
+    />
+  );
+};
+
+export const DrillStatus: ReactComponentTypes.FC<Dynamic> = (props) => {
+  return (
+    <div
+      data-testid={props.empty ? `drill-empty` : undefined}
+      className={`text-muted text-caption px-1 py-0.5 font-mono`}
+    >
+      {props.children}
+    </div>
+  );
+};
+
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var jsxRuntime: Dynamic = loadJsxRuntime();
 function resolveLocalReference(
@@ -974,67 +1517,7 @@ function isRestrictedResponse(
   return status === 404 || status === 403;
 }
 var LOADING_MENTION_TEXT: string = `…`;
-function MentionName(
-  { principal: principal }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let preferredName: Dynamic = useCommentsActionsAndSelectionAccount(principal);
-  let account: Dynamic = useCommentsActionsAndSelectionPlatform(principal);
-  if (preferredName === null && account === undefined)
-    return (
-      <jsxRuntime.Fragment>
-        {`@`}
-        {LOADING_MENTION_TEXT}
-      </jsxRuntime.Fragment>
-    );
-  let label: Dynamic = preferredName || account?.name;
-  return label ? (
-    <jsxRuntime.Fragment>
-      {`@`}
-      {label}
-    </jsxRuntime.Fragment>
-  ) : (
-    <span
-      title={EditorAnchorsAndMentionsMessage}
-      aria-label={`@${EditorAnchorsAndMentionsSomeone}, ${EditorAnchorsAndMentionsMessage}`}
-    >
-      {`@`}
-      {EditorAnchorsAndMentionsSomeone}
-    </span>
-  );
-}
-function UserReferenceChip(
-  { who: who, label: label }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let isPrincipal: Dynamic = resolveEditorAnchorsAndMentionsPlatform(who);
-  let email: Dynamic = isPrincipal
-    ? getCommentsActionsAndSelectionToLowerCase(who)?.email || null
-    : who;
-  let label2: Dynamic = label ?? resolvePlatformSessionAndSourcesValue(who);
-  let chip: Dynamic = (
-    <span
-      data-ref-chip={`user`}
-      style={{
-        display: `inline-block`,
-        padding: `0 3px`,
-        fontSize: `.96em`,
-        lineHeight: 1.35,
-        verticalAlign: `baseline`,
-        borderRadius: 3,
-        background: `color-mix(in oklch, var(--cds-blue-450) 14%, transparent)`,
-        fontWeight: 500,
-      }}
-    >
-      {isPrincipal && label == null ? (
-        <MentionName principal={who} />
-      ) : (
-        `@${label2}`
-      )}
-    </span>
-  );
-  return email ? <Tooltip content={email}>{chip}</Tooltip> : chip;
-}
+
 var projectReadPromises: Dynamic = new (Map as Dynamic)();
 var projectReadCache: Dynamic = new (Map as Dynamic)();
 function readReferenceProject(
@@ -1176,109 +1659,7 @@ function useArtifactReference(
   );
   return reference;
 }
-function ArtifactReferenceChip(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let ref: Dynamic = resolveCommentsActionsAndSelectionNoun(props.refStr);
-  let reference: Dynamic = useArtifactReference(props.refStr, props.container);
-  let restricted: boolean = reference !== null && `restricted` in reference;
-  let resolvedLabel: Dynamic =
-    reference !== null && `label` in reference
-      ? reference.parentTab === undefined
-        ? reference.label
-        : `${reference.parentTab} \u00b7 ${reference.label}`
-      : null;
-  let fallbackLabel: Dynamic = resolveEditorAnchorsAndMentionsStartsWith(
-    props.refStr,
-    props.container,
-  );
-  let label: Dynamic = restricted
-    ? `Restricted`
-    : (resolvedLabel ?? props.label ?? fallbackLabel);
-  return props.kind === `user` ? (
-    <span
-      style={{
-        display: `contents`,
-      }}
-      onClick={(
-        artifactReferenceChip?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => artifactReferenceChip.stopPropagation()}
-    >
-      <UserReferenceChip who={props.refStr.slice(6)} label={props.label} />
-    </span>
-  ) : (
-    <Tooltip content={fallbackLabel}>
-      <button
-        type={`button`}
-        onClick={(
-          artifactReferenceChip?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic => {
-          artifactReferenceChip.stopPropagation();
-          if (!restricted) {
-            if (props.kind === `run` && ref?.container === undefined) {
-              let artifactReferenceChipResult: Dynamic =
-                resolveEditorAnchorsAndMentionsRoutines(props.refStr);
-              if (artifactReferenceChipResult && props.onDrillRun)
-                return props.onDrillRun(artifactReferenceChipResult);
-              let replace: Dynamic = props.refStr.replace(/^runs?[:/]/, ``);
-              (window as Dynamic).dispatchEvent(
-                new (CustomEvent as Dynamic)(`bongo:openRuns`, {
-                  detail: {
-                    runId: replace,
-                  },
-                }),
-              );
-              return;
-            }
-            if (props.kind === `node`) {
-              location.hash = props.refStr;
-              return;
-            }
-            if (ref !== null) {
-              let artifactReferenceChipResult: Dynamic =
-                resolveCommentsActionsAndSelectionValue7(
-                  props.refStr,
-                  props.container,
-                );
-              if (artifactReferenceChipResult !== null)
-                return updateDataModelSchemasHerePath(
-                  artifactReferenceChipResult,
-                );
-              if (ref.container !== undefined) return;
-            }
-            updateDataModelSchemasHerePath(
-              `claude://${props.refStr.replace(/^routine:/, `routines/`).replace(/^table:/, `tables/`)}`,
-            );
-          }
-        }}
-        data-ref-chip={props.kind}
-        data-restricted={restricted ? `true` : undefined}
-        style={{
-          display: `inline-flex`,
-          alignItems: `center`,
-          padding: `1px 7px`,
-          fontSize: `var(--cds-font-size-footnote, 13px)`,
-          lineHeight: 1.5,
-          verticalAlign: `baseline`,
-          borderRadius: 999,
-          fontFamily: `inherit`,
-          fontWeight: 500,
-          cursor: restricted ? `default` : `pointer`,
-        }}
-        className={
-          restricted
-            ? `text-secondary bg-[var(--cds-neutral-50,#f5f4ed)]`
-            : `text-primary bg-[var(--cds-neutral-50,#f5f4ed)] hover:bg-[var(--cds-neutral-100,#e1e0d9)]`
-        }
-      >
-        {label}
-      </button>
-    </Tooltip>
-  );
-}
+
 var MAX_DRILL_DEPTH: number = 5;
 var ROUTINE_REFERENCE_PATTERN: Dynamic = RegExp(
   `^routines?[:/](${EditorAnchorsAndMentionsStyles})$`,
@@ -1304,211 +1685,7 @@ function drillReferenceKind(
       }
     : null;
 }
-function DrillReferenceChip(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <DrillFrame
-      container={props.container}
-      frame={{
-        ref: props.refStr,
-        kind: ``,
-        summary: props.label ?? props.refStr,
-        expandable: true,
-      }}
-      depth={0}
-    />
-  );
-}
-function DrillFrame(props?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-  let mode: Dynamic = resolvePlatformApiAndAuthUseContext2();
-  let [expanded, setExpanded]: Dynamic = (0, React.useState)(false);
-  let frame: Dynamic = props.frame;
-  let actor: Dynamic =
-    frame.actor && !frame.summary.includes(frame.actor) ? frame.actor : null;
-  let summary: Dynamic = (
-    <jsxRuntime.Fragment>
-      <span className={`text-muted w-3 shrink-0`}>
-        {frame.expandable ? (expanded ? `▾` : `▸`) : `·`}
-      </span>
-      {frame.kind && (
-        <span className={`text-muted shrink-0`}>{frame.kind}</span>
-      )}
-      <span className={`text-primary truncate`}>{frame.summary}</span>
-      {actor &&
-        (actor.includes(`@`) && !actor.startsWith(`agent:`) ? (
-          <UserReferenceChip who={actor} />
-        ) : (
-          <span className={`text-muted shrink-0`}>{actor}</span>
-        ))}
-      {frame.at && (
-        <span className={`text-muted shrink-0`}>
-          {resolvePlatformSessionAndSourcesWeekday(
-            frame.at,
-            Date.parse(mode.now()),
-            mode.locale,
-            mode.timeZone,
-          )}
-        </span>
-      )}
-    </jsxRuntime.Fragment>
-  );
-  let reference: Dynamic = drillReferenceKind(frame.ref);
-  let detail: Dynamic = reference && (
-    <Tooltip
-      content={
-        reference.kind === `routine`
-          ? `Open routine:${reference.name}`
-          : `Open this run's routine`
-      }
-    >
-      <button
-        type={`button`}
-        data-testid={`drill-open`}
-        aria-label={
-          reference.kind === `routine`
-            ? `Open routine ${reference.name}`
-            : `Open this run's routine`
-        }
-        onClick={(..._extraArguments: unknown[]): undefined =>
-          void loadPlatformLiveDocumentAndHistoryFile(
-            props.container,
-            reference,
-          )
-        }
-        className={`text-muted hover:text-primary hover:bg-alpha-1 flex size-5 shrink-0 items-center justify-center self-center rounded`}
-      >
-        <UiOverlaysAndIconsCustomIcon name={`ArrowOutSquare`} customSize={11} />
-      </button>
-    </Tooltip>
-  );
-  return (
-    <div className={`text-caption font-mono leading-relaxed`}>
-      {frame.expandable ? (
-        <div className={`flex items-stretch gap-0.5`}>
-          <button
-            type={`button`}
-            data-testid={`drill-frame`}
-            data-ref={frame.ref}
-            onClick={(..._extraArguments: unknown[]): Dynamic =>
-              setExpanded(!expanded)
-            }
-            className={`hover:bg-alpha-1 flex min-w-0 flex-1 items-baseline gap-1.5 rounded px-1 py-0.5 text-left`}
-          >
-            {summary}
-          </button>
-          {detail}
-        </div>
-      ) : (
-        <div className={`flex items-stretch gap-0.5`}>
-          <div
-            data-testid={`drill-frame`}
-            data-ref={frame.ref}
-            className={`flex min-w-0 flex-1 items-baseline gap-1.5 px-1 py-0.5`}
-          >
-            {summary}
-          </div>
-          {detail}
-        </div>
-      )}
-      {frame.detail && (
-        <details className={`text-muted pl-8`}>
-          <summary className={`cursor-pointer select-none`}>{`params`}</summary>
-          <pre
-            className={`text-caption max-h-40 overflow-auto break-all whitespace-pre-wrap`}
-          >
-            {frame.detail}
-          </pre>
-        </details>
-      )}
-      {frame.expandable && expanded && (
-        <div className={`border-strong/40 ml-1.5 border-l pl-3`}>
-          <DrillChildren
-            container={props.container}
-            refStr={frame.ref}
-            depth={props.depth + 1}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-function DrillChildren(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let [allowDeep, setAllowDeep]: Dynamic = (0, React.useState)(false);
-  let tooDeep: boolean = props.depth >= MAX_DRILL_DEPTH && !allowDeep;
-  let slot: Dynamic = (0, React.useId)();
-  let level: Dynamic = PlatformLiveDocumentAndHistoryLevels(
-    (drillChildren?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      drillChildren.levels[slot] ?? null,
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (!tooDeep) {
-        PlatformLiveDocumentAndHistoryLevels.getState().load(
-          slot,
-          props.container,
-          props.refStr,
-        );
-      }
-    },
-    [slot, props.container, props.refStr, tooDeep],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): Dynamic =>
-        PlatformLiveDocumentAndHistoryLevels.getState().release(slot),
-    [slot],
-  );
-  if (tooDeep)
-    return (
-      <button
-        type={`button`}
-        data-testid={`drill-more`}
-        className={`text-muted hover:text-primary text-caption px-1 py-0.5 font-mono`}
-        onClick={(..._extraArguments: unknown[]): Dynamic => setAllowDeep(true)}
-      >{`show more…`}</button>
-    );
-  if (level === null) return <DrillStatus>{`…`}</DrillStatus>;
-  if (`error` in level) return <DrillStatus>{level.message}</DrillStatus>;
-  if (level.empty)
-    return <DrillStatus empty={true}>{level.empty.reason}</DrillStatus>;
-  if (level.frames.length === 0)
-    return (
-      <DrillStatus
-        empty={true}
-      >{`No further dependencies recorded.`}</DrillStatus>
-    );
-  let depth: Dynamic = allowDeep ? 0 : props.depth;
-  let counts: Dynamic = new (Map as Dynamic)();
-  return (
-    <jsxRuntime.Fragment>
-      {level.frames.map(
-        (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-          let label: string = `${entry.kind}|${entry.ref}`;
-          let countEntry: Dynamic = counts.get(label) ?? 0;
-          counts.set(label, countEntry + 1);
-          return (
-            <DrillFrame container={props.container} frame={entry} depth={depth} key={countEntry ? `${label}#${countEntry}` : label} />
-          );
-        },
-      )}
-    </jsxRuntime.Fragment>
-  );
-}
-function DrillStatus(props?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-  return (
-    <div
-      data-testid={props.empty ? `drill-empty` : undefined}
-      className={`text-muted text-caption px-1 py-0.5 font-mono`}
-    >
-      {props.children}
-    </div>
-  );
-}
+
 if (
   typeof document !== "undefined" &&
   (document as Dynamic).getElementById(`ldoc-chip-css`) === null
@@ -1518,234 +1695,5 @@ if (
   element.textContent = EditorExtensionsBlue2;
   (document as Dynamic).head.append(element);
 }
-function MentionHoverCard(
-  { principal: principal, anchor: anchor }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let emailPrincipal: boolean =
-    resolveEditorAnchorsAndMentionsOther(principal) === `email`;
-  let preferredName: Dynamic = useCommentsActionsAndSelectionAccount(principal);
-  let account: Dynamic = useCommentsActionsAndSelectionPlatform(principal);
-  let email: Dynamic =
-    resolveEditorAnchorsAndMentionsEmail2(principal) ??
-    (account?.email || undefined);
-  let name: Dynamic = preferredName || account?.name || undefined;
-  let emailLabel: Dynamic = resolvePlatformApiAndAuthToLowerCase3(email);
-  let label: Dynamic = emailPrincipal
-    ? (emailLabel ?? resolveEditorAnchorsAndMentionsEmail(principal))
-    : resolveEditorAnchorsAndMentionsEmail(principal, name);
-  let avatar: Dynamic =
-    resolvePlatformApiAndAuthValue39(email) ??
-    (account?.avatarUrl || undefined);
-  let profile: Dynamic = resolvePlatformApiAndAuthToLowerCase2(email);
-  let showName: Dynamic = emailPrincipal || name !== undefined;
-  let cardRef: Dynamic = (0, React.useRef)(null);
-  let anchorRef: Dynamic = (0, React.useRef)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (emailPrincipal) {
-        PlatformApiAndAuthPriming.getState().primeExact([principal]);
-      }
-    },
-    [emailPrincipal, principal],
-  );
-  let roleDescription: string = [profile?.title, profile?.team, profile?.org]
-    .filter(Boolean)
-    .join(` · `);
-  let locationDescription: string = [
-    profile?.building,
-    profile?.floor ? `Floor ${profile.floor}` : ``,
-  ]
-    .filter(Boolean)
-    .join(` · `);
-  let placement: string = ``;
-  if (profile?.tz)
-    try {
-      placement = `${new (Intl.DateTimeFormat as Dynamic)(undefined, {
-        hour: `numeric`,
-        minute: `2-digit`,
-        timeZone: profile.tz,
-        timeZoneName: `short`,
-      }).format(new (Date as Dynamic)())} local`;
-    } catch {}
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let card: Dynamic = cardRef.current;
-      if (!showName || card === null) return;
-      let element: Dynamic = filterEditorChipsAndNodeViewsOnce(
-        document,
-        {
-          label: label,
-          principal: emailPrincipal ? principal : undefined,
-          email: email,
-          photoUrl: avatar,
-          role: roleDescription,
-          desk: locationDescription,
-          local: placement,
-        },
-        {
-          onCopy: (
-            mentionHoverCard?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            (navigator as Dynamic).clipboard
-              ?.writeText(mentionHoverCard)
-              .then((..._extraArguments: unknown[]): undefined => {
-                let matchedElement: Dynamic =
-                  element.querySelector(`button.cp`);
-                if (matchedElement !== null) {
-                  matchedElement.textContent = `Copied`;
-                  if (anchorRef.current !== null) {
-                    clearTimeout(anchorRef.current);
-                  }
-                  anchorRef.current = setTimeout(
-                    (..._extraArguments: unknown[]): undefined => {
-                      matchedElement.textContent = `Copy email`;
-                    },
-                    1200,
-                  );
-                }
-              });
-          },
-        },
-      );
-      card.replaceChildren(element);
-      return (..._extraArguments: unknown[]): undefined => {
-        if (anchorRef.current !== null) {
-          clearTimeout(anchorRef.current);
-        }
-        anchorRef.current = null;
-        card.replaceChildren();
-      };
-    },
-    [
-      showName,
-      label,
-      emailPrincipal,
-      principal,
-      email,
-      avatar,
-      roleDescription,
-      locationDescription,
-      placement,
-    ],
-  );
-  if (!showName) return null;
-  let left: number = Math.max(
-    8,
-    Math.min(anchor.left, (window as Dynamic).innerWidth - 268 - 8),
-  );
-  return (
-    <div
-      ref={cardRef}
-      className={`bg-surface-3 border-weak shadow-md text-footnote fixed z-50 rounded-lg border px-3.5 py-3`}
-      style={{
-        ...(anchor.bottom + 8 + 180 < (window as Dynamic).innerHeight
-          ? {
-              top: anchor.bottom + 6,
-              left: left,
-            }
-          : {
-              bottom: (window as Dynamic).innerHeight - anchor.top + 6,
-              left: left,
-            }),
-        width: 268,
-      }}
-      data-testid={`person-hover-card`}
-    />
-  );
-}
-function MentionHoverAnchor(
-  { principal: principal, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let [anchor, setAnchor]: Dynamic = (0, React.useState)(null);
-  let showTimer: Dynamic = (0, React.useRef)(null);
-  let hideTimer: Dynamic = (0, React.useRef)(null);
-  let clearTimer = (
-    ref?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (ref.current !== null) {
-      clearTimeout(ref.current);
-    }
-    ref.current = null;
-  };
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): undefined => {
-        clearTimer(showTimer);
-        clearTimer(hideTimer);
-      },
-    [],
-  );
-  let hide = (..._extraArguments: unknown[]): undefined => {
-    clearTimer(hideTimer);
-    hideTimer.current = setTimeout(
-      (..._extraArguments: unknown[]): Dynamic => setAnchor(null),
-      200,
-    );
-  };
-  return (
-    <span
-      onMouseEnter={(
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        clearTimer(hideTimer);
-        clearTimer(showTimer);
-        let currentTarget: Dynamic = event.currentTarget;
-        showTimer.current = setTimeout(
-          (..._extraArguments: unknown[]): Dynamic =>
-            setAnchor(currentTarget.getBoundingClientRect()),
-          250,
-        );
-      }}
-      onMouseLeave={(..._extraArguments: unknown[]): undefined => {
-        clearTimer(showTimer);
-        hide();
-      }}
-    >
-      {children}
-      {anchor !== null && (
-        <span
-          onMouseEnter={(..._extraArguments: unknown[]): Dynamic =>
-            clearTimer(hideTimer)
-          }
-          onMouseLeave={hide}
-        >
-          <MentionHoverCard principal={principal} anchor={anchor} />
-        </span>
-      )}
-    </span>
-  );
-}
-export {
-  referenceContainer,
-  watchReferenceChanges,
-  fileReferenceLabel,
-  readEnumDefinition,
-  projectName,
-  searchReferenceCandidates,
-  UserReferenceChip,
-  readCrossFileReference,
-  DEFAULT_STATUS_ENUM,
-  enumSchema,
-  referenceReadRoute,
-  isRestrictedResponse,
-  crossProjectClaudeLink,
-  cachedArtifactReference,
-  ENUM_COLORS,
-  reconcileEnumDefinition,
-  DrillReferenceChip,
-  MentionName,
-  safeReferenceUrl,
-  ArtifactReferenceChip,
-  REFERENCE_REFRESH_DEBOUNCE_MS,
-  MentionHoverAnchor,
-  resolveMentionNames,
-  tabNameDirectory,
-  resolveLocalReference,
-  readTableReference,
-  searchTabs,
-};
+
+export { referenceContainer, watchReferenceChanges, fileReferenceLabel, readEnumDefinition, projectName, searchReferenceCandidates, readCrossFileReference, DEFAULT_STATUS_ENUM, enumSchema, referenceReadRoute, isRestrictedResponse, crossProjectClaudeLink, cachedArtifactReference, ENUM_COLORS, reconcileEnumDefinition, safeReferenceUrl, REFERENCE_REFRESH_DEBOUNCE_MS, resolveMentionNames, tabNameDirectory, resolveLocalReference, readTableReference, searchTabs };

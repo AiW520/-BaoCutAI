@@ -62,6 +62,285 @@ import {
   resolveCommentAnchorsIssued,
   resolveCommentAnchorsSplit,
 } from "./use-comment-anchors-sheets-component";
+import type * as ReactComponentTypes from "react";
+
+export const UseCommentAnchorsUserComponent: ReactComponentTypes.FC<Dynamic> = ({
+  user: user,
+}) => {
+  let useCommentAnchorsUserResult = resolveEditorAnchorsAndMentionsOther(user);
+  let useCommentAnchorsUserResult2: Dynamic = useCommentsActionsAndSelectionPlatform(
+    useCommentAnchorsUserResult === `platform` ? user : null,
+  );
+  let useCommentAnchorsUserResult3: Dynamic = resolvePlatformApiAndAuthUseContext2();
+  let matchesLocale =
+    useCommentAnchorsUserResult3.locale !== undefined ||
+    useCommentAnchorsUserResult3.timeZone !== undefined;
+  let photoUrl: Dynamic = PlatformApiAndAuthPriming(
+    (commentAnchorsUser?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      matchesLocale
+        ? undefined
+        : resolvePlatformApiAndAuthToLowerCase(commentAnchorsUser, user),
+  );
+  return useCommentAnchorsUserResult === `email` ? (
+    <CollaboratorAvatar
+      email={user}
+      photoUrl={photoUrl}
+      size={20}
+      className={`shrink-0`}
+    />
+  ) : useCommentAnchorsUserResult2 === undefined ? (
+    <span className={`bg-alpha-2 size-[20px] shrink-0 animate-pulse rounded-full`} />
+  ) : (
+    <CollaboratorAvatar
+      email={resolveEditorAnchorsAndMentionsEmail(
+        user,
+        useCommentAnchorsUserResult2?.name,
+      )}
+      photoUrl={resolveObservabilityBrowserAndOperationEventsStartsWith(
+        useCommentAnchorsUserResult2?.avatarUrl,
+        matchesLocale,
+      )}
+      size={20}
+      className={`shrink-0`}
+    />
+  );
+};
+
+export const UseCommentAnchorsExpandedComponent: ReactComponentTypes.FC<Dynamic> = ({
+  expanded: expanded,
+  compact: compact,
+  compactPx = commentAnchorsLimit56,
+  container: container,
+  children: children,
+}) => {
+  let compactPx2: Dynamic = compact ? compactPx : commentAnchorsLimit272;
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let [enabledState2, setEnabledState2]: Dynamic = (0, React.useState)(false);
+  (0, React.useLayoutEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      let element: Dynamic = elementRef.current;
+      if (element) {
+        setEnabledState2(element.scrollHeight > compactPx2 + 8);
+      }
+    },
+    [children, compactPx2],
+  );
+  let elementRef2: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let element: Dynamic = elementRef2.current;
+      if (!element || typeof ResizeObserver === "undefined") return;
+      let resizeObserver = new ResizeObserver(
+        (..._extraArguments: unknown[]): Dynamic =>
+          setEnabledState2(element.offsetHeight > compactPx2 + 8),
+      );
+      resizeObserver.observe(element);
+      return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
+    },
+    [compactPx2],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (!expanded) {
+        setEnabledState(false);
+      }
+    },
+    [expanded],
+  );
+  let enabled = !enabledState && !expanded;
+  let enabledState3: Dynamic = enabledState2 && enabled;
+  return (
+    <div>
+      <div
+        ref={elementRef}
+        data-nonresting={enabledState || undefined}
+        style={
+          enabled
+            ? {
+                maxHeight: enabledState3 ? compactPx2 : compactPx2 + 8,
+              }
+            : undefined
+        }
+        className={`text-pretty wrap-anywhere [&_code]:break-all [&_pre]:max-w-full [&_pre]:overflow-x-auto ${enabledState3 ? `relative overflow-hidden` : ``}`}
+      >
+        <div ref={elementRef2}>
+          <UseCommentAnchorsContainerComponent container={container}>
+            {children}
+          </UseCommentAnchorsContainerComponent>
+        </div>
+        {enabledState3 && (
+          <div
+            className={`pointer-events-none absolute inset-x-0 bottom-0 ${compact ? `h-4` : `h-8`} bg-gradient-to-t from-[var(--comment-fade-stop,var(--cds-surface-1))] to-transparent`}
+          />
+        )}
+      </div>
+      {enabledState2 && !expanded && (
+        <button
+          type={`button`}
+          onClick={(
+            commentAnchorsExpanded?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            commentAnchorsExpanded.stopPropagation();
+            setEnabledState(
+              (commentAnchorsExpanded2?: Dynamic, ..._extraArguments: unknown[]) =>
+                !commentAnchorsExpanded2,
+            );
+          }}
+          className={
+            CommentAnchors_TextMutedHoverTextSecondaryTextCaptionMt05BlockTextLeft
+          }
+        >
+          {enabledState ? `Show less` : `Show more`}
+        </button>
+      )}
+    </div>
+  );
+};
+
+export const UseCommentAnchorsStateComponent: ReactComponentTypes.FC<Dynamic> = ({
+  state: state,
+  size: size,
+}) => {
+  let jsx = (
+    <UiOverlaysAndIconsCustomIcon
+      name={`Check`}
+      customSize={size}
+      className={`rx-glyph`}
+    />
+  );
+  return state === `idle` ? (
+    jsx
+  ) : (
+    <span className={`rx-check`} data-state={state}>
+      <svg viewBox={`0 0 16 16`} aria-hidden={true}>
+        <rect
+          className={`rx-square`}
+          x={`0.75`}
+          y={`0.75`}
+          width={`14.5`}
+          height={`14.5`}
+          rx={`4`}
+        />
+      </svg>
+      {jsx}
+    </span>
+  );
+};
+
+export const SummonNote: ReactComponentTypes.FC<Dynamic> = ({
+  note: note,
+  onOpen: onOpen,
+  handoff = false,
+  as: as2,
+}) => {
+  // BaoCut: 批注下方「已发给智能体」等状态，独立页面装了 docsHost.comments 时也显示。
+  if (!commentSummonHost() || note === undefined) return null;
+  let Item: Dynamic = resolveCommentAnchorsValue4(note, handoff)
+    ? PlatformSessionAndSourcesMessage2
+    : PlatformSessionAndSourcesSent[note];
+  let commentAnchorsLastIndexOf: Dynamic = resolveCommentAnchorsValue5(
+    note,
+    onOpen,
+    handoff,
+  )
+    ? resolveCommentAnchorsLastIndexOf(
+        Item,
+        note === `no_listener`
+          ? CommentAnchors_OpenItInClaude
+          : CommentAnchors_YourSession,
+      )
+    : null;
+  return renderReactJsx(as2 ?? `div`, {
+    ...(as2 === undefined && {
+      className: `text-muted text-caption mt-1`,
+    }),
+    "data-testid": `summon-note`,
+    "data-summon-note": note,
+    "data-summon-handoff": resolveCommentAnchorsValue4(note, handoff) ? `` : undefined,
+    children:
+      commentAnchorsLastIndexOf === null ? (
+        Item
+      ) : (
+        <jsxRuntime.Fragment>
+          {commentAnchorsLastIndexOf[0]}
+          <Link
+            onClick={onOpen}
+            {...(note !== `no_listener` && {
+              // BaoCut: 称「agent」，不称 Claude。
+              "aria-label": `Open your agent session`,
+            })}
+          >
+            {commentAnchorsLastIndexOf[1]}
+          </Link>
+          {commentAnchorsLastIndexOf[2] || null}
+        </jsxRuntime.Fragment>
+      ),
+  });
+};
+
+export const AuthorLoading: ReactComponentTypes.FC<Dynamic> = ({
+  r: r5,
+  className: className,
+}) => {
+  let {
+    name: commentAnchorsHover,
+    hover: content,
+    loading: commentAnchorsHover2,
+  }: Dynamic = resolveCommentAnchorsHover(r5);
+  return commentAnchorsHover2 ? (
+    <span className={className} aria-hidden={`true`} data-testid={`author-loading`}>
+      <span
+        className={`bg-alpha-2 inline-block h-2 w-14 animate-pulse rounded align-middle`}
+      />
+    </span>
+  ) : content === null ? (
+    <OverflowTooltip className={className}>{commentAnchorsHover}</OverflowTooltip>
+  ) : (
+    <Tooltip content={content}>
+      <span className={className}>{commentAnchorsHover}</span>
+    </Tooltip>
+  );
+};
+
+// BaoCut: 智能体头像的无障碍名称叫 Agent，不叫 Claude。
+export const UseCommentAnchorsRoleComponent: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  return (
+    <span
+      role={`img`}
+      aria-label={`Agent`}
+      className={`bg-fill-brand text-on-brand inline-flex size-5 shrink-0 items-center justify-center rounded-full`}
+    >
+      <svg
+        viewBox={EditorAnchorsAndMentions00100100}
+        width={12}
+        height={12}
+        fill={`currentColor`}
+        aria-hidden={`true`}
+      >
+        <path d={EditorAnchorsAndMentionsMessage2} />
+      </svg>
+    </span>
+  );
+};
+
+export const UseCommentAnchorsContainerComponent: ReactComponentTypes.FC<Dynamic> = ({
+  container: container,
+  children: children,
+}) => {
+  let ResultComponent: Dynamic =
+    useCommentsEditorUseSyncExternalStore(CommentAnchorsThen)?.default;
+  return ResultComponent ? (
+    <ResultComponent container={container}>{children}</ResultComponent>
+  ) : (
+    <div className={`whitespace-pre-wrap`}>
+      <UseCommentAnchorsContainer2Component container={container} body={children} />
+    </div>
+  );
+};
 
 function createCommentMentionSearch(
   commentMentionSearch?: Dynamic,
@@ -972,75 +1251,6 @@ function useCommentResolveMotion(
   };
 }
 
-function UseCommentAnchorsStateComponent(
-  { state: state, size: size }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let jsx = (
-    <UiOverlaysAndIconsCustomIcon
-      name={`Check`}
-      customSize={size}
-      className={`rx-glyph`}
-    />
-  );
-  return state === `idle` ? (
-    jsx
-  ) : (
-    <span className={`rx-check`} data-state={state}>
-      <svg viewBox={`0 0 16 16`} aria-hidden={true}>
-        <rect
-          className={`rx-square`}
-          x={`0.75`}
-          y={`0.75`}
-          width={`14.5`}
-          height={`14.5`}
-          rx={`4`}
-        />
-      </svg>
-      {jsx}
-    </span>
-  );
-}
-
-function SummonNote(
-  { note: note, onOpen: onOpen, handoff = false, as: as2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  // BaoCut: 批注下方「已发给智能体」等状态，独立页面装了 docsHost.comments 时也显示。
-  if (!commentSummonHost() || note === undefined) return null;
-  let Item: Dynamic = resolveCommentAnchorsValue4(note, handoff)
-    ? PlatformSessionAndSourcesMessage2
-    : PlatformSessionAndSourcesSent[note];
-  let commentAnchorsLastIndexOf: Dynamic = resolveCommentAnchorsValue5(
-    note,
-    onOpen,
-    handoff,
-  )
-    ? resolveCommentAnchorsLastIndexOf(
-        Item,
-        note === `no_listener`
-          ? CommentAnchors_OpenItInClaude
-          : CommentAnchors_YourSession,
-      )
-    : null;
-  return renderReactJsx(as2 ?? `div`, {
-  ...(as2 === undefined && {
-    className: `text-muted text-caption mt-1`
-  }),
-  "data-testid": `summon-note`,
-  "data-summon-note": note,
-  "data-summon-handoff": resolveCommentAnchorsValue4(note, handoff) ? `` : undefined,
-  children: commentAnchorsLastIndexOf === null ? Item : <jsxRuntime.Fragment>
-            {commentAnchorsLastIndexOf[0]}
-            <Link onClick={onOpen} {...note !== `no_listener` && {
-      // BaoCut: 称「agent」，不称 Claude。
-      "aria-label": `Open your agent session`
-    }}>{commentAnchorsLastIndexOf[1]}</Link>
-            {commentAnchorsLastIndexOf[2] || null}
-          </jsxRuntime.Fragment>
-});
-}
-
 function resolveCommentAnchorsLastIndexOf(
   commentAnchorsLastIndex?: Dynamic,
   items?: Dynamic,
@@ -1131,105 +1341,6 @@ function resolveCommentAnchorsHover(
       };
 }
 
-function AuthorLoading(
-  { r: r5, className: className }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let {
-    name: commentAnchorsHover,
-    hover: content,
-    loading: commentAnchorsHover2,
-  }: Dynamic = resolveCommentAnchorsHover(r5);
-  return commentAnchorsHover2 ? (
-    <span
-      className={className}
-      aria-hidden={`true`}
-      data-testid={`author-loading`}
-    >
-      <span
-        className={`bg-alpha-2 inline-block h-2 w-14 animate-pulse rounded align-middle`}
-      />
-    </span>
-  ) : content === null ? (
-    <OverflowTooltip className={className}>
-      {commentAnchorsHover}
-    </OverflowTooltip>
-  ) : (
-    <Tooltip content={content}>
-      <span className={className}>{commentAnchorsHover}</span>
-    </Tooltip>
-  );
-}
-
-function UseCommentAnchorsUserComponent(
-  { user: user }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let useCommentAnchorsUserResult = resolveEditorAnchorsAndMentionsOther(user);
-  let useCommentAnchorsUserResult2: Dynamic =
-    useCommentsActionsAndSelectionPlatform(
-      useCommentAnchorsUserResult === `platform` ? user : null,
-    );
-  let useCommentAnchorsUserResult3: Dynamic =
-    resolvePlatformApiAndAuthUseContext2();
-  let matchesLocale =
-    useCommentAnchorsUserResult3.locale !== undefined ||
-    useCommentAnchorsUserResult3.timeZone !== undefined;
-  let photoUrl: Dynamic = PlatformApiAndAuthPriming(
-    (commentAnchorsUser?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      matchesLocale
-        ? undefined
-        : resolvePlatformApiAndAuthToLowerCase(commentAnchorsUser, user),
-  );
-  return useCommentAnchorsUserResult === `email` ? (
-    <CollaboratorAvatar
-      email={user}
-      photoUrl={photoUrl}
-      size={20}
-      className={`shrink-0`}
-    />
-  ) : useCommentAnchorsUserResult2 === undefined ? (
-    <span
-      className={`bg-alpha-2 size-[20px] shrink-0 animate-pulse rounded-full`}
-    />
-  ) : (
-    <CollaboratorAvatar
-      email={resolveEditorAnchorsAndMentionsEmail(
-        user,
-        useCommentAnchorsUserResult2?.name,
-      )}
-      photoUrl={resolveObservabilityBrowserAndOperationEventsStartsWith(
-        useCommentAnchorsUserResult2?.avatarUrl,
-        matchesLocale,
-      )}
-      size={20}
-      className={`shrink-0`}
-    />
-  );
-}
-
-// BaoCut: 智能体头像的无障碍名称叫 Agent，不叫 Claude。
-function UseCommentAnchorsRoleComponent(
-  ..._extraArguments: [Readonly<Record<string, unknown>>?, ...unknown[]]
-) {
-  return (
-    <span
-      role={`img`}
-      aria-label={`Agent`}
-      className={`bg-fill-brand text-on-brand inline-flex size-5 shrink-0 items-center justify-center rounded-full`}
-    >
-      <svg
-        viewBox={EditorAnchorsAndMentions00100100}
-        width={12}
-        height={12}
-        fill={`currentColor`}
-        aria-hidden={`true`}
-      >
-        <path d={EditorAnchorsAndMentionsMessage2} />
-      </svg>
-    </span>
-  );
-}
 
 function useCommentAnchorsFlatMap(
   commentAnchorsFlatMap?: Dynamic,
@@ -1296,24 +1407,6 @@ var commentAnchorsLimit202: number;
 
 var CommentAnchorsThen: Dynamic;
 
-function UseCommentAnchorsContainerComponent(
-  { container: container, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let ResultComponent: Dynamic =
-    useCommentsEditorUseSyncExternalStore(CommentAnchorsThen)?.default;
-  return ResultComponent ? (
-    <ResultComponent container={container}>{children}</ResultComponent>
-  ) : (
-    <div className={`whitespace-pre-wrap`}>
-      <UseCommentAnchorsContainer2Component
-        container={container}
-        body={children}
-      />
-    </div>
-  );
-}
-
 function UseCommentAnchorsContainer2Component(
   { container: container, body: body }: Dynamic,
   ..._extraArguments: unknown[]
@@ -1340,104 +1433,6 @@ function UseCommentAnchorsContainer2Component(
         <ArtifactReferenceChip refStr={entry.ref} label={entry.label} kind={entry.kind} container={container} key={label} />
       );
     },
-  );
-}
-
-function UseCommentAnchorsExpandedComponent(
-  {
-    expanded: expanded,
-    compact: compact,
-    compactPx = commentAnchorsLimit56,
-    container: container,
-    children: children,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let compactPx2: Dynamic = compact ? compactPx : commentAnchorsLimit272;
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let [enabledState2, setEnabledState2]: Dynamic = (0, React.useState)(false);
-  (0, React.useLayoutEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      let element: Dynamic = elementRef.current;
-      if (element) {
-        setEnabledState2(element.scrollHeight > compactPx2 + 8);
-      }
-    },
-    [children, compactPx2],
-  );
-  let elementRef2: Dynamic = (0, React.useRef)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let element: Dynamic = elementRef2.current;
-      if (!element || typeof ResizeObserver === "undefined") return;
-      let resizeObserver = new ResizeObserver(
-        (..._extraArguments: unknown[]): Dynamic =>
-          setEnabledState2(element.offsetHeight > compactPx2 + 8),
-      );
-      resizeObserver.observe(element);
-      return (..._extraArguments: unknown[]) => resizeObserver.disconnect();
-    },
-    [compactPx2],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (!expanded) {
-        setEnabledState(false);
-      }
-    },
-    [expanded],
-  );
-  let enabled = !enabledState && !expanded;
-  let enabledState3: Dynamic = enabledState2 && enabled;
-  return (
-    <div>
-      <div
-        ref={elementRef}
-        data-nonresting={enabledState || undefined}
-        style={
-          enabled
-            ? {
-                maxHeight: enabledState3 ? compactPx2 : compactPx2 + 8,
-              }
-            : undefined
-        }
-        className={`text-pretty wrap-anywhere [&_code]:break-all [&_pre]:max-w-full [&_pre]:overflow-x-auto ${enabledState3 ? `relative overflow-hidden` : ``}`}
-      >
-        <div ref={elementRef2}>
-          <UseCommentAnchorsContainerComponent container={container}>
-            {children}
-          </UseCommentAnchorsContainerComponent>
-        </div>
-        {enabledState3 && (
-          <div
-            className={`pointer-events-none absolute inset-x-0 bottom-0 ${compact ? `h-4` : `h-8`} bg-gradient-to-t from-[var(--comment-fade-stop,var(--cds-surface-1))] to-transparent`}
-          />
-        )}
-      </div>
-      {enabledState2 && !expanded && (
-        <button
-          type={`button`}
-          onClick={(
-            commentAnchorsExpanded?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            commentAnchorsExpanded.stopPropagation();
-            setEnabledState(
-              (
-                commentAnchorsExpanded2?: Dynamic,
-                ..._extraArguments: unknown[]
-              ) => !commentAnchorsExpanded2,
-            );
-          }}
-          className={
-            CommentAnchors_TextMutedHoverTextSecondaryTextCaptionMt05BlockTextLeft
-          }
-        >
-          {enabledState ? `Show less` : `Show more`}
-        </button>
-      )}
-    </div>
   );
 }
 
@@ -1588,35 +1583,4 @@ export function initializeCommentAnchorsCreateCommentMentionSearchStep1(): void 
   ));
 }
 
-export {
-  AuthorLoading,
-  CommentAnchors_ReplyPosted,
-  CommentAnchors_Resolved,
-  CommentAnchors_SentToClaude,
-  CommentAnchors_Styles,
-  CommentAnchors_Styles2,
-  CommentAnchors_Styles3,
-  CommentAnchors_TextMutedHoverTextSecondaryTextCaptionMt05BlockTextLeft,
-  SummonNote,
-  UseCommentAnchorsContainerComponent,
-  UseCommentAnchorsExpandedComponent,
-  UseCommentAnchorsRoleComponent,
-  UseCommentAnchorsStateComponent,
-  UseCommentAnchorsUserComponent,
-  clearCommentAnchorsDelete,
-  commentAnchorsLimit202,
-  createCommentMentionSearch,
-  filterCommentAnchorsJoin,
-  resolveCommentAnchorsActor,
-  resolveCommentAnchorsHover,
-  resolveCommentAnchorsIndexOf,
-  resolveCommentAnchorsParse,
-  resolveCommentAnchorsQuote,
-  resolveCommentAnchorsReplace2,
-  resolveCommentAnchorsReplace3,
-  resolveCommentAnchorsResolvedBy,
-  resolveCommentAnchorsUser,
-  useCommentAnchorsFlatMap,
-  useCommentAnchorsKey,
-  useCommentResolveMotion,
-};
+export { CommentAnchors_ReplyPosted, CommentAnchors_Resolved, CommentAnchors_SentToClaude, CommentAnchors_Styles, CommentAnchors_Styles2, CommentAnchors_Styles3, CommentAnchors_TextMutedHoverTextSecondaryTextCaptionMt05BlockTextLeft, clearCommentAnchorsDelete, commentAnchorsLimit202, createCommentMentionSearch, filterCommentAnchorsJoin, resolveCommentAnchorsActor, resolveCommentAnchorsHover, resolveCommentAnchorsIndexOf, resolveCommentAnchorsParse, resolveCommentAnchorsQuote, resolveCommentAnchorsReplace2, resolveCommentAnchorsReplace3, resolveCommentAnchorsResolvedBy, resolveCommentAnchorsUser, useCommentAnchorsFlatMap, useCommentAnchorsKey, useCommentResolveMotion };

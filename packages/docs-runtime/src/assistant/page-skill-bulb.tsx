@@ -26,6 +26,554 @@ import {
   IconButton,
   SKILL_PROPERTY,
 } from "../document-app/index";
+import type * as ReactComponentTypes from "react";
+
+export const PageSkillBulb: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  chrome = `boxed`,
+}) => {
+  let [open, setOpen]: Dynamic = (0, React.useState)(false);
+  let view: Dynamic = skillViewOf(seat.slice);
+  let enabled: Dynamic = skillIsEnabled(view);
+  let personal: Dynamic = usePersonalSkillSubscription(seat, enabled);
+  let draft: Dynamic = useSkillDraft(seat.pid, view);
+  let pageSwitchRef: Dynamic = (0, React.useRef)(null);
+  let mineSwitchRef: Dynamic = (0, React.useRef)(null);
+  let fieldRef: Dynamic = (0, React.useRef)(null);
+  let refs: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => ({
+      pageSwitch: pageSwitchRef,
+      mineSwitch: mineSwitchRef,
+      field: fieldRef,
+    }),
+    [],
+  );
+  let popupRef: Dynamic = (0, React.useRef)(null);
+  if (seat.post === undefined && !enabled) return null;
+  let sharedEnabled: Dynamic = enabled;
+  let personallyEnabled: Dynamic = enabled && personal.shown === true;
+  let renderIcon: Dynamic = (
+    pageSkillBulb?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Dynamic => (
+    <UiOverlaysAndIconsCustomIcon
+      name={`Plugin`}
+      customSize={pageSkillBulb}
+      className={sharedEnabled ? `text-accent` : undefined}
+    />
+  );
+  let triggerProps: Dynamic = {
+    "aria-label": SKILL_DIALOG_TITLE,
+    "data-testid": `page-skill-bulb`,
+    "data-state": view.present ? (view.disabled ? `disabled` : `live`) : `none`,
+    "data-dot": personallyEnabled ? `true` : undefined,
+  };
+  let surfaceClass: Dynamic =
+    chrome === `button`
+      ? `bg-surface-popover`
+      : chrome === `bar`
+        ? `tb-plane`
+        : chrome === `docked`
+          ? SKILL_POPOVER_CLASS
+          : `bg-fill-secondary`;
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <span className={`relative inline-flex`}>
+        <Tooltip content={SKILL_DIALOG_TITLE}>
+          <Popover.Trigger
+            render={
+              chrome === `button` ? (
+                <IconButton
+                  {...triggerProps}
+                  variant={`default`}
+                  size={EditorHostGlyph.size}
+                  icon={renderIcon(EditorHostGlyph.glyph)}
+                />
+              ) : chrome === `bar` || chrome === `docked` ? (
+                <Button
+                  {...triggerProps}
+                  iconOnly={true}
+                  variant={`ghost`}
+                  icon={renderIcon(chrome === `docked` ? 20 : 16)}
+                  tooltip={false}
+                  className={`shrink-0`}
+                />
+              ) : (
+                <button
+                  type={`button`}
+                  {...triggerProps}
+                  className={SKILL_ICON_BUTTON_CLASS}
+                >
+                  {renderIcon(15)}
+                </button>
+              )
+            }
+          />
+        </Tooltip>
+        {personallyEnabled && (
+          <span
+            aria-hidden={`true`}
+            data-testid={`page-skill-bulb-dot`}
+            className={`${surfaceClass} pointer-events-none absolute top-0 right-0 rounded-full p-0.5`}
+          >
+            <span className={`bg-fill-accent block size-1.5 rounded-full`} />
+          </span>
+        )}
+      </span>
+      <Popover.Popup
+        side={`bottom`}
+        align={`start`}
+        sideOffset={4}
+        style={{
+          width: `min(320px, calc(100vw - 24px))`,
+        }}
+        initialFocus={(..._extraArguments: unknown[]): Dynamic =>
+          (draft.armed && !view.present ? refs.field.current : null) ??
+          refs.pageSwitch.current ??
+          refs.mineSwitch.current ??
+          true
+        }
+      >
+        <div
+          ref={popupRef}
+          className={`outline-none`}
+          onKeyDownCapture={(
+            event?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            if (
+              !(
+                event.key !== `Escape` ||
+                event.nativeEvent.isComposing ||
+                !(event.target instanceof (Node as Dynamic)) ||
+                !popupRef.current?.contains(event.target)
+              )
+            ) {
+              event.preventDefault();
+              setOpen(false);
+            }
+          }}
+        >
+          <SkillEditorWithDraft
+            view={view}
+            post={seat.post}
+            onWritten={seat.onWritten}
+            personal={enabled ? personal : undefined}
+            draft={draft}
+            refs={refs}
+            Title={Popover.Title}
+          />
+        </div>
+      </Popover.Popup>
+    </Popover.Root>
+  );
+};
+
+export const SkillEditor: ReactComponentTypes.FC<Dynamic> = (props) => {
+  let {
+    view: props2,
+    post: props3,
+    onWritten: props4,
+    personal: props5,
+    refs: props6,
+    Title: Props7Component = `h2`,
+  }: Dynamic = props;
+  let {
+    armed: draft,
+    setArmed: draft2,
+    draft: draft3,
+    setDraft: draft4,
+    revoked: draft5,
+    revoke: draft6,
+  }: Dynamic = props.draft;
+  let mode: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  let fieldId: Dynamic = (0, React.useId)();
+  let [triggerFailure, setTriggerFailure]: Dynamic = (0, React.useState)(null);
+  let [refusal, setRefusal]: Dynamic = (0, React.useState)(null);
+  let [saving, setSaving]: Dynamic = (0, React.useState)(null);
+  let [optimisticEnabled, setOptimisticEnabled]: Dynamic = (0, React.useState)(undefined);
+  let [statusNote, setStatusNote]: Dynamic = (0, React.useState)(null);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (draft && !props2.present) {
+        props6?.field.current?.focus();
+      }
+    },
+    [draft, props2.present, props6],
+  );
+  let canEdit: boolean = props3 !== undefined && !draft5;
+  let idle: boolean = saving === null;
+  let enabled: Dynamic = optimisticEnabled ?? (props2.present ? !props2.disabled : draft);
+  let enablingNewSkill: Dynamic = enabled && !props2.present;
+  let triggerChanged: boolean = draft3.trim() !== props2.trigger.trim();
+  let canSave: Dynamic = idle && enabled && triggerChanged && draft3.trim().length > 0;
+  let writeSkill = async (
+    skillEditor?: Dynamic,
+    options?: Dynamic,
+    context?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Promise<undefined> => {
+    if (props3 === undefined) return;
+    let trigger: Dynamic = props2.trigger;
+    setSaving(skillEditor);
+    setRefusal(null);
+    setOptimisticEnabled(context);
+    try {
+      let props8: Dynamic = await props3(options);
+      if (props8.verdict === `deny`) {
+        if (props8.reason === `forbidden` || props8.reason === `access`) {
+          draft6();
+        } else {
+          setRefusal(skillWriteRefusal(props8));
+        }
+      } else {
+        await props4?.();
+        if (skillEditor === `delete`) {
+          draft2(false);
+          setStatusNote(trigger);
+        }
+        if (skillEditor === `undo`) {
+          setStatusNote(null);
+        }
+      }
+    } catch {
+      setRefusal(SKILL_UNREACHABLE_COPY);
+    } finally {
+      setOptimisticEnabled(undefined);
+      setSaving(null);
+    }
+  };
+  let saveTrigger = (..._extraArguments: unknown[]): undefined => {
+    if (!canSave) return;
+    let triggerProblem2: Dynamic = triggerProblem(draft3);
+    setTriggerFailure(triggerProblem2);
+    if (triggerProblem2 === null) {
+      writeSkill(`save`, setSkillTriggerOps(draft3));
+    }
+  };
+  let toggleSkill = (skillEditor?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (idle) {
+      setRefusal(null);
+      setTriggerFailure(null);
+      setStatusNote(null);
+      if (!props2.present) {
+        draft2(skillEditor);
+        if (!skillEditor) {
+          draft4(``);
+        }
+        return;
+      }
+      writeSkill(
+        skillEditor ? `enable` : `disable`,
+        skillEditor ? enableSkillOps() : disableSkillOps(),
+        skillEditor,
+      );
+    }
+  };
+  let skillState: string = props2.present
+    ? props2.disabled
+      ? `disabled`
+      : `live`
+    : `none`;
+  let characterCountClass: string =
+    draft3.length >= 290 ? `text-warning` : `text-secondary`;
+  return (
+    <section
+      data-testid={`page-skill-panel`}
+      data-state={skillState}
+      className={`flex flex-col`}
+    >
+      <div className={SKILL_HEADING_ROW_CLASS} data-testid={`page-skill-title-row`}>
+        <Props7Component
+          id={fieldId}
+          className={SKILL_DESCRIPTION_CLASS}
+          data-testid={`page-skill-header`}
+        >
+          {SKILL_TOGGLE_LABEL}
+        </Props7Component>
+        <InfoTip
+          icon={`Help`}
+          side={`right`}
+          className={`text-secondary`}
+          content={SKILL_ORGANIZATION_COPY}
+          aria-label={SKILL_ABOUT_ORGANIZATION_LABEL}
+        />
+        <span className={`grow`} />
+        {canEdit && (
+          <Switch
+            ref={props6?.pageSwitch}
+            aria-labelledby={fieldId}
+            data-testid={`page-skill-switch`}
+            size={mode(`sm`)}
+            checked={enabled}
+            disabled={!idle}
+            aria-busy={saving === `enable` || saving === `disable`}
+            onCheckedChange={(
+              skillEditor?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): Dynamic => toggleSkill(skillEditor)}
+          />
+        )}
+      </div>
+      <div className={`gap-md flex flex-col`}>
+        {canEdit && refusal !== null && (
+          <p
+            className={`text-caption text-danger`}
+            role={`alert`}
+            data-testid={`page-skill-refusal`}
+          >
+            {refusal}
+          </p>
+        )}
+        {canEdit ? (
+          enabled ? (
+            <div
+              className={SKILL_SURFACE_CLASS}
+              data-testid={`page-skill-box`}
+              data-mode={`edit`}
+              data-on={`true`}
+            >
+              <Field invalid={triggerFailure !== null}>
+                <FieldLabel className={`text-footnote`}>{SKILL_TRIGGER_LABEL}</FieldLabel>
+                <TextArea
+                  ref={props6?.field}
+                  data-testid={`page-skill-trigger`}
+                  rows={2}
+                  autosize={true}
+                  size={mode(`sm`)}
+                  maxLength={300}
+                  placeholder={SKILL_TRIGGER_PLACEHOLDER}
+                  value={draft3}
+                  disabled={!idle}
+                  onChange={(
+                    event?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ): undefined => {
+                    setRefusal(null);
+                    setTriggerFailure(null);
+                    draft4(cleanTrigger(event.target.value));
+                  }}
+                  onKeyDown={(
+                    event?: Dynamic,
+                    ..._extraArguments: unknown[]
+                  ): undefined => {
+                    if (!(event.key !== `Enter` || event.nativeEvent.isComposing)) {
+                      event.preventDefault();
+                      saveTrigger();
+                    }
+                  }}
+                />
+                {draft3.length > 240 && (
+                  <div className={`flex justify-end`}>
+                    <span
+                      className={`text-caption tabular-nums ${characterCountClass}`}
+                      data-testid={`page-skill-count`}
+                      aria-hidden={`true`}
+                    >
+                      {draft3.length}
+                      {`/`}
+                      {300}
+                    </span>
+                  </div>
+                )}
+                {triggerFailure !== null && (
+                  <FieldError match={true} data-testid={`page-skill-error`}>
+                    {TRIGGER_PROBLEM_COPY[triggerFailure]}
+                  </FieldError>
+                )}
+              </Field>
+              <div className={`gap-sm flex items-center`}>
+                {enablingNewSkill && (
+                  <span
+                    className={`text-caption text-secondary`}
+                    data-testid={`page-skill-unsaved`}
+                  >{`Not saved yet`}</span>
+                )}
+                <span className={`grow`} />
+                <Button
+                  size={mode(`sm`)}
+                  variant={`primary`}
+                  onClick={saveTrigger}
+                  disabled={!canSave}
+                  data-testid={`page-skill-save`}
+                >
+                  {saving === `save` ? `Saving…` : SKILL_SAVE_LABEL}
+                </Button>
+              </div>
+            </div>
+          ) : props2.present ? (
+            <div
+              className={SKILL_SURFACE_CLASS}
+              data-testid={`page-skill-box`}
+              data-mode={`edit`}
+              data-on={`false`}
+            >
+              <SkillTriggerReadout words={props2.trigger} muted={true} />
+              <p className={`text-caption text-secondary`}>
+                <Link
+                  inheritColor={true}
+                  className={`hover:text-danger focus-visible:text-danger`}
+                  disabled={!idle}
+                  onClick={(..._extraArguments: unknown[]): boolean | undefined =>
+                    idle && void writeSkill(`delete`, deleteSkillOps(), false)
+                  }
+                  data-testid={`page-skill-delete`}
+                >
+                  {saving === `delete` ? `Deleting…` : SKILL_DELETE_LABEL}
+                </Link>
+              </p>
+            </div>
+          ) : null
+        ) : (
+          <div
+            className={SKILL_SURFACE_CLASS}
+            data-testid={`page-skill-box`}
+            data-mode={`read`}
+          >
+            <SkillTriggerReadout words={props2.trigger} />
+            <p
+              className={`text-caption text-secondary`}
+              data-testid={`page-skill-editors-only`}
+            >
+              {SKILL_EDITOR_REQUIRED_COPY}
+            </p>
+          </div>
+        )}
+        {canEdit && statusNote !== null && !props2.present && (
+          <p className={`text-caption text-secondary`} data-testid={`page-skill-deleted`}>
+            {`Skill deleted`}
+            {` ·`}
+            {` `}
+            <Link
+              inheritColor={true}
+              disabled={!idle}
+              onClick={(..._extraArguments: unknown[]): boolean | undefined =>
+                idle &&
+                void writeSkill(`undo`, setDisabledSkillTriggerOps(statusNote), false)
+              }
+              data-testid={`page-skill-undo`}
+            >{`Undo`}</Link>
+          </p>
+        )}
+        {props5 !== undefined && (!canEdit || enabled) && (
+          <PersonalSkillControl personal={props5} switchRef={props6?.mineSwitch} />
+        )}
+        <p className={`text-caption text-secondary`} data-testid={`page-skill-footer`}>
+          {SKILL_SESSIONS_COPY}
+        </p>
+      </div>
+    </section>
+  );
+};
+
+export const PersonalSkillControl: ReactComponentTypes.FC<Dynamic> = ({
+  personal: personal,
+  switchRef: switchRef,
+}) => {
+  let mode: Dynamic = resolvePlatformSyncAndRoutingCompact();
+  let switchId: Dynamic = (0, React.useId)();
+  let {
+    shown: personal2,
+    unread: personal3,
+    saving: personal4,
+    refusal: personal5,
+    press: personal6,
+    retry: personal7,
+  }: Dynamic = personal;
+  return (
+    <div
+      className={`gap-xs flex flex-col`}
+      data-testid={`page-skill-personal`}
+      data-on={personal2 === null ? `unsaid` : String(personal2)}
+    >
+      <div className={SKILL_CONTROL_ROW_CLASS}>
+        <label
+          htmlFor={switchId}
+          className={`text-footnote font-medium`}
+          data-testid={`page-skill-mine-label`}
+        >
+          {SKILL_PERSONAL_TOGGLE_LABEL}
+        </label>
+        <InfoTip
+          icon={`Help`}
+          side={`right`}
+          className={`text-secondary`}
+          content={SKILL_PERSONAL_COPY}
+          aria-label={SKILL_ABOUT_SESSIONS_LABEL}
+        />
+        <span className={`grow`} />
+        <Switch
+          id={switchId}
+          ref={switchRef}
+          data-testid={`page-skill-for-me`}
+          size={mode(`sm`)}
+          checked={personal2 === true}
+          disabled={personal2 === null}
+          disabledReason={personal3 ? PERSONAL_CHECK_FAILED_COPY : PERSONAL_CHECKING_COPY}
+          disabledReasonSide={`left`}
+          aria-busy={personal4}
+          onCheckedChange={(
+            personalSkillControl?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => void personal6(personalSkillControl)}
+        />
+      </div>
+      {personal3 && (
+        <p
+          className={`text-caption text-secondary`}
+          data-testid={`page-skill-personal-unread`}
+        >
+          {`Couldn't check whether this is on for you.`}
+          {` `}
+          <Link
+            inheritColor={true}
+            onClick={(..._extraArguments: unknown[]): Dynamic => personal7()}
+            data-testid={`page-skill-personal-retry`}
+          >{`Retry`}</Link>
+        </p>
+      )}
+      {personal5 !== null && (
+        <p
+          className={`text-caption text-danger`}
+          role={`alert`}
+          data-testid={`page-skill-personal-refusal`}
+        >
+          {personal5}
+        </p>
+      )}
+    </div>
+  );
+};
+
+export const SkillEditorWithDraft: ReactComponentTypes.FC<Dynamic> = (props) => {
+  let localDraft: Dynamic = useSkillDraft(``, props.view);
+  return <SkillEditor {...props} draft={props.draft ?? localDraft} />;
+};
+
+export const SkillTriggerReadout: ReactComponentTypes.FC<Dynamic> = ({
+  words: words,
+  muted = false,
+}) => {
+  return (
+    <dl className={`gap-sm flex flex-col ${muted ? `text-secondary` : `text-primary`}`}>
+      <dt
+        className={`text-footnote font-medium`}
+        data-testid={`page-skill-trigger-view-label`}
+      >
+        {SKILL_TRIGGER_LABEL}
+      </dt>
+      <dd>
+        <pre
+          className={`text-code bg-alpha-1 rounded-md px-2 py-1.5 wrap-break-word whitespace-pre-wrap select-text`}
+          data-testid={`page-skill-trigger-view`}
+        >
+          {words}
+        </pre>
+      </dd>
+    </dl>
+  );
+};
+
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var SKILL_TRIGGER_KEY: string = `trigger`;
 var SKILL_DISABLED_KEY: string = `disabled`;
@@ -463,570 +1011,3 @@ function useSkillDraft(
     revoke: (..._extraArguments: unknown[]): Dynamic => setRevoked(true),
   };
 }
-function PageSkillBulb(
-  { seat: seat, chrome = `boxed` }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let [open, setOpen]: Dynamic = (0, React.useState)(false);
-  let view: Dynamic = skillViewOf(seat.slice);
-  let enabled: Dynamic = skillIsEnabled(view);
-  let personal: Dynamic = usePersonalSkillSubscription(seat, enabled);
-  let draft: Dynamic = useSkillDraft(seat.pid, view);
-  let pageSwitchRef: Dynamic = (0, React.useRef)(null);
-  let mineSwitchRef: Dynamic = (0, React.useRef)(null);
-  let fieldRef: Dynamic = (0, React.useRef)(null);
-  let refs: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => ({
-      pageSwitch: pageSwitchRef,
-      mineSwitch: mineSwitchRef,
-      field: fieldRef,
-    }),
-    [],
-  );
-  let popupRef: Dynamic = (0, React.useRef)(null);
-  if (seat.post === undefined && !enabled) return null;
-  let sharedEnabled: Dynamic = enabled;
-  let personallyEnabled: Dynamic = enabled && personal.shown === true;
-  let renderIcon: Dynamic = (
-    pageSkillBulb?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => (
-    <UiOverlaysAndIconsCustomIcon
-      name={`Plugin`}
-      customSize={pageSkillBulb}
-      className={sharedEnabled ? `text-accent` : undefined}
-    />
-  );
-  let triggerProps: Dynamic = {
-    "aria-label": SKILL_DIALOG_TITLE,
-    "data-testid": `page-skill-bulb`,
-    "data-state": view.present ? (view.disabled ? `disabled` : `live`) : `none`,
-    "data-dot": personallyEnabled ? `true` : undefined,
-  };
-  let surfaceClass: Dynamic =
-    chrome === `button`
-      ? `bg-surface-popover`
-      : chrome === `bar`
-        ? `tb-plane`
-        : chrome === `docked`
-          ? SKILL_POPOVER_CLASS
-          : `bg-fill-secondary`;
-  return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <span className={`relative inline-flex`}>
-        <Tooltip content={SKILL_DIALOG_TITLE}>
-          <Popover.Trigger
-            render={
-              chrome === `button` ? (
-                <IconButton {...triggerProps} variant={`default`} size={EditorHostGlyph.size} icon={renderIcon(EditorHostGlyph.glyph)} />
-              ) : chrome === `bar` || chrome === `docked` ? (
-                <Button
-                  {...triggerProps}
-                  iconOnly={true}
-                  variant={`ghost`}
-                  icon={renderIcon(chrome === `docked` ? 20 : 16)}
-                  tooltip={false}
-                  className={`shrink-0`}
-                />
-              ) : (
-                <button type={`button`} {...triggerProps} className={SKILL_ICON_BUTTON_CLASS}>{renderIcon(15)}</button>
-              )
-            }
-          />
-        </Tooltip>
-        {personallyEnabled && (
-          <span
-            aria-hidden={`true`}
-            data-testid={`page-skill-bulb-dot`}
-            className={`${surfaceClass} pointer-events-none absolute top-0 right-0 rounded-full p-0.5`}
-          >
-            <span className={`bg-fill-accent block size-1.5 rounded-full`} />
-          </span>
-        )}
-      </span>
-      <Popover.Popup
-        side={`bottom`}
-        align={`start`}
-        sideOffset={4}
-        style={{
-          width: `min(320px, calc(100vw - 24px))`,
-        }}
-        initialFocus={(..._extraArguments: unknown[]): Dynamic =>
-          (draft.armed && !view.present ? refs.field.current : null) ??
-          refs.pageSwitch.current ??
-          refs.mineSwitch.current ??
-          true
-        }
-      >
-        <div
-          ref={popupRef}
-          className={`outline-none`}
-          onKeyDownCapture={(
-            event?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            if (
-              !(
-                event.key !== `Escape` ||
-                event.nativeEvent.isComposing ||
-                !(event.target instanceof (Node as Dynamic)) ||
-                !popupRef.current?.contains(event.target)
-              )
-            ) {
-              event.preventDefault();
-              setOpen(false);
-            }
-          }}
-        >
-          <SkillEditorWithDraft
-            view={view}
-            post={seat.post}
-            onWritten={seat.onWritten}
-            personal={enabled ? personal : undefined}
-            draft={draft}
-            refs={refs}
-            Title={Popover.Title}
-          />
-        </div>
-      </Popover.Popup>
-    </Popover.Root>
-  );
-}
-function SkillEditorWithDraft(
-  props?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let localDraft: Dynamic = useSkillDraft(``, props.view);
-  return (
-    <SkillEditor {...props} draft={props.draft ?? localDraft} />
-  );
-}
-function SkillEditor(props?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-  let {
-    view: props2,
-    post: props3,
-    onWritten: props4,
-    personal: props5,
-    refs: props6,
-    Title: Props7Component = `h2`,
-  }: Dynamic = props;
-  let {
-    armed: draft,
-    setArmed: draft2,
-    draft: draft3,
-    setDraft: draft4,
-    revoked: draft5,
-    revoke: draft6,
-  }: Dynamic = props.draft;
-  let mode: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let fieldId: Dynamic = (0, React.useId)();
-  let [triggerFailure, setTriggerFailure]: Dynamic = (0, React.useState)(null);
-  let [refusal, setRefusal]: Dynamic = (0, React.useState)(null);
-  let [saving, setSaving]: Dynamic = (0, React.useState)(null);
-  let [optimisticEnabled, setOptimisticEnabled]: Dynamic = (0, React.useState)(
-    undefined,
-  );
-  let [statusNote, setStatusNote]: Dynamic = (0, React.useState)(null);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (draft && !props2.present) {
-        props6?.field.current?.focus();
-      }
-    },
-    [draft, props2.present, props6],
-  );
-  let canEdit: boolean = props3 !== undefined && !draft5;
-  let idle: boolean = saving === null;
-  let enabled: Dynamic =
-    optimisticEnabled ?? (props2.present ? !props2.disabled : draft);
-  let enablingNewSkill: Dynamic = enabled && !props2.present;
-  let triggerChanged: boolean = draft3.trim() !== props2.trigger.trim();
-  let canSave: Dynamic =
-    idle && enabled && triggerChanged && draft3.trim().length > 0;
-  let writeSkill = async (
-    skillEditor?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Promise<undefined> => {
-    if (props3 === undefined) return;
-    let trigger: Dynamic = props2.trigger;
-    setSaving(skillEditor);
-    setRefusal(null);
-    setOptimisticEnabled(context);
-    try {
-      let props8: Dynamic = await props3(options);
-      if (props8.verdict === `deny`) {
-        if (props8.reason === `forbidden` || props8.reason === `access`) {
-          draft6();
-        } else {
-          setRefusal(skillWriteRefusal(props8));
-        }
-      } else {
-        await props4?.();
-        if (skillEditor === `delete`) {
-          draft2(false);
-          setStatusNote(trigger);
-        }
-        if (skillEditor === `undo`) {
-          setStatusNote(null);
-        }
-      }
-    } catch {
-      setRefusal(SKILL_UNREACHABLE_COPY);
-    } finally {
-      setOptimisticEnabled(undefined);
-      setSaving(null);
-    }
-  };
-  let saveTrigger = (..._extraArguments: unknown[]): undefined => {
-    if (!canSave) return;
-    let triggerProblem2: Dynamic = triggerProblem(draft3);
-    setTriggerFailure(triggerProblem2);
-    if (triggerProblem2 === null) {
-      writeSkill(`save`, setSkillTriggerOps(draft3));
-    }
-  };
-  let toggleSkill = (
-    skillEditor?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (idle) {
-      setRefusal(null);
-      setTriggerFailure(null);
-      setStatusNote(null);
-      if (!props2.present) {
-        draft2(skillEditor);
-        if (!skillEditor) {
-          draft4(``);
-        }
-        return;
-      }
-      writeSkill(
-        skillEditor ? `enable` : `disable`,
-        skillEditor ? enableSkillOps() : disableSkillOps(),
-        skillEditor,
-      );
-    }
-  };
-  let skillState: string = props2.present
-    ? props2.disabled
-      ? `disabled`
-      : `live`
-    : `none`;
-  let characterCountClass: string =
-    draft3.length >= 290 ? `text-warning` : `text-secondary`;
-  return (
-    <section
-      data-testid={`page-skill-panel`}
-      data-state={skillState}
-      className={`flex flex-col`}
-    >
-      <div
-        className={SKILL_HEADING_ROW_CLASS}
-        data-testid={`page-skill-title-row`}
-      >
-        <Props7Component
-          id={fieldId}
-          className={SKILL_DESCRIPTION_CLASS}
-          data-testid={`page-skill-header`}
-        >
-          {SKILL_TOGGLE_LABEL}
-        </Props7Component>
-        <InfoTip
-          icon={`Help`}
-          side={`right`}
-          className={`text-secondary`}
-          content={SKILL_ORGANIZATION_COPY}
-          aria-label={SKILL_ABOUT_ORGANIZATION_LABEL}
-        />
-        <span className={`grow`} />
-        {canEdit && (
-          <Switch
-            ref={props6?.pageSwitch}
-            aria-labelledby={fieldId}
-            data-testid={`page-skill-switch`}
-            size={mode(`sm`)}
-            checked={enabled}
-            disabled={!idle}
-            aria-busy={saving === `enable` || saving === `disable`}
-            onCheckedChange={(
-              skillEditor?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => toggleSkill(skillEditor)}
-          />
-        )}
-      </div>
-      <div className={`gap-md flex flex-col`}>
-        {canEdit && refusal !== null && (
-          <p
-            className={`text-caption text-danger`}
-            role={`alert`}
-            data-testid={`page-skill-refusal`}
-          >
-            {refusal}
-          </p>
-        )}
-        {canEdit ? (
-          enabled ? (
-            <div
-              className={SKILL_SURFACE_CLASS}
-              data-testid={`page-skill-box`}
-              data-mode={`edit`}
-              data-on={`true`}
-            >
-              <Field invalid={triggerFailure !== null}>
-                <FieldLabel className={`text-footnote`}>
-                  {SKILL_TRIGGER_LABEL}
-                </FieldLabel>
-                <TextArea
-                  ref={props6?.field}
-                  data-testid={`page-skill-trigger`}
-                  rows={2}
-                  autosize={true}
-                  size={mode(`sm`)}
-                  maxLength={300}
-                  placeholder={SKILL_TRIGGER_PLACEHOLDER}
-                  value={draft3}
-                  disabled={!idle}
-                  onChange={(
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    setRefusal(null);
-                    setTriggerFailure(null);
-                    draft4(cleanTrigger(event.target.value));
-                  }}
-                  onKeyDown={(
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    if (
-                      !(event.key !== `Enter` || event.nativeEvent.isComposing)
-                    ) {
-                      event.preventDefault();
-                      saveTrigger();
-                    }
-                  }}
-                />
-                {draft3.length > 240 && (
-                  <div className={`flex justify-end`}>
-                    <span
-                      className={`text-caption tabular-nums ${characterCountClass}`}
-                      data-testid={`page-skill-count`}
-                      aria-hidden={`true`}
-                    >
-                      {draft3.length}
-                      {`/`}
-                      {300}
-                    </span>
-                  </div>
-                )}
-                {triggerFailure !== null && (
-                  <FieldError match={true} data-testid={`page-skill-error`}>
-                    {TRIGGER_PROBLEM_COPY[triggerFailure]}
-                  </FieldError>
-                )}
-              </Field>
-              <div className={`gap-sm flex items-center`}>
-                {enablingNewSkill && (
-                  <span
-                    className={`text-caption text-secondary`}
-                    data-testid={`page-skill-unsaved`}
-                  >{`Not saved yet`}</span>
-                )}
-                <span className={`grow`} />
-                <Button
-                  size={mode(`sm`)}
-                  variant={`primary`}
-                  onClick={saveTrigger}
-                  disabled={!canSave}
-                  data-testid={`page-skill-save`}
-                >
-                  {saving === `save` ? `Saving…` : SKILL_SAVE_LABEL}
-                </Button>
-              </div>
-            </div>
-          ) : props2.present ? (
-            <div
-              className={SKILL_SURFACE_CLASS}
-              data-testid={`page-skill-box`}
-              data-mode={`edit`}
-              data-on={`false`}
-            >
-              <SkillTriggerReadout words={props2.trigger} muted={true} />
-              <p className={`text-caption text-secondary`}>
-                <Link
-                  inheritColor={true}
-                  className={`hover:text-danger focus-visible:text-danger`}
-                  disabled={!idle}
-                  onClick={(..._extraArguments: unknown[]): boolean | undefined =>
-                    idle && void writeSkill(`delete`, deleteSkillOps(), false)
-                  }
-                  data-testid={`page-skill-delete`}
-                >
-                  {saving === `delete` ? `Deleting…` : SKILL_DELETE_LABEL}
-                </Link>
-              </p>
-            </div>
-          ) : null
-        ) : (
-          <div
-            className={SKILL_SURFACE_CLASS}
-            data-testid={`page-skill-box`}
-            data-mode={`read`}
-          >
-            <SkillTriggerReadout words={props2.trigger} />
-            <p
-              className={`text-caption text-secondary`}
-              data-testid={`page-skill-editors-only`}
-            >
-              {SKILL_EDITOR_REQUIRED_COPY}
-            </p>
-          </div>
-        )}
-        {canEdit && statusNote !== null && !props2.present && (
-          <p
-            className={`text-caption text-secondary`}
-            data-testid={`page-skill-deleted`}
-          >
-            {`Skill deleted`}
-            {` ·`}
-            {` `}
-            <Link
-              inheritColor={true}
-              disabled={!idle}
-              onClick={(..._extraArguments: unknown[]): boolean | undefined =>
-                idle &&
-                void writeSkill(
-                  `undo`,
-                  setDisabledSkillTriggerOps(statusNote),
-                  false,
-                )
-              }
-              data-testid={`page-skill-undo`}
-            >{`Undo`}</Link>
-          </p>
-        )}
-        {props5 !== undefined && (!canEdit || enabled) && (
-          <PersonalSkillControl
-            personal={props5}
-            switchRef={props6?.mineSwitch}
-          />
-        )}
-        <p
-          className={`text-caption text-secondary`}
-          data-testid={`page-skill-footer`}
-        >
-          {SKILL_SESSIONS_COPY}
-        </p>
-      </div>
-    </section>
-  );
-}
-function SkillTriggerReadout(
-  { words: words, muted = false }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <dl
-      className={`gap-sm flex flex-col ${muted ? `text-secondary` : `text-primary`}`}
-    >
-      <dt
-        className={`text-footnote font-medium`}
-        data-testid={`page-skill-trigger-view-label`}
-      >
-        {SKILL_TRIGGER_LABEL}
-      </dt>
-      <dd>
-        <pre
-          className={`text-code bg-alpha-1 rounded-md px-2 py-1.5 wrap-break-word whitespace-pre-wrap select-text`}
-          data-testid={`page-skill-trigger-view`}
-        >
-          {words}
-        </pre>
-      </dd>
-    </dl>
-  );
-}
-function PersonalSkillControl(
-  { personal: personal, switchRef: switchRef }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let mode: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let switchId: Dynamic = (0, React.useId)();
-  let {
-    shown: personal2,
-    unread: personal3,
-    saving: personal4,
-    refusal: personal5,
-    press: personal6,
-    retry: personal7,
-  }: Dynamic = personal;
-  return (
-    <div
-      className={`gap-xs flex flex-col`}
-      data-testid={`page-skill-personal`}
-      data-on={personal2 === null ? `unsaid` : String(personal2)}
-    >
-      <div className={SKILL_CONTROL_ROW_CLASS}>
-        <label
-          htmlFor={switchId}
-          className={`text-footnote font-medium`}
-          data-testid={`page-skill-mine-label`}
-        >
-          {SKILL_PERSONAL_TOGGLE_LABEL}
-        </label>
-        <InfoTip
-          icon={`Help`}
-          side={`right`}
-          className={`text-secondary`}
-          content={SKILL_PERSONAL_COPY}
-          aria-label={SKILL_ABOUT_SESSIONS_LABEL}
-        />
-        <span className={`grow`} />
-        <Switch
-          id={switchId}
-          ref={switchRef}
-          data-testid={`page-skill-for-me`}
-          size={mode(`sm`)}
-          checked={personal2 === true}
-          disabled={personal2 === null}
-          disabledReason={
-            personal3 ? PERSONAL_CHECK_FAILED_COPY : PERSONAL_CHECKING_COPY
-          }
-          disabledReasonSide={`left`}
-          aria-busy={personal4}
-          onCheckedChange={(
-            personalSkillControl?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => void personal6(personalSkillControl)}
-        />
-      </div>
-      {personal3 && (
-        <p
-          className={`text-caption text-secondary`}
-          data-testid={`page-skill-personal-unread`}
-        >
-          {`Couldn't check whether this is on for you.`}
-          {` `}
-          <Link
-            inheritColor={true}
-            onClick={(..._extraArguments: unknown[]): Dynamic => personal7()}
-            data-testid={`page-skill-personal-retry`}
-          >{`Retry`}</Link>
-        </p>
-      )}
-      {personal5 !== null && (
-        <p
-          className={`text-caption text-danger`}
-          role={`alert`}
-          data-testid={`page-skill-personal-refusal`}
-        >
-          {personal5}
-        </p>
-      )}
-    </div>
-  );
-}
-export { PageSkillBulb };

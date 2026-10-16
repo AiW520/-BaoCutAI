@@ -14,6 +14,79 @@ import {
   useDocumentLanguage,
   writeDocumentLanguage,
 } from "../index";
+import type * as ReactComponentTypes from "react";
+
+export const DocLanguageDialog: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  open: open,
+  onOpenChange: onOpenChange,
+  onClosed: onClosed,
+}) => {
+  let optimisticLanguage: Dynamic = useDocumentLanguage(seat.pid);
+  let language: Dynamic =
+    optimisticLanguage === undefined ? seat.language : optimisticLanguage;
+  let selectRef: Dynamic = (0, React.useRef)(null);
+  let options: Dynamic = (0, React.useMemo)(
+    (..._extraArguments: unknown[]): Dynamic => docLanguageOptions(language),
+    [language],
+  );
+  return (
+    <UiDialogsRoot.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpenChangeComplete={(
+        docLanguageDialog?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): undefined => {
+        if (!docLanguageDialog) {
+          onClosed?.();
+        }
+      }}
+    >
+      <UiDialogsRoot.Popup
+        ref={selectRef}
+        initialFocus={selectRef}
+        finalFocus={false}
+        size={`lg`}
+        data-testid={`doc-language-dialog`}
+      >
+        <UiDialogsRoot.Header description={DOC_LANGUAGE_COPY.hint}>
+          {DOC_LANGUAGE_COPY.title}
+        </UiDialogsRoot.Header>
+        <LanguagePicker
+          className={`mt-md`}
+          options={options}
+          value={language ?? UNSET_LANGUAGE_VALUE}
+          onSelect={(
+            docLanguageDialog?: Dynamic,
+            ..._extraArguments: unknown[]
+          ): undefined => {
+            onOpenChange(false);
+            writeDocumentLanguage(
+              seat,
+              docLanguageDialog === UNSET_LANGUAGE_VALUE ? null : docLanguageDialog,
+            ).then((result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              if (result === `refused`) {
+                toast.error(DOC_LANGUAGE_COPY.refused, {
+                  id: LANGUAGE_FAILURE_TOAST_KEY,
+                });
+              } else {
+                if (result === `notSent` || result === `busy`) {
+                  toast.error(DOC_LANGUAGE_COPY.notSent, {
+                    id: LANGUAGE_FAILURE_TOAST_KEY,
+                  });
+                }
+              }
+            });
+          }}
+          descriptionLang={`en`}
+          groupLabel={DOC_LANGUAGE_COPY.pickerName}
+        />
+      </UiDialogsRoot.Popup>
+    </UiDialogsRoot.Root>
+  );
+};
+
 var React: Dynamic = toModuleNamespace(loadReact(), 1);
 var DOCUMENT_LANGUAGES: Dynamic = [
   {
@@ -308,81 +381,5 @@ function docLanguageOptions(
     ),
   ];
 }
-function DocLanguageDialog(
-  {
-    seat: seat,
-    open: open,
-    onOpenChange: onOpenChange,
-    onClosed: onClosed,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let optimisticLanguage: Dynamic = useDocumentLanguage(seat.pid);
-  let language: Dynamic =
-    optimisticLanguage === undefined ? seat.language : optimisticLanguage;
-  let selectRef: Dynamic = (0, React.useRef)(null);
-  let options: Dynamic = (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => docLanguageOptions(language),
-    [language],
-  );
-  return (
-    <UiDialogsRoot.Root
-      open={open}
-      onOpenChange={onOpenChange}
-      onOpenChangeComplete={(
-        docLanguageDialog?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (!docLanguageDialog) {
-          onClosed?.();
-        }
-      }}
-    >
-      <UiDialogsRoot.Popup
-        ref={selectRef}
-        initialFocus={selectRef}
-        finalFocus={false}
-        size={`lg`}
-        data-testid={`doc-language-dialog`}
-      >
-        <UiDialogsRoot.Header description={DOC_LANGUAGE_COPY.hint}>
-          {DOC_LANGUAGE_COPY.title}
-        </UiDialogsRoot.Header>
-        <LanguagePicker
-          className={`mt-md`}
-          options={options}
-          value={language ?? UNSET_LANGUAGE_VALUE}
-          onSelect={(
-            docLanguageDialog?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            onOpenChange(false);
-            writeDocumentLanguage(
-              seat,
-              docLanguageDialog === UNSET_LANGUAGE_VALUE
-                ? null
-                : docLanguageDialog,
-            ).then(
-              (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-                if (result === `refused`) {
-                  toast.error(DOC_LANGUAGE_COPY.refused, {
-                    id: LANGUAGE_FAILURE_TOAST_KEY,
-                  });
-                } else {
-                  if (result === `notSent` || result === `busy`) {
-                    toast.error(DOC_LANGUAGE_COPY.notSent, {
-                      id: LANGUAGE_FAILURE_TOAST_KEY,
-                    });
-                  }
-                }
-              },
-            );
-          }}
-          descriptionLang={`en`}
-          groupLabel={DOC_LANGUAGE_COPY.pickerName}
-        />
-      </UiDialogsRoot.Popup>
-    </UiDialogsRoot.Root>
-  );
-}
-export { DOC_LANGUAGE_COPY, DocLanguageDialog, docLanguageOptions };
+
+export { DOC_LANGUAGE_COPY, docLanguageOptions };

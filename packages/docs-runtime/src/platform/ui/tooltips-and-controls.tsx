@@ -75,6 +75,685 @@ import {
   useUiShortcutsAndSizingStart,
   useUiShortcutsAndSizingUseSyncExternalStore,
 } from "./shortcuts-and-sizing";
+import type * as ReactComponentTypes from "react";
+
+export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
+  content: content,
+  detail: detail,
+  secondaryHint: secondaryHint,
+  multiline: multiline,
+  shortcut: shortcut,
+  side = `top`,
+  align: align,
+  sideOffset = 4,
+  collisionPadding: collisionPadding,
+  trackCursorAxis: trackCursorAxis,
+  delay = 300,
+  open: open,
+  onOpenChange: onOpenChange,
+  closeDelay: closeDelay,
+  hoverable = true,
+  closeOnClick: closeOnClick,
+  lazy: lazy2 = false,
+  openOnHandedBackFocus = false,
+  triggerRef: triggerRef,
+  container: container,
+  className: className,
+  children: children,
+}) => {
+  let defaultContainer: Dynamic = resolveUiProviderAndLayersUseContext9();
+  let delays: Dynamic = useUiShortcutsAndSizingEnabled({
+    immediate: true,
+  });
+  let tooltipId: Dynamic = (0, React.useId)();
+  let tooltipHandleRef: Dynamic = (0, React.useRef)(null);
+  let [forceInstantClose, setForceInstantClose]: Dynamic = (0, React.useState)(false);
+  let closeControllerRef: Dynamic = (0, React.useRef)({
+    closeInstant: (..._extraArguments: unknown[]): undefined => {
+      setForceInstantClose(true);
+      tooltipHandleRef.current?.close();
+    },
+  });
+  let [cursorPosition, setCursorPosition]: Dynamic = (0, React.useState)(null);
+  let [tooltipState, setTooltipState]: Dynamic = (0, React.useState)(
+    UiTooltipsAndControlsOpen,
+  );
+  if (open === false && tooltipState.open) {
+    setTooltipState(resolveUiTooltipsAndControlsOpen2);
+  }
+  let lazyContent = typeof content == `function`;
+  let hasContent = lazyContent || !resolveUiTooltipsAndControlsEvery(content);
+  let displayedBody: Dynamic = !lazyContent && hasContent ? content : tooltipState.body;
+  let hasDisplayedBody = !resolveUiTooltipsAndControlsEvery(displayedBody);
+  let visible: Dynamic =
+    (open ?? tooltipState.open) && (!lazyContent || hasDisplayedBody);
+  if (!lazyContent && hasContent && visible && !Object.is(tooltipState.body, content)) {
+    setTooltipState(resolveUiTooltipsAndControlsBody2(content));
+  }
+  let changeOpen: Dynamic = (0, React.useCallback)(
+    (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {
+      if (
+        !openOnHandedBackFocus &&
+        resolveUiTooltipsAndControlsTriggerFocus(input, options)
+      )
+        return false;
+      if (input) {
+        if (typeof content != `function`)
+          setTooltipState(resolveUiTooltipsAndControlsOpen3(content));
+        else if (visible) setTooltipState(resolveUiTooltipsAndControlsOpen);
+        else {
+          let uiTooltipsAndControlsValue: Dynamic =
+            resolveUiTooltipsAndControlsValue(content);
+          if (uiTooltipsAndControlsValue === UiTooltipsAndControlsState2) {
+            options.cancel();
+            return false;
+          }
+          setTooltipState(resolveUiTooltipsAndControlsOpen3(uiTooltipsAndControlsValue));
+        }
+        setForceInstantClose(false);
+        resolveUiTooltipsAndControlsCurrent(closeControllerRef);
+      } else {
+        setTooltipState(
+          visible ? resolveUiTooltipsAndControlsOpen2 : resolveUiTooltipsAndControlsOpen4,
+        );
+        if (UiTooltipsAndControlsState === closeControllerRef) {
+          UiTooltipsAndControlsState = null;
+        }
+      }
+      setCursorPosition(
+        input && options.reason === `trigger-hover` ? (options.trigger ?? null) : null,
+      );
+      onOpenChange?.(input);
+      return true;
+    },
+    [onOpenChange, openOnHandedBackFocus, content, visible],
+  );
+  let controlled = open !== undefined;
+  let internalOpen: Dynamic = tooltipState.open;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!(!controlled || !hasContent || !hasDisplayedBody)) {
+        if (open) {
+          resolveUiTooltipsAndControlsCurrent(closeControllerRef);
+        } else {
+          if (UiTooltipsAndControlsState === closeControllerRef) {
+            UiTooltipsAndControlsState = null;
+          }
+        }
+        return (..._extraArguments: unknown[]): undefined => {
+          if (!internalOpen && UiTooltipsAndControlsState === closeControllerRef) {
+            UiTooltipsAndControlsState = null;
+          }
+        };
+      }
+    },
+    [controlled, open, hasContent, hasDisplayedBody, internalOpen, lazyContent],
+  );
+  let onClosed: Dynamic = (0, React.useCallback)(
+    (input?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (!input) {
+        setForceInstantClose(false);
+        setCursorPosition(null);
+        setTooltipState(resolveUiTooltipsAndControlsBody);
+      }
+    },
+    [],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!cursorPosition) return;
+      let ownerDocument2: Dynamic = cursorPosition.ownerDocument;
+      let closeInstant = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let target: Dynamic = event.target;
+        if (target && target !== cursorPosition && target.contains(cursorPosition)) {
+          closeControllerRef.current.closeInstant();
+        }
+      };
+      ownerDocument2.addEventListener(`scroll`, closeInstant, {
+        capture: true,
+        passive: true,
+      });
+      return (..._extraArguments: unknown[]): undefined => {
+        ownerDocument2.removeEventListener(`scroll`, closeInstant, {
+          capture: true,
+        });
+      };
+    },
+    [cursorPosition],
+  );
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      (..._extraArguments: unknown[]): undefined => {
+        if (UiTooltipsAndControlsState === closeControllerRef) {
+          UiTooltipsAndControlsState = null;
+        }
+      },
+    [],
+  );
+  let modalContext: Dynamic = resolveUiProviderAndLayersValue3(`tooltip`);
+  let [lazyHandle]: Dynamic = (0, React.useState)(
+    (..._extraArguments: unknown[]): Dynamic =>
+      lazy2 && open === undefined ? createTooltipHandle() : null,
+  );
+  let [lazyReady, setLazyReady]: Dynamic = (0, React.useState)(false);
+  let renderReady: Dynamic = lazyReady || lazyHandle === null;
+  let contentResolvedRef: Dynamic = (0, React.useRef)(false);
+  let markLazyReady: Dynamic = (0, React.useCallback)(
+    (..._extraArguments: unknown[]): undefined => {
+      contentResolvedRef.current = true;
+      setLazyReady(true);
+    },
+    [],
+  );
+  let hoverDelay: Dynamic = useUiShortcutsAndSizingStart();
+  let hoveredTriggerRef: Dynamic = (0, React.useRef)(null);
+  let handedBackOpenRef: Dynamic = (0, React.useRef)(false);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): undefined => {
+      if (open === false) {
+        handedBackOpenRef.current = false;
+      }
+    },
+    [open],
+  );
+  let resolveLazyContent: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
+    (..._extraArguments: unknown[]): undefined => {
+      if (contentResolvedRef.current || renderReady || !hasContent || open !== undefined)
+        return;
+      let tooltipResult: Dynamic;
+      if (typeof content == `function`) {
+        let uiTooltipsAndControlsValue: Dynamic =
+          resolveUiTooltipsAndControlsValue(content);
+        if (uiTooltipsAndControlsValue === UiTooltipsAndControlsState2) return;
+        tooltipResult = uiTooltipsAndControlsValue;
+      } else tooltipResult = content;
+      markLazyReady();
+      setForceInstantClose(false);
+      resolveUiTooltipsAndControlsCurrent(closeControllerRef);
+      setCursorPosition(hoveredTriggerRef.current);
+      setTooltipState(resolveUiTooltipsAndControlsOpen3(tooltipResult));
+      handedBackOpenRef.current = true;
+      onOpenChange?.(true);
+    },
+  );
+  let onPointerEnter: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
+    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (!(renderReady || event.pointerType === `touch`)) {
+        if (hasContent) {
+          hoveredTriggerRef.current = event.currentTarget;
+          hoverDelay.start(delay, resolveLazyContent);
+        }
+      }
+    },
+  );
+  let cancelHoverDelay: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
+    (..._extraArguments: unknown[]): undefined => {
+      if (closeOnClick !== false) {
+        hoverDelay.cancel();
+      }
+    },
+  );
+  let onVisibleFocus: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
+    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (!renderReady) {
+        if (event.target.matches(`:focus-visible`)) {
+          if (
+            !(
+              !openOnHandedBackFocus &&
+              isUiLinksAndFoundationRelatedTarget(event.nativeEvent)
+            )
+          ) {
+            hoveredTriggerRef.current = null;
+            hoverDelay.cancel();
+            resolveLazyContent();
+          }
+        }
+      }
+    },
+  );
+  if (lazyHandle !== null && open === true && !lazyReady) {
+    setLazyReady(true);
+  }
+  let onOpenChange2: Dynamic = (0, React.useCallback)(
+    (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (
+        !(
+          !openOnHandedBackFocus &&
+          resolveUiTooltipsAndControlsTriggerFocus(input, options)
+        )
+      ) {
+        if (input && handedBackOpenRef.current && visible) {
+          setTooltipState(resolveUiTooltipsAndControlsOpen);
+          return;
+        }
+        if (changeOpen(input, options)) {
+          handedBackOpenRef.current = input;
+        }
+      }
+    },
+    [changeOpen, openOnHandedBackFocus, visible],
+  );
+  let triggerElement: Dynamic =
+    (0, React.isValidElement)(children) && children.type !== React.Fragment
+      ? children
+      : (input?: Dynamic, ..._extraArguments: unknown[]) => (
+          <span {...input} className={`inline-flex`}>
+            {children}
+          </span>
+        );
+  let trigger = (
+    <TooltipTrigger
+      ref={triggerRef}
+      id={tooltipId}
+      delay={delay}
+      closeDelay={closeDelay}
+      closeOnClick={closeOnClick}
+      handle={lazyHandle ?? undefined}
+      disabled={lazyHandle !== null && !renderReady ? !hasContent : undefined}
+      onPointerEnter={lazyHandle ? onPointerEnter : undefined}
+      onPointerLeave={lazyHandle ? hoverDelay.cancel : undefined}
+      onPointerDown={lazyHandle ? cancelHoverDelay : undefined}
+      onFocus={lazyHandle ? onVisibleFocus : undefined}
+      render={triggerElement}
+    />
+  );
+  let popup =
+    renderReady && hasDisplayedBody ? (
+      <TooltipPortal container={container ?? defaultContainer}>
+        <UiOverlaysAndIconsSurface>
+          <UiShortcutsAndSizingOverride
+            override={collisionPadding}
+            container={container ?? defaultContainer}
+          >
+            {(collisionPadding2?: Dynamic, ..._extraArguments: unknown[]) => (
+              <UiProviderAndLayersCreateContext13.Provider value={modalContext.base}>
+                <TooltipPositioner
+                  data-cds={`Tooltip`}
+                  className={`data-[anchor-hidden]:invisible`}
+                  style={modalContext.style}
+                  side={side}
+                  align={align}
+                  sideOffset={sideOffset}
+                  collisionPadding={collisionPadding2}
+                >
+                  <TooltipPopup
+                    ref={delays}
+                    role={`tooltip`}
+                    style={
+                      forceInstantClose
+                        ? {
+                            transition: `none`,
+                          }
+                        : undefined
+                    }
+                    className={resolveUiDesignSystemValue2(
+                      UiTooltipsAndControlsState3,
+                      UiTooltipsAndControlsState4,
+                      multiline || detail || secondaryHint
+                        ? UiTooltipsAndControlsState5
+                        : UiTooltipsAndControlsStyles,
+                      !shortcut && UiTooltipsAndControlsTextBalance,
+                      className,
+                    )}
+                  >
+                    <UiShortcutsAndSizingDataMode>
+                      {multiline || detail || secondaryHint ? (
+                        <jsxRuntime.Fragment>
+                          <span className={`inline-flex min-w-0 items-center gap-2`}>
+                            <span className={UiShortcutsAndSizingMinW0BreakWords}>
+                              {displayedBody}
+                            </span>
+                            {shortcut && <UiTooltipsAndControlsKeys keys={shortcut} />}
+                          </span>
+                          {secondaryHint && (
+                            <span className={`inline-flex min-w-0 items-center gap-2`}>
+                              <span className={`min-w-0 break-words`}>
+                                {secondaryHint.label}
+                              </span>
+                              <UiTooltipsAndControlsKeys keys={secondaryHint.shortcut} />
+                            </span>
+                          )}
+                          {detail && (
+                            <span
+                              className={`break-words text-[calc(0.6875rem*var(--cds-rem-scale,1))]/[calc(0.875rem*var(--cds-rem-scale,1))] text-secondary`}
+                            >
+                              {detail}
+                            </span>
+                          )}
+                        </jsxRuntime.Fragment>
+                      ) : (
+                        <jsxRuntime.Fragment>
+                          <span className={UiShortcutsAndSizingMinW0BreakWords}>
+                            {displayedBody}
+                          </span>
+                          {shortcut && (
+                            <UiTooltipsAndControlsKeys
+                              keys={shortcut}
+                              className={UiTooltipsAndControlsSelfStart}
+                            />
+                          )}
+                        </jsxRuntime.Fragment>
+                      )}
+                    </UiShortcutsAndSizingDataMode>
+                  </TooltipPopup>
+                </TooltipPositioner>
+              </UiProviderAndLayersCreateContext13.Provider>
+            )}
+          </UiShortcutsAndSizingOverride>
+        </UiOverlaysAndIconsSurface>
+      </TooltipPortal>
+    ) : null;
+  return lazyHandle ? (
+    <jsxRuntime.Fragment>
+      <UiShortcutsAndSizingCreateContext2.Provider value={UiTooltipsAndControlsTooltip}>
+        <UiShortcutsAndSizingCreateContext.Provider value={hasContent}>
+          {trigger}
+        </UiShortcutsAndSizingCreateContext.Provider>
+      </UiShortcutsAndSizingCreateContext2.Provider>
+      {renderReady && (
+        <TooltipRoot
+          handle={lazyHandle}
+          open={visible}
+          disableHoverablePopup={!hoverable}
+          trackCursorAxis={trackCursorAxis}
+          disabled={!hasContent}
+          actionsRef={tooltipHandleRef}
+          onOpenChange={onOpenChange2}
+          onOpenChangeComplete={onClosed}
+          triggerId={tooltipId}
+        >
+          {popup}
+        </TooltipRoot>
+      )}
+    </jsxRuntime.Fragment>
+  ) : (
+    <TooltipRoot
+      open={visible}
+      disableHoverablePopup={!hoverable}
+      trackCursorAxis={trackCursorAxis}
+      disabled={!hasContent}
+      actionsRef={tooltipHandleRef}
+      onOpenChange={changeOpen}
+      onOpenChangeComplete={onClosed}
+      triggerId={tooltipId}
+    >
+      <UiShortcutsAndSizingCreateContext2.Provider value={UiTooltipsAndControlsTooltip}>
+        <UiShortcutsAndSizingCreateContext.Provider value={hasContent}>
+          {trigger}
+        </UiShortcutsAndSizingCreateContext.Provider>
+      </UiShortcutsAndSizingCreateContext2.Provider>
+      {popup}
+    </TooltipRoot>
+  );
+};
+
+export const UiTooltipsAndControlsDelay: ReactComponentTypes.FC<Dynamic> = ({
+  size = `sm`,
+  delay = 0,
+  inheritColor = false,
+  label: label,
+  className: className,
+}) => {
+  let [matchesDelayState, setMatchesDelayState]: Dynamic = (0, React.useState)(
+    delay <= 0,
+  );
+  let [delayState, setDelayState]: Dynamic = (0, React.useState)(delay);
+  if (delay !== delayState) {
+    setDelayState(delay);
+    if (delay > 0 && matchesDelayState) {
+      setMatchesDelayState(false);
+    }
+  }
+  let show: Dynamic = delay <= 0 || matchesDelayState;
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (delay <= 0) return;
+      let setTimeout2: Dynamic = (window as Dynamic).setTimeout(
+        (..._extraArguments: unknown[]): Dynamic => setMatchesDelayState(true),
+        delay,
+      );
+      return (..._extraArguments: unknown[]): Dynamic =>
+        (window as Dynamic).clearTimeout(setTimeout2);
+    },
+    [delay],
+  );
+  let UiTooltipsAndControlsBoxItem: Dynamic =
+    UiTooltipsAndControlsBox[UiTooltipsAndControlsState6[size] ?? size];
+  let label2: string = inheritColor ? `currentColor` : `var(--cds-text-muted)`;
+  let label3: string = inheritColor
+    ? `color-mix(in srgb, currentColor 25%, transparent)`
+    : `var(--cds-border)`;
+  let width: string = resolveUiOverlaysAndIconsValue6(UiTooltipsAndControlsBoxItem.box);
+  let uiOverlaysAndIconsValue6: string = resolveUiOverlaysAndIconsValue6(
+    UiTooltipsAndControlsBoxItem.stroke,
+  );
+  let label4: string = `calc(100% - ${uiOverlaysAndIconsValue6})`;
+  let WebkitMask: string = `radial-gradient(farthest-side, transparent ${label4}, #000 calc(${label4} + 0.5px))`;
+  let jsxs: Dynamic = show ? (
+    <span
+      data-cds={`Spinner`}
+      className={resolveUiDesignSystemValue2(
+        `relative inline-block shrink-0 align-middle`,
+        className,
+      )}
+      style={{
+        width: width,
+        height: width,
+      }}
+      aria-hidden={true}
+    >
+      <span
+        className={`absolute inset-0 rounded-full`}
+        style={{
+          border: `${uiOverlaysAndIconsValue6} solid ${label3}`,
+        }}
+      />
+      <span
+        className={`absolute inset-0 rounded-full animate-[spin_1s_linear_infinite] motion-reduce:animate-none`}
+        style={{
+          background: `conic-gradient(transparent 40%, ${label2})`,
+          WebkitMask: WebkitMask,
+          mask: WebkitMask,
+        }}
+      />
+    </span>
+  ) : null;
+  return label ? (
+    <span role={`status`} className={`leading-[0]`}>
+      {jsxs}
+      <UiTooltipsAndControlsShow show={show}>{label}</UiTooltipsAndControlsShow>
+    </span>
+  ) : (
+    jsxs
+  );
+};
+
+export const UiTooltipsAndControlsShow: ReactComponentTypes.FC<Dynamic> = ({
+  show: show,
+  children: children,
+}) => {
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
+    let setTimeout2 = window.setTimeout(
+      (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
+      100,
+    );
+    return (..._extraArguments: unknown[]) => window.clearTimeout(setTimeout2);
+  }, []);
+  return show && enabledState ? <span className={`sr-only`}>{children}</span> : null;
+};
+
+export const UiTooltipsAndControlsKeys: ReactComponentTypes.FC<Dynamic> = ({
+  keys: keys,
+  className: className,
+}) => {
+  return (
+    <UiShortcutsAndSizingKeys
+      keys={keys}
+      variant={`text`}
+      className={resolveUiDesignSystemValue2(
+        `text-[calc(0.75rem*var(--cds-rem-scale,1))] [--cds-shortcut-cap-ink:var(--cds-text-muted)]`,
+        className,
+      )}
+    />
+  );
+};
+
+export const DisabledReasonTooltip: ReactComponentTypes.FC<Dynamic> = ({
+  reason: reason,
+  side: side,
+  align: align,
+  sideOffset: sideOffset,
+  multiline = true,
+  delay: delay,
+  collisionPadding: collisionPadding,
+  hoverable: hoverable,
+  className: className,
+  wrapperClassName: wrapperClassName,
+  children: children,
+}) => {
+  let controlId: Dynamic = (0, React.useId)();
+  return (
+    <Tooltip
+      content={isUiShortcutsAndSizingValue(reason) ? reason : undefined}
+      side={side}
+      align={align}
+      sideOffset={sideOffset}
+      multiline={multiline}
+      delay={delay}
+      collisionPadding={collisionPadding}
+      hoverable={hoverable}
+      className={className}
+      closeOnClick={false}
+      openOnHandedBackFocus={true}
+    >
+      <span {...resolveUiShortcutsAndSizingTabIndex(reason, controlId, wrapperClassName)}>
+        {children}
+        {<UiShortcutsAndSizingReason id={controlId} reason={reason} />}
+      </span>
+    </Tooltip>
+  );
+};
+
+export const TooltipImplProvider: ReactComponentTypes.FC<Dynamic> = ({
+  children: children,
+}) => {
+  return (
+    <UiShortcutsAndSizingCreateContext2.Provider value={UiTooltipsAndControlsTooltip}>
+      {children}
+    </UiShortcutsAndSizingCreateContext2.Provider>
+  );
+};
+
+export const TooltipGroup: ReactComponentTypes.FC<Dynamic> = ({
+  delay = 600,
+  closeDelay = 200,
+  children: children,
+}) => {
+  return (
+    <UiTooltipsAndControlsCreateContext.Provider value={true}>
+      <TooltipProvider delay={delay} closeDelay={closeDelay}>
+        {children}
+      </TooltipProvider>
+    </UiTooltipsAndControlsCreateContext.Provider>
+  );
+};
+
+export const UiTooltipsAndControlsImpl: ReactComponentTypes.FC<Dynamic> = (node) => {
+  let {
+    impl: useUiTooltipsAndControlsImpl2,
+    wasCold: useUiTooltipsAndControlsImpl3,
+    interceptors: useUiTooltipsAndControlsImpl4,
+    trackTrigger: triggerRef,
+  }: Dynamic = useUiTooltipsAndControlsImpl(true);
+  let matchesAutoFocus = node.autoFocus === false;
+  if (useUiTooltipsAndControlsImpl2 !== null)
+    return useUiTooltipsAndControlsImpl3 || matchesAutoFocus ? (
+      <useUiTooltipsAndControlsImpl2.Tooltip {...node} triggerRef={triggerRef}>
+        {resolveUiTooltipsAndControlsAutoFocus(node.children)}
+      </useUiTooltipsAndControlsImpl2.Tooltip>
+    ) : (
+      <useUiTooltipsAndControlsImpl2.Tooltip {...node} />
+    );
+  let { children: node2 }: Dynamic = node;
+  if (!(0, React.isValidElement)(node2))
+    return <jsxRuntime.Fragment>{node2}</jsxRuntime.Fragment>;
+  let node3: Dynamic = node2;
+  return (0, React.cloneElement)(node3, {
+    ...useUiTooltipsAndControlsImpl4(node3.props),
+    ...UiTooltipsAndControlsTooltipPending,
+  });
+};
+
+export const UiTooltipsAndControlsImpl2: ReactComponentTypes.FC<Dynamic> = (node) => {
+  let {
+    impl: useUiTooltipsAndControlsImpl2,
+    wasCold: useUiTooltipsAndControlsImpl3,
+    interceptors: useUiTooltipsAndControlsImpl4,
+  }: Dynamic = useUiTooltipsAndControlsImpl(false);
+  let controlId: Dynamic = (0, React.useId)();
+  if (useUiTooltipsAndControlsImpl2 !== null)
+    return useUiTooltipsAndControlsImpl3 ? (
+      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip {...node}>
+        {resolveUiTooltipsAndControlsAutoFocus(node.children)}
+      </useUiTooltipsAndControlsImpl2.DisabledReasonTooltip>
+    ) : (
+      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip {...node} />
+    );
+  let { reason: reason, wrapperClassName: node2, children: node3 }: Dynamic = node;
+  return (
+    <span
+      {...resolveUiShortcutsAndSizingTabIndex(reason, controlId, node2)}
+      title={typeof reason == `string` ? reason : undefined}
+      {...useUiTooltipsAndControlsImpl4({})}
+      {...UiTooltipsAndControlsTooltipPending}
+    >
+      {node3}
+      {<UiShortcutsAndSizingReason id={controlId} reason={reason} />}
+    </span>
+  );
+};
+
+export const UiTooltipsAndControlsIndeterminate: ReactComponentTypes.FC<Dynamic> = ({
+  indeterminate = false,
+}) => {
+  return (
+    <UiOverlaysAndIconsCustomIcon
+      name={indeterminate ? `Minus` : `Check`}
+      size={`sm`}
+      bold={true}
+      style={{
+        fontSize: `var(--cds-checkbox-glyph)`,
+      }}
+    />
+  );
+};
+
+export const UiTooltipsAndControlsChecked: ReactComponentTypes.FC<Dynamic> = ({
+  checked: checked,
+  indeterminate = false,
+  className: className,
+}) => {
+  let checked2: Dynamic = checked || indeterminate;
+  return (
+    <span
+      data-checked={checked && !indeterminate ? `` : undefined}
+      data-indeterminate={indeterminate ? `` : undefined}
+      data-unchecked={checked2 ? undefined : ``}
+      className={resolveUiDesignSystemValue2(
+        UiTooltipsAndControlsStyles5,
+        checked2 && `bg-fill-accent border-transparent`,
+        className,
+      )}
+    >
+      {checked2 && (
+        <span className={`text-on-accent`}>
+          <UiTooltipsAndControlsIndeterminate indeterminate={indeterminate} />
+        </span>
+      )}
+    </span>
+  );
+};
 
 var UiTooltipsAndControlsDisabledReasonTooltip: Dynamic;
 
@@ -158,534 +837,9 @@ var UiTooltipsAndControlsSelfStart: string;
 
 var UiTooltipsAndControlsState5: string;
 
-function UiTooltipsAndControlsKeys(
-  { keys: keys, className: className }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <UiShortcutsAndSizingKeys
-      keys={keys}
-      variant={`text`}
-      className={resolveUiDesignSystemValue2(
-        `text-[calc(0.75rem*var(--cds-rem-scale,1))] [--cds-shortcut-cap-ink:var(--cds-text-muted)]`,
-        className,
-      )}
-    />
-  );
-}
-
-function Tooltip(
-  {
-    content: content,
-    detail: detail,
-    secondaryHint: secondaryHint,
-    multiline: multiline,
-    shortcut: shortcut,
-    side = `top`,
-    align: align,
-    sideOffset = 4,
-    collisionPadding: collisionPadding,
-    trackCursorAxis: trackCursorAxis,
-    delay = 300,
-    open: open,
-    onOpenChange: onOpenChange,
-    closeDelay: closeDelay,
-    hoverable = true,
-    closeOnClick: closeOnClick,
-    lazy: lazy2 = false,
-    openOnHandedBackFocus = false,
-    triggerRef: triggerRef,
-    container: container,
-    className: className,
-    children: children,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let defaultContainer: Dynamic = resolveUiProviderAndLayersUseContext9();
-  let delays: Dynamic = useUiShortcutsAndSizingEnabled({
-    immediate: true,
-  });
-  let tooltipId: Dynamic = (0, React.useId)();
-  let tooltipHandleRef: Dynamic = (0, React.useRef)(null);
-  let [forceInstantClose, setForceInstantClose]: Dynamic = (0, React.useState)(
-    false,
-  );
-  let closeControllerRef: Dynamic = (0, React.useRef)({
-    closeInstant: (..._extraArguments: unknown[]): undefined => {
-      setForceInstantClose(true);
-      tooltipHandleRef.current?.close();
-    },
-  });
-  let [cursorPosition, setCursorPosition]: Dynamic = (0, React.useState)(null);
-  let [tooltipState, setTooltipState]: Dynamic = (0, React.useState)(
-    UiTooltipsAndControlsOpen,
-  );
-  if (open === false && tooltipState.open) {
-    setTooltipState(resolveUiTooltipsAndControlsOpen2);
-  }
-  let lazyContent = typeof content == `function`;
-  let hasContent = lazyContent || !resolveUiTooltipsAndControlsEvery(content);
-  let displayedBody: Dynamic =
-    !lazyContent && hasContent ? content : tooltipState.body;
-  let hasDisplayedBody = !resolveUiTooltipsAndControlsEvery(displayedBody);
-  let visible: Dynamic =
-    (open ?? tooltipState.open) && (!lazyContent || hasDisplayedBody);
-  if (
-    !lazyContent &&
-    hasContent &&
-    visible &&
-    !Object.is(tooltipState.body, content)
-  ) {
-    setTooltipState(resolveUiTooltipsAndControlsBody2(content));
-  }
-  let changeOpen: Dynamic = (0, React.useCallback)(
-    (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {
-      if (
-        !openOnHandedBackFocus &&
-        resolveUiTooltipsAndControlsTriggerFocus(input, options)
-      )
-        return false;
-      if (input) {
-        if (typeof content != `function`)
-          setTooltipState(resolveUiTooltipsAndControlsOpen3(content));
-        else if (visible) setTooltipState(resolveUiTooltipsAndControlsOpen);
-        else {
-          let uiTooltipsAndControlsValue: Dynamic =
-            resolveUiTooltipsAndControlsValue(content);
-          if (uiTooltipsAndControlsValue === UiTooltipsAndControlsState2) {
-            options.cancel();
-            return false;
-          }
-          setTooltipState(
-            resolveUiTooltipsAndControlsOpen3(uiTooltipsAndControlsValue),
-          );
-        }
-        setForceInstantClose(false);
-        resolveUiTooltipsAndControlsCurrent(closeControllerRef);
-      } else {
-        setTooltipState(
-          visible
-            ? resolveUiTooltipsAndControlsOpen2
-            : resolveUiTooltipsAndControlsOpen4,
-        );
-        if (UiTooltipsAndControlsState === closeControllerRef) {
-          UiTooltipsAndControlsState = null;
-        }
-      }
-      setCursorPosition(
-        input && options.reason === `trigger-hover`
-          ? (options.trigger ?? null)
-          : null,
-      );
-      onOpenChange?.(input);
-      return true;
-    },
-    [onOpenChange, openOnHandedBackFocus, content, visible],
-  );
-  let controlled = open !== undefined;
-  let internalOpen: Dynamic = tooltipState.open;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!(!controlled || !hasContent || !hasDisplayedBody)) {
-        if (open) {
-          resolveUiTooltipsAndControlsCurrent(closeControllerRef);
-        } else {
-          if (UiTooltipsAndControlsState === closeControllerRef) {
-            UiTooltipsAndControlsState = null;
-          }
-        }
-        return (..._extraArguments: unknown[]): undefined => {
-          if (
-            !internalOpen &&
-            UiTooltipsAndControlsState === closeControllerRef
-          ) {
-            UiTooltipsAndControlsState = null;
-          }
-        };
-      }
-    },
-    [controlled, open, hasContent, hasDisplayedBody, internalOpen, lazyContent],
-  );
-  let onClosed: Dynamic = (0, React.useCallback)(
-    (input?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      if (!input) {
-        setForceInstantClose(false);
-        setCursorPosition(null);
-        setTooltipState(resolveUiTooltipsAndControlsBody);
-      }
-    },
-    [],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!cursorPosition) return;
-      let ownerDocument2: Dynamic = cursorPosition.ownerDocument;
-      let closeInstant = (
-        event?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        let target: Dynamic = event.target;
-        if (
-          target &&
-          target !== cursorPosition &&
-          target.contains(cursorPosition)
-        ) {
-          closeControllerRef.current.closeInstant();
-        }
-      };
-      ownerDocument2.addEventListener(`scroll`, closeInstant, {
-        capture: true,
-        passive: true,
-      });
-      return (..._extraArguments: unknown[]): undefined => {
-        ownerDocument2.removeEventListener(`scroll`, closeInstant, {
-          capture: true,
-        });
-      };
-    },
-    [cursorPosition],
-  );
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      (..._extraArguments: unknown[]): undefined => {
-        if (UiTooltipsAndControlsState === closeControllerRef) {
-          UiTooltipsAndControlsState = null;
-        }
-      },
-    [],
-  );
-  let modalContext: Dynamic = resolveUiProviderAndLayersValue3(`tooltip`);
-  let [lazyHandle]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic =>
-      lazy2 && open === undefined ? createTooltipHandle() : null,
-  );
-  let [lazyReady, setLazyReady]: Dynamic = (0, React.useState)(false);
-  let renderReady: Dynamic = lazyReady || lazyHandle === null;
-  let contentResolvedRef: Dynamic = (0, React.useRef)(false);
-  let markLazyReady: Dynamic = (0, React.useCallback)(
-    (..._extraArguments: unknown[]): undefined => {
-      contentResolvedRef.current = true;
-      setLazyReady(true);
-    },
-    [],
-  );
-  let hoverDelay: Dynamic = useUiShortcutsAndSizingStart();
-  let hoveredTriggerRef: Dynamic = (0, React.useRef)(null);
-  let handedBackOpenRef: Dynamic = (0, React.useRef)(false);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): undefined => {
-      if (open === false) {
-        handedBackOpenRef.current = false;
-      }
-    },
-    [open],
-  );
-  let resolveLazyContent: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
-    (..._extraArguments: unknown[]): undefined => {
-      if (
-        contentResolvedRef.current ||
-        renderReady ||
-        !hasContent ||
-        open !== undefined
-      )
-        return;
-      let tooltipResult: Dynamic;
-      if (typeof content == `function`) {
-        let uiTooltipsAndControlsValue: Dynamic =
-          resolveUiTooltipsAndControlsValue(content);
-        if (uiTooltipsAndControlsValue === UiTooltipsAndControlsState2) return;
-        tooltipResult = uiTooltipsAndControlsValue;
-      } else tooltipResult = content;
-      markLazyReady();
-      setForceInstantClose(false);
-      resolveUiTooltipsAndControlsCurrent(closeControllerRef);
-      setCursorPosition(hoveredTriggerRef.current);
-      setTooltipState(resolveUiTooltipsAndControlsOpen3(tooltipResult));
-      handedBackOpenRef.current = true;
-      onOpenChange?.(true);
-    },
-  );
-  let onPointerEnter: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
-    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      if (!(renderReady || event.pointerType === `touch`)) {
-        if (hasContent) {
-          hoveredTriggerRef.current = event.currentTarget;
-          hoverDelay.start(delay, resolveLazyContent);
-        }
-      }
-    },
-  );
-  let cancelHoverDelay: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
-    (..._extraArguments: unknown[]): undefined => {
-      if (closeOnClick !== false) {
-        hoverDelay.cancel();
-      }
-    },
-  );
-  let onVisibleFocus: Dynamic = useUiOverlaysAndIconsUseInsertionEffect(
-    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      if (!renderReady) {
-        if (event.target.matches(`:focus-visible`)) {
-          if (
-            !(
-              !openOnHandedBackFocus &&
-              isUiLinksAndFoundationRelatedTarget(event.nativeEvent)
-            )
-          ) {
-            hoveredTriggerRef.current = null;
-            hoverDelay.cancel();
-            resolveLazyContent();
-          }
-        }
-      }
-    },
-  );
-  if (lazyHandle !== null && open === true && !lazyReady) {
-    setLazyReady(true);
-  }
-  let onOpenChange2: Dynamic = (0, React.useCallback)(
-    (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): undefined => {
-      if (
-        !(
-          !openOnHandedBackFocus &&
-          resolveUiTooltipsAndControlsTriggerFocus(input, options)
-        )
-      ) {
-        if (input && handedBackOpenRef.current && visible) {
-          setTooltipState(resolveUiTooltipsAndControlsOpen);
-          return;
-        }
-        if (changeOpen(input, options)) {
-          handedBackOpenRef.current = input;
-        }
-      }
-    },
-    [changeOpen, openOnHandedBackFocus, visible],
-  );
-  let triggerElement: Dynamic =
-    (0, React.isValidElement)(children) && children.type !== React.Fragment
-      ? children
-      : (input?: Dynamic, ..._extraArguments: unknown[]) => (
-          <span {...input} className={`inline-flex`}>{children}</span>
-        );
-  let trigger = (
-    <TooltipTrigger
-      ref={triggerRef}
-      id={tooltipId}
-      delay={delay}
-      closeDelay={closeDelay}
-      closeOnClick={closeOnClick}
-      handle={lazyHandle ?? undefined}
-      disabled={lazyHandle !== null && !renderReady ? !hasContent : undefined}
-      onPointerEnter={lazyHandle ? onPointerEnter : undefined}
-      onPointerLeave={lazyHandle ? hoverDelay.cancel : undefined}
-      onPointerDown={lazyHandle ? cancelHoverDelay : undefined}
-      onFocus={lazyHandle ? onVisibleFocus : undefined}
-      render={triggerElement}
-    />
-  );
-  let popup =
-    renderReady && hasDisplayedBody ? (
-      <TooltipPortal container={container ?? defaultContainer}>
-        <UiOverlaysAndIconsSurface>
-          <UiShortcutsAndSizingOverride
-            override={collisionPadding}
-            container={container ?? defaultContainer}
-          >
-            {(collisionPadding2?: Dynamic, ..._extraArguments: unknown[]) => (
-              <UiProviderAndLayersCreateContext13.Provider
-                value={modalContext.base}
-              >
-                <TooltipPositioner
-                  data-cds={`Tooltip`}
-                  className={`data-[anchor-hidden]:invisible`}
-                  style={modalContext.style}
-                  side={side}
-                  align={align}
-                  sideOffset={sideOffset}
-                  collisionPadding={collisionPadding2}
-                >
-                  <TooltipPopup
-                    ref={delays}
-                    role={`tooltip`}
-                    style={
-                      forceInstantClose
-                        ? {
-                            transition: `none`,
-                          }
-                        : undefined
-                    }
-                    className={resolveUiDesignSystemValue2(
-                      UiTooltipsAndControlsState3,
-                      UiTooltipsAndControlsState4,
-                      multiline || detail || secondaryHint
-                        ? UiTooltipsAndControlsState5
-                        : UiTooltipsAndControlsStyles,
-                      !shortcut && UiTooltipsAndControlsTextBalance,
-                      className,
-                    )}
-                  >
-                    <UiShortcutsAndSizingDataMode>
-                      {multiline || detail || secondaryHint ? (
-                        <jsxRuntime.Fragment>
-                          <span
-                            className={`inline-flex min-w-0 items-center gap-2`}
-                          >
-                            <span
-                              className={UiShortcutsAndSizingMinW0BreakWords}
-                            >
-                              {displayedBody}
-                            </span>
-                            {shortcut && (
-                              <UiTooltipsAndControlsKeys keys={shortcut} />
-                            )}
-                          </span>
-                          {secondaryHint && (
-                            <span
-                              className={`inline-flex min-w-0 items-center gap-2`}
-                            >
-                              <span className={`min-w-0 break-words`}>
-                                {secondaryHint.label}
-                              </span>
-                              <UiTooltipsAndControlsKeys
-                                keys={secondaryHint.shortcut}
-                              />
-                            </span>
-                          )}
-                          {detail && (
-                            <span
-                              className={`break-words text-[calc(0.6875rem*var(--cds-rem-scale,1))]/[calc(0.875rem*var(--cds-rem-scale,1))] text-secondary`}
-                            >
-                              {detail}
-                            </span>
-                          )}
-                        </jsxRuntime.Fragment>
-                      ) : (
-                        <jsxRuntime.Fragment>
-                          <span className={UiShortcutsAndSizingMinW0BreakWords}>
-                            {displayedBody}
-                          </span>
-                          {shortcut && (
-                            <UiTooltipsAndControlsKeys
-                              keys={shortcut}
-                              className={UiTooltipsAndControlsSelfStart}
-                            />
-                          )}
-                        </jsxRuntime.Fragment>
-                      )}
-                    </UiShortcutsAndSizingDataMode>
-                  </TooltipPopup>
-                </TooltipPositioner>
-              </UiProviderAndLayersCreateContext13.Provider>
-            )}
-          </UiShortcutsAndSizingOverride>
-        </UiOverlaysAndIconsSurface>
-      </TooltipPortal>
-    ) : null;
-  return lazyHandle ? (
-    <jsxRuntime.Fragment>
-      <UiShortcutsAndSizingCreateContext2.Provider
-        value={UiTooltipsAndControlsTooltip}
-      >
-        <UiShortcutsAndSizingCreateContext.Provider value={hasContent}>
-          {trigger}
-        </UiShortcutsAndSizingCreateContext.Provider>
-      </UiShortcutsAndSizingCreateContext2.Provider>
-      {renderReady && (
-        <TooltipRoot
-          handle={lazyHandle}
-          open={visible}
-          disableHoverablePopup={!hoverable}
-          trackCursorAxis={trackCursorAxis}
-          disabled={!hasContent}
-          actionsRef={tooltipHandleRef}
-          onOpenChange={onOpenChange2}
-          onOpenChangeComplete={onClosed}
-          triggerId={tooltipId}
-        >
-          {popup}
-        </TooltipRoot>
-      )}
-    </jsxRuntime.Fragment>
-  ) : (
-    <TooltipRoot
-      open={visible}
-      disableHoverablePopup={!hoverable}
-      trackCursorAxis={trackCursorAxis}
-      disabled={!hasContent}
-      actionsRef={tooltipHandleRef}
-      onOpenChange={changeOpen}
-      onOpenChangeComplete={onClosed}
-      triggerId={tooltipId}
-    >
-      <UiShortcutsAndSizingCreateContext2.Provider
-        value={UiTooltipsAndControlsTooltip}
-      >
-        <UiShortcutsAndSizingCreateContext.Provider value={hasContent}>
-          {trigger}
-        </UiShortcutsAndSizingCreateContext.Provider>
-      </UiShortcutsAndSizingCreateContext2.Provider>
-      {popup}
-    </TooltipRoot>
-  );
-}
-
-function DisabledReasonTooltip(
-  {
-    reason: reason,
-    side: side,
-    align: align,
-    sideOffset: sideOffset,
-    multiline = true,
-    delay: delay,
-    collisionPadding: collisionPadding,
-    hoverable: hoverable,
-    className: className,
-    wrapperClassName: wrapperClassName,
-    children: children,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let controlId: Dynamic = (0, React.useId)();
-  return (
-    <Tooltip
-      content={isUiShortcutsAndSizingValue(reason) ? reason : undefined}
-      side={side}
-      align={align}
-      sideOffset={sideOffset}
-      multiline={multiline}
-      delay={delay}
-      collisionPadding={collisionPadding}
-      hoverable={hoverable}
-      className={className}
-      closeOnClick={false}
-      openOnHandedBackFocus={true}
-    >
-      <span {...resolveUiShortcutsAndSizingTabIndex(reason, controlId, wrapperClassName)}>{children}{<UiShortcutsAndSizingReason id={controlId} reason={reason} />}</span>
-    </Tooltip>
-  );
-}
-
 var OverflowTooltip: Dynamic;
 
 var UiTooltipsAndControlsTooltip: Dynamic;
-
-function TooltipImplProvider(
-  { children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <UiShortcutsAndSizingCreateContext2.Provider
-      value={UiTooltipsAndControlsTooltip}
-    >
-      {children}
-    </UiShortcutsAndSizingCreateContext2.Provider>
-  );
-}
 
 var UiTooltipsAndControlsCreateContext: Dynamic;
 
@@ -693,125 +847,9 @@ function useTooltipGroup(..._extraArguments: unknown[]): Dynamic {
   return (0, React.useContext)(UiTooltipsAndControlsCreateContext);
 }
 
-function TooltipGroup(
-  { delay = 600, closeDelay = 200, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <UiTooltipsAndControlsCreateContext.Provider value={true}>
-      <TooltipProvider delay={delay} closeDelay={closeDelay}>
-        {children}
-      </TooltipProvider>
-    </UiTooltipsAndControlsCreateContext.Provider>
-  );
-}
-
 var UiTooltipsAndControlsState6: Dynamic;
 
 var UiTooltipsAndControlsBox: Dynamic;
-
-function UiTooltipsAndControlsDelay(
-  {
-    size = `sm`,
-    delay = 0,
-    inheritColor = false,
-    label: label,
-    className: className,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let [matchesDelayState, setMatchesDelayState]: Dynamic = (0, React.useState)(
-    delay <= 0,
-  );
-  let [delayState, setDelayState]: Dynamic = (0, React.useState)(delay);
-  if (delay !== delayState) {
-    setDelayState(delay);
-    if (delay > 0 && matchesDelayState) {
-      setMatchesDelayState(false);
-    }
-  }
-  let show: Dynamic = delay <= 0 || matchesDelayState;
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (delay <= 0) return;
-      let setTimeout2: Dynamic = (window as Dynamic).setTimeout(
-        (..._extraArguments: unknown[]): Dynamic => setMatchesDelayState(true),
-        delay,
-      );
-      return (..._extraArguments: unknown[]): Dynamic =>
-        (window as Dynamic).clearTimeout(setTimeout2);
-    },
-    [delay],
-  );
-  let UiTooltipsAndControlsBoxItem: Dynamic =
-    UiTooltipsAndControlsBox[UiTooltipsAndControlsState6[size] ?? size];
-  let label2: string = inheritColor ? `currentColor` : `var(--cds-text-muted)`;
-  let label3: string = inheritColor
-    ? `color-mix(in srgb, currentColor 25%, transparent)`
-    : `var(--cds-border)`;
-  let width: string = resolveUiOverlaysAndIconsValue6(
-    UiTooltipsAndControlsBoxItem.box,
-  );
-  let uiOverlaysAndIconsValue6: string = resolveUiOverlaysAndIconsValue6(
-    UiTooltipsAndControlsBoxItem.stroke,
-  );
-  let label4: string = `calc(100% - ${uiOverlaysAndIconsValue6})`;
-  let WebkitMask: string = `radial-gradient(farthest-side, transparent ${label4}, #000 calc(${label4} + 0.5px))`;
-  let jsxs: Dynamic = show ? (
-    <span
-      data-cds={`Spinner`}
-      className={resolveUiDesignSystemValue2(
-        `relative inline-block shrink-0 align-middle`,
-        className,
-      )}
-      style={{
-        width: width,
-        height: width,
-      }}
-      aria-hidden={true}
-    >
-      <span
-        className={`absolute inset-0 rounded-full`}
-        style={{
-          border: `${uiOverlaysAndIconsValue6} solid ${label3}`,
-        }}
-      />
-      <span
-        className={`absolute inset-0 rounded-full animate-[spin_1s_linear_infinite] motion-reduce:animate-none`}
-        style={{
-          background: `conic-gradient(transparent 40%, ${label2})`,
-          WebkitMask: WebkitMask,
-          mask: WebkitMask,
-        }}
-      />
-    </span>
-  ) : null;
-  return label ? (
-    <span role={`status`} className={`leading-[0]`}>
-      {jsxs}
-      <UiTooltipsAndControlsShow show={show}>{label}</UiTooltipsAndControlsShow>
-    </span>
-  ) : (
-    jsxs
-  );
-}
-
-function UiTooltipsAndControlsShow(
-  { show: show, children: children }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  (0, React.useEffect)((..._extraArguments: unknown[]): Dynamic => {
-    let setTimeout2 = window.setTimeout(
-      (..._extraArguments: unknown[]): Dynamic => setEnabledState(true),
-      100,
-    );
-    return (..._extraArguments: unknown[]) => window.clearTimeout(setTimeout2);
-  }, []);
-  return show && enabledState ? (
-    <span className={`sr-only`}>{children}</span>
-  ) : null;
-}
 
 var UiTooltipsAndControlsState7: Dynamic;
 
@@ -1330,64 +1368,6 @@ function resolveUiTooltipsAndControlsAutoFocus(
     : ui2;
 }
 
-function UiTooltipsAndControlsImpl(
-  node?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let {
-    impl: useUiTooltipsAndControlsImpl2,
-    wasCold: useUiTooltipsAndControlsImpl3,
-    interceptors: useUiTooltipsAndControlsImpl4,
-    trackTrigger: triggerRef,
-  }: Dynamic = useUiTooltipsAndControlsImpl(true);
-  let matchesAutoFocus = node.autoFocus === false;
-  if (useUiTooltipsAndControlsImpl2 !== null)
-    return useUiTooltipsAndControlsImpl3 || matchesAutoFocus ? (
-      <useUiTooltipsAndControlsImpl2.Tooltip {...node} triggerRef={triggerRef}>{resolveUiTooltipsAndControlsAutoFocus(node.children)}</useUiTooltipsAndControlsImpl2.Tooltip>
-    ) : (
-      <useUiTooltipsAndControlsImpl2.Tooltip {...node} />
-    );
-  let { children: node2 }: Dynamic = node;
-  if (!(0, React.isValidElement)(node2))
-    return <jsxRuntime.Fragment>{node2}</jsxRuntime.Fragment>;
-  let node3: Dynamic = node2;
-  return (0, React.cloneElement)(node3, {
-    ...useUiTooltipsAndControlsImpl4(node3.props),
-    ...UiTooltipsAndControlsTooltipPending,
-  });
-}
-
-function UiTooltipsAndControlsImpl2(
-  node?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let {
-    impl: useUiTooltipsAndControlsImpl2,
-    wasCold: useUiTooltipsAndControlsImpl3,
-    interceptors: useUiTooltipsAndControlsImpl4,
-  }: Dynamic = useUiTooltipsAndControlsImpl(false);
-  let controlId: Dynamic = (0, React.useId)();
-  if (useUiTooltipsAndControlsImpl2 !== null)
-    return useUiTooltipsAndControlsImpl3 ? (
-      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip {...node}>{resolveUiTooltipsAndControlsAutoFocus(node.children)}</useUiTooltipsAndControlsImpl2.DisabledReasonTooltip>
-    ) : (
-      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip {...node} />
-    );
-  let {
-    reason: reason,
-    wrapperClassName: node2,
-    children: node3,
-  }: Dynamic = node;
-  return (
-    <span
-      {...resolveUiShortcutsAndSizingTabIndex(reason, controlId, node2)}
-      title={typeof reason == `string` ? reason : undefined}
-      {...useUiTooltipsAndControlsImpl4({})}
-      {...UiTooltipsAndControlsTooltipPending}
-    >{node3}{<UiShortcutsAndSizingReason id={controlId} reason={reason} />}</span>
-  );
-}
-
 var UiTooltipsAndControlsCompact: Dynamic;
 
 function resolveUiTooltipsAndControlsUseContext(
@@ -1520,47 +1500,6 @@ var UiTooltipsAndControlsLight2: Dynamic;
 var UiTooltipsAndControlsStyles5: string;
 
 var UiTooltipsAndControlsInlineFlexGapXsTextStartFontSansTextBodyFontNormalTextPrimary: string;
-
-function UiTooltipsAndControlsIndeterminate(
-  { indeterminate = false }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return (
-    <UiOverlaysAndIconsCustomIcon
-      name={indeterminate ? `Minus` : `Check`}
-      size={`sm`}
-      bold={true}
-      style={{
-        fontSize: `var(--cds-checkbox-glyph)`,
-      }}
-    />
-  );
-}
-
-function UiTooltipsAndControlsChecked(
-  { checked: checked, indeterminate = false, className: className }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let checked2: Dynamic = checked || indeterminate;
-  return (
-    <span
-      data-checked={checked && !indeterminate ? `` : undefined}
-      data-indeterminate={indeterminate ? `` : undefined}
-      data-unchecked={checked2 ? undefined : ``}
-      className={resolveUiDesignSystemValue2(
-        UiTooltipsAndControlsStyles5,
-        checked2 && `bg-fill-accent border-transparent`,
-        className,
-      )}
-    >
-      {checked2 && (
-        <span className={`text-on-accent`}>
-          <UiTooltipsAndControlsIndeterminate indeterminate={indeterminate} />
-        </span>
-      )}
-    </span>
-  );
-}
 
 function resolveUiTooltipsAndControlsClose(
   ref?: Dynamic,
@@ -3018,31 +2957,4 @@ export function initializeUiTooltipsAndControlsStep1(): void {
   ]);
 }
 
-export {
-  Button,
-  Checkbox,
-  DisabledReasonTooltip,
-  OverflowTooltip,
-  Tooltip,
-  TooltipGroup,
-  TooltipImplProvider,
-  UiTooltipsAndControlsChecked,
-  UiTooltipsAndControlsDelay,
-  UiTooltipsAndControlsLight,
-  UiTooltipsAndControlsLight2,
-  UiTooltipsAndControlsPanel,
-  UiTooltipsAndControlsStyles6,
-  installUiTooltipsAndControlsValue,
-  resolveUiTooltipsAndControlsClose,
-  resolveUiTooltipsAndControlsMatches,
-  resolveUiTooltipsAndControlsUseContext2,
-  resolveUiTooltipsAndControlsValue3,
-  resolveUiTooltipsAndControlsValue5,
-  updateUiTooltipsAndControlsValue,
-  useTooltipGroup,
-  useUiTooltipsAndControlsFinalFocus,
-  useUiTooltipsAndControlsFinalFocus2,
-  useUiTooltipsAndControlsState,
-  useUiTooltipsAndControlsTop,
-  useUiTooltipsAndControlsUnpan,
-};
+export { Button, Checkbox, OverflowTooltip, UiTooltipsAndControlsLight, UiTooltipsAndControlsLight2, UiTooltipsAndControlsPanel, UiTooltipsAndControlsStyles6, installUiTooltipsAndControlsValue, resolveUiTooltipsAndControlsClose, resolveUiTooltipsAndControlsMatches, resolveUiTooltipsAndControlsUseContext2, resolveUiTooltipsAndControlsValue3, resolveUiTooltipsAndControlsValue5, updateUiTooltipsAndControlsValue, useTooltipGroup, useUiTooltipsAndControlsFinalFocus, useUiTooltipsAndControlsFinalFocus2, useUiTooltipsAndControlsState, useUiTooltipsAndControlsTop, useUiTooltipsAndControlsUnpan };

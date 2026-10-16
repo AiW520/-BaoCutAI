@@ -6,6 +6,23 @@ import rehypeSanitize from "rehype-sanitize";
 import rehypeRaw from "rehype-raw";
 import { harden } from "rehype-harden";
 import * as jsxRuntimeModule from "react/jsx-runtime";
+import type * as ReactComponentTypes from "react";
+
+export const ChatMarkdown: ReactComponentTypes.FC<Dynamic> = ({
+  container: input,
+  children: input2,
+}) => {
+  return (
+    <Streamdown
+      remarkPlugins={referenceRemarkPlugins}
+      rehypePlugins={chatRehypePlugins}
+      components={referenceComponents(input)}
+    >
+      {input2}
+    </Streamdown>
+  );
+};
+
 const jsxRuntime = jsxRuntimeModule;
 import { Streamdown, defaultRemarkPlugins } from "streamdown";
 
@@ -615,18 +632,5 @@ var referenceComponents: Dynamic = (
   }
   return entry;
 };
-function ChatMarkdown(
-  { container: input, children: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return (
-    <Streamdown
-      remarkPlugins={referenceRemarkPlugins}
-      rehypePlugins={chatRehypePlugins}
-      components={referenceComponents(input)}
-    >
-      {input2}
-    </Streamdown>
-  );
-}
+
 export { Streamdown, chatRehypePlugins, useMarkdownCodePlugins, chatMarkdownModule };

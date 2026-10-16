@@ -2,13 +2,12 @@ import { useState } from "react";
 import { resolveDataContentAndReferencesReplace2 } from "../../dependencies";
 import type { LoadState, RoutineDefinition, RoutineRun } from "../project-contracts";
 import { RoutineRunHistory } from "./run-history";
-export function RoutineDefinitionPanel({
-  definition,
-  runs,
-}: {
+import type * as React from "react";
+
+export const RoutineDefinitionPanel: React.FC<{
   definition: LoadState<RoutineDefinition>;
   runs: readonly RoutineRun[];
-}) {
+}> = ({ definition, runs }) => {
   const [selectedTab, setSelectedTab] = useState<"instructions" | "output">(
     "instructions",
   );
@@ -60,4 +59,4 @@ export function RoutineDefinitionPanel({
       </div>
     </>
   );
-}
+};

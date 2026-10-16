@@ -38,6 +38,196 @@ import {
   DuplicateTooLarge,
   isDuplicateObject,
 } from "./document-context-actions/duplicate-document-tab";
+import type * as ReactComponentTypes from "react";
+
+export const PresenceDots: ReactComponentTypes.FC<Dynamic> = ({ dots: dots }) => {
+  return dots.length === 0 ? null : (
+    <Tooltip content={presenceNames(dots)} multiline={true}>
+      <span data-testid={`presence-dots`} className={`flex shrink-0 items-center`}>
+        {dots
+          .slice(0, 3)
+          .map((itemsSlice?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
+            <span
+              className={`size-[6px] rounded-full ring-1 ring-white ${index > 0 ? `-ml-0.5` : ``}`}
+              style={{
+                backgroundColor: itemsSlice.color,
+              }}
+              key={index}
+            />
+          ))}
+      </span>
+    </Tooltip>
+  );
+};
+
+export const TabsHeadingRow: ReactComponentTypes.FC<Dynamic> = ({
+  boxRef: boxRef,
+  id: id2,
+  tabName: tabName,
+  rows: rows,
+  places: places,
+  marked: marked,
+  stop: stop,
+  level: level,
+  indentRem: indentRem,
+  lead: lead,
+  cap: cap,
+  restTone = `text-muted`,
+  testid = `tabs-left-heading`,
+  onPick: onPick,
+  onRowFocus: onRowFocus,
+  onRowBlur: onRowBlur,
+}) => {
+  let ariaDescribedby = `${id2}-kind`;
+  let elementRef: Dynamic = (0, React.useRef)(null);
+  let elementRef2: Dynamic = (0, React.useRef)(undefined);
+  let onPick2 = (
+    tabsHeadingRow?: Dynamic,
+    options?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): undefined => {
+    let element: Dynamic = elementRef2.current;
+    elementRef2.current = undefined;
+    onPick(tabsHeadingRow, options === 0, options === 0 ? undefined : element);
+  };
+  return (
+    <div
+      ref={(0, React.useCallback)(
+        (tabsHeadingRow?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          elementRef.current = tabsHeadingRow;
+          if (typeof boxRef == `function`) {
+            boxRef(tabsHeadingRow);
+          } else {
+            if (boxRef) {
+              boxRef.current = tabsHeadingRow;
+            }
+          }
+        },
+        [boxRef],
+      )}
+      id={id2}
+      role={`group`}
+      tabIndex={cap === null ? undefined : -1}
+      aria-label={tabName === `` ? `Headings` : `Headings in ${tabName}`}
+      className={`flex flex-col gap-px border-l py-px forced-colors:scroll-py-1 forced-colors:p-1 ${cap === null ? `` : `more-rows-fade overflow-y-auto overscroll-contain`}`}
+      style={{
+        marginLeft:
+          lead === undefined ? `${indentRem}rem` : `calc(${indentRem}rem + ${lead})`,
+        ...(cap !== null && {
+          maxHeight: cap,
+        }),
+      }}
+      data-testid={`${testid}s`}
+    >
+      <span id={ariaDescribedby} hidden={true}>{`heading`}</span>
+      {rows.map((item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => {
+        let matchesId = item.id === marked;
+        let jsx = (
+          <button
+            type={`button`}
+            tabIndex={-1}
+            draggable={false}
+            className={`text-body min-h-control compact:px-2 comfortable:px-2.5 flex min-w-0 flex-1 items-center text-left focus-visible:outline-none`}
+            style={
+              item.indent > 0
+                ? {
+                    paddingLeft: `calc(${item.indent * TAB_TREE_INDENT_REM}rem + 0.5rem)`,
+                  }
+                : undefined
+            }
+            onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              event.currentTarget.parentElement?.focus({
+                preventScroll: true,
+              });
+              onPick2(item.h, event.detail);
+            }}
+            data-testid={`${testid}-${item.id}`}
+          >
+            <span
+              data-outline-name={item.id}
+              className={`-my-0.5 min-w-0 flex-1 truncate py-0.5`}
+            >
+              {item.h.text}
+            </span>
+          </button>
+        );
+        return (
+          <div
+            role={`treeitem`}
+            aria-level={level + item.indent}
+            aria-setsize={places[index]?.size}
+            aria-posinset={places[index]?.pos}
+            aria-current={matchesId ? `location` : undefined}
+            aria-label={item.h.text}
+            aria-describedby={ariaDescribedby}
+            tabIndex={item.id === stop ? 0 : -1}
+            data-outline-row={item.id}
+            onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              if (event.target === event.currentTarget) {
+                onPick2(item.h, event.detail);
+              }
+            }}
+            onPointerDown={(
+              tabsHeadingRow?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): undefined => {
+              elementRef2.current = tabsHeadingRow.pointerType;
+            }}
+            onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              if (event.target === event.currentTarget) {
+                onRowFocus?.(item.id, index);
+              }
+            }}
+            onBlur={(tabsHeadingRow?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              onRowBlur?.(tabsHeadingRow.relatedTarget === null)
+            }
+            className={`focus-visible:ring-fill-accent relative flex items-center focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId ? `text-primary font-medium` : `${restTone} hover:text-primary`}`}
+            key={item.id}
+          >
+            {matchesId ? (
+              <span
+                aria-hidden={`true`}
+                className={`bg-fill-primary pointer-events-none absolute inset-y-0 -left-px w-0.5`}
+              />
+            ) : null}
+            {
+              <Tooltip
+                lazy={true}
+                content={(..._extraArguments: unknown[]): Dynamic =>
+                  overflowTitle(
+                    elementRef.current?.querySelector(
+                      `[data-outline-name="${CSS.escape(item.id)}"]`,
+                    ),
+                    item.h.text,
+                  )
+                }
+                side={`right`}
+              >
+                {jsx}
+              </Tooltip>
+            }
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export const TabsPlaceRowGate: ReactComponentTypes.FC<Dynamic> = ({
+  seat: seat,
+  shown: shown,
+  why: why,
+}) => {
+  return !isTabsLocationFeatureEnabled() ||
+    seat === null ||
+    seat.post === undefined ? null : (
+    <RouteErrorBoundary component={`tabsplace`} fallback={null}>
+      <React.Suspense fallback={<div className={`min-h-8 pointer-coarse:min-h-10`} />}>
+        <LazyTabsPlaceRow seat={seat} shown={shown} why={why} />
+      </React.Suspense>
+    </RouteErrorBoundary>
+  );
+};
 
 var ONE_TAB_OUTLINE_HOLD_MS: number;
 
@@ -195,31 +385,6 @@ var tabsOutlineStore: Dynamic;
 
 var presenceNames: Dynamic;
 
-function PresenceDots({ dots: dots }: Dynamic, ..._extraArguments: unknown[]) {
-  return dots.length === 0 ? null : (
-    <Tooltip content={presenceNames(dots)} multiline={true}>
-      <span
-        data-testid={`presence-dots`}
-        className={`flex shrink-0 items-center`}
-      >
-        {dots
-          .slice(0, 3)
-          .map(
-            (
-              itemsSlice?: Dynamic,
-              index?: Dynamic,
-              ..._extraArguments: unknown[]
-            ) => (
-              <span className={`size-[6px] rounded-full ring-1 ring-white ${index > 0 ? `-ml-0.5` : ``}`} style={{
-  backgroundColor: itemsSlice.color
-}} key={index} />
-            ),
-          )}
-      </span>
-    </Tooltip>
-  );
-}
-
 function createTabNavigationSourceFence(
   ..._extraArguments: unknown[]
 ): Dynamic {
@@ -373,152 +538,7 @@ function overflowTitle(
     : null;
 }
 
-function TabsHeadingRow(
-  {
-    boxRef: boxRef,
-    id: id2,
-    tabName: tabName,
-    rows: rows,
-    places: places,
-    marked: marked,
-    stop: stop,
-    level: level,
-    indentRem: indentRem,
-    lead: lead,
-    cap: cap,
-    restTone = `text-muted`,
-    testid = `tabs-left-heading`,
-    onPick: onPick,
-    onRowFocus: onRowFocus,
-    onRowBlur: onRowBlur,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let ariaDescribedby = `${id2}-kind`;
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let elementRef2: Dynamic = (0, React.useRef)(undefined);
-  let onPick2 = (
-    tabsHeadingRow?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    let element: Dynamic = elementRef2.current;
-    elementRef2.current = undefined;
-    onPick(tabsHeadingRow, options === 0, options === 0 ? undefined : element);
-  };
-  return (
-    <div
-      ref={(0, React.useCallback)(
-        (
-          tabsHeadingRow?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          elementRef.current = tabsHeadingRow;
-          if (typeof boxRef == `function`) {
-            boxRef(tabsHeadingRow);
-          } else {
-            if (boxRef) {
-              boxRef.current = tabsHeadingRow;
-            }
-          }
-        },
-        [boxRef],
-      )}
-      id={id2}
-      role={`group`}
-      tabIndex={cap === null ? undefined : -1}
-      aria-label={tabName === `` ? `Headings` : `Headings in ${tabName}`}
-      className={`flex flex-col gap-px border-l py-px forced-colors:scroll-py-1 forced-colors:p-1 ${cap === null ? `` : `more-rows-fade overflow-y-auto overscroll-contain`}`}
-      style={{
-        marginLeft:
-          lead === undefined
-            ? `${indentRem}rem`
-            : `calc(${indentRem}rem + ${lead})`,
-        ...(cap !== null && {
-          maxHeight: cap,
-        }),
-      }}
-      data-testid={`${testid}s`}
-    >
-      <span id={ariaDescribedby} hidden={true}>{`heading`}</span>
-      {rows.map(
-        (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => {
-          let matchesId = item.id === marked;
-          let jsx = (
-            <button
-              type={`button`}
-              tabIndex={-1}
-              draggable={false}
-              className={`text-body min-h-control compact:px-2 comfortable:px-2.5 flex min-w-0 flex-1 items-center text-left focus-visible:outline-none`}
-              style={
-                item.indent > 0
-                  ? {
-                      paddingLeft: `calc(${item.indent * TAB_TREE_INDENT_REM}rem + 0.5rem)`,
-                    }
-                  : undefined
-              }
-              onClick={(
-                event?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): undefined => {
-                event.currentTarget.parentElement?.focus({
-                  preventScroll: true,
-                });
-                onPick2(item.h, event.detail);
-              }}
-              data-testid={`${testid}-${item.id}`}
-            >
-              <span
-                data-outline-name={item.id}
-                className={`-my-0.5 min-w-0 flex-1 truncate py-0.5`}
-              >
-                {item.h.text}
-              </span>
-            </button>
-          );
-          return (
-            <div role={`treeitem`} aria-level={level + item.indent} aria-setsize={places[index]?.size} aria-posinset={places[index]?.pos} aria-current={matchesId ? `location` : undefined} aria-label={item.h.text} aria-describedby={ariaDescribedby} tabIndex={item.id === stop ? 0 : -1} data-outline-row={item.id} onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  if (event.target === event.currentTarget) {
-    onPick2(item.h, event.detail);
-  }
-}} onPointerDown={(tabsHeadingRow?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  elementRef2.current = tabsHeadingRow.pointerType;
-}} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-  if (event.target === event.currentTarget) {
-    onRowFocus?.(item.id, index);
-  }
-}} onBlur={(tabsHeadingRow?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onRowBlur?.(tabsHeadingRow.relatedTarget === null)} className={`focus-visible:ring-fill-accent relative flex items-center focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId ? `text-primary font-medium` : `${restTone} hover:text-primary`}`} key={item.id}>{matchesId ? <span aria-hidden={`true`} className={`bg-fill-primary pointer-events-none absolute inset-y-0 -left-px w-0.5`} /> : null}{<Tooltip
-  lazy={true}
-  content={(..._extraArguments: unknown[]): Dynamic => overflowTitle(elementRef.current?.querySelector(`[data-outline-name="${CSS.escape(item.id)}"]`), item.h.text)}
-  side={`right`}
->
-                      {jsx}
-                    </Tooltip>}</div>
-          );
-        },
-      )}
-    </div>
-  );
-}
-
 var LazyTabsPlaceRow: Dynamic;
-
-function TabsPlaceRowGate(
-  { seat: seat, shown: shown, why: why }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return !isTabsLocationFeatureEnabled() ||
-    seat === null ||
-    seat.post === undefined ? null : (
-    <RouteErrorBoundary component={`tabsplace`} fallback={null}>
-      <React.Suspense
-        fallback={<div className={`min-h-8 pointer-coarse:min-h-10`} />}
-      >
-        <LazyTabsPlaceRow seat={seat} shown={shown} why={why} />
-      </React.Suspense>
-    </RouteErrorBoundary>
-  );
-}
 
 function tabTreeAuthority(
   tabTreeAuthority2?: Dynamic,
@@ -961,37 +981,4 @@ export function initializePresenceAndChatStep1(): void {
     resolvePlatformSessionAndSourcesTest9(copyableInternalLink.href));
 }
 
-export {
-  DUPLICATE_LINK_BATCH_SIZE,
-  DUPLICATE_SESSION_BATCH_SIZE,
-  EMPTY_ONE_TAB_LIST_STATE,
-  INLINE_OBJECT_REPLACEMENT,
-  MAX_DUPLICATE_DOCUMENT_DEPTH,
-  MAX_DUPLICATE_DOCUMENT_SIZE,
-  ONE_TAB_OUTLINE_HOLD_MS,
-  ONE_TAB_OUTLINE_SILENCE_MS,
-  PresenceDots,
-  TabsHeadingRow,
-  TabsPlaceRowGate,
-  createTabNavigationSourceFence,
-  createTabsOutlineStore,
-  decodeCopyableDocument,
-  duplicateDocumentLeafIndex,
-  extractDuplicateLinkSpans,
-  filePresentationKind,
-  isFocusVisible,
-  nearestScrollContainer,
-  overflowTitle,
-  presenceNames,
-  reduceOneTabListState,
-  removePendingBlocks,
-  scrollTabRowIntoView,
-  stripCommentAnchors,
-  tabOutlineToggleLabel,
-  tabTreeAuthority,
-  tabsOutlineReadPlan,
-  tabsOutlineStore,
-  useRepeatedTabShortcut,
-  useSelectedTabHeading,
-  useTabOutline,
-};
+export { DUPLICATE_LINK_BATCH_SIZE, DUPLICATE_SESSION_BATCH_SIZE, EMPTY_ONE_TAB_LIST_STATE, INLINE_OBJECT_REPLACEMENT, MAX_DUPLICATE_DOCUMENT_DEPTH, MAX_DUPLICATE_DOCUMENT_SIZE, ONE_TAB_OUTLINE_HOLD_MS, ONE_TAB_OUTLINE_SILENCE_MS, createTabNavigationSourceFence, createTabsOutlineStore, decodeCopyableDocument, duplicateDocumentLeafIndex, extractDuplicateLinkSpans, filePresentationKind, isFocusVisible, nearestScrollContainer, overflowTitle, presenceNames, reduceOneTabListState, removePendingBlocks, scrollTabRowIntoView, stripCommentAnchors, tabOutlineToggleLabel, tabTreeAuthority, tabsOutlineReadPlan, tabsOutlineStore, useRepeatedTabShortcut, useSelectedTabHeading, useTabOutline };

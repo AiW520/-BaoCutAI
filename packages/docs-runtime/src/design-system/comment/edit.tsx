@@ -22,20 +22,12 @@ import {
 } from "./motion";
 import { resolveShimmerValue6 } from "../spark";
 import { CommentsValue } from "./editor";
+import type * as ReactComponentTypes from "react";
 
-var CommentsStyles4: Dynamic;
-
-function resolveCommentsDisabledReason(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): boolean {
-  return input.disabledReason !== undefined && input.disabledReason !== ``;
-}
-
-function CommentsBox(
-  { box: input, disabled: input2 = false }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const CommentsBox: ReactComponentTypes.FC<Dynamic> = ({
+  box: input,
+  disabled: input2 = false,
+}) => {
   let value: Dynamic = resolveUiLinksAndFoundationUseContext3(
     `sendToClaude`,
     // BaoCut: 批注框里「发给智能体」复选框的文字（应用不给 CDS 传 labels，用的就是这个默认值）
@@ -58,14 +50,22 @@ function CommentsBox(
           checked={input.checked}
           disabled={value2 || input2}
           aria-describedby={input[`aria-describedby`]}
-          onCheckedChange={(
-            input3?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => input.onCheckedChange(input3 === true)}
+          onCheckedChange={(input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            input.onCheckedChange(input3 === true)
+          }
         />
       </Tooltip>
     </DisabledReasonTooltip>
   );
+};
+
+var CommentsStyles4: Dynamic;
+
+function resolveCommentsDisabledReason(
+  input?: Dynamic,
+  ..._extraArguments: unknown[]
+): boolean {
+  return input.disabledReason !== undefined && input.disabledReason !== ``;
 }
 
 var CommentsValue2: Dynamic;
@@ -250,4 +250,4 @@ export function initializeCommentEditStep1(): void {
   CommentsBusy.displayName = `CommentCard.DeleteConfirm`;
 }
 
-export { CommentsBox, CommentsBusy, CommentsStyles4, CommentsValue2, resolveCommentsDisabledReason };
+export { CommentsBusy, CommentsStyles4, CommentsValue2, resolveCommentsDisabledReason };

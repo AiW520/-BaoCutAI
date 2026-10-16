@@ -46,58 +46,16 @@ import {
 import { CommentsLabel2 } from "./activity";
 import { CommentsBusy, CommentsValue2 } from "./edit";
 import { CommentsExpanded } from "./card";
+import type * as ReactComponentTypes from "react";
 
-function useCommentsSettle(..._extraArguments: unknown[]): Dynamic {
-  let [value]: Dynamic = (0, React.useState)(createReactionSettledTracker);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      let value2: Dynamic = setTimeout(value.settle, commentMotionValue2000);
-      return (..._extraArguments: unknown[]): void => clearTimeout(value2);
-    },
-    [value],
-  );
-  return value;
-}
-
-var CommentsAuthorName: Dynamic;
-
-function CommentsOpen(
-  { open: input, controls: input2, label: input3, onToggle: input4 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = (0, React.useRef)(null);
-  resolveCommentMotionStandDown(value);
-  return (
-    <Button
-      ref={value}
-      variant={`ghost`}
-      size={`xs`}
-      flush={true}
-      aria-expanded={input}
-      aria-controls={input2}
-      onClick={input4}
-      className={`self-start`}
-    >
-      {input3}
-    </Button>
-  );
-}
-
-var commentsValue16: Dynamic;
-
-function CommentsShowMoreLabel(
-  { showMoreLabel: input, showLessLabel: input2, children: input3 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const CommentsShowMoreLabel: ReactComponentTypes.FC<Dynamic> = ({
+  showMoreLabel: input,
+  showLessLabel: input2,
+  children: input3,
+}) => {
   let { expanded: value }: Dynamic = useCommentCardContext();
-  let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `showMore`,
-    `Show more`,
-  );
-  let value3: Dynamic = resolveUiLinksAndFoundationUseContext3(
-    `showLess`,
-    `Show less`,
-  );
+  let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(`showMore`, `Show more`);
+  let value3: Dynamic = resolveUiLinksAndFoundationUseContext3(`showLess`, `Show less`);
   let [value4, value5]: Dynamic = (0, React.useState)(false);
   let [value6, value7]: Dynamic = (0, React.useState)(false);
   let value8: Dynamic = (0, React.useRef)(null);
@@ -135,9 +93,7 @@ function CommentsShowMoreLabel(
         id={value9}
         data-clamped={value12 || undefined}
         onFocusCapture={
-          value12
-            ? (..._extraArguments: unknown[]): Dynamic => value5(true)
-            : undefined
+          value12 ? (..._extraArguments: unknown[]): Dynamic => value5(true) : undefined
         }
         className={resolveUiDesignSystemValue2(
           `text-pretty wrap-anywhere [&_code]:break-all [&_pre]:max-w-full [&_pre]:overflow-x-auto`,
@@ -161,7 +117,47 @@ function CommentsShowMoreLabel(
       )}
     </jsxRuntime.Fragment>
   );
+};
+
+export const CommentsOpen: ReactComponentTypes.FC<Dynamic> = ({
+  open: input,
+  controls: input2,
+  label: input3,
+  onToggle: input4,
+}) => {
+  let value: Dynamic = (0, React.useRef)(null);
+  resolveCommentMotionStandDown(value);
+  return (
+    <Button
+      ref={value}
+      variant={`ghost`}
+      size={`xs`}
+      flush={true}
+      aria-expanded={input}
+      aria-controls={input2}
+      onClick={input4}
+      className={`self-start`}
+    >
+      {input3}
+    </Button>
+  );
+};
+
+function useCommentsSettle(..._extraArguments: unknown[]): Dynamic {
+  let [value]: Dynamic = (0, React.useState)(createReactionSettledTracker);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      let value2: Dynamic = setTimeout(value.settle, commentMotionValue2000);
+      return (..._extraArguments: unknown[]): void => clearTimeout(value2);
+    },
+    [value],
+  );
+  return value;
 }
+
+var CommentsAuthorName: Dynamic;
+
+var commentsValue16: Dynamic;
 
 var CommentsRef: Dynamic;
 

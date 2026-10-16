@@ -90,6 +90,181 @@ import {
   resolveDataModelSchemasRunner,
   resolveDataModelSchemasSourceProject,
 } from "./model-schemas-3";
+import type * as ReactComponentTypes from "react";
+
+export const DataModelSchemasLabel: ReactComponentTypes.FC<Dynamic> = ({
+  label: label,
+  onDrop: onDrop,
+  transparent = false,
+  bare = false,
+}) => {
+  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
+  return (
+    <div
+      data-over={enabledState || undefined}
+      onDragEnter={(..._extraArguments: unknown[]): Dynamic => setEnabledState(true)}
+      onDragOver={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+        event.preventDefault()
+      }
+      onDragLeave={(
+        dataModelSchemasLabel?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): undefined => {
+        if (
+          isObservabilityBrowserAndOperationEventsRelatedTarget(dataModelSchemasLabel)
+        ) {
+          setEnabledState(false);
+        }
+      }}
+      onDrop={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        event.preventDefault();
+        event.stopPropagation();
+        setEnabledState(false);
+        onDrop(event);
+      }}
+      className={
+        bare
+          ? `relative flex flex-1`
+          : `group border-strong data-[over]:border-accent relative flex flex-1 items-center justify-center rounded-lg border-2 border-dashed transition-colors ${transparent ? `bg-transparent` : `bg-surface-popover data-[over]:bg-surface-popover backdrop-blur-[2px]`}`
+      }
+    >
+      {!bare && (
+        <span
+          className={`bg-fill-primary text-on-primary group-data-[over]:bg-fill-accent group-data-[over]:text-on-accent pointer-events-none rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${transparent ? `absolute top-4 right-4` : ``}`}
+        >
+          {label}
+        </span>
+      )}
+    </div>
+  );
+};
+
+export const DataModelSchemasDragging2: ReactComponentTypes.FC<
+  Readonly<Record<string, unknown>>
+> = () => {
+  let transparent: Dynamic = DataModelSchemasDragging(
+    (dataModelSchemasDragging2?: Dynamic, ..._extraArguments: unknown[]) =>
+      dataModelSchemasDragging2.intercept != null ||
+      dataModelSchemasDragging2.chatIntercept != null,
+  );
+  let bare: Dynamic = DataModelSchemasDragging(
+    (dataModelSchemasDragging2?: Dynamic, ..._extraArguments: unknown[]) =>
+      dataModelSchemasDragging2.intercept != null,
+  );
+  let {
+    dragging: live,
+    setDragging: useDataModelSchemasDragging2,
+    endHover: useDataModelSchemasDragging3,
+  }: Dynamic = useDataModelSchemasDragging();
+  let onDrop = async (
+    event?: Dynamic,
+    ..._extraArguments: unknown[]
+  ): Promise<undefined> => {
+    let DataModelSchemasDraggingState: Dynamic = DataModelSchemasDragging.getState();
+    let { clientX: clientX, clientY: clientY }: Dynamic = event;
+    let chatIntercept: Dynamic =
+      DataModelSchemasDraggingState.chatIntercept &&
+      resolveDataModelSchemasLeft(
+        DataModelSchemasDraggingState.chatIntercept,
+        clientX,
+        clientY,
+      )
+        ? DataModelSchemasDraggingState.chatIntercept
+        : DataModelSchemasDraggingState.intercept &&
+            resolveDataModelSchemasLeft(
+              DataModelSchemasDraggingState.intercept,
+              clientX,
+              clientY,
+            )
+          ? DataModelSchemasDraggingState.intercept
+          : null;
+    if (!chatIntercept) {
+      let matchesIntercept = DataModelSchemasDraggingState.intercept != null;
+      let matchesChatIntercept = DataModelSchemasDraggingState.chatIntercept != null;
+      toast(
+        matchesIntercept && matchesChatIntercept
+          ? `Drop over the document, or over the chat input to attach — nothing was uploaded.`
+          : matchesChatIntercept
+            ? `Drop over the chat input to attach an image — nothing was uploaded.`
+            : `Drop over the document to add files — nothing was uploaded.`,
+      );
+      return;
+    }
+    let observabilityBrowserAndOperationEventsFromEvent: Dynamic =
+      await resolveObservabilityBrowserAndOperationEventsFromEvent(event.nativeEvent);
+    if (observabilityBrowserAndOperationEventsFromEvent.length === 0) {
+      toast(`Couldn't read the dropped files — nothing was uploaded.`);
+      return;
+    }
+    chatIntercept.onDrop(observabilityBrowserAndOperationEventsFromEvent, {
+      clientX: clientX,
+      clientY: clientY,
+    });
+  };
+  return (
+    <jsxRuntime.Fragment>
+      <DocDropRing live={live} />
+      {live && (
+        <div
+          onDragOver={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            event.preventDefault()
+          }
+          className={`fixed inset-2 z-50 flex`}
+        >
+          <DataModelSchemasLabel
+            label={transparent ? `Drop to upload` : `Drop into a document`}
+            transparent={transparent}
+            bare={bare}
+            onDrop={(
+              dataModelSchemasDragging2?: Dynamic,
+              ..._extraArguments: unknown[]
+            ): undefined => {
+              useDataModelSchemasDragging2(false);
+              useDataModelSchemasDragging3();
+              DataModelSchemasDragging.getState().chatIntercept?.onHoverEnd?.();
+              onDrop(dataModelSchemasDragging2);
+            }}
+          />
+        </div>
+      )}
+    </jsxRuntime.Fragment>
+  );
+};
+
+export const DocDropRing: ReactComponentTypes.FC<Dynamic> = ({ live: live }) => {
+  let zIndex: Dynamic = resolveUiProviderAndLayersUseContext11(51);
+  let left: Dynamic = DataModelSchemasDragging(
+    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      docDropRing.intercept?.rect.left,
+  );
+  let top: Dynamic = DataModelSchemasDragging(
+    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      docDropRing.intercept?.rect.top,
+  );
+  let width: Dynamic = DataModelSchemasDragging(
+    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      docDropRing.intercept?.rect.width,
+  );
+  let height: Dynamic = DataModelSchemasDragging(
+    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      docDropRing.intercept?.rect.height,
+  );
+  return left === undefined ? null : (
+    <div
+      data-testid={`doc-drop-ring`}
+      className={`pointer-events-none fixed`}
+      style={{
+        left: left,
+        top: top,
+        width: width,
+        height: height,
+        zIndex: zIndex,
+      }}
+    >
+      <DropZone_Overlay dragState={live ? `on-target` : `idle`} />
+    </div>
+  );
+};
 
 function updateDataModelSchemasUndo(
   updateDataModelSchemasUndo2?: Dynamic,
@@ -1160,185 +1335,6 @@ function useDataModelSchemasDragging(..._extraArguments: unknown[]): Dynamic {
     setDragging: setDragging2,
     endHover: endHover,
   };
-}
-
-function DataModelSchemasLabel(
-  { label: label, onDrop: onDrop, transparent = false, bare = false }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [enabledState, setEnabledState]: Dynamic = (0, React.useState)(false);
-  return (
-    <div
-      data-over={enabledState || undefined}
-      onDragEnter={(..._extraArguments: unknown[]): Dynamic =>
-        setEnabledState(true)
-      }
-      onDragOver={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        event.preventDefault()
-      }
-      onDragLeave={(
-        dataModelSchemasLabel?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (
-          isObservabilityBrowserAndOperationEventsRelatedTarget(
-            dataModelSchemasLabel,
-          )
-        ) {
-          setEnabledState(false);
-        }
-      }}
-      onDrop={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        event.preventDefault();
-        event.stopPropagation();
-        setEnabledState(false);
-        onDrop(event);
-      }}
-      className={
-        bare
-          ? `relative flex flex-1`
-          : `group border-strong data-[over]:border-accent relative flex flex-1 items-center justify-center rounded-lg border-2 border-dashed transition-colors ${transparent ? `bg-transparent` : `bg-surface-popover data-[over]:bg-surface-popover backdrop-blur-[2px]`}`
-      }
-    >
-      {!bare && (
-        <span
-          className={`bg-fill-primary text-on-primary group-data-[over]:bg-fill-accent group-data-[over]:text-on-accent pointer-events-none rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${transparent ? `absolute top-4 right-4` : ``}`}
-        >
-          {label}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function DataModelSchemasDragging2(..._extraArguments: unknown[]) {
-  let transparent: Dynamic = DataModelSchemasDragging(
-    (dataModelSchemasDragging2?: Dynamic, ..._extraArguments: unknown[]) =>
-      dataModelSchemasDragging2.intercept != null ||
-      dataModelSchemasDragging2.chatIntercept != null,
-  );
-  let bare: Dynamic = DataModelSchemasDragging(
-    (dataModelSchemasDragging2?: Dynamic, ..._extraArguments: unknown[]) =>
-      dataModelSchemasDragging2.intercept != null,
-  );
-  let {
-    dragging: live,
-    setDragging: useDataModelSchemasDragging2,
-    endHover: useDataModelSchemasDragging3,
-  }: Dynamic = useDataModelSchemasDragging();
-  let onDrop = async (
-    event?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Promise<undefined> => {
-    let DataModelSchemasDraggingState: Dynamic =
-      DataModelSchemasDragging.getState();
-    let { clientX: clientX, clientY: clientY }: Dynamic = event;
-    let chatIntercept: Dynamic =
-      DataModelSchemasDraggingState.chatIntercept &&
-      resolveDataModelSchemasLeft(
-        DataModelSchemasDraggingState.chatIntercept,
-        clientX,
-        clientY,
-      )
-        ? DataModelSchemasDraggingState.chatIntercept
-        : DataModelSchemasDraggingState.intercept &&
-            resolveDataModelSchemasLeft(
-              DataModelSchemasDraggingState.intercept,
-              clientX,
-              clientY,
-            )
-          ? DataModelSchemasDraggingState.intercept
-          : null;
-    if (!chatIntercept) {
-      let matchesIntercept = DataModelSchemasDraggingState.intercept != null;
-      let matchesChatIntercept =
-        DataModelSchemasDraggingState.chatIntercept != null;
-      toast(
-        matchesIntercept && matchesChatIntercept
-          ? `Drop over the document, or over the chat input to attach — nothing was uploaded.`
-          : matchesChatIntercept
-            ? `Drop over the chat input to attach an image — nothing was uploaded.`
-            : `Drop over the document to add files — nothing was uploaded.`,
-      );
-      return;
-    }
-    let observabilityBrowserAndOperationEventsFromEvent: Dynamic =
-      await resolveObservabilityBrowserAndOperationEventsFromEvent(
-        event.nativeEvent,
-      );
-    if (observabilityBrowserAndOperationEventsFromEvent.length === 0) {
-      toast(`Couldn't read the dropped files — nothing was uploaded.`);
-      return;
-    }
-    chatIntercept.onDrop(observabilityBrowserAndOperationEventsFromEvent, {
-      clientX: clientX,
-      clientY: clientY,
-    });
-  };
-  return (
-    <jsxRuntime.Fragment>
-      <DocDropRing live={live} />
-      {live && (
-        <div
-          onDragOver={(
-            event?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => event.preventDefault()}
-          className={`fixed inset-2 z-50 flex`}
-        >
-          <DataModelSchemasLabel
-            label={transparent ? `Drop to upload` : `Drop into a document`}
-            transparent={transparent}
-            bare={bare}
-            onDrop={(
-              dataModelSchemasDragging2?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              useDataModelSchemasDragging2(false);
-              useDataModelSchemasDragging3();
-              DataModelSchemasDragging.getState().chatIntercept?.onHoverEnd?.();
-              onDrop(dataModelSchemasDragging2);
-            }}
-          />
-        </div>
-      )}
-    </jsxRuntime.Fragment>
-  );
-}
-
-function DocDropRing({ live: live }: Dynamic, ..._extraArguments: unknown[]) {
-  let zIndex: Dynamic = resolveUiProviderAndLayersUseContext11(51);
-  let left: Dynamic = DataModelSchemasDragging(
-    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      docDropRing.intercept?.rect.left,
-  );
-  let top: Dynamic = DataModelSchemasDragging(
-    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      docDropRing.intercept?.rect.top,
-  );
-  let width: Dynamic = DataModelSchemasDragging(
-    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      docDropRing.intercept?.rect.width,
-  );
-  let height: Dynamic = DataModelSchemasDragging(
-    (docDropRing?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      docDropRing.intercept?.rect.height,
-  );
-  return left === undefined ? null : (
-    <div
-      data-testid={`doc-drop-ring`}
-      className={`pointer-events-none fixed`}
-      style={{
-        left: left,
-        top: top,
-        width: width,
-        height: height,
-        zIndex: zIndex,
-      }}
-    >
-      <DropZone_Overlay dragState={live ? `on-target` : `idle`} />
-    </div>
-  );
 }
 
 var DataModelSchemasUrl: {
@@ -3251,35 +3247,4 @@ export function initializeDataModelSchemas2Step2(): void {
   });
 }
 
-export {
-  DataModelSchemasBULKATTACHTHRESHOLD,
-  DataModelSchemasDragging,
-  DataModelSchemasDragging2,
-  DataModelSchemasMinRows,
-  DataModelSchemasParseLineParam,
-  DataModelSchemasUrl,
-  OT_ACK_TIMEOUT_MS,
-  _ackIndex,
-  _otOnReconnect,
-  clearDataModelSchemasInflight,
-  clearDataModelSchemasOps,
-  collectDataModelSchemasSyncedRunId,
-  dataModelSchemasMap,
-  dataModelSchemasMap2,
-  filterDataModelSchemasFilter,
-  getDataModelSchemasAckTimeout,
-  isDataModelSchemasArgs,
-  parseLineParam,
-  parseTarget,
-  resolveDataModelSchemasAckTimer,
-  resolveDataModelSchemasAlgo,
-  resolveDataModelSchemasEmptyRef,
-  resolveDataModelSchemasIncludes,
-  resolveDataModelSchemasKind2,
-  resolveDataModelSchemasLimit,
-  resolveDataModelSchemasPath,
-  resolveDataModelSchemasValue,
-  updateDataModelSchemasLocalRev,
-  updateDataModelSchemasUndo,
-  useContainerStore,
-};
+export { DataModelSchemasBULKATTACHTHRESHOLD, DataModelSchemasDragging, DataModelSchemasMinRows, DataModelSchemasParseLineParam, DataModelSchemasUrl, OT_ACK_TIMEOUT_MS, _ackIndex, _otOnReconnect, clearDataModelSchemasInflight, clearDataModelSchemasOps, collectDataModelSchemasSyncedRunId, dataModelSchemasMap, dataModelSchemasMap2, filterDataModelSchemasFilter, getDataModelSchemasAckTimeout, isDataModelSchemasArgs, parseLineParam, parseTarget, resolveDataModelSchemasAckTimer, resolveDataModelSchemasAlgo, resolveDataModelSchemasEmptyRef, resolveDataModelSchemasIncludes, resolveDataModelSchemasKind2, resolveDataModelSchemasLimit, resolveDataModelSchemasPath, resolveDataModelSchemasValue, updateDataModelSchemasLocalRev, updateDataModelSchemasUndo, useContainerStore };

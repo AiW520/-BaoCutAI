@@ -21,22 +21,14 @@ import {
   applicationRoutesSet,
   ApplicationRoutesStaged,
 } from "../routes-filmed-prose-page";
-interface DisplayClock {
-  now(): string;
-  locale: string;
-  timeZone: string;
-}
-function RoutineHistoryButton({
-  runs,
-  routineId,
-  label,
-  onVisualize,
-}: {
+import type * as React from "react";
+
+export const RoutineHistoryButton: React.FC<{
   runs?: readonly RoutineRun[];
   routineId?: string;
   label?: string;
   onVisualize?: VisualizeRoutine;
-}) {
+}> = ({ runs, routineId, label, onVisualize }) => {
   const controlSize: (size: "sm") => string = resolvePlatformSyncAndRoutingCompact();
   return (
     <Popover.Root>
@@ -89,8 +81,11 @@ function RoutineHistoryButton({
       </Popover.Popup>
     </Popover.Root>
   );
-}
-function RoutineRunHistory({ runs }: { runs?: readonly RoutineRun[] }) {
+};
+
+export const RoutineRunHistory: React.FC<{ runs?: readonly RoutineRun[] }> = ({
+  runs,
+}) => {
   const clock: DisplayClock = resolvePlatformApiAndAuthUseContext2();
   const nowMs = Date.parse(clock.now());
   const formatTime = (routineRuns: string) =>
@@ -181,5 +176,10 @@ function RoutineRunHistory({ runs }: { runs?: readonly RoutineRun[] }) {
       ))}
     </div>
   );
+};
+
+interface DisplayClock {
+  now(): string;
+  locale: string;
+  timeZone: string;
 }
-export { RoutineHistoryButton, RoutineRunHistory };

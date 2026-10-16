@@ -14,6 +14,57 @@ import {
   resolveMenuPopupsValue4,
   resolveMenuPopupsValue5,
 } from "./popup";
+import type * as ReactComponentTypes from "react";
+
+export const MenuPopupsCell: ReactComponentTypes.FC<Dynamic> = ({
+  cell: input,
+  nested: input2,
+  children: input3,
+}) => {
+  let value: Dynamic = (0, React.useSyncExternalStore)(
+    input === null ? resolveMenuPopupsValue3 : input.subscribe,
+    input === null ? resolveMenuPopupsValue4 : input.getLevel,
+    resolveMenuPopupsValue4,
+  );
+  let value2: Dynamic = input === null || (input2 && value === `hover`) ? `off` : value;
+  return (
+    <MenuPopupsCreateContext2.Provider value={value2 === `declared`}>
+      {value2 === `declared` && !input2 && input !== null ? (
+        <UseMenuPopupsCellComponent cell={input} />
+      ) : null}
+      {input3(
+        input === null || value2 === `off`
+          ? resolveMenuPopupsValue5
+          : value2 === `hover`
+            ? (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+                ...input4,
+                tabIndex: undefined,
+                onFocus(input5?: Dynamic, ..._extraArguments: unknown[]): undefined {
+                  input4.onFocus?.(input5);
+                  input.engage();
+                },
+              })
+            : (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+                ...input4,
+                tabIndex: undefined,
+                finalFocus: false,
+                onMouseDown(event?: Dynamic, ..._extraArguments: unknown[]): undefined {
+                  input4.onMouseDown?.(event);
+                  if (!resolveMenuPopupsDraggable(event)) {
+                    event.preventDefault();
+                  }
+                },
+                onKeyDown(event?: Dynamic, ..._extraArguments: unknown[]): undefined {
+                  input4.onKeyDown?.(event);
+                  if (!event.nativeEvent.isComposing && menuPopupsSet.has(event.key)) {
+                    input.engage();
+                  }
+                },
+              }),
+      )}
+    </MenuPopupsCreateContext2.Provider>
+  );
+};
 
 var MenuPopupsStyles: Dynamic;
 
@@ -403,68 +454,6 @@ var MenuPopupsState: Dynamic;
 
 var menuPopupsSet: Dynamic;
 
-function MenuPopupsCell(
-  { cell: input, nested: input2, children: input3 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = (0, React.useSyncExternalStore)(
-    input === null ? resolveMenuPopupsValue3 : input.subscribe,
-    input === null ? resolveMenuPopupsValue4 : input.getLevel,
-    resolveMenuPopupsValue4,
-  );
-  let value2: Dynamic =
-    input === null || (input2 && value === `hover`) ? `off` : value;
-  return (
-    <MenuPopupsCreateContext2.Provider value={value2 === `declared`}>
-      {value2 === `declared` && !input2 && input !== null ? (
-        <UseMenuPopupsCellComponent cell={input} />
-      ) : null}
-      {input3(
-        input === null || value2 === `off`
-          ? resolveMenuPopupsValue5
-          : value2 === `hover`
-            ? (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-                ...input4,
-                tabIndex: undefined,
-                onFocus(
-                  input5?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined {
-                  input4.onFocus?.(input5);
-                  input.engage();
-                },
-              })
-            : (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-                ...input4,
-                tabIndex: undefined,
-                finalFocus: false,
-                onMouseDown(
-                  event?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined {
-                  input4.onMouseDown?.(event);
-                  if (!resolveMenuPopupsDraggable(event)) {
-                    event.preventDefault();
-                  }
-                },
-                onKeyDown(
-                  event?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined {
-                  input4.onKeyDown?.(event);
-                  if (
-                    !event.nativeEvent.isComposing &&
-                    menuPopupsSet.has(event.key)
-                  ) {
-                    input.engage();
-                  }
-                },
-              }),
-      )}
-    </MenuPopupsCreateContext2.Provider>
-  );
-}
-
 function UseMenuPopupsCellComponent(
   { cell: input }: Dynamic,
   ..._extraArguments: unknown[]
@@ -538,11 +527,4 @@ export function initializeMenuFocusStep1(): void {
   (MenuPopupsCell as Dynamic).displayName = `PassiveOpenGate`;
 }
 
-export {
-  MenuPopupsCell,
-  MenuPopupsCreateContext,
-  resolveMenuPopupsCell,
-  resolveMenuPopupsDraggable,
-  resolveMenuPopupsUseContext,
-  useMenuPopupsRenderedWith,
-};
+export { MenuPopupsCreateContext, resolveMenuPopupsCell, resolveMenuPopupsDraggable, resolveMenuPopupsUseContext, useMenuPopupsRenderedWith };

@@ -12,55 +12,64 @@ import {
   SheetsDataCdsSheetPressed,
 } from "../sheets/geometry";
 import { useLabeledFieldsHeight } from "./height";
+import type * as ReactComponentTypes from "react";
 
-function SheetPopupDrawPill(
-  { drawPill: input = true }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const SheetPopupDrawPill: ReactComponentTypes.FC<Dynamic> = ({
+  drawPill: input = true,
+}) => {
   return (
     <div
       aria-hidden={true}
       data-cds-sheet-handle={``}
       {...useLabeledFieldsHeight()}
       className={`flex min-h-8 shrink-0 touch-none items-center justify-center select-none`}
-    >{<div className={clsx(`h-1 w-9 rounded-full bg-border`, !input && `opacity-0`)} />}</div>
+    >
+      {<div className={clsx(`h-1 w-9 rounded-full bg-border`, !input && `opacity-0`)} />}
+    </div>
   );
-}
+};
 
-function SheetPopupLeading(
-  { leading: input, title: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const SheetPopupLeading: ReactComponentTypes.FC<Dynamic> = ({
+  leading: input,
+  title: input2,
+}) => {
   let value: Dynamic = useLabeledFieldsHeight();
   let value2: boolean = input != null && input !== false;
-  return !value2 &&
-    !(input2 != null && input2 !== false && input2 !== ``) ? null : (
-    <div {...value} className={`order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1 pb-1 select-none`}>{value2 && <span className={`-me-2.5 shrink-0`}>{input}</span>}{<span
-      aria-hidden={true}
-      className={clsx(`min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary`, !value2 && `ps-2.5`)}
+  return !value2 && !(input2 != null && input2 !== false && input2 !== ``) ? null : (
+    <div
+      {...value}
+      className={`order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1 pb-1 select-none`}
     >
-            {input2}
-          </span>}</div>
+      {value2 && <span className={`-me-2.5 shrink-0`}>{input}</span>}
+      {
+        <span
+          aria-hidden={true}
+          className={clsx(
+            `min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary`,
+            !value2 && `ps-2.5`,
+          )}
+        >
+          {input2}
+        </span>
+      }
+    </div>
   );
-}
+};
 
-var SheetPopupLabel: Dynamic;
-
-function SheetPopupView(
-  { className: input, children: input2 }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
+export const SheetPopupView: ReactComponentTypes.FC<Dynamic> = ({
+  className: input,
+  children: input2,
+}) => {
   return (
     <div
-      className={resolveUiDesignSystemValue2(
-        `flex min-h-0 flex-auto flex-col`,
-        input,
-      )}
+      className={resolveUiDesignSystemValue2(`flex min-h-0 flex-auto flex-col`, input)}
     >
       {input2}
     </div>
   );
-}
+};
+
+var SheetPopupLabel: Dynamic;
 
 var SheetPopupHandle: Dynamic;
 
@@ -240,4 +249,4 @@ export function initializeSheetPopupLayoutStep1(): void {
   };
 }
 
-export { SheetPopupDrawPill, SheetPopupHandle, SheetPopupLeading, useSheetPopupClick, useSheetPopupTall };
+export { SheetPopupHandle, useSheetPopupClick, useSheetPopupTall };

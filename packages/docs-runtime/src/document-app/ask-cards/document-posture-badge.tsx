@@ -74,6 +74,120 @@ import {
 import {
   documentExportTelemetryEvent,
 } from "../document-export/telemetry-event";
+import type * as ReactComponentTypes from "react";
+
+export const DocumentPosturePopover: ReactComponentTypes.FC<Dynamic> = ({
+  chip: chip,
+  tip: tip,
+}) => {
+  let [open, setOpen]: Dynamic = (0, React.useState)(false);
+  (0, React.useEffect)(
+    (..._extraArguments: unknown[]): Dynamic => {
+      if (!open) return;
+      let setOpen2: Dynamic = (..._extraArguments: unknown[]): Dynamic => setOpen(false);
+      let documentPosturePopoverResult: Dynamic =
+        clearPlatformFeatureFlagsDelete(setOpen2);
+      window.addEventListener(`blur`, setOpen2);
+      return (..._extraArguments: unknown[]): undefined => {
+        documentPosturePopoverResult();
+        window.removeEventListener(`blur`, setOpen2);
+      };
+    },
+    [open],
+  );
+  return (
+    <Popover.Root
+      open={open}
+      onOpenChange={(
+        documentPosturePopover?: Dynamic,
+        ..._extraArguments: unknown[]
+      ): Dynamic => setOpen(documentPosturePopover)}
+    >
+      <Popover.Trigger nativeButton={false} render={chip} />
+      <Popover.Popup
+        side={`bottom`}
+        align={`start`}
+        padding={`md`}
+        className={`w-64`}
+        data-testid={`phone-comment-popover`}
+      >
+        <Popover.Description className={`text-footnote text-secondary`}>
+          {tip}
+        </Popover.Description>
+      </Popover.Popup>
+    </Popover.Root>
+  );
+};
+
+export const DocumentPostureBadge: ReactComponentTypes.FC<Dynamic> = ({
+  className = ``,
+  posture = `view`,
+  reason: reason,
+  chrome = `plate`,
+  size: size,
+}) => {
+  let matchesPosture: boolean = posture === `comment`;
+  let matchesPosture2: Dynamic = matchesPosture && reason === `phone`;
+  let ariaDescription: Dynamic = matchesPosture
+    ? matchesPosture2
+      ? PHONE_COMMENT_ONLY_MESSAGE
+      : COMMENT_ONLY_RESTRICTION_MESSAGE
+    : VIEW_ONLY_RESTRICTION;
+  let ariaLabel: Dynamic = matchesPosture2
+    ? COMMENT_ONLY_LABEL
+    : DOCUMENT_POSTURE_LABELS[posture];
+  let record: Dynamic = matchesPosture2
+    ? {}
+    : {
+        role: `status`,
+      };
+  let documentPostureBadgeResult: Dynamic = resolvePlatformSyncAndRoutingValue10();
+  let matchesChrome: boolean = chrome === `plate`;
+  let size2: Dynamic =
+    size ??
+    (matchesChrome && documentPostureBadgeResult ? EditorHostBadge.badge : undefined);
+  let chip: Dynamic = (
+    <Badge
+      variant={`neutral`}
+      size={size2}
+      icon={matchesPosture ? `Chat` : `Lock`}
+      {...record}
+      aria-label={ariaLabel}
+      aria-description={ariaDescription}
+      data-testid={`roomview-view-only`}
+      data-posture={posture}
+      className={matchesChrome ? `select-none` : `select-none ${className}`}
+    >
+      {ariaLabel}
+    </Badge>
+  );
+  let jsx: Dynamic = matchesPosture2 ? (
+    <DocumentPosturePopover chip={chip} tip={ariaDescription} />
+  ) : (
+    <Tooltip content={ariaDescription} side={`bottom`}>
+      {chip}
+    </Tooltip>
+  );
+  return matchesChrome ? (
+    <span
+      data-size={size2}
+      data-testid={`roomview-view-only-plate`}
+      className={`bg-surface-popover rounded-chip inline-flex shrink-0 self-center ${className}`}
+    >
+      {jsx}
+    </span>
+  ) : (
+    jsx
+  );
+};
+
+export const ImagePreview: ReactComponentTypes.FC<Dynamic> = ({ src: src }) => {
+  return (
+    <div className={`flex h-full items-center justify-center overflow-auto p-4`}>
+      <img src={src} alt={``} className={`max-h-full max-w-full object-contain`} />
+    </div>
+  );
+};
 
 function exportToolTelemetryLabel(
   result?: Dynamic,
@@ -252,130 +366,6 @@ var DOCUMENT_POSTURE_LABELS: Dynamic;
 var COMMENT_ONLY_LABEL: string;
 
 var documentPosture: (documentPosture2?: Dynamic, ..._extraArguments: unknown[]) => "comment" | "edit" | "view";
-
-function DocumentPostureBadge(
-  {
-    className = ``,
-    posture = `view`,
-    reason: reason,
-    chrome = `plate`,
-    size: size,
-  }: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let matchesPosture: boolean = posture === `comment`;
-  let matchesPosture2: Dynamic = matchesPosture && reason === `phone`;
-  let ariaDescription: Dynamic = matchesPosture
-    ? matchesPosture2
-      ? PHONE_COMMENT_ONLY_MESSAGE
-      : COMMENT_ONLY_RESTRICTION_MESSAGE
-    : VIEW_ONLY_RESTRICTION;
-  let ariaLabel: Dynamic = matchesPosture2
-    ? COMMENT_ONLY_LABEL
-    : DOCUMENT_POSTURE_LABELS[posture];
-  let record: Dynamic = matchesPosture2
-    ? {}
-    : {
-        role: `status`,
-      };
-  let documentPostureBadgeResult: Dynamic =
-    resolvePlatformSyncAndRoutingValue10();
-  let matchesChrome: boolean = chrome === `plate`;
-  let size2: Dynamic =
-    size ??
-    (matchesChrome && documentPostureBadgeResult
-      ? EditorHostBadge.badge
-      : undefined);
-  let chip: Dynamic = (
-    <Badge
-      variant={`neutral`}
-      size={size2}
-      icon={matchesPosture ? `Chat` : `Lock`}
-      {...record}
-      aria-label={ariaLabel}
-      aria-description={ariaDescription}
-      data-testid={`roomview-view-only`}
-      data-posture={posture}
-      className={matchesChrome ? `select-none` : `select-none ${className}`}
-    >{ariaLabel}</Badge>
-  );
-  let jsx: Dynamic = matchesPosture2 ? (
-    <DocumentPosturePopover chip={chip} tip={ariaDescription} />
-  ) : (
-    <Tooltip content={ariaDescription} side={`bottom`}>
-      {chip}
-    </Tooltip>
-  );
-  return matchesChrome ? (
-    <span
-      data-size={size2}
-      data-testid={`roomview-view-only-plate`}
-      className={`bg-surface-popover rounded-chip inline-flex shrink-0 self-center ${className}`}
-    >
-      {jsx}
-    </span>
-  ) : (
-    jsx
-  );
-}
-
-function DocumentPosturePopover(
-  { chip: chip, tip: tip }: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let [open, setOpen]: Dynamic = (0, React.useState)(false);
-  (0, React.useEffect)(
-    (..._extraArguments: unknown[]): Dynamic => {
-      if (!open) return;
-      let setOpen2: Dynamic = (..._extraArguments: unknown[]): Dynamic =>
-        setOpen(false);
-      let documentPosturePopoverResult: Dynamic =
-        clearPlatformFeatureFlagsDelete(setOpen2);
-      window.addEventListener(`blur`, setOpen2);
-      return (..._extraArguments: unknown[]): undefined => {
-        documentPosturePopoverResult();
-        window.removeEventListener(`blur`, setOpen2);
-      };
-    },
-    [open],
-  );
-  return (
-    <Popover.Root
-      open={open}
-      onOpenChange={(
-        documentPosturePopover?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => setOpen(documentPosturePopover)}
-    >
-      <Popover.Trigger nativeButton={false} render={chip} />
-      <Popover.Popup
-        side={`bottom`}
-        align={`start`}
-        padding={`md`}
-        className={`w-64`}
-        data-testid={`phone-comment-popover`}
-      >
-        <Popover.Description className={`text-footnote text-secondary`}>
-          {tip}
-        </Popover.Description>
-      </Popover.Popup>
-    </Popover.Root>
-  );
-}
-
-function ImagePreview({ src: src }: Dynamic, ..._extraArguments: unknown[]) {
-  return (
-    <div
-      className={`flex h-full items-center justify-center overflow-auto p-4`}
-    >
-      <img
-        src={src}
-        alt={``}
-        className={`max-h-full max-w-full object-contain`}
-      />
-    </div>
-  );
-}
 
 var MAX_SCROLL_MEMORY_ENTRIES: number;
 
@@ -1193,36 +1183,4 @@ export function initializeAskCardsDocumentPostureBadgeStep1(): void {
   (SELECTION_ACTIONS_GAP = 8);
 }
 
-export {
-  DESKTOP_HOVER_QUERY,
-  DocumentPostureBadge,
-  ImagePreview,
-  ReactionPicker,
-  SELECTION_ACTIONS_GAP,
-  SELECTION_ACTIONS_INNER_STYLE,
-  SELECTION_ACTIONS_PADDING,
-  SELECTION_ACTIONS_RADIUS,
-  beginDocumentExport,
-  clearDocumentSwitchPicture,
-  createRequestedDownloadAction,
-  documentPosture,
-  documentScrollKey,
-  doorWithPrefetchedDocumentView,
-  exportAsMarkdown,
-  exportAsPdf,
-  exportAsWord,
-  exportToolTelemetryLabel,
-  getDocumentScroll,
-  googleDocsExportAction,
-  guardAsyncDocumentCall,
-  installDocumentSwitchPrefetch,
-  isExternalSelectionTarget,
-  notionExportAction,
-  prefetchDocumentViewWithComments,
-  rememberCommentListReturn,
-  rememberDocumentScroll,
-  rememberDocumentSwitchPicture,
-  selectionActionsPlacement,
-  takeCommentListReturn,
-  takeDocumentSwitchPicture,
-};
+export { DESKTOP_HOVER_QUERY, ReactionPicker, SELECTION_ACTIONS_GAP, SELECTION_ACTIONS_INNER_STYLE, SELECTION_ACTIONS_PADDING, SELECTION_ACTIONS_RADIUS, beginDocumentExport, clearDocumentSwitchPicture, createRequestedDownloadAction, documentPosture, documentScrollKey, doorWithPrefetchedDocumentView, exportAsMarkdown, exportAsPdf, exportAsWord, exportToolTelemetryLabel, getDocumentScroll, googleDocsExportAction, guardAsyncDocumentCall, installDocumentSwitchPrefetch, isExternalSelectionTarget, notionExportAction, prefetchDocumentViewWithComments, rememberCommentListReturn, rememberDocumentScroll, rememberDocumentSwitchPicture, selectionActionsPlacement, takeCommentListReturn, takeDocumentSwitchPicture };
