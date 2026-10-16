@@ -627,8 +627,11 @@ impl FrameRenderer {
                         return Ok(None);
                     };
                     Some(svg)
-                } else if layer.kind == LayerKind::Image && context.is_gif(layer.asset.as_ref()) {
-                    let Some(gif) = self.gif(layer, media)? else {
+                } else if let Some(format) = (layer.kind == LayerKind::Image)
+                    .then(|| context.animated_format(layer.asset.as_ref()))
+                    .flatten()
+                {
+                    let Some(gif) = self.gif(layer, format, media)? else {
                         return Ok(None);
                     };
                     // 图片实例的动图一直循环；贴纸按 `sticker.loop`。
@@ -929,17 +932,17 @@ impl FrameRenderer {
         }
     }
 
-    /// GIF 图片：素材字节解成动图（[`crate::load_gif`]），按素材版本缓存。读不到或连第一帧也解不开时按选项报错或跳过
-    /// （`asset-undecodable`）；超过上限只画第一帧时给一条提示。
-    fn gif(&mut self, layer: &VisualLayer, media: &mut dyn LayerMedia) -> Result<Option<Arc<crate::Gif>>, RenderError> {
-        let asset = layer.asset.as_ref().expect("调用方查过是 GIF 素材");
+    /// 动图（GIF / APNG）：素材字节解成动图（[`crate::load_gif`]），按素材版本缓存。读不到或连第一帧也解不开时按选项报错
+    /// 或跳过（`asset-undecodable`）；超过上限只画第一帧时给一条提示。`format` 是给人看的格式名。
+    fn gif(&mut self, layer: &VisualLayer, format: &str, media: &mut dyn LayerMedia) -> Result<Option<Arc<crate::Gif>>, RenderError> {
+        let asset = layer.asset.as_ref().expect("调用方查过是动图素材");
         let key = format!("{}@{}", asset.id, asset.revision);
         if !self.gifs.contains_key(&key) {
             let Some(bytes) = media.asset_bytes(asset) else {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    asset_text::image_unreadable("GIF", &asset.id),
+                    asset_text::image_unreadable(format, &asset.id),
                 )])?;
                 return Ok(None);
             };
@@ -955,7 +958,7 @@ impl FrameRenderer {
                     self.refuse_or_skip(vec![asset_item(
                         layer,
                         "asset-undecodable",
-                        asset_text::image_undecodable_detail("GIF", &asset.id, &format!("{error:#}")),
+                        asset_text::image_undecodable_detail(format, &asset.id, &format!("{error:#}")),
                     )])?;
                     return Ok(None);
                 }
@@ -967,7 +970,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    asset_text::image_undecodable("GIF", &asset.id),
+                    asset_text::image_undecodable(format, &asset.id),
                 )])?;
                 Ok(None)
             }
@@ -1474,9 +1477,11 @@ impl SequenceContext<'_> {
         self.media_type_is(asset, SVG_MEDIA_TYPE)
     }
 
-    /// 素材版本是不是 GIF 图片（同上）。
-    fn is_gif(&self, asset: Option<&VersionRef>) -> bool {
-        self.media_type_is(asset, GIF_MEDIA_TYPE)
+    /// 素材版本是动图（GIF / APNG）时给出格式名（同上，按 [`animated_image_format`]）。
+    fn animated_format(&self, asset: Option<&VersionRef>) -> Option<&'static str> {
+        let asset = asset?;
+        let revision = self.assets.get(&asset.id)?.revisions.get(&asset.revision)?;
+        animated_image_format(&revision.media_type)
     }
 
     fn media_type_is(&self, asset: Option<&VersionRef>, media_type: &str) -> bool {
@@ -1491,6 +1496,20 @@ pub const SVG_MEDIA_TYPE: &str = "image/svg+xml";
 
 /// GIF 图片素材的媒体类型：画面由帧光栅从素材字节解（动图按时刻取帧）。
 pub const GIF_MEDIA_TYPE: &str = "image/gif";
+
+/// APNG 图片素材的媒体类型（导入时按 `.apng` 扩展名认；扩展名是 `.png` 的 APNG 记成 `image/png`，按静态图画）。
+pub const APNG_MEDIA_TYPE: &str = "image/apng";
+
+/// 由帧光栅按时刻取帧的动图媒体类型（GIF、APNG）给出给人看的格式名；别的媒体类型是 None。
+pub fn animated_image_format(media_type: &str) -> Option<&'static str> {
+    if media_type.eq_ignore_ascii_case(GIF_MEDIA_TYPE) {
+        Some("GIF")
+    } else if media_type.eq_ignore_ascii_case(APNG_MEDIA_TYPE) {
+        Some("APNG")
+    } else {
+        None
+    }
+}
 
 /// Composite one caption plane onto the current video backdrop. `plain`：调用方确知 `target` 没有发光分量（省一遍整幅扫描）。
 fn composite_caption_layer(

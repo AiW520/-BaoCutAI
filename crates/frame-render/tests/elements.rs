@@ -1079,6 +1079,11 @@ fn svg_images_use_the_kernel_raster_and_missing_bytes_are_refused() {
 }
 
 fn gif_sticker(mode: &str) -> video_model::VideoSnapshot {
+    animated_sticker(mode, gif_asset("a_gif", 8, 8))
+}
+
+/// 一层画素材 `a_gif` 的贴纸，按 `mode` 循环；素材记录由调用方给（GIF 或 APNG）。
+fn animated_sticker(mode: &str, asset: (String, serde_json::Value)) -> video_model::VideoSnapshot {
     video(
         vec![item(
             "st",
@@ -1087,7 +1092,7 @@ fn gif_sticker(mode: &str) -> video_model::VideoSnapshot {
             json!({ "type": "sticker", "sticker": { "source": "asset", "loop": mode }, "place": { "w": 30 },
                     "assetRef": { "id": "a_gif", "revision": "rev_1" } }),
         )],
-        vec![gif_asset("a_gif", 8, 8)],
+        vec![asset],
         json!({}),
     )
 }
@@ -1151,6 +1156,17 @@ fn gif_stickers_follow_their_loop_mode() {
     ] {
         let pixels = render(&gif_sticker(mode), seconds, &mut media);
         near(px(&pixels, 80, 45), STRIPES[frame], 2);
+    }
+}
+
+#[test]
+fn apng_stickers_animate_like_gifs() {
+    let mut media = Media::default();
+    media.assets.insert("a_gif".into(), PULSE_APNG.to_vec());
+    // 帧表 [0, 40) [40, 140) [140, 200)；循环时 0.25 秒落在第二遍的 50 ms。
+    for (mode, seconds, frame) in [("loop", 0.05, 1), ("loop", 0.25, 1), ("once", 0.25, 2), ("hold", 0.15, 0)] {
+        let pixels = render(&animated_sticker(mode, apng_asset("a_gif", 8, 8)), seconds, &mut media);
+        near(px(&pixels, 80, 45), PULSE[frame], 2);
     }
 }
 

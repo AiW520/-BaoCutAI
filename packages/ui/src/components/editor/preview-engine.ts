@@ -1,4 +1,14 @@
-import { localizeText, type AssetRecord, type DocumentRecord, type FontFaceQuery, type Id, type Revision, type Sequence, type VersionRef } from '@baocut/protocol';
+import {
+  isAnimatedImageType,
+  localizeText,
+  type AssetRecord,
+  type DocumentRecord,
+  type FontFaceQuery,
+  type Id,
+  type Revision,
+  type Sequence,
+  type VersionRef,
+} from '@baocut/protocol';
 import { durationSeconds, videoSlots } from '../../model/editor.ts';
 import { LIVE_CAPTION_ITEM_ID, liveCaptionCues, liveCaptionDocuments, withLiveCaption, type LiveCue } from '../../model/live-caption.ts';
 import { captionView, type CaptionMode } from '../../model/player.ts';
@@ -1149,11 +1159,11 @@ export class PreviewEngine {
     }
   }
 
-  /** 图片层的素材是 SVG 或 GIF（按素材版本的媒体类型）：画面由 WASM 从字节光栅或解码（与导出同一份），不读图片元素的像素。 */
+  /** 图片层的素材是 SVG 或动图（GIF、APNG；按素材版本的媒体类型）：画面由 WASM 从字节光栅或解码（与导出同一份），不读图片元素的像素。 */
   #kernelDecoded(layer: MediaLayer): boolean {
     if (layer.kind !== 'image') return false;
     const mediaType = this.#video?.assets[layer.asset.id]?.revisions[layer.asset.revision]?.mediaType;
-    return mediaType === 'image/svg+xml' || mediaType === 'image/gif';
+    return mediaType === 'image/svg+xml' || isAnimatedImageType(mediaType);
   }
 
   #readPixels(element: SourceElement, width: number, height: number): ImageData | null {

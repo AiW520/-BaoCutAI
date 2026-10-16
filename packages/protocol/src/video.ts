@@ -845,6 +845,16 @@ export function templateFileLogos(template: TemplateLayers | null | undefined): 
   return [...files];
 }
 
+/**
+ * 帧光栅从素材字节解、按时刻取帧的动图媒体类型（视频格式规范 §4.5）：GIF 与 APNG。APNG 只按 `.apng` 扩展名认，
+ * 扩展名是 `.png` 的动画 PNG 记成 `image/png`，按静态图画。
+ */
+export const ANIMATED_IMAGE_MEDIA_TYPES: readonly string[] = ['image/gif', 'image/apng'];
+
+export function isAnimatedImageType(mediaType: string | null | undefined): boolean {
+  return !!mediaType && ANIMATED_IMAGE_MEDIA_TYPES.includes(mediaType.toLowerCase());
+}
+
 /** 按路径引用的模板台标登记成素材时的来源（视频格式规范 §4.5）；`source.templateLogo.file` 记路径。 */
 export const TEMPLATE_LOGO_ORIGIN = 'template-logo';
 

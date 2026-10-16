@@ -26,7 +26,10 @@ pub mod transition;
 pub use census::{FALLBACK_FAMILY, FontUsage, font_census, font_usage};
 pub use documents::{Documents, FrozenDocument};
 pub use render_raster::fonts::FaceUse;
-pub use renderer::{FrameRenderer, GIF_MEDIA_TYPE, LayerMedia, RenderError, RenderOptions, RenderWarning, SVG_MEDIA_TYPE};
+pub use renderer::{
+    APNG_MEDIA_TYPE, FrameRenderer, GIF_MEDIA_TYPE, LayerMedia, RenderError, RenderOptions, RenderWarning, SVG_MEDIA_TYPE,
+    animated_image_format,
+};
 pub use spectrum::SpeakerActivity;
 pub use support::UnsupportedItem;
 pub use text_measure::TextBox;

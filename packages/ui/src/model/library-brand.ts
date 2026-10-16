@@ -1,4 +1,4 @@
-import { defineMessages, type AssetRecord, type BrandContent, type BrandKind, type BrandMediaKind, type DocumentRecord, type Id, type LibrarySource, type Sequence } from '@baocut/protocol';
+import { defineMessages, isAnimatedImageType, type AssetRecord, type BrandContent, type BrandKind, type BrandMediaKind, type DocumentRecord, type Id, type LibrarySource, type Sequence } from '@baocut/protocol';
 import { placeBox, type LayerAsset, type VisualLayer } from './new-items.ts';
 import { zhHans } from './library-brand.zh-Hans.ts';
 import { zhHant } from './library-brand.zh-Hant.ts';
@@ -161,11 +161,11 @@ export function isLottieSticker(content: BrandContent): boolean {
 }
 
 /**
- * 元素页里一张品牌库贴纸进哪一页（设计稿 `BC_STSRC.isDynamicPage`，两页互补、不重复）：Lottie 与 GIF 进「动态贴纸」
- * （预览与导出都按 GIF 自己的帧时间播放），其余图片进「贴纸」。
+ * 元素页里一张品牌库贴纸进哪一页（设计稿 `BC_STSRC.isDynamicPage`，两页互补、不重复）：Lottie 与动图（GIF、APNG）进
+ * 「动态贴纸」（预览与导出都按动图自己的帧时间播放），其余图片进「贴纸」。
  */
 export function isDynamicSticker(content: BrandContent): boolean {
-  return isLottieSticker(content) || (content.kind === 'sticker' && content.file.mediaType === 'image/gif');
+  return isLottieSticker(content) || (content.kind === 'sticker' && isAnimatedImageType(content.file.mediaType));
 }
 
 /**

@@ -30,6 +30,7 @@ const MIME_BY_EXT: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
   gif: 'image/gif',
+  apng: 'image/apng',
   webp: 'image/webp',
   heic: 'image/heic',
   svg: 'image/svg+xml',

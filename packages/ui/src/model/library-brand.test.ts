@@ -100,6 +100,7 @@ describe('元素页里的品牌库贴纸', () => {
   it('Lottie 进动态贴纸那一页，图片（GIF 也是：只画得出一帧）进贴纸那一页', () => {
     expect(isDynamicSticker({ name: 'a', kind: 'sticker', file: file('application/json') })).toBe(true);
     expect(isDynamicSticker({ name: 'a', kind: 'sticker', file: file('image/gif') })).toBe(true);
+    expect(isDynamicSticker({ name: 'a', kind: 'sticker', file: file('image/apng') })).toBe(true);
     expect(isDynamicSticker({ name: 'a', kind: 'sticker', file: file('image/png') })).toBe(false);
   });
 
