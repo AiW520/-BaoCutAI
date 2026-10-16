@@ -339,6 +339,15 @@
     return {tid: t.id, cmd: t.cmd, status, lines: t.log || [], code: t.code == null ? null : t.code};
   }
 
+  /* 在设置里起跑之前的确认（architecture-design §12.9「安装动作」：用户逐次确认，确认时显示将要执行的完整命令；
+     同实现 RunCommandDialog）：▶、问题条与「升级到 X」都先弹它，确认了才起跑。按钮用动词「运行」。
+     引导里勾上几家再按「后台安装 N 个」本身就是确认，不再一家一家弹（同实现 OnboardingHost）。 */
+  function runConfirm(h, plan, upgrade) {
+    return {title: `运行 ${h.name} 的${upgrade ? '升级' : '安装'}命令？`, cmd: plan.cmd, confirmLabel: '运行',
+      before: 'BaoCut 会在这台电脑上运行下面这条命令，输出显示在命令下方，运行中可以随时停止。',
+      after: '需要输入密码的命令在这里会失败，那时请改在终端里运行。'};
+  }
+
   /* ---------- 会话里的登录恢复（2026-09-20） ----------
      探测层的 loggedIn 只有刷新模型目录时才更新；凭据也可能在会话开着的这段时间里过期，
      那句话只会作为**一轮的失败详情**出现在线程里（`Failed to authenticate: OAuth session
@@ -421,7 +430,7 @@
   window.BC_AGENT_SETUP = {
     compareVer, health, blocked, needsReinstall, hasUpdate, badge, problem, diagnose, verdict,
     TIERS, recommended, defaultModel, modelChoices, modelLabel,
-    installSource, upgradeCmd, detected, installMethods, startMethod, installPlan, runnable, LOG_MAX, appendLog, pkgOf, demoRun, setupRun, overview, groups, moreSummary, SCENARIOS, scenarioPatch,
+    installSource, upgradeCmd, detected, installMethods, startMethod, installPlan, runnable, LOG_MAX, appendLog, pkgOf, demoRun, setupRun, runConfirm, overview, groups, moreSummary, SCENARIOS, scenarioPatch,
     authFailure, loginCmd, defaultModelGate, modelGateFailure,
   };
 })();

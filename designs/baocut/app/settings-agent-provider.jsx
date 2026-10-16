@@ -1,7 +1,7 @@
 /* Settings › Agent 的一家 provider（2026-09-18 重设计）。
    一行回答三件事：装没装、能不能用、开没开；有问题时问题条直接露在行下面，不用先点开。
    展开后是「日常会动的」四样：默认模型、版本与升级、账号、排查。未安装时展开的是安装面板。
-   状态判断全在 model-agent-setup.js。安装 / 升级命令左边一枚 ▶，点了就在这里运行，命令下面出一个日志框滚动显示输出
+   状态判断全在 model-agent-setup.js。安装 / 升级命令左边一枚 ▶，点了先确认（框里写出完整命令），确认后就在这里运行，命令下面出一个日志框滚动显示输出
    （2026-09-18 起取代「摆进系统终端」）；`curl … | bash` 这类官方脚本不给 ▶，只给复制（S.runnable）。登录要在 CLI 里交互，
    仍然摆进终端。每次运行是一条后台任务（agent-setup-runs.jsx，同实现：设置与首次启动引导起的都在任务页），原型里的输出是
    S.demoRun 编的，跑完把结果写进 store 的探测补丁。 */
@@ -161,11 +161,15 @@
       try { await navigator.clipboard.writeText(value); app.toast(label + '已复制', 'positive'); }
       catch (e) { app.toast('复制失败，请选中文字后复制'); }
     };
-    /* 就地运行：跑完成功才写探测补丁（正式版是跑完自动重新检测）；失败留在日志框里，不弹 toast。
-       命令跑不了（官方脚本）时只展开详情，让用户看到复制入口。 */
+    /* 就地运行：先弹确认，写出完整命令（S.runConfirm），点「运行」才起跑，取消什么也不做。跑完成功才写探测补丁
+       （正式版是跑完自动重新检测）；失败留在日志框里，不弹 toast。命令跑不了（官方脚本）时只展开详情，让用户看到复制入口。 */
     const runPlan = (upgrading, done) => {
       if (!open) onToggle();
-      if (plan && S.runnable(plan)) runner.start(plan, upgrading, (ok) => ok && done());
+      if (!plan || !S.runnable(plan) || runner.running) return;
+      const q = S.runConfirm(h, plan, upgrading);
+      app.confirm({title: q.title, confirmLabel: q.confirmLabel,
+        body: <>{q.before}<code className="agset-confirm__cmd">{q.cmd}</code>{q.after}</>,
+        run: () => runner.start(plan, upgrading, (ok) => ok && done())});
     };
     const install = () => runPlan(false, () => {
       app.patchHarness(h.id, {found: true, loggedIn: false});
