@@ -1,3 +1,31 @@
+import type { DiagramWaitingBox, MermaidRenderResult } from "./code-block/mermaid/render";
+import type { HeldDiagramLabel } from "./code-block/mermaid/label-source";
+import type { LabelEditorSession } from "./code-block/label-editor/session";
+import type { CodeCommentRange } from "./code-block/comment-ranges";
+import { codeCommentIdsAttribute, addCodeCommentId } from "./code-block/comment-ids";
+import { isLabelHistoryKey } from "./code-block/label-editor/keyboard";
+import {
+  mermaidWriteMeta,
+  mermaidSiblingWritesMeta,
+} from "./code-block/label-editor/source-replacement";
+import { MermaidAnnotations } from "./code-block/mermaid/annotations";
+import { MermaidRenderController } from "./code-block/mermaid/render-controller";
+import type { MermaidLibrary } from "./code-block/mermaid/render";
+
+import { diagramLabelAt } from "./code-block/mermaid/labels";
+
+import { DiagramLabelEditor } from "./code-block/label-editor/controller";
+
+import { edgeLabelKind } from "./code-block/mermaid/source-context";
+
+import { bracketLabels } from "./code-block/mermaid/bracket-labels";
+
+import { firstDeclaredLabel } from "./code-block/mermaid/label-definitions";
+
+import { findLabelMatch } from "./code-block/mermaid/label-match";
+
+import { locateHeldLabelSource } from "./code-block/mermaid/label-location";
+import { locateLabelSelection } from "./code-block/mermaid/label-location";
 import { captureForeignEdit } from "./operation-sync/capture-foreign-edit";
 import { releaseForeignEdit } from "./operation-sync/release-foreign-edit";
 import { ForeignEditHistory } from "./operation-sync/foreign-edit-history";
@@ -21,7 +49,6 @@ import {
   decoratedCodeCommentRanges,
   codeThreadRange,
   partitionCodeComments,
-  type CodeCommentRange,
 } from "./code-block/comment-ranges";
 import type { DecorationSource, NodeView, ViewMutationRecord } from "prosemirror-view";
 import type { CharacterLedger, CharacterSpan, BlockCharacterRuns } from "./character-ledger";
@@ -105695,1604 +105722,7 @@ function resolveSchemaAndRenderingLabel2(
 initializeTiptapCoreDependencies2();
 initializeProsemirrorCommandsDependencies2();
 initializeProsemirrorViewDependencies();
-var schemaAndRenderingMessage5 = "[({>/\\";
-var schemaAndRenderingMessage6 = "])}/\\";
-var schemaAndRenderingMessage7 = "])}";
-var resolveSchemaAndRenderingTest = (
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) => input != null && /[\p{L}\p{N}_]/u.test(input);
-function isSchemaAndRenderingSequence(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = input[options - 1];
-  let value2: Dynamic = input[options + context];
-  if (
-    resolveSchemaAndRenderingTest(value) ||
-    resolveSchemaAndRenderingTest(value2)
-  )
-    return false;
-  if (
-    (value === "-" || value === ".") &&
-    resolveSchemaAndRenderingTest(input[options - 2])
-  )
-    return false;
-  if (
-    (value2 === "-" || value2 === ".") &&
-    resolveSchemaAndRenderingTest(input[options + context + 1])
-  ) {
-    if (
-      !(
-        value2 === "-" &&
-        input[options + context + 1] === "x" &&
-        resolveSchemaAndRenderingFlowchart(input) === "sequence"
-      )
-    )
-      return false;
-  }
-  return true;
-}
-function resolveSchemaAndRenderingFlowchart(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value = false;
-  for (let value2 of input.split(`
-`) as Dynamic) {
-    let value3: Dynamic = value2.trim();
-    if (value3 === "---") {
-      value = !value;
-      continue;
-    }
-    if (value || !value3 || value3.startsWith("%%")) continue;
-    let value4: Dynamic = value3.split(/[\s;]/, 1)[0];
-    if (value4 === "flowchart" || value4 === "graph") return "flowchart";
-    if (value4.startsWith("stateDiagram")) return "state";
-    if (value4 === "sequenceDiagram") return "sequence";
-    if (value4.startsWith("classDiagram")) return "class";
-    if (value4 === "erDiagram") return "er";
-    return "other";
-  }
-  return "other";
-}
-var schemaAndRenderingInputPattern2 =
-  /^\s*(?:%%|(?:flowchart|graph|stateDiagram(?:-v2)?|sequenceDiagram|classDiagram(?:-v2)?|erDiagram|direction|classDef|class|style|linkStyle|click|note|end)\b)/;
-var schemaAndRenderingInputPattern3 =
-  /[xo<]?(?:--+[-xo>]|==+[=xo>]|-?\.+-[xo>]?)|[xo<]?(?:--|==|-\.)/g;
-var schemaAndRenderingInputPattern4 = /^[xo<]?(?:--|==|-\.)$/;
-function resolveSchemaAndRenderingReplace(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = input
-    .replace(/"[^"]*"/g, (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      " ".repeat(input2.length),
-    )
-    .replace(/\|[^|]*\|/g, (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      " ".repeat(input2.length),
-    );
-  let value2 = false;
-  schemaAndRenderingInputPattern3.lastIndex = 0;
-  for (
-    let value3 = schemaAndRenderingInputPattern3.exec(value);
-    value3;
-    value3 = schemaAndRenderingInputPattern3.exec(value)
-  )
-    value2 = schemaAndRenderingInputPattern4.test(value3[0]);
-  return value2;
-}
-function resolveSchemaAndRenderingPiped(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic =
-    input.lastIndexOf(
-      `
-`,
-      options - 1,
-    ) + 1;
-  let value2: Dynamic = options;
-  let value3: Dynamic = options + context;
-  let value4 = (..._extraArguments: unknown[]): undefined => {
-    while (value2 > value && /[ \t]/.test(input[value2 - 1])) value2--;
-    while (value3 < input.length && /[ \t]/.test(input[value3])) value3++;
-  };
-  value4();
-  if (input[value2 - 1] === '"' && input[value3] === '"') {
-    value2--;
-    value3++;
-    value4();
-  }
-  if (input[value2 - 1] === "|" && input[value3] === "|") return "piped";
-  let slice: Dynamic = input.slice(value, value2);
-  let slice2: Dynamic = input.slice(value3);
-  if (
-    /(?:--|==|-\.)$/.test(slice) &&
-    /^[xo<]?(?:--+[-xo>]|==+[=xo>]|-?\.+-[xo>]?)/.test(slice2)
-  )
-    return "open";
-  if (/(?:--|\.\.|==)[^:]*:$/.test(slice) && /^[ \t]*(?:;|\n|$)/.test(slice2))
-    return "colon";
-  return null;
-}
-var schemaAndRenderingInputPattern5 = /--|[=.]/;
-function resolveSchemaAndRenderingDecl(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  if (!options) return null;
-  let index: number = 0;
-  while (index <= input.length) {
-    let value2: Dynamic = input.indexOf(
-      `
-`,
-      index,
-    );
-    if (value2 < 0) value2 = input.length;
-    let slice: Dynamic = input.slice(index, value2);
-    let value3 =
-      /^([ \t]*)state[ \t]+"([^"\n]*)"[ \t]+as[ \t]+([\p{L}\p{N}_.-]+)[ \t]*(?:;[ \t]*)?$/u.exec(
-        slice,
-      );
-    if (value3 && value3[3] === options) {
-      let value4: Dynamic = index + slice.indexOf('"', value3[1].length + 5);
-      let value5: Dynamic = index + slice.lastIndexOf(options);
-      return {
-        decl: {
-          from: index + value3[1].length,
-          to: value5 + options.length,
-        },
-        content: {
-          from: value4 + 1,
-          to: value4 + 1 + value3[2].length,
-        },
-        line: {
-          from: index,
-          to: Math.min(input.length, value2 + 1),
-        },
-        kind: "as",
-      };
-    }
-    if (value2 >= input.length) break;
-    index = value2 + 1;
-  }
-  let value: Dynamic = resolveSchemaAndRenderingDecl2(input, options);
-  return value.length === 1 ? value[0] : null;
-}
-function resolveSchemaAndRenderingValue5(
-  input?: unknown,
-  options?: unknown,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return resolveSchemaAndRenderingDecl2(input, options).length;
-}
-function resolveSchemaAndRenderingDecl2(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  if (resolveSchemaAndRenderingFlowchart(input) !== "state") return items;
-  let value: Dynamic = resolveSchemaAndRenderingClass2(input);
-  let index: number = 0;
-  let value2 = /^(?:[ \t]*\n)*---[ \t]*\n[\s\S]*?\n---[ \t]*(?:\n|$)/.exec(
-    input,
-  );
-  if (value2 && value2.index === 0) index = value2[0].length;
-  while (index <= input.length) {
-    let value3: number = index;
-    while (
-      value3 < input.length &&
-      input[value3] !==
-        `
-` &&
-      value[value3] !== ";"
-    )
-      value3++;
-    let value4: Dynamic =
-      input.indexOf(
-        `
-`,
-        index,
-      ) < 0
-        ? input.length
-        : input.indexOf(
-            `
-`,
-            index,
-          );
-    let slice: Dynamic = input.slice(index, value3);
-    let value5 = /^([ \t]*)([\p{L}\p{N}_.-]+)[ \t]*:[ \t]*(.*?)[ \t]*$/u.exec(
-      slice,
-    );
-    let value6: number = index + (value5?.[1].length ?? 0);
-    if (
-      value5 &&
-      value5[2] === options &&
-      value5[3] !== "" &&
-      !value5[3].startsWith(":") &&
-      value[value6] === input[value6]
-    ) {
-      let value7: Dynamic =
-        index + slice.indexOf(value5[3], value5[1].length + options.length + 1);
-      let value8: Dynamic =
-        input.lastIndexOf(
-          `
-`,
-          index - 1,
-        ) + 1;
-      items.push({
-        decl: {
-          from: index + value5[1].length,
-          to: value7 + value5[3].length,
-        },
-        content: {
-          from: value7,
-          to: value7 + value5[3].length,
-        },
-        line: {
-          from: value8,
-          to: Math.min(input.length, value4 + 1),
-        },
-        kind: "desc",
-      });
-    }
-    if (value3 >= input.length) break;
-    index = value3 + 1;
-  }
-  return items;
-}
-function resolveSchemaAndRenderingValue6(
-  input?: unknown,
-  options?: unknown,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return resolveSchemaAndRenderingClass(input, options, true)[0] ?? -1;
-}
-function resolveSchemaAndRenderingValue7(
-  input?: unknown,
-  options?: unknown,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return resolveSchemaAndRenderingClass(input, options, false);
-}
-function resolveSchemaAndRenderingClass(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  if (!options) return items;
-  let value: Dynamic = resolveSchemaAndRenderingClass2(input);
-  for (
-    let value2: Dynamic = input.indexOf(options);
-    value2 >= 0;
-    value2 = input.indexOf(options, value2 + 1)
-  ) {
-    if (!isSchemaAndRenderingSequence(input, value2, options.length)) continue;
-    if (value[value2] !== input[value2]) continue;
-    let value3: Dynamic =
-      input.lastIndexOf(
-        `
-`,
-        value2 - 1,
-      ) + 1;
-    for (let value10 = value2 - 1; value10 >= value3; value10--)
-      if (value[value10] === ";") {
-        value3 = value10 + 1;
-        break;
-      }
-    let value4: Dynamic = input.indexOf(
-      `
-`,
-      value2,
-    );
-    if (value4 < 0) value4 = input.length;
-    for (let value10: Dynamic = value2; value10 < value4; value10++)
-      if (value[value10] === ";") {
-        value4 = value10;
-        break;
-      }
-    let slice: Dynamic = value.slice(value3, value4);
-    if (
-      schemaAndRenderingInputPattern2.test(slice) &&
-      !(
-        /^\s*class\b/.test(slice) &&
-        resolveSchemaAndRenderingFlowchart(input) === "class"
-      )
-    )
-      continue;
-    let value5: Dynamic = value.slice(value3, value2).trimEnd();
-    let value6: Dynamic = value
-      .slice(value2 + options.length, value4)
-      .trimStart();
-    let value7 =
-      value5 === "" ||
-      /(?:[&|>=.({;-]|-[xo)]|~~)$/.test(value5) ||
-      /(?:^|[\s;])(?:participant|actor|class|state|subgraph)$/.test(value5);
-    let value8 =
-      value6 === "" || /^(?:[;&=.~<:|}{@-]|[xo](?:--|==|-\.))/.test(value6);
-    if (!value7 || !value8) continue;
-    let value9: Dynamic = input[value2 - 1] ?? "";
-    if (
-      /[[({"']/.test(value9) ||
-      (value9 === ">" && resolveSchemaAndRenderingTest(input[value2 - 2]))
-    )
-      continue;
-    if (!isSchemaAndRenderingInDq(input, value2)) continue;
-    if (
-      resolveSchemaAndRenderingReplace(
-        value.slice(
-          input.lastIndexOf(
-            `
-`,
-            value2 - 1,
-          ) + 1,
-          value2,
-        ),
-      )
-    )
-      continue;
-    items.push(value2);
-    if (context) break;
-  }
-  return items;
-}
-function resolveSchemaAndRenderingIncludes(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = options;
-  while (
-    value < input.length &&
-    value - options < 4 &&
-    schemaAndRenderingMessage5.includes(input[value])
-  )
-    value++;
-  if (value === options) return options;
-  let value2: Dynamic = value;
-  while (
-    value2 < input.length &&
-    (input[value2] === " " || input[value2] === "\t")
-  )
-    value2++;
-  if (input[value2] === '"') {
-    let value4: Dynamic = input.indexOf('"', value2 + 1);
-    if (value4 < 0) return options;
-    value = value4 + 1;
-    while (
-      value < input.length &&
-      (input[value] === " " || input[value] === "\t")
-    )
-      value++;
-  } else {
-    let value4: Dynamic = value + 400;
-    while (
-      value < input.length &&
-      value < value4 &&
-      !schemaAndRenderingMessage7.includes(input[value])
-    )
-      value++;
-    if (value >= input.length || value >= value4) return options;
-  }
-  let value3: Dynamic = value + 5;
-  while (
-    value < input.length &&
-    value < value3 &&
-    schemaAndRenderingMessage6.includes(input[value])
-  )
-    value++;
-  return value;
-}
-function resolveSchemaAndRenderingFrom(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveRenderedCodeAndProofreadingLen(
-    input,
-    options,
-    context,
-  );
-  if (!value) return null;
-  if (value.by === "label") {
-    let state: Dynamic = {
-      from: value.at,
-      to: value.at + value.len,
-    };
-    if (options) {
-      let value2 = (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => {
-        while (
-          options2 < 0
-            ? input2 > 0 && /[ \t]/.test(input[input2 - 1])
-            : input2 < input.length && /[ \t]/.test(input[input2])
-        )
-          input2 += options2;
-        return input2;
-      };
-      let value3: Dynamic = value2(state.from, -1);
-      if (input[value3 - 1] === '"') value3 = value2(value3 - 1, -1);
-      let value4: Dynamic = value3;
-      while (
-        value4 > 0 &&
-        value3 - value4 < 4 &&
-        schemaAndRenderingMessage5.includes(input[value4 - 1])
-      )
-        value4--;
-      let value5: number = value4 - options.length;
-      if (
-        value4 < value3 &&
-        value5 >= 0 &&
-        input.slice(value5, value4) === options &&
-        !resolveSchemaAndRenderingTest(input[value5 - 1])
-      ) {
-        let value7: Dynamic = value2(state.to, 1);
-        if (input[value7] === '"') value7 = value2(value7 + 1, 1);
-        let value8: Dynamic = value7 + 5;
-        let value9: Dynamic = value7;
-        while (
-          value7 < input.length &&
-          value7 < value8 &&
-          schemaAndRenderingMessage6.includes(input[value7])
-        )
-          value7++;
-        if (value7 > value9)
-          return {
-            from: value5,
-            to: value7,
-            label: state,
-          };
-      }
-      let value6: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-      if (
-        value6 &&
-        state.from >= value6.content.from &&
-        state.to <= value6.content.to
-      )
-        return {
-          from: value6.decl.from,
-          to: value6.decl.to,
-          label: state,
-        };
-    }
-    return {
-      from: state.from,
-      to: state.to,
-      label: state,
-    };
-  }
-  if (options) {
-    let value2: Dynamic = resolveSchemaAndRenderingFrom4(input, options);
-    let value3: Dynamic = resolveSchemaAndRenderingIndexOf(
-      input,
-      options,
-      value2,
-    );
-    let value4: Dynamic =
-      value3 === 1
-        ? value2[0]
-        : value2.findLast((input2?: Dynamic, ..._extraArguments: unknown[]) =>
-            isSchemaAndRenderingTrim(input, input2, context),
-          );
-    if (value4)
-      return {
-        from: value4.group.from - options.length,
-        to: value4.group.to,
-        label: null,
-      };
-    let value5: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-    if (
-      value3 > 1 &&
-      !(value5 && isSchemaAndRenderingTrim(input, value5.content, context))
-    )
-      return {
-        from: value.at,
-        to: value.at + value.len,
-        label: null,
-      };
-    if (value5)
-      return {
-        from: value5.decl.from,
-        to: value5.decl.to,
-        label: null,
-      };
-  }
-  return {
-    from: value.at,
-    to: value.at + value.len,
-    label: null,
-  };
-}
-function resolveSchemaAndRenderingFrom2(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  if (options != null && value && value.from <= value.to) {
-    let value2: Dynamic = resolveSchemaAndRenderingFrom4(input, options);
-    let match: Dynamic = value2.find(
-      (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-        value.from >= input2.group.from - options.length &&
-        value.to <= input2.group.to,
-    );
-    if (
-      match &&
-      value.to - value.from === options.length &&
-      value.from === match.group.from - options.length &&
-      resolveSchemaAndRenderingIndexOf(input, options, value2) > 1 &&
-      !isSchemaAndRenderingTrim(input, match, context)
-    )
-      match = value2.findLast(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-          isSchemaAndRenderingTrim(input, input2, context),
-      );
-    if (match) {
-      let value3: Dynamic = context?.trim() ?? "";
-      let slice: Dynamic = input.slice(match.from, match.to);
-      let value4: number = slice.length - slice.trimStart().length;
-      let value5 = value3 !== "" && slice.trim() === value3;
-      return {
-        from: match.group.from - options.length,
-        to: match.group.to,
-        label: value5
-          ? {
-              from: match.from + value4,
-              to: match.from + value4 + value3.length,
-            }
-          : null,
-      };
-    }
-  }
-  if (
-    options == null &&
-    value &&
-    value.from < value.to &&
-    value.to <= input.length
-  ) {
-    let value2: Dynamic = context?.trim() ?? "";
-    let slice: Dynamic = input.slice(value.from, value.to);
-    let value3 = slice === value2;
-    if (
-      value2 &&
-      (value3 || resolveSchemaAndRenderingReplace2(slice) === value2) &&
-      resolveSchemaAndRenderingPiped(input, value.from, value.to - value.from)
-    )
-      return {
-        from: value.from,
-        to: value.to,
-        label: value3
-          ? {
-              ...value,
-            }
-          : null,
-      };
-    let value4: Dynamic = resolveSchemaAndRenderingFrom(input, null, context);
-    return value4 && value4.from < value.to && value4.to > value.from
-      ? value4
-      : null;
-  }
-  return resolveSchemaAndRenderingFrom(input, options, context);
-}
-function resolveSchemaAndRenderingStart(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  if (!input.label) return null;
-  let value = Math.max(options, input.label.from) - input.label.from;
-  let value2 = Math.min(context, input.label.to) - input.label.from;
-  if (value2 <= value) return null;
-  return {
-    start: value,
-    end: value2,
-    whole: value <= 0 && value2 >= input.label.to - input.label.from,
-  };
-}
-var schemaAndRenderingInputPattern6 = /[()[\]{}|<>";#]/;
-function resolveSchemaAndRenderingTest2(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  for (let value: Dynamic = options; value < input.length; value++) {
-    let value2: Dynamic = input[value];
-    if (
-      (value2 === '"' || value2 === "'") &&
-      /[:,{[-][ \t]*$/.test(input.slice(options - 1, value))
-    ) {
-      for (value++; value < input.length; value++)
-        if (input[value] === "\\" && value2 === '"') value++;
-        else if (
-          input[value] === value2 &&
-          !(value2 === "'" && input[value + 1] === "'")
-        )
-          break;
-        else if (input[value] === value2) value++;
-      continue;
-    }
-    if (value2 === "}") return value;
-  }
-  return -1;
-}
-function resolveSchemaAndRenderingFrom3(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveSchemaAndRenderingClass2(input);
-  for (
-    let value2: Dynamic = input.indexOf(options + "@{");
-    value2 >= 0;
-    value2 = input.indexOf(options + "@{", value2 + 1)
-  ) {
-    if (!isSchemaAndRenderingSequence(input, value2, options.length)) continue;
-    if (value[value2] !== input[value2]) continue;
-    let value3: Dynamic = value2 + options.length + 2;
-    let value4: Dynamic = resolveSchemaAndRenderingTest2(input, value3);
-    if (value4 < 0) continue;
-    let text: string = "";
-    for (let value9: Dynamic = value3; value9 < value4; value9++) {
-      let value10: Dynamic = input[value9];
-      if (
-        (value10 === '"' || value10 === "'") &&
-        /[:,{[-][ \t]*$/.test(input.slice(value3 - 1, value9))
-      ) {
-        let value11: Dynamic = value9 + 1;
-        for (; value11 < value4; value11++)
-          if (input[value11] === "\\" && value10 === '"') value11++;
-          else if (
-            input[value11] === value10 &&
-            !(value10 === "'" && input[value11 + 1] === "'")
-          )
-            break;
-          else if (input[value11] === value10) value11++;
-        text += " ".repeat(Math.min(value11, value4 - 1) - value9 + 1);
-        value9 = Math.min(value11, value4 - 1);
-        continue;
-      }
-      text += value10;
-    }
-    let value5 = /(^|[,{\s])label[ \t]*:/.exec(text);
-    if (!value5) continue;
-    let value6: Dynamic = value3 + value5.index + value5[0].length;
-    while (input[value6] === " " || input[value6] === "\t") value6++;
-    let value7: Dynamic = input[value6];
-    if (value7 === '"' || value7 === "'") {
-      let value9: Dynamic = input.indexOf(value7, value6 + 1);
-      if (value9 < 0 || value9 > value4) continue;
-      if (value7 === "'" && input[value9 + 1] === "'") return null;
-      if (value7 === '"' && input[value9 - 1] === "\\") return null;
-      return {
-        from: value6 + 1,
-        to: value9,
-        quoted: value7 === '"',
-        squote: value7 === "'",
-      };
-    }
-    let value8: Dynamic = value6;
-    while (
-      value8 < value4 &&
-      input[value8] !== "," &&
-      input[value8] !==
-        `
-`
-    )
-      value8++;
-    while (
-      value8 > value6 &&
-      (input[value8 - 1] === " " || input[value8 - 1] === "\t")
-    )
-      value8--;
-    while (value6 < value8 && (input[value6] === " " || input[value6] === "\t"))
-      value6++;
-    return value8 > value6
-      ? {
-          from: value6,
-          to: value8,
-          quoted: false,
-          bare: true,
-        }
-      : null;
-  }
-  return null;
-}
-var SchemaAndRenderingQuot: Dynamic = {
-  quot: '"',
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  apos: "'",
-  nbsp: " ",
-  semi: ";",
-  num: "#",
-};
-function resolveSchemaAndRenderingReplace2(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return input.replace(
-    /#(\d+|[a-z]+);/g,
-    (
-      input2?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      if (!/^\d+$/.test(options))
-        return SchemaAndRenderingQuot[options] ?? input2;
-      let value: number = Number(options);
-      return value <= 1114111 ? String.fromCodePoint(value) : input2;
-    },
-  );
-}
-function isSchemaAndRenderingTrim(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = (context ?? "").trim();
-  if (!value) return false;
-  let value2: Dynamic = resolveSchemaAndRenderingReplace2(
-    input.slice(options.from, options.to),
-  ).trim();
-  if (value2 === value) return true;
-  let value3 = (
-    input2?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    input2
-      .replace(/<br\s*\/?>/gi, "")
-      .replace(/[*_`]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-  return value3(value2) === value3(value);
-}
-function resolveSchemaAndRenderingValue8(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = options;
-  let value2: Dynamic = context;
-  while (value > 0 && (input[value - 1] === " " || input[value - 1] === "\t"))
-    value--;
-  while (
-    value2 < input.length &&
-    (input[value2] === " " || input[value2] === "\t")
-  )
-    value2++;
-  return (
-    (input[value - 1] === '"' && input[value2] === '"') ||
-    (input[options - 1] === '"' && input[context] === '"')
-  );
-}
-function isSchemaAndRenderingInDq(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value = resolveSchemaAndRenderingInDq(input, options);
-  return (
-    !value.inDq &&
-    !value.inSq &&
-    !value.inPipe &&
-    !value.comment &&
-    value.depth === 0 &&
-    value.shapeData === 0
-  );
-}
-function isSchemaAndRenderingInDq2(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value = resolveSchemaAndRenderingInDq(input, options);
-  if (
-    value.inDq &&
-    !value.inPipe &&
-    !/"[ \t]*$/.test(input.slice(input.lastIndexOf('"', options - 1), options))
-  )
-    return false;
-  return (
-    !value.inSq && !value.comment && value.depth === 0 && value.shapeData === 0
-  );
-}
-function resolveSchemaAndRenderingInDq(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value = resolveSchemaAndRenderingFlowchart(input) === "er";
-  let value2 = false;
-  let value3 = false;
-  let value4 = false;
-  let value5 = false;
-  let value6 = false;
-  let index = 0;
-  let index2 = 0;
-  for (let index3 = 0; index3 < options && index3 < input.length; index3++) {
-    let value7: Dynamic = input[index3];
-    if (
-      value7 ===
-      `
-`
-    ) {
-      value6 = false;
-      value5 = false;
-      if (!index2) {
-        value4 = false;
-        index = 0;
-        if (value2 && !value3) value2 = false;
-      }
-      continue;
-    }
-    if (value6) continue;
-    if (value2) {
-      if (value7 === "\\" && index2) index3++;
-      else if (value7 === '"') value2 = value3 = false;
-      continue;
-    }
-    if (value4) {
-      if (value7 === "'" && input[index3 + 1] === "'") index3++;
-      else if (value7 === "'") value4 = false;
-      continue;
-    }
-    if (
-      value7 === "%" &&
-      input[index3 + 1] === "%" &&
-      input[index3 + 2] !== "{" &&
-      index === 0 &&
-      !value5
-    ) {
-      value6 = true;
-      continue;
-    }
-    if (value7 === '"') {
-      value2 = true;
-      value3 = input[index3 + 1] === "`";
-      continue;
-    }
-    if (
-      index2 &&
-      value7 === "'" &&
-      /[:,{[-][ \t]*$/.test(input.slice(Math.max(0, index3 - 40), index3))
-    ) {
-      value4 = true;
-      continue;
-    }
-    if (
-      value7 === "@" &&
-      input[index3 + 1] === "{" &&
-      resolveSchemaAndRenderingTest(input[index3 - 1]) &&
-      index === 0
-    ) {
-      index2++;
-      index++;
-      index3++;
-      continue;
-    }
-    if (index2) {
-      if (value7 === "{") {
-        index++;
-        index2++;
-      } else if (value7 === "}") {
-        index--;
-        index2--;
-      }
-      continue;
-    }
-    if (value7 === "|" && index === 0) {
-      value5 = !value5;
-      continue;
-    }
-    if (value5) continue;
-    if (
-      value7 === "[" ||
-      value7 === "(" ||
-      (value7 === "{" &&
-        (!value || input[index3 - 1] === " " || input[index3 - 1] === "\t")) ||
-      (value7 === ">" &&
-        resolveSchemaAndRenderingTest(input[index3 - 1]) &&
-        index === 0)
-    )
-      index++;
-    else if ((value7 === "]" || value7 === ")" || value7 === "}") && index > 0)
-      index--;
-  }
-  return {
-    inDq: value2,
-    inSq: value4,
-    inPipe: value5,
-    comment: value6,
-    depth: index,
-    shapeData: index2,
-  };
-}
-function isSchemaAndRenderingSome(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  if (
-    resolveSchemaAndRenderingFrom4(input, options).some(
-      (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-        context >= input2.from && value <= input2.to,
-    )
-  )
-    return true;
-  let value2: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-  if (value2 && context >= value2.content.from && value <= value2.content.to)
-    return true;
-  let value3: Dynamic = resolveSchemaAndRenderingFrom3(input, options);
-  return value3 != null && context >= value3.from && value <= value3.to;
-}
-function resolveSchemaAndRenderingIndexOf(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveSchemaAndRenderingClass2(input);
-  let value2 = false;
-  for (
-    let value5: Dynamic = input.indexOf(options + "@{");
-    value5 >= 0 && !value2;
-    value5 = input.indexOf(options + "@{", value5 + 1)
-  )
-    value2 =
-      value[value5] === input[value5] &&
-      isSchemaAndRenderingSequence(input, value5, options.length);
-  let value3: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-  let value4 =
-    value3?.kind === "as" && resolveSchemaAndRenderingValue5(input, options) > 0
-      ? 2
-      : value3
-        ? 1
-        : 0;
-  return context.length + value4 + (value2 ? 1 : 0);
-}
-function resolveSchemaAndRenderingFrom4(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  let value: Dynamic = resolveSchemaAndRenderingClass2(input);
-  for (
-    let value2: Dynamic = input.indexOf(options);
-    value2 >= 0;
-    value2 = input.indexOf(options, value2 + 1)
-  ) {
-    if (!isSchemaAndRenderingSequence(input, value2, options.length)) continue;
-    let value3: Dynamic = value2 + options.length;
-    let value4: Dynamic =
-      input.lastIndexOf(
-        `
-`,
-        value2 - 1,
-      ) + 1;
-    let value5: Dynamic = value3;
-    if (/(?:^|;)[ \t]*subgraph[ \t]+$/.test(input.slice(value4, value2)))
-      while (input[value5] === " " || input[value5] === "\t") value5++;
-    let value6: Dynamic = resolveSchemaAndRenderingIncludes(input, value5);
-    if (value6 === value5) continue;
-    if (value[value2] !== input[value2]) continue;
-    if (resolveSchemaAndRenderingReplace(value.slice(value4, value2))) continue;
-    let value7: Dynamic = value5;
-    let value8: Dynamic = value7 + 4;
-    while (
-      value7 < value6 &&
-      value7 < value8 &&
-      schemaAndRenderingMessage5.includes(input[value7])
-    )
-      value7++;
-    let value9: Dynamic = value6;
-    let value10 = value6 - 5;
-    while (
-      value9 > value7 &&
-      value9 > value10 &&
-      schemaAndRenderingMessage6.includes(input[value9 - 1])
-    )
-      value9--;
-    let value11: Dynamic = value7;
-    while (
-      value11 < value9 &&
-      (input[value11] === " " || input[value11] === "\t")
-    )
-      value11++;
-    let value12: Dynamic = value9;
-    while (
-      value12 > value11 &&
-      (input[value12 - 1] === " " || input[value12 - 1] === "\t")
-    )
-      value12--;
-    let value13 =
-      value12 - value11 >= 2 &&
-      input[value11] === '"' &&
-      input[value12 - 1] === '"';
-    let state: Dynamic = {
-      from: value3,
-      to: value6,
-    };
-    items.push(
-      value13
-        ? {
-            from: value11 + 1,
-            to: value12 - 1,
-            quoted: value13,
-            group: state,
-          }
-        : {
-            from: value7,
-            to: value9,
-            quoted: value13,
-            group: state,
-          },
-    );
-  }
-  return items;
-}
-function resolveSchemaAndRenderingExec(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  let index: number = 0;
-  let value = /^(?:[ \t]*\n)*---[ \t]*\n[\s\S]*?\n---[ \t]*(?:\n|$)/.exec(
-    input,
-  );
-  if (value && value.index === 0) {
-    items.push(value[0].replace(/[^\n]/g, " "));
-    index = value[0].length;
-  }
-  let value2 = (
-    input2?: Dynamic,
-    options2?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => input.slice(input2, options2).replace(/[^\n]/g, " ");
-  let value3 = true;
-  let index2 = 0;
-  let items2: Dynamic = [];
-  while (index < input.length) {
-    let value4: Dynamic = input[index];
-    if (
-      value4 ===
-      `
-`
-    ) {
-      items.push(value4);
-      value3 = true;
-      index2 = 0;
-      items2.length = 0;
-      index++;
-      continue;
-    }
-    let value5 =
-      value3 &&
-      /^[ \t]*$/.test(
-        input.slice(
-          input.lastIndexOf(
-            `
-`,
-            index - 1,
-          ) + 1,
-          index,
-        ),
-      );
-    if (value4 !== " " && value4 !== "\t") value3 = false;
-    if (
-      value4 === "%" &&
-      input[index + 1] === "%" &&
-      input[index + 2] !== "{" &&
-      (value5 || index2 === 0)
-    ) {
-      let value6: Dynamic = input.indexOf(
-        `
-`,
-        index,
-      );
-      let value7: Dynamic = value6 < 0 ? input.length : value6;
-      items.push(" ".repeat(value7 - index));
-      index = value7;
-      continue;
-    }
-    if (value4 === '"') {
-      let value6: Dynamic;
-      if (input[index + 1] === "`") {
-        let value7: Dynamic = input.indexOf('`"', index + 2);
-        value6 = value7 < 0 ? input.length : value7 + 2;
-      } else {
-        let value7: Dynamic = input.indexOf(
-          `
-`,
-          index + 1,
-        );
-        let value8: Dynamic = input.indexOf('"', index + 1);
-        value6 =
-          value8 < 0 || (value7 >= 0 && value8 > value7)
-            ? value7 < 0
-              ? input.length
-              : value7
-            : value8 + 1;
-      }
-      items.push(value2(index, value6));
-      index = value6;
-      continue;
-    }
-    if (
-      value4 === "@" &&
-      input[index + 1] === "{" &&
-      resolveSchemaAndRenderingTest(input[index - 1]) &&
-      index2 === 0
-    ) {
-      let value6: Dynamic = resolveSchemaAndRenderingTest2(input, index + 2);
-      if (value6 >= 0) {
-        items.push("@{" + value2(index + 2, value6) + "}");
-        index = value6 + 1;
-      } else {
-        let value7: Dynamic = input.indexOf(
-          `
-`,
-          index,
-        );
-        let value8: Dynamic = value7 < 0 ? input.length : value7;
-        items.push("@{" + " ".repeat(Math.max(0, value8 - index - 2)));
-        index = value8;
-      }
-      continue;
-    }
-    if (value4 === "|" && index2 === 0) {
-      let value6: Dynamic = input.indexOf(
-        `
-`,
-        index + 1,
-      );
-      let value7: Dynamic = value6 < 0 ? input.length : value6;
-      let value8: number = -1;
-      for (let value9: number = index + 1; value9 < value7; value9++)
-        if (input[value9] === '"') {
-          let value10: Dynamic = input.indexOf('"', value9 + 1);
-          if (value10 < 0 || value10 >= value7) break;
-          value9 = value10;
-        } else if (input[value9] === "|") {
-          value8 = value9;
-          break;
-        }
-      if (value8 >= 0) {
-        items.push(" ".repeat(value8 + 1 - index));
-        index = value8 + 1;
-        continue;
-      }
-    }
-    if (
-      value4 === "[" ||
-      value4 === "(" ||
-      (value4 === "{" &&
-        (options !== "er" ||
-          input[index - 1] === " " ||
-          input[index - 1] === "\t")) ||
-      (value4 === ">" &&
-        index2 === 0 &&
-        resolveSchemaAndRenderingTest(input[index - 1]))
-    ) {
-      if (index2 === 0) {
-        let value6: Dynamic = input.indexOf(
-          `
-`,
-          index,
-        );
-        let slice: Dynamic = input.slice(
-          index + 1,
-          value6 < 0 ? input.length : value6,
-        );
-        if (!/[\])}]/.test(slice)) {
-          items.push(value4);
-          index++;
-          continue;
-        }
-      }
-      items.push(index2 === 0 ? value4 : " ");
-      index2++;
-      items2.push(
-        value4 === "["
-          ? "]"
-          : value4 === "("
-            ? ")"
-            : value4 === "{"
-              ? "}"
-              : "]",
-      );
-      index++;
-      continue;
-    }
-    if (index2 > 0 && (value4 === "]" || value4 === ")" || value4 === "}")) {
-      index2--;
-      items2.pop();
-      items.push(index2 === 0 ? value4 : " ");
-      index++;
-      continue;
-    }
-    items.push(index2 > 0 ? " " : value4);
-    index++;
-  }
-  let text: Dynamic = items.join("");
-  return text.length === input.length ? text : input.replace(/[^\n]/g, " ");
-}
-function resolveSchemaAndRenderingClass2(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value = resolveSchemaAndRenderingFlowchart(input);
-  let value2: Dynamic = resolveSchemaAndRenderingExec(input, value);
-  let value3 =
-    value === "class"
-      ? /(^|;)[ \t]*(?:classDef|style|linkStyle|click)\b[^\n;]*/gm
-      : /(^|;)[ \t]*(?:classDef|class|style|linkStyle|click)\b[^\n;]*/gm;
-  value2 = value2.replace(
-    value3,
-    (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) =>
-      options + " ".repeat(input2.length - options.length),
-  );
-  value2 = value2.replace(
-    /(^|;)[ \t]*acc(?:Title|Descr)[ \t]*:[^\n]*/gm,
-    (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) =>
-      options + " ".repeat(input2.length - options.length),
-  );
-  value2 = value2.replace(
-    /(^|;)[ \t]*accDescr[ \t]*\{[^}]*\}/gm,
-    (
-      input2?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => options + input2.slice(options.length).replace(/[^\n]/g, " "),
-  );
-  if (value === "class" || value === "er")
-    value2 = value2.replace(
-      /\{[ \t]*\n[^{}]*\n[ \t]*\}/g,
-      (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-        "{" + input2.slice(1, -1).replace(/[^\n]/g, " ") + "}",
-    );
-  value2 = value2.replace(
-    /#(?:\d+|[a-zA-Z]+);/g,
-    (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      " ".repeat(input2.length),
-  );
-  value2 = value2.replace(
-    /:::[\p{L}\p{N}_-]+/gu,
-    (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      ":::" + " ".repeat(input2.length - 3),
-  );
-  if (value !== "flowchart")
-    value2 = value2
-      .replace(/:::/g, "")
-      .replace(/:[^\n;]*/g, (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-        " ".repeat(input2.length),
-      )
-      .replace(/\uE000\uE000\uE000/g, ":::");
-  return value2;
-}
-function resolveSchemaAndRenderingFrom5(
-  input?: unknown,
-  options?: unknown,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = resolveSchemaAndRenderingFrom4(input, options)[0];
-  if (value)
-    return {
-      from: value.from,
-      to: value.to,
-      quoted: value.quoted,
-    };
-  let value2: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-  if (value2)
-    return {
-      ...value2.content,
-      quoted: value2.kind !== "desc",
-    };
-  let value3: Dynamic = resolveSchemaAndRenderingFrom3(input, options);
-  return value3
-    ? {
-        from: value3.from,
-        to: value3.to,
-        quoted: value3.quoted,
-      }
-    : null;
-}
-function resolveSchemaAndRenderingFind(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  let value2: Dynamic = resolveSchemaAndRenderingFrom4(input, options);
-  let match: Dynamic = value2.find(
-    (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      context.from >= input2.group.from && context.to <= input2.group.to,
-  );
-  let value3: Dynamic = match ? input.slice(match.from, match.to).trim() : null;
-  for (let value4 of value2 as Dynamic) {
-    if (value4 === match) continue;
-    let value5: Dynamic = resolveSchemaAndRenderingTrim(input, value4);
-    if (
-      value5 !== value.trim() &&
-      value5 !== resolveSchemaAndRenderingReplace2(value).trim() &&
-      input.slice(value4.from, value4.to).trim() !== value3
-    )
-      continue;
-    let value6: Dynamic = resolveSchemaAndRenderingFrom6(input, value4, extra);
-    if (value6) items.push(value6);
-  }
-  return items;
-}
-function resolveSchemaAndRenderingTrim(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return resolveSchemaAndRenderingReplace2(
-    input.slice(options.from, options.to),
-  ).trim();
-}
-function resolveSchemaAndRenderingFrom6(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = context.replace(/"/g, "#quot;");
-  let value2: Dynamic = options.quoted
-    ? value
-    : schemaAndRenderingInputPattern6.test(context)
-      ? `"${value}"`
-      : context;
-  return value2 === input.slice(options.from, options.to)
-    ? null
-    : {
-        from: options.from,
-        to: options.to,
-        insert: value2,
-      };
-}
-function resolveSchemaAndRenderingFrom7(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value2: Dynamic = resolveSchemaAndRenderingFrom2(
-    input,
-    options,
-    context,
-    extra,
-  );
-  if (!value2) return null;
-  let value3: Dynamic = value.replace(/"/g, "#quot;");
-  let value4 = value3 === value;
-  let value5: Dynamic;
-  let value6: Dynamic;
-  let value7: Dynamic;
-  if (value2.label) {
-    if (
-      options != null &&
-      value2.from === value2.label.from &&
-      value2.to === value2.label.to &&
-      input.slice(value2.from, value2.to) === options &&
-      !isSchemaAndRenderingSome(input, options, value2.from, value2.to)
-    ) {
-      let value13 = resolveSchemaAndRenderingFlowchart(input);
-      if (value13 === "flowchart") {
-        let value14: Dynamic = value2.from + options.length + 2;
-        return {
-          from: value2.from,
-          to: value2.to,
-          insert: `${options}["${value3}"]`,
-          label: {
-            from: value14,
-            to: value14 + value3.length,
-          },
-          exact: value4,
-          declared: "flowchart",
-        };
-      }
-      if (value13 === "state") {
-        let value14: Dynamic =
-          input.lastIndexOf(
-            `
-`,
-            value2.from - 1,
-          ) + 1;
-        let value15: Dynamic = (
-          /^[ \t]*/.exec(input.slice(value14, value2.from)) as Dynamic
-        )[0];
-        let value16 = `${value15}state "${value3}" as ${options}
-`;
-        let value17: Dynamic = value14 + value15.length + 7;
-        return {
-          from: value14,
-          to: value14,
-          insert: value16,
-          label: {
-            from: value17,
-            to: value17 + value3.length,
-          },
-          exact: value4,
-          declared: "state",
-        };
-      }
-      return null;
-    }
-    value5 = value2.label.from;
-    value6 = value2.label.to;
-    let value10: Dynamic =
-      options != null
-        ? resolveSchemaAndRenderingFrom4(input, options).find(
-            (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-              value5 >= input2.from && value6 <= input2.to,
-          )
-        : null;
-    let value11: Dynamic =
-      options != null && !value10
-        ? resolveSchemaAndRenderingFrom3(input, options)
-        : null;
-    let value12 =
-      value11 != null && value5 >= value11.from && value6 <= value11.to;
-    value7 = value10
-      ? value10.quoted
-      : value12
-        ? value11.quoted
-        : resolveSchemaAndRenderingValue8(input, value5, value6);
-    if (value12 && value.includes("\\")) return null;
-    if (value12 && (value11.squote || value11.bare)) {
-      let value13: Dynamic = value11.squote ? value11.from - 1 : value11.from;
-      let value14: Dynamic = value11.squote ? value11.to + 1 : value11.to;
-      return {
-        from: value13,
-        to: value14,
-        insert: `"${value3}"`,
-        label: {
-          from: value13 + 1,
-          to: value13 + 1 + value3.length,
-        },
-        exact: value4,
-      };
-    }
-  } else if (options) {
-    let value10: Dynamic = resolveSchemaAndRenderingFrom4(input, options);
-    let value11: Dynamic = resolveSchemaAndRenderingFrom3(input, options);
-    let value12: Dynamic =
-      value10.find(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-          input2.group.from >= value2.from && input2.group.to <= value2.to,
-      ) ??
-      (resolveSchemaAndRenderingIndexOf(input, options, value10) <= 1
-        ? resolveSchemaAndRenderingFrom5(input, options)
-        : value11 && isSchemaAndRenderingTrim(input, value11, context)
-          ? value11
-          : ((..._extraArguments: unknown[]): Dynamic => {
-              let value14: Dynamic = resolveSchemaAndRenderingDecl(
-                input,
-                options,
-              );
-              return value14 &&
-                value14.decl.from >= value2.from &&
-                value14.decl.to <= value2.to &&
-                isSchemaAndRenderingTrim(input, value14.content, context)
-                ? {
-                    from: value14.content.from,
-                    to: value14.content.to,
-                    quoted: value14.kind !== "desc",
-                  }
-                : null;
-            })());
-    if (!value12) return null;
-    ({ from: value5, to: value6, quoted: value7 } = value12);
-    let value13 =
-      value11 != null && value5 >= value11.from && value6 <= value11.to;
-    if (value13 && value.includes("\\")) return null;
-    if (value13 && (value11.squote || value11.bare)) {
-      let value14: Dynamic = value11.squote ? value5 - 1 : value5;
-      let value15: Dynamic = value11.squote ? value6 + 1 : value6;
-      return {
-        from: value14,
-        to: value15,
-        insert: `"${value3}"`,
-        label: {
-          from: value14 + 1,
-          to: value14 + 1 + value3.length,
-        },
-        exact: value4,
-      };
-    }
-  } else {
-    value5 = value2.from;
-    value6 = value2.to;
-    value7 = resolveSchemaAndRenderingValue8(input, value5, value6);
-  }
-  if (value7)
-    return {
-      from: value5,
-      to: value6,
-      insert: value3,
-      label: {
-        from: value5,
-        to: value5 + value3.length,
-      },
-      exact: value4,
-    };
-  let value8 = resolveSchemaAndRenderingPiped(input, value5, value6 - value5);
-  let value9: Dynamic =
-    options != null ? resolveSchemaAndRenderingDecl(input, options) : null;
-  if (
-    value8 === "colon" ||
-    (value9?.kind === "desc" &&
-      value5 >= value9.content.from &&
-      value6 <= value9.content.to)
-  ) {
-    let value10: Dynamic = value
-      .replace(/;/g, "#59;")
-      .replace(/"/g, "#quot;")
-      .replace(/^:/, "#58;");
-    return {
-      from: value5,
-      to: value6,
-      insert: value10,
-      label: {
-        from: value5,
-        to: value5 + value10.length,
-      },
-      exact: value4 && value10 === value,
-    };
-  }
-  if (
-    schemaAndRenderingInputPattern6.test(value) ||
-    (schemaAndRenderingInputPattern5.test(value) && value8 === "open")
-  )
-    return {
-      from: value5,
-      to: value6,
-      insert: `"${value3}"`,
-      label: {
-        from: value5 + 1,
-        to: value5 + 1 + value3.length,
-      },
-      exact: value4,
-    };
-  return {
-    from: value5,
-    to: value6,
-    insert: value,
-    label: {
-      from: value5,
-      to: value5 + value.length,
-    },
-    exact: true,
-  };
-}
+
 var SchemaAndRenderingMaster16 = {
   name: "User",
   master16: [
@@ -108911,9 +107341,7 @@ function isRenderedCodeAndProofreadingMode(
   return true;
 }
 var RenderedCodeAndProofreadingResolve = Promise.resolve();
-class RenderedCodeAndProofreadingData extends Error {
-  [key: string]: Dynamic;
-}
+class RenderedCodeAndProofreadingData extends Error {}
 function resolveRenderedCodeAndProofreadingThen(
   input?: Dynamic,
   options?: Dynamic,
@@ -109051,13 +107479,9 @@ async function loadRenderedCodeAndProofreadingUnsupported(
 var renderedCodeAndProofreadingState2: Dynamic = null;
 var renderedCodeAndProofreadingLimit1 = false;
 var renderedCodeAndProofreadingLimit12 = false;
-var renderedCodeAndProofreadingState3: Dynamic = null;
-var renderedCodeAndProofreadingState4: Dynamic = null;
-var renderedCodeAndProofreadingInstance: Dynamic = new (Promise as Dynamic)(
-  (input?: unknown, ..._extraArguments: unknown[]): undefined => {
-    renderedCodeAndProofreadingState4 = input;
-  },
-);
+var renderedCodeAndProofreadingState3: MermaidLibrary | null = null;
+var renderedCodeAndProofreadingState4: ((library: MermaidLibrary) => void) | null = null;
+const renderedCodeAndProofreadingInstance = new Promise<MermaidLibrary>((resolve) => { renderedCodeAndProofreadingState4 = resolve; });
 function resolveRenderedCodeAndProofreadingValue(
   input?: unknown,
   ..._extraArguments: unknown[]
@@ -109154,7 +107578,7 @@ function installRenderedCodeAndProofreadingTextJavascript(
     let value3 = (..._extraArguments: unknown[]): undefined => {
       URL.revokeObjectURL(value);
       value2.remove();
-      let mermaid: Dynamic = (globalThis as Dynamic).mermaid;
+      const mermaid = globalThis.mermaid;
       if (!mermaid) {
         console.warn("[mermaid] library executed but window.mermaid missing");
         return;
@@ -109226,15 +107650,15 @@ function collectRenderedCodeAndProofreadingDiagramParseError(
 }
 var renderedCodeAndProofreadingLimit02 = 0;
 async function loadRenderedCodeAndProofreadingPosition(
-  input?: Dynamic,
-  options: Dynamic = "light",
-  context?: Dynamic,
+  input: string,
+  options: string = "light",
+  context?: HTMLElement,
   ..._extraArguments: unknown[]
-): Promise<Dynamic> {
-  let value: Dynamic =
+): Promise<MermaidRenderResult> {
+  let value: MermaidLibrary =
     renderedCodeAndProofreadingState3 ??
     (await renderedCodeAndProofreadingInstance);
-  let value2: Dynamic = context?.ownerDocument ?? document;
+  let value2 = context?.ownerDocument ?? document;
   let value3: Dynamic = resolveSchemaAndRenderingTokens(
     value2,
     options,
@@ -109328,522 +107752,7 @@ function resolveRenderedCodeAndProofreadingValue8(
 ) {
   return `<span class="cw-mm-error">${escapeCodeHTML(input)}</span>`;
 }
-var renderedCodeAndProofreadingInputPattern2 = /(?:^|-)flowchart-(.+)-\d+$/;
-var renderedCodeAndProofreadingInputPattern3 =
-  /(?:^|-)state-(.+?)(?:----\w+)?-\d+$/;
-var renderedCodeAndProofreadingInputPattern4 = /^cw-mm-\d+-(.+)$/;
-function resolveRenderedCodeAndProofreadingExec(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value =
-    renderedCodeAndProofreadingInputPattern2.exec(input) ??
-    renderedCodeAndProofreadingInputPattern3.exec(input);
-  if (value) return /^root_(?:start|end)$/.test(value[1]) ? null : value[1];
-  let value2 = renderedCodeAndProofreadingInputPattern4.exec(input);
-  return value2 ? value2[1] : null;
-}
-var resolveRenderedCodeAndProofreadingTest = (
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) => input != null && /[\p{L}\p{N}_]/u.test(input);
-function resolveRenderedCodeAndProofreadingFrom(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let index: number = 0;
-  while (index <= input.length) {
-    let value: Dynamic = input.indexOf(
-      `
-`,
-      index,
-    );
-    if (value < 0) value = input.length;
-    let slice: Dynamic = input.slice(index, value);
-    let value2 = /^[ \t]*(participant|actor)[ \t]+/.exec(slice);
-    if (value2 && slice.startsWith(options, value2[0].length)) {
-      let slice2: Dynamic = slice.slice(value2[0].length + options.length);
-      let value3 = /^[ \t]+as[ \t]+/.exec(slice2);
-      if (value3) {
-        let value4: Dynamic =
-          index + value2[0].length + options.length + value3[0].length;
-        let value5: Dynamic = value;
-        while (
-          value5 > value4 &&
-          (input[value5 - 1] === " " || input[value5 - 1] === "\t")
-        )
-          value5--;
-        if (value5 > value4)
-          return {
-            from: value4,
-            to: value5,
-          };
-      }
-    }
-    if (value >= input.length) break;
-    index = value + 1;
-  }
-  return null;
-}
-function resolveRenderedCodeAndProofreadingIndexOf(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  if (!options) return -1;
-  let value: Dynamic = resolveSchemaAndRenderingClass2(input);
-  for (
-    let value2: Dynamic = input.indexOf(options);
-    value2 >= 0;
-    value2 = input.indexOf(options, value2 + 1)
-  ) {
-    if (
-      value[value2] !== input[value2] ||
-      !isSchemaAndRenderingSequence(input, value2, options.length)
-    )
-      continue;
-    if (
-      resolveSchemaAndRenderingReplace(
-        value.slice(
-          input.lastIndexOf(
-            `
-`,
-            value2 - 1,
-          ) + 1,
-          value2,
-        ),
-      )
-    )
-      continue;
-    return value2;
-  }
-  return -1;
-}
-function resolveRenderedCodeAndProofreadingLen(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = context?.trim() ?? "";
-  let value2: Dynamic = value.replace(/"/g, "#quot;");
-  let value3 = options != null && value2 === value;
-  if (value && value3)
-    for (let value4 of resolveSchemaAndRenderingFrom4(
-      input,
-      options,
-    ) as Dynamic) {
-      let slice: Dynamic = input.slice(value4.from, value4.to);
-      let value5: Dynamic = slice.trim();
-      if (
-        value5.length >= 2 &&
-        value5[0] === '"' &&
-        value5[value5.length - 1] === '"'
-      )
-        value5 = value5.slice(1, -1).trim();
-      if (
-        value5.length >= 2 &&
-        value5[0] === "`" &&
-        value5[value5.length - 1] === "`"
-      )
-        value5 = value5.slice(1, -1).trim();
-      if (value5 === value)
-        return {
-          at: value4.from + slice.indexOf(value),
-          len: value.length,
-          by: "label",
-        };
-    }
-  if (value && options) {
-    let value4: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-    let value5: Dynamic = value4
-      ? input.slice(value4.content.from, value4.content.to)
-      : null;
-    if (value4 && value5 === value)
-      return {
-        at: value4.content.from,
-        len: value.length,
-        by: "label",
-      };
-    if (
-      value4 &&
-      value5 != null &&
-      value5 !== value &&
-      resolveSchemaAndRenderingReplace2(value5) === value
-    )
-      return {
-        at: value4.content.from,
-        len: value5.length,
-        by: "id",
-      };
-    let value6: Dynamic =
-      value2 !== value ? resolveSchemaAndRenderingFrom3(input, options) : null;
-    if (value6 && input.slice(value6.from, value6.to).trim() === value2)
-      return {
-        at: value6.from,
-        len: value2.length,
-        by: "id",
-      };
-  }
-  if (value && value3) {
-    let value4: Dynamic = resolveSchemaAndRenderingFrom3(input, options);
-    let value5: Dynamic = value4 ? input.slice(value4.from, value4.to) : null;
-    if (value4 && value5.trim() === value)
-      return {
-        at: value4.from + (value5.length - value5.trimStart().length),
-        len: value.length,
-        by: "label",
-      };
-    let value6: Dynamic = resolveRenderedCodeAndProofreadingFrom(
-      input,
-      options,
-    );
-    if (value6 && input.slice(value6.from, value6.to) === value)
-      return {
-        at: value6.from,
-        len: value.length,
-        by: "label",
-      };
-  }
-  if (value && value3 && value === options) {
-    let value4: Dynamic = resolveSchemaAndRenderingValue6(input, options);
-    if (value4 >= 0)
-      return {
-        at: value4,
-        len: options.length,
-        by: "label",
-      };
-  }
-  if (value && options == null) {
-    let value4 = (
-      input2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      let value7: number = -1;
-      for (
-        let value8: Dynamic = input.indexOf(input2);
-        value8 >= 0;
-        value8 = input.indexOf(input2, value8 + 1)
-      ) {
-        let value9 =
-          !resolveRenderedCodeAndProofreadingTest(input2[0]) ||
-          !resolveRenderedCodeAndProofreadingTest(input[value8 - 1]);
-        let value10 =
-          !resolveRenderedCodeAndProofreadingTest(input2[input2.length - 1]) ||
-          !resolveRenderedCodeAndProofreadingTest(
-            input[value8 + input2.length],
-          );
-        if (!value9 || !value10) continue;
-        if (!isSchemaAndRenderingInDq2(input, value8)) continue;
-        if (resolveSchemaAndRenderingPiped(input, value8, input2.length))
-          return value8;
-        if (value7 < 0) value7 = value8;
-      }
-      return value7;
-    };
-    let value5: Dynamic = value4(value);
-    if (value5 >= 0)
-      return {
-        at: value5,
-        len: value.length,
-        by: "label",
-      };
-    let value6: Dynamic = value
-      .replace(/;/g, "#59;")
-      .replace(/"/g, "#quot;")
-      .replace(/^:/, "#58;");
-    for (let value7 of new (Set as Dynamic)([
-      value2,
-      value.replace(/;/g, "#59;").replace(/"/g, "#quot;"),
-      value6,
-    ]) as Dynamic)
-      if (value7 !== value) {
-        let value8: Dynamic = value4(value7);
-        if (value8 >= 0)
-          return {
-            at: value8,
-            len: value7.length,
-            by: "id",
-          };
-      }
-  }
-  if (options) {
-    let value4: Dynamic = resolveRenderedCodeAndProofreadingIndexOf(
-      input,
-      options,
-    );
-    if (value4 >= 0)
-      return {
-        at: value4,
-        len: options.length,
-        by: "id",
-      };
-  }
-  return null;
-}
-function resolveRenderedCodeAndProofreadingFrom2(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingLen(
-    input,
-    options,
-    context,
-  );
-  if (!value2) return null;
-  let state: Dynamic = {
-    from: value2.at,
-    to: value2.at + value2.len,
-  };
-  if (value2.by !== "label")
-    return {
-      ...state,
-      exact: false,
-      whole: state,
-    };
-  if (value == null || extra == null)
-    return {
-      ...state,
-      exact: true,
-      whole: state,
-    };
-  let value3 = Math.max(0, Math.min(value2.len, Math.min(value, extra)));
-  let value4 = Math.max(0, Math.min(value2.len, Math.max(value, extra)));
-  if (value4 <= value3)
-    return {
-      ...state,
-      exact: true,
-      whole: state,
-    };
-  return {
-    from: value2.at + value3,
-    to: value2.at + value4,
-    exact: true,
-    whole: state,
-  };
-}
-var renderedCodeAndProofreadingMessage = "g.node, g.edgeLabel, g.cluster";
-var renderedCodeAndProofreadingMessage2 = "text, foreignObject";
-var renderedCodeAndProofreadingMessage3 =
-  "rect, circle, ellipse, polygon, polyline, path, line, use, image";
-function resolveRenderedCodeAndProofreadingText(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): undefined {
-  let value: Dynamic =
-    input.localName === "svg" ? [input] : [...input.querySelectorAll("svg")];
-  for (let value2 of value as Dynamic)
-    for (let value3 of value2.querySelectorAll(
-      ":scope > text.messageText",
-    ) as Dynamic) {
-      if (value3.parentNode !== value2) continue;
-      let items: Dynamic = [value3];
-      let nextElementSibling: Dynamic = value3.nextElementSibling;
-      while (
-        nextElementSibling &&
-        nextElementSibling.localName === "text" &&
-        nextElementSibling.classList.contains("messageText")
-      ) {
-        items.push(nextElementSibling);
-        nextElementSibling = nextElementSibling.nextElementSibling;
-      }
-      let value4: Dynamic = value2.ownerDocument.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "g",
-      );
-      value4.setAttribute("class", "cw-mm-msg");
-      value2.insertBefore(value4, value3);
-      for (let value5 of items as Dynamic) value4.appendChild(value5);
-    }
-}
-function collectRenderedCodeAndProofreadingText(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic =
-    input.localName === "text" ? [] : [...input.querySelectorAll("text")];
-  return (
-    (value.length > 1
-      ? value
-          .map(
-            (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              (input2.textContent ?? "").trim(),
-          )
-          .join(" ")
-      : (input.textContent ?? "")
-    )
-      .replace(/\s+/g, " ")
-      .trim() || null
-  );
-}
-function resolveRenderedCodeAndProofreadingParentElement2(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let parentElement: Dynamic = input.parentElement;
-  if (parentElement?.matches("g.cw-mm-msg")) return parentElement;
-  if (
-    parentElement &&
-    parentElement !== options &&
-    parentElement.localName === "g" &&
-    !parentElement.matches(renderedCodeAndProofreadingMessage) &&
-    parentElement.querySelectorAll(renderedCodeAndProofreadingMessage2)
-      .length === 1 &&
-    parentElement.children.length <= 8 &&
-    parentElement.querySelector(":scope > g > text, :scope > g > g") == null
-  )
-    return parentElement;
-  return input;
-}
-function filterRenderedCodeAndProofreadingLocalName(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input.localName === "g" ? input : input.parentElement;
-  for (let index = 0; value && index < 3; index++) {
-    let filtered: Dynamic = [...value.children].filter(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        (input2.textContent ?? "").trim(),
-    );
-    if (
-      filtered.length === 1 &&
-      filtered[0].localName === "g" &&
-      !filtered[0].matches(".cw-mm-person")
-    )
-      value = filtered[0];
-    else break;
-  }
-  return value;
-}
-function resolveRenderedCodeAndProofreadingLabel(
-  element?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = collectRenderedCodeAndProofreadingText(element);
-  if (!value) return null;
-  let value2: Dynamic =
-    (element.matches("[name]") ? element : element.querySelector("[name]"))
-      ?.getAttribute("name")
-      ?.trim() || null;
-  return {
-    el: element,
-    id: value2,
-    label: value,
-  };
-}
-function resolveRenderedCodeAndProofreadingMatches(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return input.matches(renderedCodeAndProofreadingMessage);
-}
-function resolveRenderedCodeAndProofreadingClosest(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input?.closest?.("svg");
-  if (!input || !value) return null;
-  let value2: Dynamic = input.closest("g.cw-mm-msg");
-  let value3: Dynamic = value2 ? null : input.closest("[name]");
-  if (value3 && value.contains(value3) && value3 !== value)
-    value2 = filterRenderedCodeAndProofreadingLocalName(value3);
-  if (!value2 || !(value2.textContent ?? "").trim()) {
-    let value4: Dynamic = input.closest(renderedCodeAndProofreadingMessage2);
-    if (value4 && value.contains(value4))
-      value2 = resolveRenderedCodeAndProofreadingParentElement2(value4, value);
-    else if (
-      input.matches(renderedCodeAndProofreadingMessage3) ||
-      input.closest(".cw-mm-person")
-    ) {
-      let value5: Dynamic =
-        input.closest(".cw-mm-person")?.parentElement ?? input.parentElement;
-      for (
-        let index = 0;
-        value5 && value5 !== value && index < 3;
-        index++, value5 = value5.parentElement
-      ) {
-        if (
-          value5.localName !== "g" ||
-          value5.matches(renderedCodeAndProofreadingMessage)
-        )
-          break;
-        let value6: Dynamic = value5.querySelectorAll(
-          renderedCodeAndProofreadingMessage2,
-        );
-        if (value6.length === 1) {
-          value2 =
-            resolveRenderedCodeAndProofreadingParentElement2(
-              value6[0],
-              value,
-            ) === value5
-              ? value5
-              : null;
-          break;
-        }
-        if (value6.length > 1) break;
-      }
-    }
-  }
-  if (
-    !value2 ||
-    value2 === value ||
-    value2.closest(renderedCodeAndProofreadingMessage)
-  )
-    return null;
-  return resolveRenderedCodeAndProofreadingLabel(value2);
-}
-function collectRenderedCodeAndProofreadingLabel(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let mapped: Dynamic = [
-    ...input.querySelectorAll(renderedCodeAndProofreadingMessage),
-  ].map(
-    (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-      el: input2,
-      id: resolveRenderedCodeAndProofreadingExec(input2.id),
-      label: input2.textContent?.trim() || null,
-    }),
-  );
-  let values: Dynamic = new (Set as Dynamic)(
-    mapped.map(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input2.el,
-    ),
-  );
-  for (let value of (input.localName === "svg"
-    ? [input]
-    : input.querySelectorAll("svg")) as Dynamic)
-    for (let value2 of value.querySelectorAll("text") as Dynamic) {
-      if (
-        value2.closest(renderedCodeAndProofreadingMessage) ||
-        value2.closest("defs, marker, symbol")
-      )
-        continue;
-      let value3: Dynamic = resolveRenderedCodeAndProofreadingClosest(value2);
-      if (!value3 || values.has(value3.el)) continue;
-      values.add(value3.el);
-      mapped.push(value3);
-    }
-  return mapped;
-}
-function resolveRenderedCodeAndProofreadingLabel2(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input?.closest?.(renderedCodeAndProofreadingMessage);
-  if (!value) return resolveRenderedCodeAndProofreadingClosest(input);
-  return {
-    el: value,
-    id: resolveRenderedCodeAndProofreadingExec(value.id),
-    label: value.textContent?.trim() || null,
-  };
-}
+
 var VhRedlinePluginKey: Dynamic = new (ProseMirrorPluginKey as Dynamic)(
   "vhRedline",
 );
@@ -116812,29 +114721,7 @@ function updateRenderedCodeAndProofreadingBongoLiveSrcHover(
     new (defaultView.Highlight as Dynamic)(...(value3 ? value2 : [])),
   );
 }
-var renderedCodeAndProofreadingDataCommentIds = "data-comment-ids";
-function isRenderedCodeAndProofreadingDataCommentId(
-  element?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let attribute: Dynamic = element.getAttribute("data-comment-id");
-  if (attribute == null) {
-    element.setAttribute("data-comment-id", options);
-    return true;
-  }
-  if (attribute === options) return false;
-  let attribute2: Dynamic = element.getAttribute(
-    renderedCodeAndProofreadingDataCommentIds,
-  );
-  let value: Dynamic = attribute2 ? attribute2.split(" ") : [];
-  if (!value.includes(options))
-    element.setAttribute(
-      renderedCodeAndProofreadingDataCommentIds,
-      [...value, options].join(" "),
-    );
-  return false;
-}
+
 function isRenderedCodeAndProofreadingDataCommentId2(
   element?: Dynamic,
   options?: Dynamic,
@@ -116842,7 +114729,7 @@ function isRenderedCodeAndProofreadingDataCommentId2(
 ): Dynamic {
   if (element.getAttribute("data-comment-id") === options) return true;
   let attribute: Dynamic = element.getAttribute(
-    renderedCodeAndProofreadingDataCommentIds,
+    codeCommentIdsAttribute,
   );
   return attribute != null && attribute.split(" ").includes(options);
 }
@@ -116851,7 +114738,7 @@ function resolveRenderedCodeAndProofreadingEscape(
   ..._extraArguments: unknown[]
 ) {
   let value = CSS.escape(input);
-  return `[data-comment-id="${value}"],[${renderedCodeAndProofreadingDataCommentIds}~="${value}"]`;
+  return `[data-comment-id="${value}"],[${codeCommentIdsAttribute}~="${value}"]`;
 }
 function resolveRenderedCodeAndProofreadingFaceForThread(
   input?: unknown,
@@ -117305,79 +115192,7 @@ function resolveRenderedCodeAndProofreadingCreateTreeWalker(
   );
 }
 var renderedCodeAndProofreadingLimit150 = 150;
-var renderedCodeAndProofreadingMmWrite = "mm-write";
-var renderedCodeAndProofreadingCwMermaidSiblingWrites =
-  "cwMermaidSiblingWrites";
-var renderedCodeAndProofreadingWeakSet5: Dynamic = new (WeakSet as Dynamic)();
-function resolveRenderedCodeAndProofreadingFrom11(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let slice: Dynamic = input.slice(options.from, options.to);
-  let [items, items2]: Dynamic = [slice.length, options.insert.length];
-  let value = Math.min(items, items2);
-  let index = 0;
-  while (
-    index < value &&
-    slice.charCodeAt(index) === options.insert.charCodeAt(index)
-  )
-    index++;
-  let index2 = 0;
-  while (
-    index2 < value &&
-    slice.charCodeAt(items - 1 - index2) ===
-      options.insert.charCodeAt(items2 - 1 - index2)
-  )
-    index2++;
-  if (index + index2 > value && context != null && items !== items2) {
-    let value2: Dynamic = items2 > items ? context - (items2 - items) : context;
-    index = Math.max(value - index2, Math.min(index, value2));
-  }
-  index2 = Math.min(index2, value - index);
-  return {
-    from: options.from + index,
-    to: options.to - index2,
-    insert: options.insert.slice(index, items2 - index2),
-  };
-}
-var resolveRenderedCodeAndProofreadingTrim2 = (
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  ..._extraArguments: unknown[]
-) => {
-  let value: Dynamic = resolveSchemaAndRenderingTrim(input, options);
-  return (
-    value === context.trim() ||
-    value === resolveSchemaAndRenderingReplace2(context).trim()
-  );
-};
-var resolveRenderedCodeAndProofreadingTrim3 = (
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic => (input ?? "").replace(/\s*[\n\r]+\s*/g, " ").trim();
-function isRenderedCodeAndProofreadingMetaKey(
-  event?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  if (
-    !(event.metaKey || event.ctrlKey) ||
-    event.altKey ||
-    event.isComposing ||
-    event.keyCode === 229
-  )
-    return false;
-  let value: Dynamic = event.key.length === 1 ? event.key.toLowerCase() : "";
-  return (
-    value === "z" ||
-    value === "я" ||
-    value === "y" ||
-    event.keyCode === 90 ||
-    event.keyCode === 89
-  );
-}
+
 var RenderedCodeAndProofreadingMetaKey =
   typeof navigator !== "undefined" &&
   /Mac|iP(hone|[oa]d)/.test(navigator.platform ?? "");
@@ -117401,26 +115216,7 @@ function isRenderedCodeAndProofreadingBackspace(
     event.keyCode === 68
   );
 }
-function resolveRenderedCodeAndProofreadingKey3(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  return new ((input.defaultView ?? window).KeyboardEvent as Dynamic)(
-    "keydown",
-    {
-      key: "z",
-      code: "KeyZ",
-      keyCode: 90,
-      which: 90,
-      shiftKey: options,
-      metaKey: RenderedCodeAndProofreadingMetaKey,
-      ctrlKey: !RenderedCodeAndProofreadingMetaKey,
-      bubbles: true,
-      cancelable: true,
-    },
-  );
-}
+
 var renderedCodeAndProofreadingLimit17 = false;
 var renderedCodeAndProofreadingRenderedCodeAndProofreadingLimit17Alias =
   renderedCodeAndProofreadingLimit17;
@@ -117566,6 +115362,40 @@ function filterRenderedCodeAndProofreadingStart(
   return items4;
 }
 class CodeBlockNodeView implements NodeView {
+  private readonly mermaidAnnotations = new MermaidAnnotations(this, {
+    isResolved: (threadId) => renderedCodeAndProofreadingSet14.has(threadId),
+  });
+
+  private readonly mermaid = new MermaidRenderController(this, {
+    theme: () => resolveSchemaAndRenderingDataMode(this.dom.ownerDocument),
+    ready: resolveRenderedCodeAndProofreadingValue2,
+    requestRenderer: resolveRenderedCodeAndProofreadingValue3,
+    unavailable: resolveRenderedCodeAndProofreadingValue6,
+    unavailableMessage: renderedCodeAndProofreadingMessage16,
+    load: loadRenderedCodeAndProofreadingPosition,
+    isMermaid: () =>
+      renderableKindDefinition(this.node.attrs.language)?.live === "mermaid",
+    isRenderableMermaid: () =>
+      codeRenderableKind(this.node.attrs.language)?.live === "mermaid",
+    paint: () => this.mermaidAnnotations.paintMermaid(),
+    positionEditor: () => this.labelEditor.position(),
+    clearHover: () => {
+      this.mmHoverEl = null;
+      if (renderedCodeAndProofreadingMap8.delete(this))
+        updateRenderedCodeAndProofreadingBongoLiveSrcHover(this.dom.ownerDocument);
+    },
+    stampFitWidth: (pane, width) => this.layout.stampFitWidth(pane, width),
+  });
+
+  private readonly labelEditor = new DiagramLabelEditor(
+    this,
+    () => renderedCodeAndProofreadingRenderedCodeAndProofreadingLimit17Alias,
+    CodeRenderPanePluginKey,
+  );
+  isSyncPending(): boolean {
+    return this.syncTimer != null;
+  }
+
   private readonly layout = new CodeBlockLayout(this, {
     borderWidth: renderedCodeAndProofreadingLimit1_5,
     clipAttribute: renderedCodeAndProofreadingProsePluginsDataLdocClipAlias,
@@ -117615,41 +115445,29 @@ class CodeBlockNodeView implements NodeView {
   detected: string | null = null;
   srcOpen: boolean = false;
   selRange: { from: number; to: number } | null = null;
-  inPlace: Dynamic = null;
+  inPlace: HeldDiagramLabel | null = null;
   suppressClickOnce: boolean = false;
   pressAt: { x: number; y: number } | null = null;
   panePressing: boolean = false;
   paneSelOff: (() => void) | null = null;
   panePress: MouseEvent | null = null;
-  editor: Dynamic = null;
+  editor: LabelEditorSession | null = null;
   syncTimer: Dynamic = null;
   lxTagged: Dynamic = [];
-  mmTagged: Dynamic = [];
-  mmSplits: Dynamic = [];
-  mmRects: Dynamic = [];
+
   mmHoverEl: Element | null = null;
-  mmSeq: number = 0;
-  mmInflight: { src: string; theme: string } | null = null;
+
   destroyed: boolean = false;
   wholeThreads = new Set<string>();
   mdThreadRanges: Dynamic = new (Map as Dynamic)();
   decoAnchors: CodeCommentRange[] = [];
-  abandonMermaidRender(..._extraArguments: unknown[]): undefined {
-    this.mmSeq++;
-    this.mmInflight = null;
-  }
+
   resetPaneMemo(..._extraArguments: unknown[]): undefined {
     this.lastPane = null;
     this.lastErr = null;
-    this.abandonMermaidRender();
+    this.mermaid.abandonMermaidRender();
   }
-  isLiveKick(
-    input: number,
-    options: HTMLDivElement | null,
-    ..._extraArguments: unknown[]
-  ) {
-    return !this.destroyed && input === this.mmSeq && this.render === options;
-  }
+
   constructor(
     input: ProseMirrorNode,
     options: ProseMirrorEditorView,
@@ -118399,7 +116217,7 @@ class CodeBlockNodeView implements NodeView {
     let value: Dynamic = resolveRenderedCodeAndProofreadingValue53(this.node);
     if (value != null) renderedCodeAndProofreadingMap2.set(value, input);
     if (input) {
-      if (this.editor) this.closeLabelEditor(false);
+      if (this.editor) this.labelEditor.closeLabelEditor(false);
       this.inPlace = null;
     } else {
       if (renderedCodeAndProofreadingMap8.delete(this))
@@ -118556,11 +116374,11 @@ class CodeBlockNodeView implements NodeView {
     let value8 = inPlace != null && !value6;
     if (value8) this.inPlace = null;
     let editor: Dynamic = this.editor;
-    if (editor && value7) this.readBack();
+    if (editor && value7) this.labelEditor.readBack();
     if (editor && value8)
       queueMicrotask((..._extraArguments: unknown[]): undefined => {
         if (this.editor === editor && !this.inPlace && !this.destroyed)
-          this.closeLabelEditor(false);
+          this.labelEditor.closeLabelEditor(false);
       });
     let value9: Dynamic =
       value3 && this.srcOpen && this.dom.classList.contains("cw-mm-held");
@@ -118583,7 +116401,7 @@ class CodeBlockNodeView implements NodeView {
       input.some(
         (input2?: Dynamic, ..._extraArguments: unknown[]) =>
           input2.getMeta(CodeRenderPanePluginKey) ===
-          renderedCodeAndProofreadingMmWrite,
+          mermaidWriteMeta,
       )
     )
       return null;
@@ -118618,7 +116436,7 @@ class CodeBlockNodeView implements NodeView {
       this.adoptHold(value5);
       return null;
     }
-    let value6: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
+    let value6: Dynamic = locateLabelSelection(
       textContent,
       inPlace.id,
       inPlace.label,
@@ -118633,7 +116451,7 @@ class CodeBlockNodeView implements NodeView {
       value7 = null;
     let value8: Dynamic =
       inPlace.id == null
-        ? resolveSchemaAndRenderingFrom2(
+        ? locateHeldLabelSource(
             textContent,
             null,
             inPlace.label,
@@ -118646,10 +116464,10 @@ class CodeBlockNodeView implements NodeView {
         to: value8.to,
       };
     let value9: Dynamic = inPlace.id
-      ? (resolveSchemaAndRenderingFrom4(textContent, inPlace.id).find(
+      ? (bracketLabels(textContent, inPlace.id).find(
           (input2?: Dynamic, ..._extraArguments: unknown[]) =>
             input2.group.from <= inPlace.to && input2.group.to >= inPlace.from,
-        ) ?? resolveSchemaAndRenderingFrom5(textContent, inPlace.id))
+        ) ?? firstDeclaredLabel(textContent, inPlace.id))
       : null;
     let value10: Dynamic =
       value9 && value9.to > value9.from
@@ -118680,7 +116498,7 @@ class CodeBlockNodeView implements NodeView {
     let value2 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
       inPlace.id != null ||
       (input2.from < inPlace.to && input2.to > inPlace.from);
-    let value3: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
+    let value3: Dynamic = locateLabelSelection(
       input,
       inPlace.id,
       inPlace.label,
@@ -118698,7 +116516,7 @@ class CodeBlockNodeView implements NodeView {
       };
     let value4: Dynamic = this.editor?.original;
     if (value4 != null && value4 !== inPlace.label) {
-      let value8: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
+      let value8: Dynamic = locateLabelSelection(
         input,
         inPlace.id,
         value4,
@@ -118746,7 +116564,7 @@ class CodeBlockNodeView implements NodeView {
         )
           continue;
         if (
-          !resolveSchemaAndRenderingPiped(
+          !edgeLabelKind(
             input,
             value8.from,
             value8.to - value8.from,
@@ -118762,10 +116580,10 @@ class CodeBlockNodeView implements NodeView {
           };
       }
     let value7: Dynamic = inPlace.id
-      ? (resolveSchemaAndRenderingFrom4(input, inPlace.id).find(
+      ? (bracketLabels(input, inPlace.id).find(
           (input2?: unknown, ..._extraArguments: unknown[]) =>
             value(input2),
-        ) ?? resolveSchemaAndRenderingFrom5(input, inPlace.id))
+        ) ?? firstDeclaredLabel(input, inPlace.id))
       : null;
     if (!value7 || !value(value7)) return null;
     let slice: Dynamic = input.slice(value7.from, value7.to);
@@ -118795,7 +116613,7 @@ class CodeBlockNodeView implements NodeView {
     let value2 = this.getPos();
     if (value2 == null) return;
     if (this.editor && !this.holdsElement(input.el))
-      this.closeLabelEditor(false);
+      this.labelEditor.closeLabelEditor(false);
     this.inPlace = {
       from: options.from,
       to: options.to,
@@ -118890,7 +116708,7 @@ class CodeBlockNodeView implements NodeView {
       this.clearInPlace();
       return;
     }
-    if (this.editor) this.closeLabelEditor(false);
+    if (this.editor) this.labelEditor.closeLabelEditor(false);
     let value3 = ProseMirrorNodeSelection.create(
       this.view.state.doc,
       value,
@@ -118975,10 +116793,10 @@ class CodeBlockNodeView implements NodeView {
         if (resolveProsePluginsEscape(event)) resolveProsePluginsValue32(event);
         return true;
       }
-      if (!isRenderedCodeAndProofreadingMetaKey(event)) return null;
+      if (!isLabelHistoryKey(event)) return null;
       event.preventDefault();
       if (this.view.hasFocus()) this.view.focus();
-      this.historyChord(event);
+      this.labelEditor.historyChord(event);
       return true;
     }
     let value3 = this.getPos();
@@ -118994,15 +116812,15 @@ class CodeBlockNodeView implements NodeView {
     ) {
     } else if (value2) return null;
     else if (key === "Enter" || key === "F2")
-      this.openLabelEditor({
+      this.labelEditor.openLabelEditor({
         caretEnd: true,
       });
     else if (key === "Backspace" || key === "Delete")
-      this.openLabelEditor({
+      this.labelEditor.openLabelEditor({
         deleteSel: true,
       });
     else if (key.length === 1)
-      this.openLabelEditor({
+      this.labelEditor.openLabelEditor({
         replaceWith: key,
       });
     else if (
@@ -119011,7 +116829,7 @@ class CodeBlockNodeView implements NodeView {
       key === "Dead" ||
       key === "Unidentified"
     )
-      this.openLabelEditor({});
+      this.labelEditor.openLabelEditor({});
     else if (
       key === "ArrowDown" ||
       key === "ArrowRight" ||
@@ -119040,989 +116858,12 @@ class CodeBlockNodeView implements NodeView {
     let value2: Dynamic = input.replace(/\s*[\n\r]+\s*/g, " ");
     if (!value2.trim()) return true;
     return (
-      this.openLabelEditor({
+      this.labelEditor.openLabelEditor({
         replaceWith: value2,
       }) || true
     );
   }
-  openLabelEditor(input?: Dynamic, ..._extraArguments: unknown[]) {
-    if (!renderedCodeAndProofreadingRenderedCodeAndProofreadingLimit17Alias)
-      return false;
-    let inPlace: Dynamic = this.inPlace;
-    if (
-      !inPlace ||
-      this.srcOpen ||
-      this.editor ||
-      !this.view.editable ||
-      !this.render
-    )
-      return false;
-    if (!resolveRenderedCodeAndProofreadingMatches(inPlace.el)) return false;
-    let value = this.getPos();
-    if (value == null) return false;
-    let textContent = this.node.textContent;
-    let value2: Dynamic = resolveSchemaAndRenderingFrom2(
-      textContent,
-      inPlace.id,
-      inPlace.label,
-      inPlace,
-    );
-    let value3 =
-      inPlace.id != null &&
-      value2?.label != null &&
-      value2.from === value2.label.from &&
-      value2.to === value2.label.to &&
-      textContent.slice(value2.from, value2.to) === inPlace.id;
-    let value4 = value3
-      ? resolveSchemaAndRenderingFlowchart(textContent)
-      : null;
-    let value5 = value4 === "flowchart" || value4 === "state" ? value4 : null;
-    if (value3 && !value5) return false;
-    let value6: Dynamic = resolveSchemaAndRenderingFrom7(
-      textContent,
-      inPlace.id,
-      inPlace.label,
-      `${inPlace.label ?? ""}​`,
-      inPlace,
-    );
-    if (
-      !value6 ||
-      !this.writeAllowed(
-        textContent,
-        inPlace.id,
-        value6.from,
-        value6.to,
-        value6.insert,
-      )
-    )
-      return false;
-    let value7: Dynamic = inPlace.exact
-      ? textContent.slice(inPlace.from, inPlace.to)
-      : (inPlace.label ?? "").replace(/\s*\n\s*/g, " ");
-    let selection = this.view.state.selection;
-    let value8 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      Math.max(0, Math.min(value7.length, input2));
-    let value9: number = inPlace.exact
-      ? value8(selection.from - (value + 1) - inPlace.from)
-      : 0;
-    let value10: Dynamic = inPlace.exact
-      ? value8(selection.to - (value + 1) - inPlace.from)
-      : value7.length;
-    if (value10 < value9) [value9, value10] = [value10, value9];
-    let value11: Dynamic = value7;
-    let value12 = value9;
-    let value13: Dynamic = value10;
-    if (input.replaceWith != null) {
-      value11 =
-        value7.slice(0, value9) + input.replaceWith + value7.slice(value10);
-      value12 = value13 = value9 + input.replaceWith.length;
-    } else if (input.deleteSel) {
-      value11 = value7.slice(0, value9) + value7.slice(value10);
-      value12 = value13 = value9;
-    } else if (input.caretEnd) value12 = value13 = value11.length;
-    else if (input.caret != null)
-      value12 = value13 = inPlace.exact ? value8(input.caret) : value11.length;
-    let ownerDocument = this.dom.ownerDocument;
-    let value14: Dynamic = ownerDocument.createElement("div");
-    value14.className = "cw-mm-edit-host";
-    value14.setAttribute("contenteditable", "false");
-    let value15: Dynamic = ownerDocument.createElement("div");
-    value15.className = "cw-mm-edit";
-    value15.setAttribute("contenteditable", "true");
-    value15.tabIndex = 0;
-    value15.spellcheck = false;
-    value15.setAttribute("role", "textbox");
-    value15.setAttribute("aria-label", "Edit label");
-    value15.dataset.testid = "mermaid-label-editor";
-    value15.textContent = value11;
-    this.editor = {
-      el: value15,
-      host: value14,
-      original: value7,
-      def0: value2 ? textContent.slice(value2.from, value2.to) : null,
-      written: value7,
-      bare: value5,
-      declared: null,
-      composing: false,
-      readPending: false,
-      forId: inPlace.id,
-      quoted0:
-        value2 != null &&
-        textContent[value2.from - 1] === '"' &&
-        textContent[value2.to] === '"',
-      squote0:
-        value2 != null &&
-        textContent[value2.from - 1] === "'" &&
-        textContent[value2.to] === "'",
-      chord: false,
-      copies: inPlace.id
-        ? this.copiesOf(textContent, inPlace.id, value2, value7)
-        : null,
-      unwire: (..._extraArguments: unknown[]): undefined => {},
-    };
-    if (value5 && !renderedCodeAndProofreadingWeakSet5.has(ownerDocument)) {
-      renderedCodeAndProofreadingWeakSet5.add(ownerDocument);
-      let value19: Dynamic = ownerDocument.createElement("div");
-      value19.className = "cw-mm-edit-hint";
-      value19.textContent = `Adds a display label — the id stays “${inPlace.id}”`;
-      value14.appendChild(value19);
-    }
-    value15.addEventListener(
-      "keydown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        event.stopPropagation();
-        if (event.key === "Enter") {
-          event.preventDefault();
-          this.closeLabelEditor(false);
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          this.closeLabelEditor(true);
-        } else if (isRenderedCodeAndProofreadingMetaKey(event)) {
-          event.preventDefault();
-          this.historyChord(event);
-        }
-      },
-    );
-    for (let value19 of [
-      "keyup",
-      "keypress",
-      "beforeinput",
-      "input",
-      "compositionstart",
-      "compositionupdate",
-      "compositionend",
-      "cut",
-      "copy",
-    ] as Dynamic)
-      value15.addEventListener(
-        value19,
-        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input2.stopPropagation(),
-      );
-    value15.addEventListener(
-      "input",
-      (..._extraArguments: unknown[]): undefined => {
-        let value19: Dynamic = value15.textContent ?? "";
-        if (/[\n\r]/.test(value19))
-          value15.textContent = value19.replace(/\s*[\n\r]+\s*/g, " ");
-        this.writeThrough();
-      },
-    );
-    value15.addEventListener(
-      "compositionstart",
-      (..._extraArguments: unknown[]): undefined => {
-        if (this.editor?.el === value15) this.editor.composing = true;
-      },
-    );
-    value15.addEventListener(
-      "compositionend",
-      (..._extraArguments: unknown[]): undefined => {
-        let editor: Dynamic = this.editor;
-        if (editor?.el !== value15) return;
-        editor.composing = false;
-        if (!editor.readPending) return;
-        editor.readPending = false;
-        this.readBack();
-      },
-    );
-    value15.addEventListener(
-      "beforeinput",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        let inputType: Dynamic = event.inputType;
-        if (inputType !== "historyUndo" && inputType !== "historyRedo") return;
-        event.preventDefault();
-        this.historyChord(
-          resolveRenderedCodeAndProofreadingKey3(
-            ownerDocument,
-            inputType === "historyRedo",
-          ),
-        );
-      },
-    );
-    value15.addEventListener(
-      "paste",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        event.preventDefault();
-        event.stopPropagation();
-        let value19: Dynamic = (
-          event.clipboardData?.getData("text/plain") ?? ""
-        ).replace(/\s*[\n\r]+\s*/g, " ");
-        if (value19) {
-          this.insertIntoEditor(value19);
-          this.writeThrough();
-        }
-      },
-    );
-    let state = {
-      down: false,
-      tab: false,
-    };
-    let value16 = (..._extraArguments: unknown[]) =>
-      (state.down = true);
-    let value17 = (..._extraArguments: unknown[]) =>
-      queueMicrotask((..._extraArguments: unknown[]): undefined => {
-        state.down = false;
-      });
-    ownerDocument.addEventListener("pointerdown", value16, true);
-    ownerDocument.addEventListener("pointerup", value17, true);
-    ownerDocument.addEventListener("mousedown", value16, true);
-    ownerDocument.addEventListener("mouseup", value17, true);
-    value15.addEventListener(
-      "keydown",
-      (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (input2.key === "Tab") state.tab = true;
-      },
-    );
-    let value18 = (..._extraArguments: unknown[]): undefined => {
-      ownerDocument.removeEventListener("pointerdown", value16, true);
-      ownerDocument.removeEventListener("pointerup", value17, true);
-      ownerDocument.removeEventListener("mousedown", value16, true);
-      ownerDocument.removeEventListener("mouseup", value17, true);
-    };
-    this.editor.unwire = value18;
-    value15.addEventListener(
-      "blur",
-      (input2?: Dynamic, ..._extraArguments: unknown[]) => {
-        if (this.editor?.el !== value15) return value18();
-        let relatedTarget: Dynamic = input2.relatedTarget;
-        if (
-          !state.down &&
-          !state.tab &&
-          this.inPlace != null &&
-          relatedTarget != null &&
-          (relatedTarget === this.view.dom ||
-            this.view.dom.contains(relatedTarget)) &&
-          !value14.contains(relatedTarget)
-        ) {
-          let [value19, value20]: Dynamic = this.editorSelection();
-          queueMicrotask((..._extraArguments: unknown[]): undefined => {
-            if (this.editor?.el !== value15 || this.destroyed) return;
-            value15.focus({
-              preventScroll: true,
-            });
-            this.selectInEditor(value19, value20);
-          });
-          return;
-        }
-        value18();
-        this.closeLabelEditor(false);
-      },
-    );
-    value14.appendChild(value15);
-    this.dom.appendChild(value14);
-    this.dom.classList.add("cw-mm-editing");
-    this.positionEditor();
-    value15.focus({
-      preventScroll: true,
-    });
-    if (ownerDocument.activeElement !== value15) value15.focus();
-    this.selectInEditor(value12, value13);
-    if (value11 !== value7) this.writeThrough();
-    return true;
-  }
-  positionEditor(..._extraArguments: unknown[]): undefined {
-    let editor: Dynamic = this.editor;
-    let inPlace: Dynamic = this.inPlace;
-    if (!editor || !inPlace || !this.render) return;
-    let el: Dynamic = editor.el;
-    let ownerDocument = this.dom.ownerDocument;
-    let value: Dynamic =
-      inPlace.el.isConnected &&
-      this.render.contains(inPlace.el) &&
-      (inPlace.el.querySelector("foreignObject > *, text") ?? inPlace.el);
-    if (!value) return;
-    let bounds: Dynamic = value.getBoundingClientRect();
-    let bounds2 = this.dom.getBoundingClientRect();
-    el.style.left = `${bounds.left + bounds.width / 2 - bounds2.left}px`;
-    el.style.top = `${bounds.top + bounds.height / 2 - bounds2.top}px`;
-    el.style.minWidth = `${Math.max(16, bounds.width + 4)}px`;
-    el.style.minHeight = `${bounds.height}px`;
-    let value2: Dynamic = ownerDocument.defaultView?.getComputedStyle(value);
-    if (!value2) return;
-    let count = 1;
-    let value3: Dynamic = value;
-    let value4: Dynamic = value;
-    if (typeof value3.offsetWidth === "number" && value3.offsetWidth > 0)
-      count = bounds.width / value3.offsetWidth;
-    else if (typeof value4.getBBox === "function")
-      try {
-        let value7: Dynamic = value4.getBBox();
-        if (value7.width > 0) count = bounds.width / value7.width;
-      } catch {}
-    if (!(count > 0.2 && count < 5)) count = 1;
-    el.style.fontFamily = value2.fontFamily;
-    el.style.fontWeight = value2.fontWeight;
-    el.style.fontStyle = value2.fontStyle;
-    el.style.letterSpacing = value2.letterSpacing;
-    let value5 = parseFloat(value2.fontSize);
-    if (value5 > 0) el.style.fontSize = `${value5 * count}px`;
-    let value6 = parseFloat(value2.lineHeight);
-    el.style.lineHeight =
-      value6 > 0 && value2.lineHeight.endsWith("px")
-        ? `${value6 * count}px`
-        : value2.lineHeight;
-    if (value2.color) el.style.color = value2.color;
-    let element: Dynamic = editor.host.querySelector(".cw-mm-edit-hint");
-    if (element) {
-      element.style.left = el.style.left;
-      element.style.top = `${bounds.bottom - bounds2.top + 6}px`;
-    }
-  }
-  writeThrough(..._extraArguments: unknown[]): undefined {
-    let editor: Dynamic = this.editor;
-    let inPlace: Dynamic = this.inPlace;
-    let value = this.getPos();
-    if (!editor || !inPlace || value == null || this.destroyed) return;
-    let value2: Dynamic = resolveRenderedCodeAndProofreadingTrim3(
-      editor.el.textContent,
-    );
-    if (!value2 || value2 === editor.written) return;
-    let textContent = this.node.textContent;
-    let value3: Dynamic = resolveSchemaAndRenderingFrom7(
-      textContent,
-      inPlace.id,
-      inPlace.label,
-      value2,
-      inPlace,
-    );
-    if (!value3) return;
-    let value4: Dynamic = value3.declared
-      ? []
-      : this.siblingWrites(textContent, value3, editor, value2);
-    editor.written = value2;
-    if (value3.declared) editor.declared = value3.declared;
-    let [value5, value6]: Dynamic = this.editorSelection();
-    let value7: Dynamic = editor.el.textContent ?? "";
-    let value8 =
-      value5 === value6
-        ? value5 - (value7.length - value7.trimStart().length)
-        : null;
-    let value9 =
-      value3.exact && value8 != null && value8 >= 0 && value8 <= value2.length
-        ? value3.label.from - value3.from + value8
-        : null;
-    this.replaceInSource(
-      textContent,
-      value3.from,
-      value3.to,
-      value3.insert,
-      {
-        from: value3.label.from,
-        to: value3.label.to,
-        label: value2,
-        exact: value3.exact,
-      },
-      value4,
-      value9,
-    );
-  }
-  replaceInSource(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    extra?: Dynamic,
-    detail: Dynamic = [],
-    argument: Dynamic = null,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    let inPlace: Dynamic = this.inPlace;
-    let value2 = this.getPos();
-    if (!inPlace || value2 == null) return;
-    if (!this.writeAllowed(input, inPlace.id, options, context, value)) return;
-    let value3: Dynamic = resolveRenderedCodeAndProofreadingFrom11(
-      input,
-      {
-        from: options,
-        to: context,
-        insert: value,
-      },
-      argument,
-    );
-    let value4: Dynamic = value2 + 1 + value3.from;
-    let value5: Dynamic = value2 + 1 + value3.to;
-    let value6 = this.view.state.tr.setMeta(
-      CodeRenderPanePluginKey,
-      renderedCodeAndProofreadingMmWrite,
-    );
-    let filtered: Dynamic = detail
-      .map(
-        (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-          resolveRenderedCodeAndProofreadingFrom11(input, input2),
-      )
-      .filter(
-        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input2.insert || input2.to > input2.from,
-      );
-    let value7: Dynamic = filtered
-      .filter(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-          input2.to <= value3.from,
-      )
-      .reduce(
-        (input2?: Dynamic, options2?: Dynamic, ..._extraArguments: unknown[]) =>
-          input2 + options2.insert.length - (options2.to - options2.from),
-        0,
-      );
-    let mapped: Dynamic = filtered.map(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-        from: value2 + 1 + input2.from,
-        to: value2 + 1 + input2.to,
-        insert: input2.insert,
-      }),
-    );
-    if (mapped.length)
-      value6.setMeta(renderedCodeAndProofreadingCwMermaidSiblingWrites, mapped);
-    if (value3.insert) value6.insertText(value3.insert, value4, value5);
-    else if (value5 > value4) value6.delete(value4, value5);
-    this.inPlace = {
-      from: extra.from + value7,
-      to: extra.to + value7,
-      id: inPlace.id,
-      label: extra.label,
-      el: inPlace.el,
-      exact: extra.exact,
-    };
-    let value8 = Math.min(value2 + 1 + extra.from, value6.doc.content.size);
-    let value9 = Math.min(value2 + 1 + extra.to, value6.doc.content.size);
-    if (value9 > value8)
-      value6.setSelection(
-        ProseMirrorTextSelection.create(value6.doc, value8, value9),
-      );
-    else {
-      this.inPlace = null;
-      let value10: Dynamic = this.exitSelection(value6.doc, value2, 1);
-      if (value10) value6.setSelection(value10);
-    }
-    if (value6.docChanged || value6.selectionSet) this.view.dispatch(value6);
-  }
-  writeAllowed(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    extra?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) {
-    if (options == null)
-      return (
-        isSchemaAndRenderingInDq2(input, context) &&
-        (resolveSchemaAndRenderingPiped(input, context, value - context) !=
-          null ||
-          (input[context] === '"' &&
-            input[value - 1] === '"' &&
-            value - context >= 2 &&
-            resolveSchemaAndRenderingPiped(
-              input,
-              context + 1,
-              value - context - 2,
-            ) != null))
-      );
-    if (isSchemaAndRenderingSome(input, options, context, value)) return true;
-    if (
-      resolveSchemaAndRenderingFrom4(input, options).some(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-          context === input2.group.from - options.length &&
-          value === input2.group.to,
-      )
-    )
-      return true;
-    let value2: Dynamic = resolveSchemaAndRenderingDecl(input, options);
-    if (
-      value2 &&
-      ((context === value2.decl.from && value === value2.decl.to) ||
-        (context === value2.line.from && value === value2.line.to))
-    )
-      return true;
-    if (
-      context === value &&
-      /^[ \t]*state "[^"\n]*" as (.+)\n$/u.exec(extra)?.[1] === options
-    )
-      return true;
-    let value3: Dynamic = resolveSchemaAndRenderingFrom3(input, options);
-    if (value3 && context === value3.from - 1 && value === value3.to + 1)
-      return true;
-    if (
-      input.slice(context, value) === options &&
-      extra.startsWith(options) &&
-      !/[\p{L}\p{N}_.-]/u.test(extra[options.length] ?? "")
-    )
-      return (
-        context === resolveSchemaAndRenderingValue6(input, options) &&
-        isSchemaAndRenderingInDq(input, context)
-      );
-    return false;
-  }
-  selectInEditor(
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    let value: Dynamic = this.editor?.el;
-    let value2: Dynamic = value?.ownerDocument.getSelection?.();
-    if (!value || !value2) return;
-    let firstChild: Dynamic = value.firstChild;
-    if (!firstChild)
-      value.appendChild((firstChild = value.ownerDocument.createTextNode("")));
-    let length: Dynamic = firstChild.data.length;
-    try {
-      value2.removeAllRanges();
-      value2.setBaseAndExtent(
-        firstChild,
-        Math.min(input, length),
-        firstChild,
-        Math.min(options, length),
-      );
-    } catch {}
-  }
-  editorSelection(..._extraArguments: unknown[]): Dynamic {
-    let value: Dynamic = this.editor?.el;
-    let value2: Dynamic = value?.textContent ?? "";
-    let { length: length, length: length2 }: Dynamic = value2;
-    let value3: Dynamic = value?.ownerDocument.getSelection?.();
-    if (
-      value &&
-      value3 &&
-      value3.rangeCount &&
-      value.contains(value3.anchorNode) &&
-      value.contains(value3.focusNode)
-    ) {
-      let value4: Dynamic = value.ownerDocument.createRange();
-      value4.setStart(value, 0);
-      value4.setEnd(value3.anchorNode, value3.anchorOffset);
-      length = value4.toString().length;
-      value4.setEnd(value3.focusNode, value3.focusOffset);
-      length2 = value4.toString().length;
-      if (length2 < length) [length, length2] = [length2, length];
-    }
-    return [length, length2];
-  }
-  insertIntoEditor(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let value: Dynamic = this.editor?.el;
-    if (!value) return;
-    let value2: Dynamic = value.textContent ?? "";
-    let [value3, value4]: Dynamic = this.editorSelection();
-    value.textContent = value2.slice(0, value3) + input + value2.slice(value4);
-    this.selectInEditor(value3 + input.length, value3 + input.length);
-  }
-  historyChord(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let editor: Dynamic = this.editor;
-    if (!editor || this.destroyed || !this.view.editable) return;
-    if (
-      resolveRenderedCodeAndProofreadingTrim3(editor.el.textContent) !==
-        editor.written &&
-      this.readBack(true)
-    )
-      return;
-    editor.chord = true;
-    try {
-      this.view.someProp(
-        "handleKeyDown",
-        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input2(this.view, input),
-      );
-    } finally {
-      editor.chord = false;
-    }
-    if (this.editor === editor && !this.inPlace && !this.destroyed)
-      this.closeLabelEditor(false);
-  }
-  readBack(input: Dynamic = false, ..._extraArguments: unknown[]) {
-    let editor: Dynamic = this.editor;
-    if (!editor || this.destroyed) return false;
-    if (editor.composing) {
-      editor.readPending = true;
-      return true;
-    }
-    let value: Dynamic = this.labelInSource();
-    let value2: Dynamic =
-      value == null ? null : resolveRenderedCodeAndProofreadingTrim3(value);
-    if (!value2) return false;
-    if (value2 === editor.written && !input) return true;
-    editor.written = value2;
-    let value3: Dynamic = resolveRenderedCodeAndProofreadingTrim3(
-      editor.el.textContent,
-    );
-    if (value3 === value2) return true;
-    let value4 = editor.el.ownerDocument.activeElement === editor.el;
-    let [value5]: Dynamic = this.editorSelection();
-    editor.el.textContent = value2;
-    if (value4 && !value3) this.selectInEditor(0, value2.length);
-    else if (value4 && editor.chord) {
-      let index = 0;
-      let value6 = Math.min(value3.length, value2.length);
-      while (
-        index < value6 &&
-        value3[value3.length - 1 - index] === value2[value2.length - 1 - index]
-      )
-        index++;
-      let index2 = 0;
-      while (index2 < value6 && value3[index2] === value2[index2]) index2++;
-      index = Math.min(index, Math.max(0, value2.length - index2));
-      this.selectInEditor(value2.length - index, value2.length - index);
-    } else if (value4) {
-      let value6: Dynamic =
-        value3.slice(0, value5) === value2.slice(0, value5)
-          ? value5
-          : value2.endsWith(value3.slice(value5))
-            ? value2.length - (value3.length - value5)
-            : value2.length;
-      this.selectInEditor(value6, value6);
-    }
-    this.positionEditor();
-    return true;
-  }
-  labelInSource(..._extraArguments: unknown[]): Dynamic {
-    let editor: Dynamic = this.editor;
-    let inPlace: Dynamic = this.inPlace;
-    if (!editor || !inPlace) return null;
-    let textContent = this.node.textContent;
-    if (inPlace.exact) return textContent.slice(inPlace.from, inPlace.to);
-    let value: Dynamic = resolveSchemaAndRenderingFrom2(
-      textContent,
-      inPlace.id,
-      inPlace.label,
-      inPlace,
-    );
-    if (
-      value &&
-      editor.def0 != null &&
-      textContent.slice(value.from, value.to) === editor.def0
-    )
-      return editor.original;
-    let value2: Dynamic = inPlace.id
-      ? (resolveSchemaAndRenderingFrom4(textContent, inPlace.id).find(
-          (input?: Dynamic, ..._extraArguments: unknown[]) =>
-            inPlace.from >= input.group.from && inPlace.to <= input.group.to,
-        ) ?? resolveSchemaAndRenderingFrom5(textContent, inPlace.id))
-      : inPlace.from < inPlace.to &&
-          resolveSchemaAndRenderingPiped(
-            textContent,
-            inPlace.from,
-            inPlace.to - inPlace.from,
-          )
-        ? inPlace
-        : null;
-    return value2
-      ? resolveSchemaAndRenderingReplace2(
-          textContent.slice(value2.from, value2.to),
-        )
-      : null;
-  }
-  closeLabelEditor(input?: unknown, ..._extraArguments: unknown[]): undefined {
-    let editor: Dynamic = this.editor;
-    if (!editor) return;
-    this.editor = null;
-    editor.unwire();
-    editor.host.remove();
-    this.dom.classList.remove("cw-mm-editing");
-    let inPlace: Dynamic = this.inPlace;
-    let value = this.getPos();
-    if (input && inPlace && inPlace.id !== editor.forId) input = false;
-    if (
-      input &&
-      inPlace &&
-      value != null &&
-      !this.destroyed &&
-      editor.written !== editor.original
-    ) {
-      let textContent = this.node.textContent;
-      let value2: Dynamic = resolveSchemaAndRenderingFrom2(
-        textContent,
-        inPlace.id,
-        inPlace.label,
-        inPlace,
-      );
-      let value3: Dynamic =
-        editor.declared === "state" && inPlace.id
-          ? resolveSchemaAndRenderingDecl(textContent, inPlace.id)
-          : null;
-      let value4: Dynamic = value3 && value3.kind !== "desc" ? value3 : null;
-      if (value4 && inPlace.id) {
-        let value5: Dynamic =
-          textContent.slice(0, value4.line.from) +
-          textContent.slice(value4.line.to);
-        let value6: Dynamic = resolveSchemaAndRenderingValue6(
-          value5,
-          inPlace.id,
-        );
-        this.replaceInSource(
-          textContent,
-          value4.line.from,
-          value4.line.to,
-          "",
-          {
-            from: value6 >= 0 ? value6 : value4.line.from,
-            to: value6 >= 0 ? value6 + inPlace.id.length : value4.line.from,
-            label: inPlace.id,
-            exact: value6 >= 0,
-          },
-        );
-      } else if (value2 && editor.def0 != null && editor.declared !== "state") {
-        let { from: from, to: to2 }: Dynamic = value2;
-        let def0: Dynamic = editor.def0;
-        if (
-          !editor.quoted0 &&
-          textContent[from - 1] === '"' &&
-          textContent[to2] === '"' &&
-          !/^"|"$/.test(editor.def0)
-        ) {
-          from--;
-          to2++;
-          if (editor.squote0) def0 = `'${editor.def0}'`;
-        }
-        let value5: Dynamic =
-          textContent.slice(0, from) + def0 + textContent.slice(to2);
-        if (inPlace.id) {
-          let value7 = editor.squote0 && def0 !== editor.def0 ? 1 : 0;
-          let value8: Dynamic = resolveSchemaAndRenderingFrom2(
-            value5,
-            inPlace.id,
-            editor.original || null,
-            {
-              from: from + value7,
-              to: from + value7 + editor.def0.length,
-            },
-          );
-          if (
-            !value8 ||
-            value8.from !== from + value7 ||
-            value8.to !== from + value7 + editor.def0.length
-          )
-            return void this.afterClose();
-        }
-        let value6: Dynamic = inPlace.id
-          ? resolveRenderedCodeAndProofreadingFrom2(
-              value5,
-              inPlace.id,
-              editor.original || null,
-            )
-          : {
-              from: from,
-              to: from + editor.def0.length,
-              exact: editor.def0 === editor.original,
-            };
-        this.replaceInSource(
-          textContent,
-          from,
-          to2,
-          def0,
-          {
-            from: value6 ? value6.from : from,
-            to: value6 ? value6.to : from + def0.length,
-            label: editor.original,
-            exact: value6 ? value6.exact : false,
-          },
-          this.siblingReverts(textContent, value2, editor),
-        );
-      }
-    }
-    this.afterClose();
-  }
-  afterClose(..._extraArguments: unknown[]): undefined {
-    if (this.destroyed) return;
-    if (this.syncTimer != null) this.flushSyncSoon();
-    this.view.focus();
-  }
-  copiesOf(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    let value2: Dynamic = resolveSchemaAndRenderingFrom4(input, options);
-    let value3: Dynamic = context
-      ? value2.findIndex(
-          (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-            input2.group.from >= context.from && input2.group.to <= context.to,
-        )
-      : -1;
-    let value4: Dynamic =
-      value3 >= 0
-        ? input.slice(value2[value3].from, value2[value3].to).trim()
-        : null;
-    let items: Dynamic = [];
-    value2.forEach(
-      (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (options2 === value3 || value3 < 0) return;
-        if (
-          resolveRenderedCodeAndProofreadingTrim2(input, input2, value) ||
-          input.slice(input2.from, input2.to).trim() === value4
-        )
-          items.push(options2);
-      },
-    );
-    return {
-      groups: value2.map(
-        (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input.slice(input2.group.from, input2.group.to),
-      ),
-      idx: items,
-      pi: value3,
-    };
-  }
-  copiesAligned(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    let value2 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      (context.from >= input2.group.from && context.to <= input2.group.to) ||
-      (input2.group.from >= context.from && input2.group.to <= context.to);
-    return (
-      options.length === value.groups.length &&
-      (value.pi < 0 || options.findIndex(value2) === value.pi) &&
-      options.every(
-        (
-          input2?: Dynamic,
-          options2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic =>
-          value2(input2) ||
-          value.idx.includes(options2) ||
-          input.slice(input2.group.from, input2.group.to) ===
-            value.groups[options2],
-      )
-    );
-  }
-  siblingsByText(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    extra?: Dynamic,
-    detail?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    let values: Dynamic = new (Set as Dynamic)(
-      detail.groups.filter(
-        (input2?: unknown, options2?: Dynamic, ..._extraArguments: unknown[]) =>
-          options2 !== detail.pi && !detail.idx.includes(options2),
-      ),
-    );
-    let value2: Dynamic = resolveSchemaAndRenderingFrom4(input, options);
-    return resolveSchemaAndRenderingFind(
-      input,
-      options,
-      context,
-      value,
-      extra,
-    ).filter((input2?: Dynamic, ..._extraArguments: unknown[]) => {
-      let match: Dynamic = value2.find(
-        (input3?: Dynamic, ..._extraArguments: unknown[]) =>
-          input2.from >= input3.group.from && input2.to <= input3.group.to,
-      );
-      return (
-        !match || !values.has(input.slice(match.group.from, match.group.to))
-      );
-    });
-  }
-  siblingWrites(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    let inPlace: Dynamic = this.inPlace;
-    if (!inPlace?.id || !context.copies) return [];
-    let value2: Dynamic = resolveSchemaAndRenderingFrom4(input, inPlace.id);
-    if (!this.copiesAligned(input, value2, options, context.copies))
-      return this.siblingsByText(
-        input,
-        inPlace.id,
-        options,
-        context.written,
-        value,
-        context.copies,
-      );
-    let match: Dynamic = value2.find(
-      (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-        options.from >= input2.group.from && options.to <= input2.group.to,
-    );
-    let value3: Dynamic = match
-      ? input.slice(match.from, match.to).trim()
-      : null;
-    let items: Dynamic = [];
-    for (let value4 of context.copies.idx as Dynamic) {
-      let value5: Dynamic = value2[value4];
-      if (value5 === match) continue;
-      if (
-        !resolveRenderedCodeAndProofreadingTrim2(
-          input,
-          value5,
-          context.written,
-        ) &&
-        input.slice(value5.from, value5.to).trim() !== value3
-      )
-        continue;
-      let value6: Dynamic = resolveSchemaAndRenderingFrom6(
-        input,
-        value5,
-        value,
-      );
-      if (value6) items.push(value6);
-    }
-    return items;
-  }
-  siblingReverts(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    let inPlace: Dynamic = this.inPlace;
-    if (!inPlace?.id || !context.copies) return [];
-    let { groups: groups, idx: idx }: Dynamic = context.copies;
-    let value: Dynamic = resolveSchemaAndRenderingFrom4(input, inPlace.id);
-    let value2 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-      input2.group.from >= options.from && input2.group.to <= options.to;
-    if (!this.copiesAligned(input, value, options, context.copies)) {
-      let match2: Dynamic = value.find(value2);
-      return match2
-        ? this.siblingsByText(
-            input,
-            inPlace.id,
-            match2,
-            context.written,
-            context.original,
-            context.copies,
-          )
-        : [];
-    }
-    let match: Dynamic = value.find(value2);
-    let value3: Dynamic = match
-      ? input.slice(match.from, match.to).trim()
-      : null;
-    let items: Dynamic = [];
-    for (let value4 of idx as Dynamic) {
-      let value5: Dynamic = value[value4];
-      if (value2(value5)) continue;
-      if (
-        !resolveRenderedCodeAndProofreadingTrim2(
-          input,
-          value5,
-          context.written,
-        ) &&
-        input.slice(value5.from, value5.to).trim() !== value3
-      )
-        continue;
-      if (input.slice(value5.group.from, value5.group.to) !== groups[value4])
-        items.push({
-          from: value5.group.from,
-          to: value5.group.to,
-          insert: groups[value4],
-        });
-    }
-    return items;
-  }
+
   inPlaceFace(
     input?: Dynamic,
     options?: Dynamic,
@@ -120155,7 +116996,7 @@ class CodeBlockNodeView implements NodeView {
         value8.removeAttribute("data-comment-id");
       }
       this.lxTagged.length = 0;
-      this.mmTagged.length = 0;
+      this.mermaidAnnotations.forgetTags();
       renderedCodeAndProofreadingMap3.delete(this);
       renderedCodeAndProofreadingMap4.delete(this);
       updateRenderedCodeAndProofreadingBongoLiveSrcHover(
@@ -120172,8 +117013,8 @@ class CodeBlockNodeView implements NodeView {
     if (this.dom.getAttribute("data-live") !== value3) {
       if (value3 !== "mermaid") this.dropHold();
       this.mdThreadRanges.clear();
-      this.mmTagged.length = 0;
-      this.abandonMermaidRender();
+      this.mermaidAnnotations.forgetTags();
+      this.mermaid.abandonMermaidRender();
       this.render?.classList.remove("cw-mm-loading", "cw-wait-box");
       this.layout.dropFitWidth();
       renderedCodeAndProofreadingMap4.delete(this);
@@ -120215,7 +117056,7 @@ class CodeBlockNodeView implements NodeView {
           let target: Dynamic = event.target;
           let value9: Dynamic =
             value8 === "mermaid"
-              ? resolveRenderedCodeAndProofreadingLabel2(target)
+              ? diagramLabelAt(target)
               : null;
           if (
             value9 &&
@@ -120234,7 +117075,7 @@ class CodeBlockNodeView implements NodeView {
               let value16: Dynamic = this.faceForThread(value7);
               if (value15 && value16 && value16 !== this.dom) {
                 let value17: Dynamic = value9 ??
-                  resolveRenderedCodeAndProofreadingLabel2(value16) ?? {
+                  diagramLabelAt(value16) ?? {
                     el: value16,
                     id: null,
                     label: null,
@@ -120280,7 +117121,7 @@ class CodeBlockNodeView implements NodeView {
                   return;
                 }
               }
-              let value15: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
+              let value15: Dynamic = locateLabelSelection(
                 textContent,
                 value9.id,
                 value9.label,
@@ -120304,7 +117145,7 @@ class CodeBlockNodeView implements NodeView {
                   let value18: number =
                     value17.length - value17.trimStart().length;
                   if (value16 != null)
-                    this.openLabelEditor({
+                    this.labelEditor.openLabelEditor({
                       caret: value16 - value18,
                     });
                 }
@@ -120320,7 +117161,7 @@ class CodeBlockNodeView implements NodeView {
           let value10: Dynamic = value7 ? this.threadRange(value7) : null;
           let value11: Dynamic = null;
           if (!value10 && value9)
-            value11 = resolveRenderedCodeAndProofreadingLen(
+            value11 = findLabelMatch(
               this.node.textContent,
               value9.id,
               value9.label,
@@ -120398,7 +117239,7 @@ class CodeBlockNodeView implements NodeView {
           let { anchorNode: anchorNode, focusNode: focusNode }: Dynamic =
             value7;
           if (!anchorNode || !focusNode || !render.contains(anchorNode)) return;
-          let value8: Dynamic = resolveRenderedCodeAndProofreadingLabel2(
+          let value8: Dynamic = diagramLabelAt(
             anchorNode instanceof Element
               ? anchorNode
               : anchorNode.parentElement,
@@ -120462,7 +117303,7 @@ class CodeBlockNodeView implements NodeView {
                 !this.holdsElement(value8.el)
               )
                 return;
-              let value24: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
+              let value24: Dynamic = locateLabelSelection(
                 this.node.textContent,
                 value8.id,
                 value8.label,
@@ -120477,7 +117318,7 @@ class CodeBlockNodeView implements NodeView {
                 value24.exact,
               );
               if (value23)
-                this.openLabelEditor({
+                this.labelEditor.openLabelEditor({
                   caret: value11 - value10,
                 });
               return;
@@ -120503,7 +117344,7 @@ class CodeBlockNodeView implements NodeView {
           let value15: number = value14(value12 ? value12[0] : value11);
           let value16: number = value14(value13);
           if (value15 === value16) return;
-          let value17: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
+          let value17: Dynamic = locateLabelSelection(
             this.node.textContent,
             value8.id,
             value8.label,
@@ -120525,7 +117366,7 @@ class CodeBlockNodeView implements NodeView {
             value19,
             value17.exact,
           );
-          if (event.detail >= 2) this.openLabelEditor({});
+          if (event.detail >= 2) this.labelEditor.openLabelEditor({});
         },
       );
       this.render.addEventListener(
@@ -120539,10 +117380,10 @@ class CodeBlockNodeView implements NodeView {
             return;
           if (
             !this.inPlace ||
-            !resolveRenderedCodeAndProofreadingLabel2(event.target)
+            !diagramLabelAt(event.target instanceof Element ? event.target : null)
           )
             return;
-          if (this.openLabelEditor({})) event.preventDefault();
+          if (this.labelEditor.openLabelEditor({})) event.preventDefault();
         },
       );
       this.render.addEventListener(
@@ -120553,14 +117394,14 @@ class CodeBlockNodeView implements NodeView {
             "mermaid"
           )
             return;
-          let value7: Dynamic = resolveRenderedCodeAndProofreadingLabel2(
-            event.target,
+          let value7: Dynamic = diagramLabelAt(
+            event.target instanceof Element ? event.target : null,
           );
           if ((value7?.el ?? null) === this.mmHoverEl) return;
           this.mmHoverEl = value7?.el ?? null;
           let value8: Dynamic =
             value7 && this.srcOpen
-              ? resolveRenderedCodeAndProofreadingLen(
+              ? findLabelMatch(
                   this.node.textContent,
                   value7.id,
                   value7.label,
@@ -120617,11 +117458,11 @@ class CodeBlockNodeView implements NodeView {
     }
     this.render.classList.remove("cw-empty");
     if (this.lastErr?.lang === value3 && this.lastErr.src === value4) {
-      if (this.mmInflight) this.abandonMermaidRender();
+      if (this.mermaid.inflight) this.mermaid.abandonMermaidRender();
       return;
     }
     if (value3 === "mermaid") {
-      this.syncMermaid(value4);
+      this.mermaid.syncMermaid(value4);
       return;
     }
     if (value3 === "latex" && !isClipboardAndCodeInputValue()) {
@@ -120825,7 +117666,7 @@ class CodeBlockNodeView implements NodeView {
       this.lastErr == null
     );
   }
-  measureWaiting(input?: unknown, ..._extraArguments: unknown[]): Dynamic {
+  measureWaiting(input: HTMLDivElement, ..._extraArguments: unknown[]): DiagramWaitingBox | null {
     let defaultView: Dynamic = this.dom.ownerDocument.defaultView;
     if (!defaultView || this.srcOpen) return null;
     if (defaultView.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
@@ -121205,8 +118046,8 @@ class CodeBlockNodeView implements NodeView {
     );
   }
   mountMermaidSvg(
-    element?: Dynamic,
-    options?: Dynamic,
+    element: HTMLDivElement,
+    options: string,
     ..._extraArguments: unknown[]
   ): undefined {
     element.innerHTML = options;
@@ -121219,529 +118060,6 @@ class CodeBlockNodeView implements NodeView {
     );
   }
 
-  syncMermaid(input: string, ..._extraArguments: unknown[]): undefined {
-    let render = this.render;
-    if (!render) return;
-    if (this.syncTimer != null) {
-      this.paintMermaid();
-      return;
-    }
-    let value = resolveSchemaAndRenderingDataMode(this.dom.ownerDocument);
-    if (
-      this.lastPane?.lang === "mermaid" &&
-      this.lastPane.src === input &&
-      this.lastPane.theme === value
-    ) {
-      if (this.mmInflight) {
-        this.abandonMermaidRender();
-        this.dom.classList.remove("cw-stale");
-      }
-      this.paintMermaid();
-      return;
-    }
-    if (this.mmInflight?.src === input && this.mmInflight.theme === value) {
-      this.paintMermaid();
-      return;
-    }
-    let value2: number = ++this.mmSeq;
-    this.mmInflight = {
-      src: input,
-      theme: value,
-    };
-    this.mmHoverEl = null;
-    if (renderedCodeAndProofreadingMap8.delete(this))
-      updateRenderedCodeAndProofreadingBongoLiveSrcHover(
-        this.dom.ownerDocument,
-      );
-    if (!resolveRenderedCodeAndProofreadingValue2())
-      resolveRenderedCodeAndProofreadingValue3();
-    if (this.lastPane?.lang === "mermaid" || this.lastGood?.lang === "mermaid")
-      this.dom.classList.add("cw-stale");
-    else {
-      render.textContent = resolveRenderedCodeAndProofreadingValue2()
-        ? "Rendering diagram…"
-        : resolveRenderedCodeAndProofreadingValue6()
-          ? renderedCodeAndProofreadingMessage16
-          : "Loading diagram renderer…";
-      render.classList.add("cw-mm-loading");
-      render.classList.toggle("cw-wait-box", this.firstWait());
-      this.layout.stampFitWidth(render, null);
-      this.lastPane = null;
-      this.lastErr = null;
-    }
-    loadRenderedCodeAndProofreadingPosition(input, value, this.dom).then(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (!this.isLiveKick(value2, render)) return;
-        if (
-          this.node.textContent !== input ||
-          renderableKindDefinition(this.node.attrs.language)?.live !== "mermaid"
-        ) {
-          this.mmInflight = null;
-          return;
-        }
-        this.mmInflight = null;
-        let value3: Dynamic = render.classList.contains("cw-wait-box")
-          ? this.measureWaiting(render)
-          : null;
-        render.classList.remove("cw-mm-loading", "cw-wait-box");
-        if (!input2.ok) {
-          this.lastErr = {
-            lang: "mermaid",
-            src: input,
-          };
-          let value4: Dynamic =
-            (this.editor != null ||
-              (this.srcOpen && this.view.hasFocus() && this.caretInside())) &&
-            this.lastOk?.theme === value
-              ? this.lastOk
-              : null;
-          if (value4) {
-            if (this.lastPane?.html !== value4.html)
-              this.mountMermaidSvg(render, value4.html);
-            this.lastPane = null;
-            this.dom.classList.remove("cw-stale");
-            this.setHeld(input2.error, input2.at);
-            this.paintMermaid();
-            this.positionEditor();
-            return;
-          }
-          this.lastPane = null;
-          this.dom.classList.remove("cw-mm-held");
-          let value5: Dynamic =
-            this.lastGood?.lang === "mermaid" ? this.lastGood : null;
-          if (value5) this.mountMermaidSvg(render, value5.html);
-          else {
-            render.innerHTML = input2.html;
-            this.layout.stampFitWidth(render, null);
-          }
-          this.dom.classList.toggle("cw-stale", value5 != null);
-          this.setStatus(input2.error, value5 ?? undefined, input2.at);
-          this.paintMermaid();
-          this.regreyMermaid(
-            resolveSchemaAndRenderingDataMode(this.dom.ownerDocument),
-          );
-          return;
-        }
-        if (!this.srcOpen || this.lastGood?.lang !== "mermaid")
-          this.lastGood = {
-            lang: "mermaid",
-            src: input,
-            html: input2.html,
-            theme: value,
-          };
-        this.lastPane = {
-          lang: "mermaid",
-          src: input,
-          html: input2.html,
-          theme: value,
-        };
-        this.lastOk = {
-          src: input,
-          html: input2.html,
-          theme: value,
-        };
-        this.lastErr = null;
-        this.mountMermaidSvg(render, input2.html);
-        this.dom.classList.remove("cw-stale", "cw-mm-held");
-        if (value3) this.playArrival(render, value3, "diagram");
-        this.setStatus(null);
-        this.paintMermaid();
-        this.positionEditor();
-      },
-    );
-  }
-  rethemeMermaid(..._extraArguments: unknown[]): undefined {
-    if (
-      !this.render ||
-      codeRenderableKind(this.node.attrs.language)?.live !== "mermaid"
-    )
-      return;
-    if (
-      this.lastErr?.lang === "mermaid" &&
-      this.lastErr.src === this.node.textContent &&
-      !this.mmInflight
-    ) {
-      this.regreyMermaid(
-        resolveSchemaAndRenderingDataMode(this.dom.ownerDocument),
-      );
-      return;
-    }
-    this.sync();
-  }
-  regreyMermaid(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let render = this.render;
-    let lastGood: Dynamic = this.lastGood;
-    if (!render || lastGood?.lang !== "mermaid" || lastGood.theme === input)
-      return;
-    let value: number = ++this.mmSeq;
-    loadRenderedCodeAndProofreadingPosition(lastGood.src, input, this.dom).then(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        if (
-          !this.isLiveKick(value, render) ||
-          this.lastErr?.lang !== "mermaid" ||
-          !input2.ok
-        )
-          return;
-        this.lastGood = {
-          lang: "mermaid",
-          src: lastGood.src,
-          html: input2.html,
-          theme: input,
-        };
-        this.mountMermaidSvg(render, input2.html);
-        this.dom.classList.add("cw-stale");
-        this.paintMermaid();
-      },
-    );
-  }
-  clearMmSplits(..._extraArguments: unknown[]): undefined {
-    for (let value of this.mmRects as Dynamic) value.rect.remove();
-    this.mmRects.length = 0;
-    for (let value of this.mmSplits as Dynamic)
-      if (value.inserted[0]?.parentNode === value.parent) {
-        value.parent.insertBefore(value.original, value.inserted[0]);
-        for (let value2 of value.inserted as Dynamic) value2.remove();
-      }
-    this.mmSplits.length = 0;
-  }
-  splitTextAt(
-    element?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) {
-    if (context <= options) return false;
-    let ownerDocument: Dynamic = element.ownerDocument;
-    let value2: Dynamic = element.textContent ?? "";
-    let value3: number = value2.length - value2.trimStart().length;
-    let value4: Dynamic = options + value3;
-    let value5: Dynamic = context + value3;
-    let items: Dynamic = [];
-    let value6: Dynamic = ownerDocument.createTreeWalker(
-      element,
-      NodeFilter.SHOW_TEXT,
-    );
-    for (
-      let value8: Dynamic = value6.nextNode();
-      value8;
-      value8 = value6.nextNode()
-    )
-      items.push(value8);
-    let index: number = 0;
-    let value7 = false;
-    for (let value8 of items as Dynamic) {
-      let data: Dynamic = value8.data;
-      let value9: number = index;
-      index += data.length;
-      let value10 = Math.max(value4, value9) - value9;
-      let value11 = Math.min(value5, index) - value9;
-      if (value11 <= value10) continue;
-      let parentNode: Dynamic = value8.parentNode;
-      if (!parentNode || parentNode.closest("svg") == null) continue;
-      let value12 = parentNode.namespaceURI === "http://www.w3.org/1999/xhtml";
-      let value13 = (
-        input?: unknown,
-        options2?: unknown,
-        ..._extraArguments: unknown[]
-      ): Dynamic => {
-        let value14: Dynamic = value12
-          ? ownerDocument.createElement("span")
-          : ownerDocument.createElementNS(
-              "http://www.w3.org/2000/svg",
-              "tspan",
-            );
-        if (options2) value14.setAttribute("class", options2);
-        value14.textContent = input;
-        return value14;
-      };
-      let items2: Dynamic = [];
-      if (value10 > 0) items2.push(value13(data.slice(0, value10)));
-      items2.push(value13(data.slice(value10, value11), value));
-      if (value11 < data.length) items2.push(value13(data.slice(value11)));
-      for (let value14 of items2 as Dynamic)
-        parentNode.insertBefore(value14, value8);
-      parentNode.removeChild(value8);
-      this.mmSplits.push({
-        parent: parentNode,
-        inserted: items2,
-        original: value8,
-      });
-      if (!value12)
-        this.backSvgRun(items2[value10 > 0 ? 1 : 0], element, value);
-      value7 = true;
-    }
-    return value7;
-  }
-  backSvgRun(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    let value: Dynamic = input.closest("text");
-    let value2: Dynamic = value?.parentNode;
-    let value3: Dynamic = input;
-    let length: Dynamic = (input.textContent ?? "").length;
-    if (
-      !value ||
-      !value2 ||
-      length === 0 ||
-      typeof value3.getExtentOfChar !== "function"
-    )
-      return;
-    let value4 = 1 / 0;
-    let value5 = 1 / 0;
-    let value6 = -1 / 0;
-    let value7 = -1 / 0;
-    try {
-      for (let index = 0; index < length; index++) {
-        let value9: Dynamic = value3.getExtentOfChar(index);
-        if (!value9 || !(value9.width > 0)) continue;
-        value4 = Math.min(value4, value9.x);
-        value5 = Math.min(value5, value9.y);
-        value6 = Math.max(value6, value9.x + value9.width);
-        value7 = Math.max(value7, value9.y + value9.height);
-      }
-    } catch {
-      return;
-    }
-    if (!(value6 > value4 && value7 > value5)) return;
-    let value8: Dynamic = value.ownerDocument.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "rect",
-    );
-    value8.setAttribute(
-      "class",
-      context === "cw-mm-txt-sel" ? "cw-mm-selbg" : "cw-mm-hlbg",
-    );
-    value8.setAttribute("x", String(value4 - 1));
-    value8.setAttribute("y", String(value5));
-    value8.setAttribute("width", String(value6 - value4 + 2));
-    value8.setAttribute("height", String(value7 - value5));
-    value8.setAttribute("rx", "2");
-    let attribute: Dynamic = value.getAttribute("transform");
-    if (attribute) value8.setAttribute("transform", attribute);
-    value2.insertBefore(value8, value);
-    this.mmRects.push({
-      rect: value8,
-      unit: options,
-    });
-  }
-  syncSvgRunFlags(..._extraArguments: unknown[]): undefined {
-    for (let { rect: rect, unit: unit } of this.mmRects as Dynamic) {
-      if (!rect.classList.contains("cw-mm-hlbg")) continue;
-      rect.classList.toggle("cw-on", unit.classList.contains("cw-on"));
-      rect.classList.toggle("cw-res", unit.classList.contains("cw-res"));
-    }
-  }
-  paintMermaid(..._extraArguments: unknown[]): undefined {
-    let render = this.render;
-    if (!render) return;
-    resolveRenderedCodeAndProofreadingText(render);
-    this.clearMmSplits();
-    for (let value of this.mmTagged as Dynamic) {
-      value.classList.remove(
-        "cw-mm-hl",
-        "cw-mm-sel",
-        "cw-mm-part-sel",
-        "cw-mm-inplace",
-        "cw-mm-part-hl",
-        "cw-on",
-        "cw-res",
-      );
-      value.removeAttribute("data-comment-id");
-      value.removeAttribute(renderedCodeAndProofreadingDataCommentIds);
-    }
-    this.mmTagged.length = 0;
-    if (!this.dom.classList.contains("cw-broken")) {
-      let value: Dynamic = this.splitCommentRanges();
-      let selRange: Dynamic = this.selRange;
-      if (value.length || selRange) {
-        let textContent = this.node.textContent;
-        let value2: Dynamic = collectRenderedCodeAndProofreadingLabel(render);
-        let value3: Dynamic = !this.srcOpen ? this.inPlace : null;
-        if (selRange && value3) {
-          let value6: Dynamic =
-            value3.el.isConnected && render.contains(value3.el)
-              ? value3.el
-              : null;
-          if (!value6) {
-            let value7: Dynamic =
-              value2.find(
-                (input?: Dynamic, ..._extraArguments: unknown[]) =>
-                  input.id === value3.id && input.label === value3.label,
-              ) ??
-              (value3.label != null
-                ? value2.find(
-                    (input?: Dynamic, ..._extraArguments: unknown[]) =>
-                      input.label === value3.label,
-                  )
-                : undefined);
-            if (value7) value3.el = value6 = value7.el;
-          }
-          if (value6) {
-            value6.classList.add("cw-mm-sel", "cw-mm-inplace");
-            this.mmTagged.push(value6);
-            let value7: number = value3.to - value3.from;
-            let value8 =
-              selRange.from <= value3.from && selRange.to >= value3.to;
-            if (value3.exact && !value8) {
-              if (
-                this.splitTextAt(
-                  value6,
-                  selRange.from - value3.from,
-                  selRange.to - value3.from,
-                  "cw-mm-txt-sel",
-                )
-              )
-                value6.classList.add("cw-mm-part-sel");
-            } else if (value3.exact)
-              this.splitTextAt(value6, 0, value7, "cw-mm-txt-sel");
-            else
-              this.splitTextAt(
-                value6,
-                0,
-                (value6.textContent ?? "").trim().length,
-                "cw-mm-txt-sel",
-              );
-          }
-        }
-        let entries: Dynamic = new (Map as Dynamic)();
-        let value4 = (
-          input?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic => {
-          let entry: Dynamic = entries.get(input.el);
-          if (entry === undefined)
-            entries.set(
-              input.el,
-              (entry = resolveSchemaAndRenderingFrom(
-                textContent,
-                input.id,
-                input.label,
-              )),
-            );
-          return entry;
-        };
-        let value5 = (
-          input?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic =>
-          value2.flatMap(
-            (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-              let value6: Dynamic = value4(input2);
-              return value6 &&
-                Math.min(options, value6.to) > Math.max(input, value6.from)
-                ? [
-                    {
-                      n: input2,
-                      d: value6,
-                    },
-                  ]
-                : [];
-            },
-          );
-        if (selRange && !value3) {
-          let value6 = (
-            input?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            input.el.classList.add("cw-mm-sel");
-            let value7 = resolveSchemaAndRenderingStart(
-              options,
-              selRange.from,
-              selRange.to,
-            );
-            if (
-              value7 &&
-              !value7.whole &&
-              this.splitTextAt(
-                input.el,
-                value7.start,
-                value7.end,
-                "cw-mm-txt-sel",
-              )
-            )
-              input.el.classList.add("cw-mm-part-sel");
-            else if (input.label)
-              this.splitTextAt(
-                input.el,
-                0,
-                input.label.length,
-                "cw-mm-txt-sel",
-              );
-            this.mmTagged.push(input.el);
-          };
-          for (let { n: n3, d: d7 } of value5(
-            selRange.from,
-            selRange.to,
-          ) as Dynamic)
-            value6(n3, d7);
-          for (let value7 of value2 as Dynamic) {
-            if (value7.id == null || value7.el.classList.contains("cw-mm-sel"))
-              continue;
-            let length: Dynamic = value7.id.length;
-            let match: Dynamic = resolveSchemaAndRenderingValue7(
-              textContent,
-              value7.id,
-            ).find(
-              (input?: Dynamic, ..._extraArguments: unknown[]) =>
-                Math.min(selRange.to, input + length) >
-                Math.max(selRange.from, input),
-            );
-            if (match == null) continue;
-            let value8: Dynamic =
-              value7.label === value7.id
-                ? {
-                    from: match,
-                    to: match + length,
-                  }
-                : null;
-            value6(value7, {
-              from: match,
-              to: match + length,
-              label: value8,
-            });
-          }
-        }
-        for (let value6 of value as Dynamic)
-          for (let { n: n3, d: d7 } of value5(
-            value6.from,
-            value6.to,
-          ) as Dynamic) {
-            let el: Dynamic = n3.el;
-            el.classList.add("cw-mm-hl");
-            let value7 = isRenderedCodeAndProofreadingDataCommentId(
-              el,
-              value6.threadId,
-            );
-            if (value7) {
-              el.classList.toggle(
-                "cw-res",
-                renderedCodeAndProofreadingSet14.has(value6.threadId),
-              );
-              this.mmTagged.push(el);
-            } else if (!renderedCodeAndProofreadingSet14.has(value6.threadId))
-              el.classList.remove("cw-res");
-            let value8 = value7
-              ? resolveSchemaAndRenderingStart(d7, value6.from, value6.to)
-              : null;
-            if (
-              value8 &&
-              !value8.whole &&
-              this.splitTextAt(el, value8.start, value8.end, "cw-mm-txt-hl")
-            )
-              el.classList.add("cw-mm-part-hl");
-            else if (value7 && n3.label)
-              this.splitTextAt(el, 0, n3.label.length, "cw-mm-txt-hl");
-          }
-      }
-    }
-    this.applyActivePaneHighlight();
-  }
   splitCommentRanges(..._extraArguments: unknown[]): CodeCommentRange[] {
     const { whole, inline } = partitionCodeComments(
       this.node.textContent,
@@ -121789,7 +118107,7 @@ class CodeBlockNodeView implements NodeView {
     if (value === "latex") this.paintLatex();
     else if (value === "csv") this.paintCsvSelection();
     else if (value === "markdown") this.paintMdSelection();
-    else if (value === "mermaid") this.paintMermaid();
+    else if (value === "mermaid") this.mermaidAnnotations.paintMermaid();
   }
   applyActivePaneHighlight(..._extraArguments: unknown[]): undefined {
     if (this.render)
@@ -121804,7 +118122,7 @@ class CodeBlockNodeView implements NodeView {
               renderedCodeAndProofreadingState8,
             ),
         );
-    this.syncSvgRunFlags();
+    this.mermaidAnnotations.syncFlags();
     let value: Dynamic =
       renderedCodeAndProofreadingState8 != null
         ? this.mdThreadRanges.get(renderedCodeAndProofreadingState8)
@@ -121976,7 +118294,7 @@ class CodeBlockNodeView implements NodeView {
     for (let value5 of this.lxTagged as Dynamic) {
       value5.classList.remove("cw-lx-sel", "cw-lx-hl", "cw-on", "cw-res");
       value5.removeAttribute("data-comment-id");
-      value5.removeAttribute(renderedCodeAndProofreadingDataCommentIds);
+      value5.removeAttribute(codeCommentIdsAttribute);
     }
     this.lxTagged.length = 0;
     let render = this.render;
@@ -122069,7 +118387,7 @@ class CodeBlockNodeView implements NodeView {
         let value10 = value9.threadId === "sel";
         parentElement.classList.add(value10 ? "cw-lx-sel" : "cw-lx-hl");
         if (!value10)
-          isRenderedCodeAndProofreadingDataCommentId(
+          addCodeCommentId(
             parentElement,
             value9.threadId,
           );
@@ -122100,7 +118418,7 @@ class CodeBlockNodeView implements NodeView {
     for (let value5 of render.querySelectorAll(".cw-csv-hl") as Dynamic) {
       value5.classList.remove("cw-csv-hl", "cw-on", "cw-res");
       value5.removeAttribute("data-comment-id");
-      value5.removeAttribute(renderedCodeAndProofreadingDataCommentIds);
+      value5.removeAttribute(codeCommentIdsAttribute);
     }
     let value: Dynamic = this.splitCommentRanges();
     let selRange: Dynamic = this.selRange;
@@ -122164,7 +118482,7 @@ class CodeBlockNodeView implements NodeView {
             if (filtered.length) {
               value5.classList.add("cw-csv-hl");
               for (let value6 of filtered as Dynamic)
-                isRenderedCodeAndProofreadingDataCommentId(
+                addCodeCommentId(
                   value5,
                   value6.threadId,
                 );
@@ -122325,7 +118643,7 @@ class CodeBlockNodeView implements NodeView {
       this.editor.host.remove();
       this.editor = null;
     }
-    this.abandonMermaidRender();
+    this.mermaid.abandonMermaidRender();
     renderedCodeAndProofreadingMap8.delete(this);
     this.instances.delete(this);
     renderedCodeAndProofreadingSet12.delete(this);
@@ -122867,7 +119185,7 @@ ${value3}${value9}`);
               ..._extraArguments: unknown[]
             ): undefined => {
               for (let value5 of (input2.getMeta(
-                renderedCodeAndProofreadingCwMermaidSiblingWrites,
+                mermaidSiblingWritesMeta,
               ) ?? []) as Dynamic) {
                 let { from: from, to: to2 }: Dynamic = value5;
                 for (
@@ -122906,7 +119224,7 @@ ${value3}${value9}`);
           if (value4)
             value4.setMeta(
               CodeRenderPanePluginKey,
-              renderedCodeAndProofreadingMmWrite,
+              mermaidWriteMeta,
             );
           if (!input.some(value2)) {
             if (value3) value4 = (value4 ?? context.tr).setSelection(value3);
