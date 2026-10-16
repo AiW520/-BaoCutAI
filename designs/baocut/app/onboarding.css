@@ -21,6 +21,8 @@
 .onb-status p { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
 .onb-agent__nm { display: inline-flex; align-items: center; gap: 8px; }
 .onb-agent__nm svg[role="img"] { flex: none; width: var(--bc-icon-primary); height: var(--bc-icon-primary); }
+/* 下面那句与名字对齐（勾选框 28 + 图标 20 + 间距 8） */
+.onb-agent .onb-model__desc, .onb-agent .onb-model__plan { padding-left: 56px; }
 
 /* 模型卡：多选（同翻译配音的取向卡 .prio，前缀自成一家免得串样式）；已装好、正在下、不能勾的是 is-fixed */
 .onb-models { margin-top: 12px; }
