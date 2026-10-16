@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "知识讲解视频",
+    "zh-Hant": "知識講解影片",
+    "en": "Explainer video",
+    "ja": "解説動画",
+    "ko": "지식 설명 영상",
+    "es": "Vídeo explicativo",
+    "fr": "Vidéo explicative",
+    "de": "Erklärvideo",
+    "nl": "Uitlegvideo",
+    "pt-BR": "Vídeo explicativo",
+    "it": "Video esplicativo",
+    "ru": "Обучающее видео",
+    "pl": "Film objaśniający",
+    "tr": "Anlatım videosu",
+    "vi": "Video giải thích kiến thức"
+  },
+  "summary": {
+    "zh-Hans": "把一个概念、一条新闻或一份资料，讲成外行也看得懂的动画讲解视频",
+    "zh-Hant": "把一個概念、一則新聞或一份資料，講成外行也看得懂的動畫講解影片",
+    "en": "Turn a concept, a news story or a document into an animated explainer anyone can follow",
+    "ja": "概念やニュース、資料を、予備知識がなくてもわかるアニメーション解説動画にする",
+    "ko": "개념, 뉴스, 자료를 배경지식 없이도 이해할 수 있는 애니메이션 설명 영상으로 만듭니다",
+    "es": "Convierte un concepto, una noticia o un documento en un vídeo animado que cualquiera entiende",
+    "fr": "Transforme un concept, une actualité ou un document en vidéo animée que tout le monde comprend",
+    "de": "Ein Konzept, eine Nachricht oder ein Dokument als animiertes Erklärvideo, das jeder versteht",
+    "nl": "Maak van een begrip, nieuwsbericht of document een geanimeerde uitlegvideo die iedereen snapt",
+    "pt-BR": "Transforma um conceito, uma notícia ou um documento em um vídeo animado que qualquer um entende",
+    "it": "Trasforma un concetto, una notizia o un documento in un video animato che chiunque capisce",
+    "ru": "Превратить понятие, новость или документ в анимированное видео, понятное без подготовки",
+    "pl": "Zamienia pojęcie, wiadomość lub dokument w animowany film, który każdy zrozumie",
+    "tr": "Bir kavramı, haberi veya belgeyi herkesin anlayacağı animasyonlu bir anlatım videosuna dönüştürür",
+    "vi": "Biến một khái niệm, tin tức hay tài liệu thành video hoạt hình giải thích ai cũng hiểu"
+  }
+}

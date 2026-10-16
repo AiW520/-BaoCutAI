@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "knowledge-explainer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "kind": "scene",
   "title": "知识讲解",
   "summary": "把一份文档、一套幻灯片或一个话题讲成好懂的视频。",
@@ -43,6 +43,7 @@
   ],
   "skills": [
     "video-production",
+    "explainer-video",
     "narration"
   ],
   "cover": {

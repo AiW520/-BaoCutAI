@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "news-explainer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "kind": "example",
   "title": "热点趣闻讲解",
   "summary": "挑一条近期的热点，做成节奏快、梗图多的讲解视频。",
@@ -31,6 +31,7 @@
   ],
   "skills": [
     "video-production",
+    "explainer-video",
     "narration"
   ],
   "cover": {

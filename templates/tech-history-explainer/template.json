@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "tech-history-explainer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "kind": "example",
   "title": "技术简史科普",
   "summary": "用代码做一条节奏快、带笑点的大语言模型发展史科普。",
@@ -36,6 +36,7 @@
   ],
   "skills": [
     "video-production",
+    "explainer-video",
     "narration"
   ],
   "cover": {

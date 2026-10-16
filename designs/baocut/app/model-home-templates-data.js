@@ -444,7 +444,7 @@
     },
     {
       "id": "knowledge-explainer",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "kind": "scene",
       "category": "explainer",
       "title": "知识讲解",
@@ -477,6 +477,7 @@
       ],
       "skills": [
         "video-production",
+        "explainer-video",
         "narration"
       ],
       "source": "official",
@@ -618,7 +619,7 @@
     },
     {
       "id": "news-explainer",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "kind": "example",
       "category": "news-data",
       "title": "热点趣闻讲解",
@@ -641,6 +642,7 @@
       ],
       "skills": [
         "video-production",
+        "explainer-video",
         "narration"
       ],
       "source": "official",
@@ -1131,7 +1133,7 @@
     },
     {
       "id": "tech-history-explainer",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "kind": "example",
       "category": "explainer",
       "title": "技术简史科普",
@@ -1159,6 +1161,7 @@
       ],
       "skills": [
         "video-production",
+        "explainer-video",
         "narration"
       ],
       "source": "official",

@@ -15,6 +15,8 @@
 7. 验收（第 7 节）。
 8. 按修改意见改一两轮（第 8 节）。
 
+知识讲解、科普、教学类的成片，另读 [`references/craft/explainer-video.md`](explainer-video.md)：讲什么、怎么写稿、画面怎么设计按它，制作步骤仍按这里。
+
 第 2、3 节写完，把整理好的制作计划给用户过目再执行：改一张卡比重做一个镜头便宜。用户说过「直接做」时不停下，把计划附在交付里。
 
 本做法的分阶段流程借鉴了 Manus 官方 skill video-generator，并按 BaoCut 的工具与能力改写。开头样段、视觉参考图、稿子与材料的对应表、按条处理修改意见，以及旁白用真人录音还是合成的取舍，受「大师的AI小灶」（@dashiAIxz）分享的 Opus 5.5 剪辑经验启发（https://x.com/dashiAIxz/status/2108785099663867916）。代码场景里整首歌按整帧分段、样段带上第一次高潮、角色分开画再在代码里同框这几条，参考了 makevoid 的 motion-graphics-music-video-skill（https://github.com/makevoid/motion-graphics-music-video-skill）。
