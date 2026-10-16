@@ -34,6 +34,8 @@ export const de: ServicesMcpMessages = {
     assets_import: "Material importieren",
     assets_search: "Online-Material suchen",
     assets_download: "Online-Material herunterladen",
+    assets_sfx: "Soundeffekte erzeugen",
+    assets_analyze: "Audio analysieren",
     compositions_import: "Motion-Grafik importieren",
     compositions_preview: "Vorschau der Motion-Grafik anzeigen",
     assets_prune: "Unbenutztes Material bereinigen",

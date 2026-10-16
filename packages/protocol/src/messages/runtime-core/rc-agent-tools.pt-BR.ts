@@ -57,6 +57,7 @@ export const ptBR: RcAgentToolsMessages = {
 
   importAssetLabel: (p: { name: string; place: boolean }) => `Importar ${p.name}${p.place ? " e adicionar à linha do tempo" : ""}`,
   openMediaDownloadSummary: (p: { title: string; source: string; license: string; place: boolean }) => `Baixar “${p.title}” de ${p.source} (${p.license}) e importar${p.place ? " na linha do tempo" : ""}`,
+  sfxSummary: (p: { recipe: string; place: boolean }) => `Gerar o efeito sonoro “${p.recipe}” e importá-lo${p.place ? ' na linha do tempo' : ''}`,
   replaceCompositionSummary: (p: { name: string; clip: string }) => `Importar ${p.name} e substituir o clipe ${p.clip} na linha do tempo`,
   replaceCompositionLabel: (p: { name: string }) => `Substituir o gráfico animado por ${p.name}`,
   pruneAssetsSummary: (p) => `Remover do vídeo as mídias sem uso (${p.count}): ${p.names}`,

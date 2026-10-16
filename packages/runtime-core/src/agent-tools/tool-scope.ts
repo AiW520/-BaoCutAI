@@ -125,6 +125,9 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   // 再编译成 importAsset，一笔可撤销的修改，与从链接下载同级。
   assets_search: 'read',
   assets_download: 'command',
+  // 程序化音效：本机合成后编译成 importAsset，一笔可撤销的修改，与导入素材同级；音频分析只读（JSON 写进 .baocut-out/analysis/）。
+  assets_sfx: 'edit',
+  assets_analyze: 'read',
   // 清理没有引用的素材：只列出时只读；apply 时编译成 removeAssets，一笔可撤销的修改，同级。
   assets_prune: 'edit',
   // 采用来源章节：dryRun 时只读；否则编译成一个 setChapters，一笔可撤销的修改，同级。

@@ -122,6 +122,7 @@ import { entryPlace } from './videos/pipeline-targets.ts';
 import { FlowTools } from './agent-tools/flow-tools.ts';
 import { LinkImportTools } from './agent-tools/link-import-tools.ts';
 import { OpenMediaTools } from './agent-tools/open-media-tools.ts';
+import { AudioTools } from './agent-tools/audio-tools.ts';
 import { DownloadTools } from './agent-tools/download-tools.ts';
 import { SpeechSentenceTools } from './agent-tools/speech-sentence-tools.ts';
 import { MemoryCitationRegistry } from './ai-tools/citation-registry.ts';
@@ -846,6 +847,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           // YouTube 检索与 `download` 同一个 yt-dlp、同一项网站登录。
           youtube: { tool: () => externalTools.resolveForUse(YT_DLP), cookieBrowsers: linkImport.settingCookieBrowsers },
         }),
+        // 程序化音效与音频分析（Agent 面设计 §4.3）：音效导入与 assets_import 同级；分析只读，解码用同一个 ffmpeg。
+        new AudioTools({ videos, scope: toolScope, ffmpeg: compositionFfmpeg }),
         // 会话里的幻灯片（docs/design/slides §7.2）：校验与导入素材；编译器与 deck 的存储来自幻灯片服务。
         new SlidesTools({ scope: toolScope, slides }),
         // 会话里的设计稿（docs/design/canvas §7.2）：结构校验与导入素材；设计稿的存储来自同一个编辑器服务。

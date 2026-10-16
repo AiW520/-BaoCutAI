@@ -21,6 +21,7 @@ export const es: RcAgentToolsMessages = {
  deleteVideoSummary: (p) => `Eliminar el vídeo «${p.name}» (${p.path}): moverlo a la Papelera, desde donde se puede restaurar en Space durante ${countEs(p.days, 'día', 'días')}. Los archivos originales de materiales vinculados permanecen donde están`, importPackageSummary: (p) => `Abrir el paquete portable ${p.file}`, renameVideoLabel: 'Cambiar nombre del vídeo',
  putDocumentSummary: (p) => `Escribir una versión nueva del documento ${p.documentId}`, newDocumentSummary: (p) => `Crear un documento (${p.kind})`, updateDocumentLabel: (p) => `Actualizar el documento «${p.name}»`, newDocumentLabel: (p) => `Crear el documento «${p.name}»`, translationDocumentName: (p) => `Traducción en ${p.language}`, importAssetSummary: (p) => `Importar el material ${p.name}${p.place ? ' y añadirlo a la línea de tiempo' : ''}`, importAssetLabel: (p) => `Importar ${p.name}${p.place ? ' y añadirlo a la línea de tiempo' : ''}`,
   openMediaDownloadSummary: (p) => `Descargar «${p.title}» de ${p.source} (${p.license}) e importarlo${p.place ? ' en la línea de tiempo' : ''}`,
+  sfxSummary: (p) => `Generar el efecto de sonido «${p.recipe}» e importarlo${p.place ? ' en la línea de tiempo' : ''}`,
  
   replaceCompositionSummary: (p) => `Importar ${p.name} y reemplazar el clip ${p.clip} de la línea de tiempo`,
   replaceCompositionLabel: (p) => `Reemplazar el gráfico animado por ${p.name}`,

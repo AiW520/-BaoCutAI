@@ -8,6 +8,8 @@ export const pl: AgentToolStepsMessages = {
     importAssets: "Importuj materiały",
     searchOnlineAssets: "Szukaj materiałów online",
     downloadOnlineAsset: "Pobierz materiał online",
+    makeSoundEffect: "Utwórz efekt dźwiękowy",
+    analyzeAudio: "Analizuj dźwięk",
     editVideo: "Edytuj wideo",
     listVideos: "Wyświetl wideo",
     newVideo: "Nowe wideo",

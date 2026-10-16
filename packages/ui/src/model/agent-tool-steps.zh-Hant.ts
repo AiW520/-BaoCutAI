@@ -7,6 +7,8 @@ export const zhHant: AgentToolStepsMessages = {
     importAssets: '匯入素材',
     searchOnlineAssets: '檢索網路素材',
     downloadOnlineAsset: '下載網路素材',
+    makeSoundEffect: '合成音效',
+    analyzeAudio: '分析音訊',
     editVideo: '修改影片',
     listVideos: '列出影片',
     newVideo: '新增影片',

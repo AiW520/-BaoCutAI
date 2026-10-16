@@ -11,6 +11,7 @@ import { LinkImportTools } from './link-import-tools.ts';
 import { ModelInstallTools } from './model-install-tools.ts';
 import { ModelTools } from './model-tools.ts';
 import { OpenMediaTools } from './open-media-tools.ts';
+import { AudioTools } from './audio-tools.ts';
 import { ProjectTools } from './project-tools.ts';
 import { SkillTools } from './skill-tools.ts';
 import { SlidesTools } from './slides-tools.ts';
@@ -54,6 +55,7 @@ export function allToolSets(): ToolSet[] {
     new VideoDeleteTools(none),
     new CompositionTools(none),
     new OpenMediaTools(none),
+    new AudioTools(none),
     new SlidesTools(none),
     new DesignTools(none),
     new DesignSystemTools(none),

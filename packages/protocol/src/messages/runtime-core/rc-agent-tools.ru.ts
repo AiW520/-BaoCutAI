@@ -50,6 +50,7 @@ export const ru: RcAgentToolsMessages = {
   importAssetSummary: (p) => `Импортировать материал ${p.name}${p.place ? " и добавить на таймлайн" : ""}`,
   importAssetLabel: (p) => `Импортировать ${p.name}${p.place ? " и добавить на таймлайн" : ""}`,
   openMediaDownloadSummary: (p) => `Скачать «${p.title}» с ${p.source} (${p.license}) и импортировать${p.place ? " на таймлайн" : ""}`,
+  sfxSummary: (p) => `Создать звуковой эффект «${p.recipe}» и импортировать его${p.place ? ' на таймлайн' : ''}`,
  
   replaceCompositionSummary: (p) => `Импортировать ${p.name} и заменить им клип ${p.clip} на таймлайне`,
   replaceCompositionLabel: (p) => `Заменить анимированную графику на ${p.name}`,

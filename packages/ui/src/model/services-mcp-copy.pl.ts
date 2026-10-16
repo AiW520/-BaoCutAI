@@ -33,6 +33,8 @@ export const pl: ServicesMcpMessages = {
     assets_import: "Importuj materiały",
     assets_search: "Szukaj materiałów online",
     assets_download: "Pobierz materiały online",
+    assets_sfx: "Twórz efekty dźwiękowe",
+    assets_analyze: "Analizuj dźwięk",
     compositions_import: "Importuj grafikę animowaną",
     compositions_preview: "Podgląd grafiki animowanej",
     assets_prune: "Usuń nieużywane materiały",

@@ -48,6 +48,8 @@ const en = {
     assets_import: 'Import assets',
     assets_search: 'Search online assets',
     assets_download: 'Download online assets',
+    assets_sfx: 'Make sound effects',
+    assets_analyze: 'Analyze audio',
     compositions_import: 'Import motion graphic',
     compositions_preview: 'Preview motion graphic',
     assets_prune: 'Clean up unused assets',

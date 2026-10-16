@@ -7,6 +7,8 @@ export const ja: AgentToolStepsMessages = {
     importAssets: '素材を読み込む',
     searchOnlineAssets: 'ネットの素材を検索',
     downloadOnlineAsset: 'ネットの素材をダウンロード',
+    makeSoundEffect: '効果音を生成',
+    analyzeAudio: '音声を解析',
     editVideo: '動画を編集',
     listVideos: '動画を一覧表示',
     newVideo: '新しい動画',
