@@ -305,6 +305,14 @@
   background: transparent;
   padding-bottom: 0;
 }
+/*
+ * Electron 按几何位置叠窗口拖动区，不看层级：标题栏的 .bc-drag 会透过盖在它上面的全屏对话框，
+ * 吞掉表头按钮、滑块和输入框的点击。对话框自己声明 no-drag 才压得住；表头不能只靠左边的留白。
+ */
+.bc-image-lightbox,
+.bc-media-dialog {
+  -webkit-app-region: no-drag;
+}
 /* macOS 的红绿灯压在全屏查看器左上角：各表头（查看、标注、全景）左边让出与标题栏相同的 84px。 */
 .bc-image-lightbox--mac .bc-image-header {
   padding-inline-start: 84px;
