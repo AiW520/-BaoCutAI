@@ -14,6 +14,7 @@ import {
   UiOverlaysAndIconsCustomIcon,
   ackOf,
   apiFetcher,
+  dataSourcesOffered,
   liveSupportCode,
   loadPlatformApiAndAuthDescription,
   loadPlatformLiveDocumentAndHistoryContainer2,
@@ -21,6 +22,7 @@ import {
   loadPlatformSessionAndSourcesFrameVersionTable,
   loadPlatformSyncAndRoutingClipboard,
   pageBusyOf,
+  projectDuplicateOffered,
   resolveCommentsEditorUseContext4,
   resolveDataContentAndReferencesKind,
   resolveDataContentAndReferencesKind2,
@@ -544,7 +546,8 @@ export const HeaderPath: ReactComponentTypes.FC<Dynamic> = ({
               icon={`Edit`}
               disabled={!door || projectName2 === undefined}
             >{`Rename`}</Menu.Item>
-            {!embed && (
+            {/* BaoCut: 独立页面不复制文档（docs-host.ts 的 projectDuplicateOffered），不列「Duplicate」。 */}
+            {!embed && projectDuplicateOffered() && (
               <Menu.Item
                 onClick={(..._extraArguments: unknown[]): Dynamic => onOpenChange2(true)}
                 icon={`Copy`}
@@ -607,7 +610,8 @@ export const HeaderPath: ReactComponentTypes.FC<Dynamic> = ({
               </Menu.Submenu>
             )}
             <Menu.Separator />
-            {!embed && (
+            {/* BaoCut: 独立页面没有定时任务与数据库（docs-host.ts 的 dataSourcesOffered），不列「Data sources」。 */}
+            {!embed && dataSourcesOffered() && (
               <Menu.Item
                 data-testid={`more-sources-btn`}
                 onClick={(..._extraArguments: unknown[]): Dynamic =>

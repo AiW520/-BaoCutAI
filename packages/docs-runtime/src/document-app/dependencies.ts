@@ -1203,7 +1203,14 @@ export {
 
 export { isFrameOfflineError, isFrameArtifact, recordFramePhase } from "../boot/environment";
 
-export { commentSummonHost, standaloneDocsChat, standaloneDocsHost, versionHistoryOffered } from "../host/docs-host";
+export {
+  commentSummonHost,
+  dataSourcesOffered,
+  projectDuplicateOffered,
+  standaloneDocsChat,
+  standaloneDocsHost,
+  versionHistoryOffered,
+} from "../host/docs-host";
 
 export { preloadModule } from "../boot/preload";
 

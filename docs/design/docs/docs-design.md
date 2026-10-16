@@ -68,6 +68,7 @@
 - `globalThis.docsHost.chat`（只在 BaoCut 的 iframe 里装）：编辑器左下角的「Ask Agent」点了发 `editor:focus-chat`，功能区让这个会话露出来（单条标签条里选中会话标签），光标放到它的输入框末尾；标签不属于会话时提示。页面单独打开时没有这个按钮。原版这里打开 claude.ai 的对话栏，BaoCut 不提供。
 - 选中文字后工具栏的「Ask Agent」打开这处选区的批注框（开头带着提及智能体的 `@Agent`），之后同第 8 节的评论；批注发不出去（页面单独打开、只读）时提示。
 - 版本历史：编辑器的版本面板要文档服务提供版本列表与每一版渲染好的 HTML（`api/v3/project/<id>/file/<文件>/history`、`at/<rev>`、`restore/<rev>`），`packages/docs` 不提供，所以编辑器不显示顶栏的 History 按钮与版本面板（`packages/docs-runtime` README「版本历史」；原版在独立页面总是开着，点了只显示接口的 404）。正文最近若干个 rev 的快照仍存在 `tabs/<正文 id>.history.json`，给智能体的 `atRev` / `sinceRev` 读与 `restore` 用。
+- 数据源与复制项目：项目菜单的「Data sources」（定时任务与数据库）与「Duplicate」要原平台的项目服务。文档没有定时任务与数据库，文档是一个目录、grant 按目录发，复制出的副本没有地方放也打不开，所以编辑器不列这两项（`packages/docs-runtime` README「项目菜单的「Data sources」与「Duplicate」」；原版在独立页面列着，点了显示 `databases read failed (404)` 或提示 `not_found`）。
 - 与功能区的其他编辑器共用 `editor:ready`、`editor:flush` / `editor:flushed`、`editor:reveal`；文档自己有持久的评论，没有幻灯片那样的标注模式开关。
 - 界面里把助手叫「智能体」（Send to agent / Sent to agent / Ask Agent），不叫 Claude；评论里提及智能体写作 `@Agent`（原版是 `@Claude`）。以前的文档里的 `@Claude` 与手打的 `@claude` 照样算发给智能体：编辑器勾上「Send to agent」，没带 `to` 的评论 door 记作发给智能体，交给智能体前去掉开头的提及。智能体改文档时露出的名字（光标旗子、在线头像、播报、新加标签页与改写段落的提示、批注里的署名与等回复的提示）也叫 Agent / the agent；连不上与编辑器更新后的提示只说 Docs。BaoCut 用不到的部分（正文里的行内提问、skill、widget、图表、登录、分享）文案不改。
 
@@ -84,7 +85,7 @@
 | `/docs/<grant>` | 308 到 `/docs/<grant>/`（编辑器用相对地址取样式与脚本） |
 | `/docs/<grant>/`、`/docs/<grant>/project/<id>` | 编辑器页面（注入 `<base>`、启动信息与 CSP）；shim 把地址换成 `project/<文档 id>`；没构建时 503 |
 | `/docs/<grant>/assets/…`、`artifact-type/…` | 编辑器的构建产物，防路径穿越 |
-| `/docs/<grant>/api/…` | 编辑器读写文档、上传与取素材的 HTTP 接口（door 的 HTTP 后备 `POST api/v3/door/<地址>[/batch]`、`POST api/blob`、`GET api/blob/<sha 或素材 id>`、运行时 `api/lfile-runtime/<哈希>`）；上传与写入要同源 |
+| `/docs/<grant>/api/…` | 编辑器读写文档、上传与取素材的 HTTP 接口（door 的 HTTP 后备 `POST api/v3/door/<地址>[/batch]`、`POST api/blob`、`GET api/blob/<sha 或素材 id>`、运行时 `api/lfile-runtime/<哈希>`）；上传与写入要同源。编辑器启动与菜单要的原平台列表里，本机没有的定时任务、待审批的运行与数据库（`GET api/v3/project/<id>/routines`、`staged-runs`、`databases`）回空列表 `{rows: []}`；没提供的接口回 404 |
 | `/docs/<grant>/api/baocut/annotation?path=` | 一条批注的说明 `{kind, label, quote?}`（shim 发 `editor:annotate` 前查） |
 | `/docs/<grant>/api/mux` | WebSocket：door 调用（二进制帧，标签 `~d:<rid>:<o\|b>:<地址>`，回 `doorack`）与推送（`chat` 的空闲帧、`feed:project/<id>` 的新修订与评论、`room:project/<id>` 的标签栏与下拉选项）；跨源的升级回 404 |
 

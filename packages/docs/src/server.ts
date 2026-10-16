@@ -564,12 +564,12 @@ export class DocsServer implements DocsConnectorHost {
       if (id !== meta.id) return sendJson(response, 404, { files: [] });
       return sendJson(response, 200, { files: visibleTabs(meta).map((tab) => ({ id: tab.id, name: tab.name })) });
     }
-    const project = /^v3\/project\/([^/]+)\/(access|routines|staged-runs|enums)$/.exec(route);
+    const project = /^v3\/project\/([^/]+)\/(access|routines|staged-runs|enums|databases)$/.exec(route);
     if (project) {
       if (project[1] !== meta.id) return sendJson(response, 404, { error: 'not_found' });
       if (project[2] === 'access') return sendJson(response, 200, { access: options.canEdit ? 'owner' : 'viewer' });
       if (project[2] === 'enums') return sendJson(response, 200, { rows: Object.entries(meta.enums).map(([id, value]) => ({ ...value, id })) });
-      // 定时任务、待审批的运行：本机没有
+      // 定时任务、待审批的运行、数据库：本机没有（单个数据库 `database/<id>` 落到下面的 404，编辑器当作不存在）
       return sendJson(response, 200, { rows: [] });
     }
     sendJson(response, 404, { error: 'not_found', path: route });

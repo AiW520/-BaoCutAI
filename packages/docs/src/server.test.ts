@@ -173,7 +173,7 @@ describe('页面与静态文件', () => {
 });
 
 describe('接口', () => {
-  it('本机用户、功能开关、能力表、文档对象、权限、找人', async () => {
+  it('本机用户、功能开关、能力表、文档对象、权限、本机没有的列表、找人', async () => {
     expect((await request('GET', `/docs/${grant}/api/me`)).json()).toMatchObject({ name: 'Jim', flags: { values: { docFonts: true } } });
     expect((await request('GET', `/docs/${grant}/api/v3/manifest?brief=1`)).json()).toHaveProperty('caps');
     expect((await request('GET', `/docs/${grant}/api/v3/manifest`)).json()).toEqual({ door: { dialect: 'final' } });
@@ -183,6 +183,11 @@ describe('接口', () => {
     canEdit = false;
     expect((await request('GET', `/docs/${grant}/api/v3/project/${project.id}/access`)).json()).toEqual({ access: 'viewer' });
     expect((await request('GET', `/docs/${grant}/api/v3/project/${project.id}/enums`)).json()).toEqual({ rows: [] });
+    for (const list of ['routines', 'staged-runs', 'databases']) {
+      expect((await request('GET', `/docs/${grant}/api/v3/project/${project.id}/${list}`)).json()).toEqual({ rows: [] });
+    }
+    expect((await request('GET', `/docs/${grant}/api/v3/project/other/databases`)).status).toBe(404);
+    expect((await request('GET', `/docs/${grant}/api/v3/project/${project.id}/database/db-1`)).status).toBe(404);
     const people = (await request('GET', `/docs/${grant}/api/people/search?q=ji`)).json<{ hits: { name: string }[] }>();
     expect(people.hits.map((hit) => hit.name)).toContain('Jim');
     expect((await request('GET', `/docs/${grant}/api/v3/directory`)).json()).toEqual([{ id: project.id, name: 'Plan' }]);

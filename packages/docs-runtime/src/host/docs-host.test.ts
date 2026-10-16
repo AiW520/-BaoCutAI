@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isFrameArtifact } from "../boot/environment";
-import { commentSummonHost, versionHistoryOffered } from './docs-host';
+import { commentSummonHost, dataSourcesOffered, projectDuplicateOffered, versionHistoryOffered } from './docs-host';
 
 vi.mock("../boot/environment", () => ({ isFrameArtifact: vi.fn(() => false) }));
 
@@ -26,5 +26,22 @@ describe('version history gate', () => {
   it('keeps the original behaviour inside the Frame', () => {
     inFrame.mockReturnValue(true);
     expect(versionHistoryOffered()).toBe(true);
+  });
+});
+
+describe('project menu platform gates', () => {
+  it('hide Data sources and Duplicate on standalone pages, even with the BaoCut host installed', () => {
+    vi.stubGlobal('docsHost', {
+      comments: { canSendToClaude: async () => 'available', sendToClaude: async () => ({ threadId: 't' }) },
+      chat: { focus() {} },
+    });
+    expect(dataSourcesOffered()).toBe(false);
+    expect(projectDuplicateOffered()).toBe(false);
+  });
+
+  it('keep the original behaviour inside the Frame', () => {
+    inFrame.mockReturnValue(true);
+    expect(dataSourcesOffered()).toBe(true);
+    expect(projectDuplicateOffered()).toBe(true);
   });
 });

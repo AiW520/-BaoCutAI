@@ -12,7 +12,8 @@
  * 不经 chat：装了 comments 时打开批注框（docs-app.tsx 的 ask-claude）。
  * 空行上 @Agent 的行内提问不经这里：它要先让模型判断请求（sample）再决定由 Claude 直接写还是转成批注，独立页面不提供
  * （packages/docs-runtime/README.md「不提供」）。
- * 版本历史也不经 docsHost：它要的是文档服务的接口，BaoCut 不提供，独立页面不显示（versionHistoryOffered()）。
+ * 版本历史也不经 docsHost：它要的是文档服务的接口，BaoCut 不提供，独立页面不显示（versionHistoryOffered()）。项目菜单的
+ * 「Data sources」与「Duplicate」同理（dataSourcesOffered()、projectDuplicateOffered()）。
  */
 import { isFrameArtifact } from "../boot/environment";
 
@@ -93,6 +94,26 @@ export function commentSummonHost(): boolean {
  * HistoryRailToggle 与 ?chrome=embed 布局给 HeaderPath 的 historyOffered（项目菜单的「Version history」）。
  */
 export function versionHistoryOffered(): boolean {
+  return isFrameArtifact();
+}
+
+/**
+ * 项目菜单的「Data sources」（Routines 与 Databases 两栏的对话框）只在 Frame 里照原样开，独立页面不开。BaoCut 的文档没有
+ * 定时任务与数据库，文档服务对 `api/v3/project/<id>/routines`、`databases` 只回空列表；对话框里只剩「No routines yet. Define
+ * one in chat.」「No databases yet. Ask in chat to create one.」两句做不到的提示（以前 databases 还回 404，显示
+ * 「databases read failed (404)」）。读取点：application/routes-routines-dialog.tsx 的 HeaderPath（带 BaoCut: 注释）。
+ */
+export function dataSourcesOffered(): boolean {
+  return isFrameArtifact();
+}
+
+/**
+ * 项目菜单的「Duplicate」只在 Frame 里照原样开，独立页面不开。原版向 `api/v3/project/<id>/duplicate` 要一份新项目，成功后在
+ * 同一个页面跳到 `project/<新 id>`；BaoCut 的文档是一个目录，grant 按目录发，`api/v3/project/<id>/…` 只认这份文档，复制出的
+ * 副本既没有地方放，也打不开。文档服务不提供这个接口，以前点了只提示 `not_found`。
+ * 读取点：application/routes-routines-dialog.tsx 的 HeaderPath（带 BaoCut: 注释）。
+ */
+export function projectDuplicateOffered(): boolean {
   return isFrameArtifact();
 }
 
