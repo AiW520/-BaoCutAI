@@ -652,9 +652,19 @@
     const tones = quickTones(id);
     return tones.find((t) => t.k === k) || tones.find((t) => t.k === 'natural') || null;
   }
-  /** 试听前要先说清楚的一句；没有就返回 null。 */
-  function quickSlow(id) {
+  /* 合成在 CPU 上跑时的耗时提示（Runtime 模型描述的 `notes`：合成服务的后端是 `cpu` 时才有——Windows 标准安装包、
+     Linux 的 CPU 构建，或设了 BAOCUT_AUDIOCPP_BACKEND=cpu）。只写实测过的（architecture-design §6.5）：
+     2026-10-15 在 Apple M4 上强制 cpu、8 线程实测 OmniVoice 约为音频长度的 9 倍；其余引擎没有在 CPU 上实测，只说没测，不按参数量推算。 */
+  const CPU_PACE = {
+    omnivoice: '耗时约为音频长度的 9 倍，10 秒的一句要一分半钟左右',
+  };
+  function cpuNote(engine) {
+    return `在本机的 CPU 上合成，比用显卡慢得多：${CPU_PACE[engine] || '这个模型在 CPU 上的速度还没有实测'}`;
+  }
+  /** 试听前要先说清楚的一句；没有就返回 null。`cpu` = 合成服务在 CPU 上跑：耗时提示排第一（同 Runtime 的 `notes`）。 */
+  function quickSlow(id, cpu) {
     const spec = MODELS[id] || {};
+    if (cpu && spec.engine && spec.engine !== 'sep') return cpuNote(spec.engine);
     if (spec.mode === 'describe') return '声音完全由这句描述决定：换一句描述就是另一个人，没有预设音色可选';
     if (engineOf(spec.engine).nonCommercial) return '仅限非商用（CC-BY-NC-4.0）：做要商用的内容请换别的模型';
     return null;
@@ -1186,7 +1196,7 @@
     MAX_RATE, RETRANS_RATE, MANUAL_RATE, GAP, SEP_WINDOW, BED_TRACK_ID,
     LOCAL_KNOBS, knobsOf, knobValue, setKnob, knobArgs, knobLine, DURATION_MAX, durationMax,
     OMNI_DESIGN, OMNI_PRESETS, omniCats, omniItemLabel, omniFit, omniToggle, omniCount, omniInstruct, omniLabel, omniProblem, omniLangNote, describeText,
-    engineOf, allEngines, LANG_SHORT, VOICE_MODES, modelFor, referenceWindows, voiceModes, cloneOnly, hasDescribe, describeByVocab, hasStyle, styleOn, refRequired, builtinKind, hasEmotion, engineName, engineFamily, formLangs, refProblem, refTextRequired, BUILTIN_REFS, QUICK_BUILTINS, builtinRef, defaultBuiltin, moreBuiltins, REF_CREDIT, refSources, refDefault, refSourceOf, pickRef, modelBrief, SAMPLE_LINES, SAMPLE_KINDS, sampleLangs, sampleKinds, sampleLine, langLabel, quickTones, quickTone, QUICK_PRESETS, quickVoices, quickDefaults, quickForm, quickSummary, quickKey, quickSlow, DESCRIBE_VOICES, engineSpeaks, ttsLangs, dubLangMarks, fallbackLang, REF_WINDOW, referenceWindow, referenceLine, validate, validatePreview, segments, estimateDuration, GEN_STAGES, genStages, genPhase, genSub, asSource,
+    engineOf, allEngines, LANG_SHORT, VOICE_MODES, modelFor, referenceWindows, voiceModes, cloneOnly, hasDescribe, describeByVocab, hasStyle, styleOn, refRequired, builtinKind, hasEmotion, engineName, engineFamily, formLangs, refProblem, refTextRequired, BUILTIN_REFS, QUICK_BUILTINS, builtinRef, defaultBuiltin, moreBuiltins, REF_CREDIT, refSources, refDefault, refSourceOf, pickRef, modelBrief, SAMPLE_LINES, SAMPLE_KINDS, sampleLangs, sampleKinds, sampleLine, langLabel, quickTones, quickTone, QUICK_PRESETS, quickVoices, quickDefaults, quickForm, quickSummary, quickKey, quickSlow, cpuNote, DESCRIBE_VOICES, engineSpeaks, ttsLangs, dubLangMarks, fallbackLang, REF_WINDOW, referenceWindow, referenceLine, validate, validatePreview, segments, estimateDuration, GEN_STAGES, genStages, genPhase, genSub, asSource,
     PACE_FILE, PACE_PATH, PACE_SEED, paceUnit, unitName, latinUnits, countUnits, paceFor, paceUpdate, paceLine, predictRate, budgetUnits,
     limitOf, fitPlan, demoRewrite, replanRow,
     DUB_STAGES, dubStages, sepWindows, dubPhase, fitSentence, speakerHue, dubTrackId, dubBlocks, stretchBlock, rateLabel,

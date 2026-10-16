@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FrozenSpeechReference, ModelBundleStatus, SynthesizeSpeechRequest } from '@baocut/protocol';
+import { ModelsLocalSpeech as M } from '@baocut/protocol/messages/models/local-speech.ts';
 import { speechParameters } from './generation-options.ts';
 import {
   audioCppSpeechRequestOf,
@@ -63,6 +64,16 @@ const REFERENCE: FrozenSpeechReference = {
   byteLength: 10,
   transcript: null,
 };
+
+describe('localSpeechModelInfo', () => {
+  it('合成服务在 CPU 上跑时照实提示耗时：实测过的模型给实测的速度，别的只说没有实测；显卡与不知道的后端不提示', () => {
+    const notes = (id: string, backend: string | null) => localSpeechModelInfo(def(id), status, true, backend).notes;
+    expect(notes('omnivoice@audio-cpp-q8', 'cpu')).toBe(M.cpuNote({ pace: M.paceOmnivoice().text }).text);
+    expect(notes('voxcpm2@audio-cpp-q8', 'cpu')).toBe(M.cpuNote({ pace: M.paceDefault().text }).text);
+    expect(notes('voxcpm2@audio-cpp-q8', 'cpu')).toContain('CPU');
+    for (const backend of ['metal', 'cuda', 'vulkan', null]) expect(notes('omnivoice@audio-cpp-q8', backend), String(backend)).toBeUndefined();
+  });
+});
 
 describe('planLocalVoice', () => {
   it('不指定声音：内置音色按请求语言挑（没有那种语言时取第一只）；说话人模型用默认说话人', () => {

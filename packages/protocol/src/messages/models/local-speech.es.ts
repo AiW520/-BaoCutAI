@@ -1,5 +1,8 @@
 import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 export const es: ModelsLocalSpeechMessages = {
+  cpuNote: (p: { pace: string }) => `Sintetiza en la CPU de este ordenador, mucho más lento que en una GPU: ${p.pace}`,
+  paceOmnivoice: 'tarda unas 9 veces la duración del audio, por lo que una frase de 10 segundos tarda alrededor de minuto y medio',
+  paceDefault: 'su velocidad en la CPU aún no se ha medido',
   referenceTranscriptRequired: "Introduce la transcripción de la grabación de referencia",
  oneVoiceSource: 'Proporciona solo uno de voice, reference y voiceDescription', modeUnsupported: (p) => `El modelo ${p.modelId} no admite ${p.what} (${p.mode})`, modeClone: 'clonar a partir de una grabación de referencia', modeDescribe: 'crear una voz a partir de una descripción',
  noReferenceTranscript: (p) => `El modelo ${p.modelId} no lee la transcripción de la grabación de referencia (reference.transcript)`, descriptionEmpty: 'La descripción no puede estar vacía',

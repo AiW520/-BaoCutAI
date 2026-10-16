@@ -33,8 +33,16 @@ import { renderReadings, type DroppedReading } from './speech-readings.ts';
  */
 export const LOCAL_SPEECH_MAX_CHARS = 2000;
 
-/** `synthesize` 模型包的 `synthesizeSpeech` 模型描述。 */
-export function localSpeechModelInfo(def: BundleDefinition, status: ModelBundleStatus, usable: boolean): SpeechModelInfo {
+/**
+ * `synthesize` 模型包的 `synthesizeSpeech` 模型描述。`backend` 是合成服务此刻会用的后端（`LocalSpeechProvider.backend`，不知道时
+ * null）：`cpu` 时带耗时提示（`notes`）。
+ */
+export function localSpeechModelInfo(
+  def: BundleDefinition,
+  status: ModelBundleStatus,
+  usable: boolean,
+  backend: string | null = null,
+): SpeechModelInfo {
   const profile = def.speech!;
   const builtin = profile.presets === 'builtin-reference' || profile.presets === 'builtin-description';
   const voices: SpeechVoice[] =
@@ -73,8 +81,26 @@ export function localSpeechModelInfo(def: BundleDefinition, status: ModelBundleS
     cost: 'free-local',
     available: usable,
     local,
+    ...(backend === 'cpu' ? { notes: cpuNote(def) } : {}),
     ...(!usable && status.detail ? { detail: status.detail, ...(status.detailRef ? { detailRef: status.detailRef } : {}) } : {}),
   };
+}
+
+/**
+ * audio.cpp 在 CPU 上合成有多慢，按模型包。只写实测过的：2026-10-15 在 Apple M4（10 核、16 GB）上强制 `cpu` 后端、8 线程
+ * （Runtime 在这台机器上的默认），OmniVoice Q8 合成 10.8 秒的中文用 94 秒、13.3 秒的英文用 123 秒，约为音频长度的 9 倍
+ * （Metal 约 1.35 倍）。别的模型包没有在 CPU 上实测，走 `paceDefault`，只说没有实测，不按参数量推算（架构设计 §6.5、
+ * Model Worker 协议规范 §4.4）。
+ */
+const CPU_PACE: Record<string, () => Localized> = {
+  'omnivoice@audio-cpp-q8': M.paceOmnivoice,
+};
+
+/** 耗时的提示（与文生图同一个 `notes`）：合成服务的后端是 CPU 时照实说。 */
+// `notes` 没有引用字段：按生成时的语言存文本。
+function cpuNote(def: BundleDefinition): string {
+  const pace = (CPU_PACE[def.bundleId] ?? M.paceDefault)();
+  return M.cpuNote({ pace: pace.text }).text;
 }
 
 /**

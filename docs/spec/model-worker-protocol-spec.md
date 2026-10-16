@@ -495,6 +495,8 @@ audiocpp_cli --task gen --family yue2 --model <模型包目录> --threads <n>
 
 **资源**。服务从启动起持有这个模型包在资源调度里的 holder（与 Model Worker 的同名，量只计一次），进程真的退出后才归还；Apple Silicon 计 GPU 内存、别的平台计内存（与音乐相同）。量是模型包登记的 `residentBytes`，没登记时按 GGUF 的存储字节乘 1.5：2026-10-15 在 Apple M4 的 Metal 上实测 OmniVoice Q8，GGUF 1.35 GB，服务就绪后进程常驻约 2.02 GB，合成一句 6 秒的话不再上涨（别的模型族未实测）；架构设计 §7.7。
 
+**耗时提示**。本地 Provider 描述合成模型时问 `LocalSpeechProvider.backend()` 服务会用的后端（给了 `BAOCUT_AUDIOCPP_BACKEND` 就是它，否则与起服务时同一个、按路径缓存的 `--version` 结果；找不到引擎时不知道，null）。是 `cpu` 时每个合成模型的描述带 `notes`（与文生图同一个字段，按生成时的语言存文本）：在本机的 CPU 上合成、比用显卡慢得多，后面接这个模型包在 CPU 上的实测速度，没有实测的只说还没有实测，不按参数量推算。别的后端与不知道时不带。实测（2026-10-15，Apple M4，10 核、16 GB，服务 8 线程）：OmniVoice Q8 的耗时在 Metal 上约为音频长度的 1.35 倍，强制 `cpu` 时 8.8–9.2 倍（测时 load average 4.9–12；更忙时 10.8–14 倍），进程常驻 1.3–1.7 GB；别的模型族在 CPU 上未实测。架构设计 §6.5。
+
 ### 4.5 文本嵌入模型包与 LiteRT-LM
 
 本机语义检索（EmbeddingGemma 2 检索集成方案 v0.1）的模型包是 `embed` 能力、`litert-lm` backend，登记在 `@baocut/models` 的 `embedding-bundles.ts`。登记的设备 `cpu` 是向量的数值类别（FP32），进 `encoderProfileId`；实际设备按 §2.1 交 Worker 的首选设备（macOS 上 `metal`），见下文「加载」：

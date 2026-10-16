@@ -302,6 +302,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
         image: provider.imageGenerator(),
         music,
         engine: audioCppEngine,
+        speechBackend: () => speech.backend(),
       }),
       ...(options.remote ? [options.remote] : []),
       online,

@@ -115,7 +115,7 @@
     const langs = TTS.sampleLangs(m.id);
     const kinds = TTS.sampleKinds(pick.lang);
     const tones = TTS.quickTones(m.id);
-    const slow = TTS.quickSlow(m.id);
+    const slow = TTS.quickSlow(m.id, app.prefs.speechBackend === 'cpu');
     const busy = pct >= 0;
     const eff = Object.assign({}, pick, {custom: editing ? draft : ''});
     const form = TTS.quickForm(m.id, eff, file, app.voices);

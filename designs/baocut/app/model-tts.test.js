@@ -732,6 +732,11 @@ test('新模型的速览、语速回落、快速试听键', () => {
   assert.deepEqual(omni.facts.slice(0, 1), ['内置音色 / 克隆 / 描述']);
   assert.equal(TTS.quickSlow('voxcpm2'), null, '可商用、不慢：试听前不必多说一句');
   assert.match(TTS.quickSlow('omnivoice'), /CC-BY-NC-4\.0/);
+  // 合成服务在 CPU 上跑：耗时提示排第一；只有实测过的引擎带数字，其余只说没测
+  assert.match(TTS.quickSlow('voxcpm2', true), /^在本机的 CPU 上合成.*还没有实测$/);
+  assert.match(TTS.quickSlow('omnivoice', true), /9 倍，10 秒的一句要一分半钟左右$/);
+  assert.equal(TTS.quickSlow('omnivoice', true), TTS.cpuNote('omnivoice'));
+  assert.equal(TTS.quickSlow('htdemucs-ft', true), null, '分离模型不是合成');
   // 没有种子：按单位落到默认语速
   ['voxcpm2', 'omnivoice', 'qwen3-tts-1.7b-voicedesign'].forEach((m) => {
     assert.equal(TTS.paceFor({}, m, 'zh').unit, 'char', m);

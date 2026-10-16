@@ -1,6 +1,9 @@
 import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const ko: ModelsLocalSpeechMessages = {
+  cpuNote: (p: { pace: string }) => `이 컴퓨터의 CPU에서 합성하므로 GPU보다 훨씬 느립니다: ${p.pace}`,
+  paceOmnivoice: '오디오 길이의 약 9배 시간이 걸려 10초짜리 대사에 1분 30초 정도 걸립니다',
+  paceDefault: '이 모델의 CPU 속도는 아직 측정하지 않았습니다',
   referenceTranscriptRequired: "참조 녹음의 원문을 입력하세요",
   oneVoiceSource: 'voice, reference, voiceDescription 중 하나만 지정하세요',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) =>

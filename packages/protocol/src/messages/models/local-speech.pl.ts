@@ -1,6 +1,9 @@
 import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const pl: ModelsLocalSpeechMessages = {
+  cpuNote: (p: { pace: string }) => `Synteza na CPU tego komputera, znacznie wolniej niż na GPU: ${p.pace}`,
+  paceOmnivoice: 'trwa około 9 razy dłużej niż nagranie: 10-sekundowa wypowiedź zajmuje około półtorej minuty',
+  paceDefault: 'szybkości na CPU jeszcze nie zmierzono',
   referenceTranscriptRequired: "Wpisz transkrypcję nagrania referencyjnego",
   oneVoiceSource: "Podaj tylko jedną z wartości voice, reference i voiceDescription",
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `Model ${p.modelId} nie obsługuje ${p.what} (${p.mode})`,

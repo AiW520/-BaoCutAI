@@ -160,7 +160,8 @@
     return short.length > 5 ? `${short.slice(0, 4).join(' / ')} 等 ${short.length} 种` : short.join(' / ');
   }
   /** 模型卡：一句话 + 能力标签。标签只写「能拿它做什么」，tone 给出「要你多做一步」的那几条。 */
-  function engineCard(engine, connected) {
+  /** `cpu` = 本机的合成服务在 CPU 上跑：那句耗时提示排在本地模型那一行的最前面（同 Runtime 的 `notes`）。 */
+  function engineCard(engine, connected, cpu) {
     const e = TTS().engineOf(engine);
     if (e.cloud) return C().card(e.provider, connected);
     const tags = [];
@@ -183,6 +184,7 @@
     tags.push({label: langsShort(engine)});
     if (e.slow) tags.push({label: '较慢', tone: 'notice'});
     if (e.nonCommercial) tags.push({label: '仅限非商用', tone: 'notice'});
+    if (cpu) line = `${TTS().cpuNote(e.id)} · ${line}`;
     return {id: e.id, name: e.name, line, tags};
   }
   /** 语言 Picker：自动 + 这只引擎会念的 */

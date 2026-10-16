@@ -1,6 +1,9 @@
 import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const ja: ModelsLocalSpeechMessages = {
+  cpuNote: (p: { pace: string }) => `このコンピュータの CPU で合成するため、GPU よりはるかに遅くなります。${p.pace}`,
+  paceOmnivoice: '音声の長さの約 9 倍の時間がかかり、10 秒の 1 文なら 1 分半ほどです',
+  paceDefault: 'このモデルの CPU での速度はまだ実測していません',
   referenceTranscriptRequired: "参照録音の原文を入力してください",
   oneVoiceSource: 'voice、reference、voiceDescription のうち指定できるのは 1 つだけです',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `モデル ${p.modelId} は ${p.what}（${p.mode}）に対応していません`,

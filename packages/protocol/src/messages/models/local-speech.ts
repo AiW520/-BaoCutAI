@@ -16,6 +16,9 @@ import { vi } from './local-speech.vi.ts';
 
 /** `packages/models/src/local-speech.ts` 给人看的文字：本地语音合成的耗时提示与提交时拒绝的原因。 */
 const en = {
+  cpuNote: (p: { pace: string }) => `Synthesizes on this computer's CPU, much slower than on a GPU: ${p.pace}`,
+  paceOmnivoice: 'it takes about 9 times the length of the audio, so a 10-second line takes about a minute and a half',
+  paceDefault: "this model's speed on the CPU has not been measured",
   referenceTranscriptRequired: "Enter the transcript of the reference recording",
   oneVoiceSource: 'Give only one of voice, reference, and voiceDescription',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `Model ${p.modelId} does not support ${p.what} (${p.mode})`,

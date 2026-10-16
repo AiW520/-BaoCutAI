@@ -70,7 +70,7 @@
         </div>
       );
     }
-    const c = T.engineCard(f.engine);
+    const c = T.engineCard(f.engine, undefined, app.prefs.speechBackend === 'cpu');
     const ids = T.modelsOf(f.engine);
     const have = ids.filter((id) => app.modelInstalled(id)).length;
     return (
@@ -90,7 +90,7 @@
     return (
       <BCChoiceGroup className="ttsw__engines" value={f.engine} onChange={engine => set(T.switchEngine(f, engine))} aria-label="模型">
         {TTS.ENGINES.map((e) => {
-          const c = T.engineCard(e.id);
+          const c = T.engineCard(e.id, undefined, app.prefs.speechBackend === 'cpu');
           const ids = T.modelsOf(e.id);
           const have = ids.filter((id) => app.modelInstalled(id)).length;
           const on = f.engine === e.id;

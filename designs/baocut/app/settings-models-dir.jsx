@@ -177,7 +177,7 @@
   }
 
   /* 原型开关（shell.jsx 的「原型开关」里画）：本地模型的环境变量（设了以后对应的入口只读，architecture-design §6.3），
-     与下载确认后哪一种来源下不成（download-dialog.jsx 的失败演示）。 */
+     下载确认后哪一种来源下不成（download-dialog.jsx 的失败演示），与本地语音合成跑在显卡还是 CPU 上。 */
   const ENV_TWEAKS = [
     {pref: 'modelsDirEnv', label: '模型目录环境变量', where: '设置 › 本地模型 › 模型目录',
      opts: [[null, '未设置'], ['/Volumes/ExtremeSSD/BaoCut/models', 'BAOCUT_MODELS_DIR']]},
@@ -187,12 +187,16 @@
      opts: [[null, '未设置'], ['https://gh-mirror.example.com', 'BAOCUT_TOOLS_ENDPOINT=https://gh-mirror.example.com']]},
     {pref: 'dlFailDemo', label: '下次下载的结果', where: '设置页（本地模型、语义索引）的下载确认后；这一种来源的部分下不成，前面下好的留着',
      opts: [[null, '都下成'], ['releases', '工具与运行库下不成'], ['models', '模型仓库下不成']]},
+    /* 合成服务的后端（architecture-design §6.5）：Windows 标准安装包、Linux 的 CPU 构建只带 CPU 版引擎，
+       BAOCUT_AUDIOCPP_BACKEND=cpu 也强制 CPU；这时本地合成模型的描述带一句耗时提示（Runtime 的 `notes`）。 */
+    {pref: 'speechBackend', label: '本地语音合成的后端', hint: '工具 › 语音合成的模型一行与模型卡、设置 › 本地模型 › 语音合成的试听；CPU 时多一句耗时提示',
+     opts: [[null, '显卡（Metal / Vulkan）'], ['cpu', 'CPU']]},
   ];
   function ModelEnvTweaks() {
     const app = useApp();
     return ENV_TWEAKS.map((t) => (
       <div className="tweaks__sec" key={t.pref}>
-        <div className="tweaks__lb">{t.label}<em>{t.pref === 'dlFailDemo' ? t.where : `${t.where}；设了以后入口只读（architecture-design §6.3）`}</em></div>
+        <div className="tweaks__lb">{t.label}<em>{t.hint || (t.pref === 'dlFailDemo' ? t.where : `${t.where}；设了以后入口只读（architecture-design §6.3）`)}</em></div>
         <div className="tweaks__rad">
           {t.opts.map(([v, l]) => (
             <BCAction key={l} className={cx('tweaks__opt', (app.prefs[t.pref] || null) === v && 'is-on')}

@@ -206,6 +206,18 @@ export class LocalSpeechProvider implements GenerationProvider {
   }
 
   /**
+   * 合成服务此刻会用的后端（模型描述据此在 `cpu` 时带耗时提示）：找不到引擎或服务时 null；给了 `backend` 就是它，否则按服务
+   * 构建的 `--version` 选（与启动服务时同一个、按路径缓存的结果）。
+   */
+  async backend(): Promise<string | null> {
+    const engine = this.#engine();
+    if (engine === null) return null;
+    const executable = audioCppServerOf(engine);
+    if (!(await isFile(executable))) return null;
+    return this.#backend ?? (await this.#build(executable)).backend;
+  }
+
+  /**
    * 卸载一个模型包（删除、搬动模型目录之前，装好之后，或空闲时被要求让位）：空闲的服务退出，等它真的退出。有任务排队或正在合成时
    * 不动它，返回 false；只是还在启动（任务在启动时被取消）时等启动结束再卸载。
    */

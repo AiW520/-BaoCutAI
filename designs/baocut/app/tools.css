@@ -54,6 +54,8 @@
 /* 模型一栏收起时的一行：名字 + 装没装 + 它能做什么 */
 .ttsmodel { display: flex; align-items: center; gap: 8px; min-height: 32px; min-width: 0; }
 .ttsmodel__line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 名字与安装状态不让位：那一行长了（例如 CPU 上的耗时提示排在前面）只截断说明 */
+.ttsmodel > b, .ttsmodel > b + .ttseng__inst { flex: none; }
 
 .ttsw__voices { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
 .ttsvoice { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border: 0; border-radius: 8px; text-align: left; color: var(--gray-900);

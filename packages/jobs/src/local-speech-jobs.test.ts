@@ -524,6 +524,25 @@ describe.skipIf(process.platform === 'win32')('本地语音合成（假 audio.cp
     expect(await recorded()).toEqual([]);
   });
 
+  it('模型描述按服务会用的后端提示耗时：CPU 时每个合成模型带 notes，显卡不带；找不到引擎时不知道后端，也不带', async () => {
+    const modelsOf = async (speech: LocalSpeechProvider) => {
+      const source = new LocalProviderSource({ catalog, transcriber: null, speech, speechBackend: () => speech.backend() });
+      return (await source.describe('local', 'view'))!.capabilities.synthesizeSpeech!.models;
+    };
+    // 假服务的构建编进了 cpu 与 metal：按构建选是 metal。
+    expect(await provider.backend()).toBe('metal');
+    expect((await modelsOf(provider)).map((m) => m.notes)).toEqual(BUNDLES.map(() => undefined));
+    const cpu = new LocalSpeechProvider({ catalog, engine: () => engine, env: async () => process.env, ffmpeg: async () => ({ command: 'ffmpeg', env: process.env }), backend: 'cpu' });
+    expect(await cpu.backend()).toBe('cpu');
+    const models = await modelsOf(cpu);
+    expect(models.length).toBe(BUNDLES.length);
+    for (const model of models) expect(model.notes, model.modelId).toContain('CPU');
+    engine = null;
+    expect(await provider.backend()).toBeNull();
+    expect((await modelsOf(provider)).map((m) => m.notes)).toEqual(BUNDLES.map(() => undefined));
+    await cpu.close();
+  });
+
   it('服务启动时退出：MODEL_LOAD_FAILED，带输出的尾巴；问题解决后下次再起', async () => {
     await control({ startExit: 'cannot open model' });
     const job = await speak({ voice: 'en-female' });

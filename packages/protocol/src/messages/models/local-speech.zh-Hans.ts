@@ -1,6 +1,9 @@
 import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const zhHans: ModelsLocalSpeechMessages = {
+  cpuNote: (p: { pace: string }) => `在本机的 CPU 上合成，比用显卡慢得多：${p.pace}`,
+  paceOmnivoice: '耗时约为音频长度的 9 倍，10 秒的一句要一分半钟左右',
+  paceDefault: '这个模型在 CPU 上的速度还没有实测',
   referenceTranscriptRequired: "请填写参考录音的原文",
   oneVoiceSource: 'voice、reference 与 voiceDescription 只能给一个',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `模型 ${p.modelId} 不支持${p.what}（${p.mode}）`,

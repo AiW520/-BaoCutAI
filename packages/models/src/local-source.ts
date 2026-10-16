@@ -39,6 +39,7 @@ export class LocalProviderSource implements ProviderSource {
   readonly #image: GenerationProvider | null;
   readonly #music: GenerationProvider | null;
   readonly #engine: () => string | null;
+  readonly #speechBackend: () => Promise<string | null>;
 
   constructor(options: {
     catalog: ModelCatalog;
@@ -49,6 +50,8 @@ export class LocalProviderSource implements ProviderSource {
     music?: GenerationProvider | null;
     /** 内置 audio.cpp 引擎 `audiocpp_cli` 的路径；null 表示这台主机没有。 */
     engine?: () => string | null;
+    /** 本地合成的服务此刻会用的后端（`LocalSpeechProvider.backend`）；`cpu` 时合成模型的描述带耗时提示。 */
+    speechBackend?: () => Promise<string | null>;
   }) {
     this.#catalog = options.catalog;
     this.#transcriber = options.transcriber;
@@ -56,6 +59,7 @@ export class LocalProviderSource implements ProviderSource {
     this.#image = options.image ?? null;
     this.#music = options.music ?? null;
     this.#engine = options.engine ?? (() => null);
+    this.#speechBackend = options.speechBackend ?? (async () => null);
   }
 
   owns(providerId: string): boolean {
@@ -124,7 +128,7 @@ export class LocalProviderSource implements ProviderSource {
           ...(reason ? { unavailableReason: reason } : {}),
           ...(!available ? detailOf(preferred) : {}),
         },
-        ...this.#speechCapability(all),
+        ...(await this.#speechCapability(all)),
         ...this.#imageCapability(all),
         ...this.#musicCapability(all),
         ...this.#separateCapability(all),
@@ -132,17 +136,20 @@ export class LocalProviderSource implements ProviderSource {
     };
   }
 
-  /** 语音合成的模型包：登记了才有这项能力；没有一个可用时整项不可用（原因取第一个的）。 */
-  #speechCapability(all: ModelBundleStatus[]): { synthesizeSpeech?: ProviderCapability<SpeechModelInfo> } {
-    const models = all
-      .filter((s) => s.capability === 'synthesize')
-      .flatMap((status) => {
-        const def = this.#catalog.definition(status.bundleId);
-        if (!def?.speech) return [];
-        const usable = bundleUsable(status);
-        const info = localSpeechModelInfo(def, status, usable);
-        return [usable ? info : { ...info, unavailableReason: unavailableReasonOf(status) }];
-      });
+  /**
+   * 语音合成的模型包：登记了才有这项能力；没有一个可用时整项不可用（原因取第一个的）。服务的后端只在有合成的模型包时解析
+   * （第一次要跑一次 `--version`，之后用缓存）。
+   */
+  async #speechCapability(all: ModelBundleStatus[]): Promise<{ synthesizeSpeech?: ProviderCapability<SpeechModelInfo> }> {
+    const statuses = all.filter((s) => s.capability === 'synthesize');
+    const backend = statuses.length > 0 ? await this.#speechBackend() : null;
+    const models = statuses.flatMap((status) => {
+      const def = this.#catalog.definition(status.bundleId);
+      if (!def?.speech) return [];
+      const usable = bundleUsable(status);
+      const info = localSpeechModelInfo(def, status, usable, backend);
+      return [usable ? info : { ...info, unavailableReason: unavailableReasonOf(status) }];
+    });
     if (models.length === 0) return {};
     const usable = models.filter((m) => m.available);
     const preferred = usable[0] ?? models[0]!;

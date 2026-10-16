@@ -114,6 +114,14 @@ test('模型卡能力标签随引擎变', () => {
   assert.deepEqual(labels('indextts2'), ['需要参考音频', '情绪', '中 / 英']);
 });
 
+test('合成在 CPU 上跑：本地模型那一行以耗时提示开头，标签不变；云端不受影响', () => {
+  const gpu = T.engineCard('voxcpm2');
+  const cpu = T.engineCard('voxcpm2', undefined, true);
+  assert.equal(cpu.line, `${TTS.cpuNote('voxcpm2')} · ${gpu.line}`);
+  assert.deepEqual(cpu.tags, gpu.tags);
+  assert.ok(!gpu.line.includes('CPU'));
+});
+
 test('语言表只列引擎会念的；「自动」时文字语种不支持就拦', () => {
   assert.deepEqual(T.langOptions('indextts2').map((l) => l.code), ['auto', 'zh', 'en']);
   assert.equal(T.langOptions('qwen3').length, 11);
