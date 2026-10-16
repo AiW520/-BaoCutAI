@@ -445,6 +445,7 @@
               </div>
             </div>
             {SURF.pages && window.ModelEnvTweaks ? <window.ModelEnvTweaks /> : null}
+            {window.OnboardingTweaks ? <window.OnboardingTweaks onLaunch={() => setOpen(false)} /> : null}
             {window.LegacyImportTweaks ? <window.LegacyImportTweaks onLaunch={() => setOpen(false)} /> : null}
             {SURF.pages && window.BC_LOCALCHECK ? (
               <div className="tweaks__sec">

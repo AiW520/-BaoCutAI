@@ -1,0 +1,56 @@
+/* 首次启动引导（onboarding.jsx）。对话框本身是 S2，这里只排正文：步骤条、欢迎页的预告、转录模型的单选卡、语音合成的举例与去处 */
+.onb-steps { margin-bottom: 16px; }
+.onb-lead { margin: 0; font-size: 14px; line-height: 1.5; color: var(--gray-800); }
+.onb-lead + .onb-lead { margin-top: 8px; }
+.onb-note {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--gray-600);
+}
+.onb-note .ic--14 { flex: none; color: var(--gray-600); }
+.onb-alt { margin-top: 4px; gap: 4px; }
+
+/* 欢迎 */
+.onb-welcome__icon { display: block; width: 48px; height: 48px; margin-bottom: 12px; }
+.onb-preview { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.onb-preview li {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px;
+  border-radius: 10px; background: var(--gray-100); font-size: 14px; line-height: 1.5; color: var(--gray-800);
+}
+.onb-preview li .ic--20 { flex: none; margin-top: 1px; color: var(--gray-700); }
+.onb-preview b { display: block; font-weight: 700; color: var(--gray-900); }
+
+/* 语音识别：单选卡（同翻译配音的取向卡 .prio，前缀自成一家免得串样式） */
+.onb-models { margin-top: 12px; }
+.onb-models > div { display: flex; flex-direction: column; gap: 8px; }
+.onb-model {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px;
+  background: var(--gray-50); box-shadow: inset 0 0 0 1px var(--gray-200); cursor: pointer;
+  transition: background 150ms cubic-bezier(0.45,0,0.4,1), box-shadow 150ms cubic-bezier(0.45,0,0.4,1);
+}
+.onb-model:hover { background: var(--gray-75); }
+.onb-model.is-on { background: var(--blue-100); box-shadow: inset 0 0 0 2px var(--blue-800); }
+.onb-model.is-off { cursor: default; opacity: 0.55; }
+.onb-model.is-off:hover { background: var(--gray-50); }
+.onb-model__hd { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.onb-model__desc { padding-left: 28px; font-size: 12px; line-height: 1.5; color: var(--gray-700); }
+.onb-model__plan { padding-left: 28px; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
+.onb-model__ok { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--green-900); }
+.onb-model__pg { display: inline-flex; align-items: center; gap: 8px; width: 160px; }
+.onb-model__pg > :first-child { flex: 1 1 auto; min-width: 0; }
+
+/* 语音合成：举例（不可选，只介绍）与「在哪儿用」 */
+.onb-tts__list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.onb-tts__item {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--gray-200);
+}
+.onb-tts__hd { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.onb-tts__nm { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+.onb-tts__item .onb-model__desc { padding-left: 0; }
+.onb-where {
+  display: flex; align-items: flex-start; gap: 12px; margin-top: 12px; padding: 12px;
+  border-radius: 10px; background: var(--blue-100);
+}
+.onb-where .ic--20 { flex: none; margin-top: 1px; color: var(--blue-900); }
+.onb-where b { font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--gray-900); }
+.onb-where p { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--gray-800); }

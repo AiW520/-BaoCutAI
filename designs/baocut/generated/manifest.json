@@ -141,6 +141,7 @@
       "app/model-tool-semantic.js",
       "app/model-dub.js",
       "app/model-local-models.js",
+      "app/model-onboarding.js",
       "app/model-download-sources.js",
       "app/model-local-check.js",
       "app/model-daoyazi.js",
@@ -195,6 +196,7 @@
       "app/project-info.jsx",
       "app/legacy-import.jsx",
       "app/legacy-import-task.jsx",
+      "app/onboarding.jsx",
       "app/home-templates.jsx",
       "app/composer-insert-menu.jsx",
       "app/new-agent.jsx",
@@ -464,12 +466,13 @@
       "app/agent-messages.css",
       "app/agent-cards.css",
       "app/legacy-import.css",
+      "app/onboarding.css",
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=5320b4b5222a",
-    "css": "generated/app.css?v=652ce5c49050",
-    "bytes": 4353614
+    "js": "generated/app.js?v=a82c913572df",
+    "css": "generated/app.css?v=6af63a23dc4e",
+    "bytes": 4366949
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -712,9 +715,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=6454210fae94",
+    "js": "generated/web.js?v=d062531d247f",
     "css": "generated/web.css?v=2f0462bf0870",
-    "bytes": 2561041
+    "bytes": 2561136
   },
   "components": {
     "file": "Components.html",
