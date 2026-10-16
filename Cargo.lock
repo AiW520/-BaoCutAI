@@ -1279,6 +1279,7 @@ dependencies = [
  "anyhow",
  "caption-scene",
  "editor-semantics",
+ "message-ref",
  "motion",
  "render-graph",
  "render-raster",

@@ -211,6 +211,7 @@ impl<'a> Sources<'a> {
             kind: Some(asset.id.clone()),
             reason: "asset-undecodable".into(),
             message: problem,
+            message_ref: None,
         };
         if !self.skip {
             return Err(RenderError {

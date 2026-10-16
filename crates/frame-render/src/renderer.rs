@@ -1474,6 +1474,7 @@ fn asset_item(layer: &VisualLayer, reason: &str, message: String) -> Unsupported
         kind: None,
         reason: reason.into(),
         message,
+        message_ref: None,
     }
 }
 

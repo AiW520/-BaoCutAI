@@ -162,6 +162,7 @@ pub fn run(input: &Input, tools: &Tools) -> Result<Preflight, Failure> {
                     kind: Some(asset.id.clone()),
                     reason: reason.to_string(),
                     message: message.clone(),
+                    message_ref: None,
                 });
             }
         }
@@ -184,6 +185,7 @@ pub fn run(input: &Input, tools: &Tools) -> Result<Preflight, Failure> {
             kind: Some(transition.kind.clone()),
             reason,
             message: format!("transition \"{}\" cannot be rendered; drawing a hard cut instead", transition.kind),
+            message_ref: None,
         });
     }
 
@@ -277,5 +279,6 @@ fn check_lottie(input: &Input, layer: &VisualLayer) -> Option<UnsupportedItem> {
         kind: None,
         reason: problem.0.to_string(),
         message: problem.1,
+        message_ref: None,
     })
 }

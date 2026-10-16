@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { setLocale } from '@baocut/protocol';
 import { ELEMENT_TILES } from '../../model/element-catalog.ts';
 import { TEXT_PRESETS } from '../../model/text-presets.ts';
 import { RenderPlanner } from '../../render/render-planner.ts';
@@ -90,6 +91,21 @@ describe.skipIf(!built)('缩略图由渲染内核画', () => {
     expect(waves.length).toBeGreaterThan(3);
     for (const picture of waves) expect(picture.problems).toEqual([]);
     expect(new Set(waves.map((picture) => opaque(picture))).size).toBeGreaterThan(waves.length / 2);
+  });
+
+  it('画不出来的说明跟着界面语言，不是内核的原话', () => {
+    const tile = ELEMENT_TILES.find((t) => t.group === 'shape')!;
+    const layer = tile.layer(canvas) as unknown as { shape: Record<string, unknown> };
+    const unknown = { ...layer, shape: { ...layer.shape, shape: 'no-such-shape' } } as unknown as Parameters<typeof layerThumb>[1];
+    expect(layerThumb(planner, unknown, canvas, 200, 120).problems).toEqual(['形状「no-such-shape」不在随渲染内核发布的目录里']);
+    vi.stubEnv('BAOCUT_LOCALE', 'en');
+    setLocale('en');
+    try {
+      expect(layerThumb(planner, unknown, canvas, 200, 120).problems).toEqual(['Shape no-such-shape isn’t in the catalog shipped with the renderer']);
+    } finally {
+      vi.unstubAllEnvs();
+      setLocale('zh-Hans');
+    }
   });
 
   it('彩纸格：同一刻恒得同一幅，往后播画面会变', () => {
