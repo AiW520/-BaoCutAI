@@ -44,6 +44,8 @@ TSX 使用 React 标准自动 JSX runtime，不再包装 props 或扩展 JSX 的
 
 `prose-editor/character-ledger.ts` 管理会话字符 ID、连续字符区间、Unicode／UTF-16 位置索引与事务后的账本映射；集合与缓存使用具体的键值类型，事务与节点沿用 ProseMirror 原生合同。相邻测试覆盖行内原子、代理对、插入映射、确认重命名、回滚与漂移。代码块视图实现原生 `NodeView` 接口，主要 DOM、选区和渲染缓存按实际用途定义，不提供任意属性的索引签名。
 
+`prose-editor/operation-sync/` 分离已知字符区间、字符归属、步骤分类，以及外部编辑的捕获、历史窗口和释放。历史按桥实例维护，调用时读取最新的文档、会话与待同步步骤，保留撤销窗口、64 条记录上限和诊断事件顺序。`prose-editor/code-block/` 分离文本测量、文档布局监听、节点布局与批注范围；布局对象只持有所属节点的缓存和清理函数，通过宿主实时读取节点与渲染面板。文档布局监听按文档合并为一个观察器和一帧通知，最后一个订阅离开时断开。两个目录使用 ProseMirror／DOM 原生类型和明确的业务合同，不引入 `Dynamic`、`any` 或类型断言。
+
 `tools/type-debt.mjs` 通过 TypeScript AST 统计 `Dynamic` 类型引用、显式 `any` 与无类型模块声明，排除导入名称、注释、字符串和 JSX 文案；该统计不等于对推导类型安全性的完整证明。带 `--check-target` 时要求前两项各不超过 9、无类型模块声明为 0，未达标返回非零。
 
 `tools/asset-plugin.ts` 将 `prose-editor/runtime.tsx` 打成 `artifact-type/lfile-runtime.35524228.js`，将 `prose-editor/extras.ts` 打成附加脚本文本。KaTeX 的 WOFF2 独立输出为带内容哈希的本地资源，由 `fonts/katex-fonts.ts` 缓存并转为 data URL 传给 iframe。`runtime-source.ts` 仍为空串：Frame 内联运行时，独立页面从接口获取；`extras-source.ts` 由虚拟资源插件填充。

@@ -1,5 +1,30 @@
+import { captureForeignEdit } from "./operation-sync/capture-foreign-edit";
+import { releaseForeignEdit } from "./operation-sync/release-foreign-edit";
+import { ForeignEditHistory } from "./operation-sync/foreign-edit-history";
+import { KnownCharacters } from "./operation-sync/known-characters";
+import {
+  splitCharacterOwnership,
+  foreignCharacterRanges,
+  characterIdsForBlock,
+} from "./operation-sync/character-ownership";
+import {
+  isBlockShellReplacement,
+  isSameTypeBlockShellReplacement,
+  isInlineLeafReplacement,
+  isStructurePreservingStep,
+  replacementTextEdges,
+} from "./operation-sync/step-classification";
+import { CodeBlockLayout } from "./code-block/layout";
+import { observeDocumentLayout } from "./code-block/layout-observer";
+import {
+  markedCodeCommentRanges,
+  decoratedCodeCommentRanges,
+  codeThreadRange,
+  partitionCodeComments,
+  type CodeCommentRange,
+} from "./code-block/comment-ranges";
 import type { DecorationSource, NodeView, ViewMutationRecord } from "prosemirror-view";
-import type { CharacterLedger } from "./character-ledger";
+import type { CharacterLedger, CharacterSpan, BlockCharacterRuns } from "./character-ledger";
 import {
   codePointCount,
   pmCharacterOffsets,
@@ -770,32 +795,6 @@ import {
   json,
   preprocess,
 } from "zod";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Subsystem: runtime-support */
 var objectCreate = Object.create;
@@ -116381,68 +116380,7 @@ function isRenderedCodeAndProofreadingSelection(
     return false;
   return isRenderedCodeAndProofreadingFocus(value3);
 }
-var renderedCodeAndProofreadingWeakMap6: Dynamic = new (WeakMap as Dynamic)();
-function clearRenderedCodeAndProofreadingSubs(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let defaultView: Dynamic = input.defaultView;
-  let value: Dynamic = defaultView?.MutationObserver;
-  if (!defaultView || typeof value !== "function")
-    return (..._extraArguments: unknown[]): undefined => {};
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingValue35(
-    renderedCodeAndProofreadingWeakMap6,
-    input,
-  );
-  if (!value2) {
-    let values: Dynamic = new (Set as Dynamic)();
-    let value4 = (..._extraArguments: unknown[]): undefined => {
-      state.frame = 0;
-      for (let value6 of values as Dynamic) value6();
-    };
-    let value5: Dynamic = new (value as Dynamic)(
-      (..._extraArguments: unknown[]) => {
-        if (typeof defaultView.requestAnimationFrame !== "function")
-          return value4();
-        if (!state.frame)
-          state.frame = defaultView.requestAnimationFrame(value4);
-      },
-    );
-    let state: Dynamic = {
-      subs: values,
-      mo: value5,
-      frame: 0,
-    };
-    value5.observe(input.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "data-layout", "data-page-width"],
-    });
-    resolveRenderedCodeAndProofreadingValue36(
-      renderedCodeAndProofreadingWeakMap6,
-      input,
-      state,
-    );
-    value2 = state;
-  }
-  let value3: Dynamic = value2;
-  value3.subs.add(options);
-  return (..._extraArguments: unknown[]): undefined => {
-    if (!value3.subs.delete(options) || value3.subs.size > 0) return;
-    value3.mo.disconnect();
-    if (value3.frame) defaultView.cancelAnimationFrame(value3.frame);
-    if (
-      resolveRenderedCodeAndProofreadingValue35(
-        renderedCodeAndProofreadingWeakMap6,
-        input,
-      ) === value3
-    )
-      resolveRenderedCodeAndProofreadingValue37(
-        renderedCodeAndProofreadingWeakMap6,
-        input,
-      );
-  };
-}
+
 var RenderedCodeAndProofreadingJoin = `:scope>p:not(.lfile-figure),:scope>h1,:scope>h2,:scope>h3,:scope>h4,:scope>blockquote,:scope>pre,:scope>ul,:scope>ol,:scope>div.lfile-codewrap[data-live]${ProsePluginsData19.map((input: string, ..._extraArguments: unknown[]) => `:not(${input})`).join("")}`;
 var resolveRenderedCodeAndProofreadingValue50 = (
   input?: Dynamic,
@@ -116497,7 +116435,7 @@ function resolveRenderedCodeAndProofreadingInset(
     if (value2) value3.observe(value2);
   };
   let isConnected: Dynamic = dom.isConnected;
-  let value5: Dynamic = clearRenderedCodeAndProofreadingSubs(
+  let value5: Dynamic = observeDocumentLayout(
     ownerDocument,
     (..._extraArguments: unknown[]) => value6(),
   );
@@ -116765,7 +116703,7 @@ function resolveRenderedCodeAndProofreadingFrom8(
   }
   return null;
 }
-var renderedCodeAndProofreadingSet12: Dynamic = new (Set as Dynamic)();
+var renderedCodeAndProofreadingSet12 = new Set<CodeBlockNodeView>();
 var renderedCodeAndProofreadingMessage16 =
   "Diagram preview unavailable — the diagram renderer couldn't be loaded. Use Source to read the diagram text.";
 var renderedCodeAndProofreadingMessage17 =
@@ -117109,68 +117047,7 @@ var RenderedCodeAndProofreadingDiagram = {
 var renderedCodeAndProofreadingLimit1_5 = 1.5;
 var renderedCodeAndProofreadingProsePluginsDataLdocClipAlias =
   prosePluginsDataLdocClip;
-function resolveRenderedCodeAndProofreadingScrollWidth(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  return input.scrollWidth - input.clientWidth - input.scrollLeft > 1;
-}
-function resolveRenderedCodeAndProofreadingWidth(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let style: Dynamic = input.style;
-  if (!style) return null;
-  let value: Dynamic = style.getPropertyValue("width");
-  style.setProperty("width", "max-content");
-  let width: Dynamic = input.getBoundingClientRect().width;
-  if (value) style.setProperty("width", value);
-  else style.removeProperty("width");
-  return width > 0 ? width : null;
-}
-function resolveRenderedCodeAndProofreadingRepeat2(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value2 = " ".repeat(context > 0 ? context : 8);
-  let index: number = 0;
-  let index2: number = 0;
-  for (let value3 of input.split(`
-`) as Dynamic) {
-    let value4: Dynamic = value3
-      .slice(0, renderedCodeAndProofreadingLimit2000)
-      .replaceAll("\t", value2);
-    if (value4.length * 2 < index2) continue;
-    let value5: Dynamic = options(value4);
-    if (value5 <= index) continue;
-    index = value5;
-    index2 = value4.length;
-    if (index > renderedCodeAndProofreadingLimit8192) break;
-  }
-  return index > 0 ? Math.ceil(index + value + index2 / 64) : null;
-}
-var renderedCodeAndProofreadingLimit2000 = 2000;
-var renderedCodeAndProofreadingLimit8192 = 8192;
-var renderedCodeAndProofreadingWeakMap8: Dynamic = new (WeakMap as Dynamic)();
-function updateRenderedCodeAndProofreadingCanvas(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  if (!renderedCodeAndProofreadingWeakMap8.has(input)) {
-    let value: Dynamic = null;
-    try {
-      value = input.createElement("canvas").getContext("2d");
-    } catch {
-      value = null;
-    }
-    renderedCodeAndProofreadingWeakMap8.set(input, value);
-  }
-  return renderedCodeAndProofreadingWeakMap8.get(input) ?? null;
-}
-var renderedCodeAndProofreadingWeakSet4: Dynamic = new (WeakSet as Dynamic)();
+
 var renderedCodeAndProofreadingLimit120 = 120;
 function isRenderedCodeAndProofreadingNone(
   input?: Dynamic,
@@ -117339,69 +117216,7 @@ ${resolveRenderedCodeAndProofreadingSearch(`.lfile-codewrap.cw-renderable[${rend
 .lfile-codewrap[data-code-comment-active=focus] .cw-render{background:${resolveClipboardAndCodeInputValue14(15)}}
 .lfile-codewrap.cw-ring-res[data-code-comment-active]{outline-color:${resolveClipboardAndCodeInputValue15(60)}}
 `;
-function resolveRenderedCodeAndProofreadingFrom9(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  let index: number = 0;
-  input.content.forEach(
-    (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      let value: Dynamic = input2.text?.length ?? input2.nodeSize;
-      for (let value2 of input2.marks as Dynamic)
-        if (
-          value2.type.name === "commentAnchor" &&
-          typeof value2.attrs.threadId === "string"
-        )
-          items.push({
-            from: index,
-            to: index + value,
-            threadId: value2.attrs.threadId,
-          });
-      index += value;
-    },
-  );
-  return items;
-}
-function resolveRenderedCodeAndProofreadingFrom10(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let items: Dynamic = [];
-  let value = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-    typeof input2?.thread === "string" &&
-    input2.thread !== "" &&
-    input2.cell !== true;
-  input?.forEachSet(
-    (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-      for (let value2 of input2.find(0, options, value) as Dynamic) {
-        let value3 = Math.max(0, value2.from);
-        let value4 = Math.min(options, value2.to);
-        if (value3 < value4)
-          items.push({
-            from: value3,
-            to: value4,
-            threadId: value2.spec.thread,
-          });
-      }
-    },
-  );
-  return items.toSorted(
-    (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): number =>
-      input2.from - options2.from ||
-      input2.to - options2.to ||
-      (input2.threadId < options2.threadId
-        ? -1
-        : input2.threadId > options2.threadId
-          ? 1
-          : 0),
-  );
-}
+
 function resolveRenderedCodeAndProofreadingEvery2(
   input?: Dynamic,
   options?: Dynamic,
@@ -117751,6 +117566,16 @@ function filterRenderedCodeAndProofreadingStart(
   return items4;
 }
 class CodeBlockNodeView implements NodeView {
+  private readonly layout = new CodeBlockLayout(this, {
+    borderWidth: renderedCodeAndProofreadingLimit1_5,
+    clipAttribute: renderedCodeAndProofreadingProsePluginsDataLdocClipAlias,
+    documentGutter: documentIconGutter,
+    hasMenuSpace: resolveRenderedCodeAndProofreadingValue50,
+    peers: function* () {
+      for (const view of renderedCodeAndProofreadingSet12) yield view.layout;
+    },
+  });
+
   view: ProseMirrorEditorView;
   getPos: () => number | undefined;
   instances: Set<CodeBlockNodeView>;
@@ -117778,13 +117603,7 @@ class CodeBlockNodeView implements NodeView {
   errorAt: { from: number; to: number } | null = null;
   caretIn: boolean = false;
   render: HTMLDivElement | null = null;
-  cutOff: (() => void) | null = null;
-  cutWatching: Element | null = null;
-  csvFitOff: (() => void) | null = null;
-  seatCrowded: boolean = false;
-  seatWatchOff: (() => void) | null = null;
-  fitFont: string = "";
-  fitAdvances: Dynamic = new (Map as Dynamic)();
+
   node: ProseMirrorNode;
   lastGood: { lang: string; src: string; html: string; theme?: string } | null = null;
   lastPane: { lang: string; src: string; html: string; theme?: string } | null = null;
@@ -117812,9 +117631,9 @@ class CodeBlockNodeView implements NodeView {
   mmSeq: number = 0;
   mmInflight: { src: string; theme: string } | null = null;
   destroyed: boolean = false;
-  wholeThreads: Dynamic = new (Set as Dynamic)();
+  wholeThreads = new Set<string>();
   mdThreadRanges: Dynamic = new (Map as Dynamic)();
-  decoAnchors: Dynamic = [];
+  decoAnchors: CodeCommentRange[] = [];
   abandonMermaidRender(..._extraArguments: unknown[]): undefined {
     this.mmSeq++;
     this.mmInflight = null;
@@ -117843,7 +117662,7 @@ class CodeBlockNodeView implements NodeView {
     this.getPos = context;
     this.instances = value;
     this.node = input;
-    this.decoAnchors = resolveRenderedCodeAndProofreadingFrom10(
+    this.decoAnchors = decoratedCodeCommentRanges(
       extra,
       input.content.size,
     );
@@ -118438,7 +118257,7 @@ class CodeBlockNodeView implements NodeView {
     let value = this.getPos();
     let value2 =
       (value != null && this.view.state.doc.resolve(value).depth > 0) ||
-      this.seatCrowded;
+      this.layout.seatCrowded;
     if (
       value2 !==
       (this.dom.getAttribute(renderedCodeAndProofreadingDataObjmenuSeat) ===
@@ -120328,9 +120147,9 @@ class CodeBlockNodeView implements NodeView {
       this.dom.classList.remove("cw-stale", "cw-ring-res");
       this.setStatus(null);
       this.dom.removeAttribute("data-live");
-      this.unwatchPaneCut();
-      this.unwatchCsvFit();
-      this.stampCodeFit();
+      this.layout.unwatchPaneCut();
+      this.layout.unwatchCsvFit();
+      this.layout.stampCodeFit();
       for (let value8 of this.lxTagged as Dynamic) {
         value8.classList.remove("cw-lx-sel", "cw-lx-hl", "cw-on", "cw-res");
         value8.removeAttribute("data-comment-id");
@@ -120356,7 +120175,7 @@ class CodeBlockNodeView implements NodeView {
       this.mmTagged.length = 0;
       this.abandonMermaidRender();
       this.render?.classList.remove("cw-mm-loading", "cw-wait-box");
-      this.dropFitWidth();
+      this.layout.dropFitWidth();
       renderedCodeAndProofreadingMap4.delete(this);
       renderedCodeAndProofreadingMap6.delete(this);
       renderedCodeAndProofreadingMap5.delete(this);
@@ -120365,7 +120184,7 @@ class CodeBlockNodeView implements NodeView {
       );
     }
     this.dom.setAttribute("data-live", value3);
-    this.dropCodeSeat();
+    this.layout.dropCodeSeat();
     if (!this.render) {
       this.render = this.dom.ownerDocument.createElement("div");
       this.render.className = "cw-render";
@@ -120790,7 +120609,7 @@ class CodeBlockNodeView implements NodeView {
               : "Empty markdown";
       this.render.classList.remove("cw-mm-loading", "cw-wait-box");
       this.render.classList.add("cw-empty");
-      this.dropFitWidth();
+      this.layout.dropFitWidth();
       this.dom.classList.remove("cw-stale");
       this.setStatus(null);
       this.resetPaneMemo();
@@ -120851,7 +120670,7 @@ class CodeBlockNodeView implements NodeView {
       };
       this.lastErr = null;
       this.render.innerHTML = value7.html;
-      if (value3 === "csv") this.watchCsvFit(this.render);
+      if (value3 === "csv") this.layout.watchCsvFit(this.render);
       this.dom.classList.remove("cw-stale");
       this.setStatus(null);
     }
@@ -121393,317 +121212,13 @@ class CodeBlockNodeView implements NodeView {
     element.innerHTML = options;
     let value: Dynamic = resolveSchemaAndRenderingLocalName2(element);
     let element2: Dynamic = element.querySelector(":scope > svg");
-    this.stampFitWidth(
+    this.layout.stampFitWidth(
       element,
       value?.natural ??
         (element2 ? collectSchemaAndRenderingViewBox(element2) : null),
     );
   }
-  stampFitWidth(
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    if (options == null || !(options > 0)) {
-      this.dropFitWidth();
-      return;
-    }
-    let value =
-      this.dom.ownerDocument.defaultView?.getComputedStyle(input);
-    let value2 =
-      (Number.parseFloat(value?.paddingLeft ?? "") || 0) +
-      (Number.parseFloat(value?.paddingRight ?? "") || 0);
-    this.dom.style.setProperty(
-      "--cw-fit",
-      `${Math.ceil(options + value2 + 2 * renderedCodeAndProofreadingLimit1_5)}px`,
-    );
-    this.watchPaneCut(input);
-  }
-  dropFitWidth(..._extraArguments: unknown[]): undefined {
-    this.dom.style.removeProperty("--cw-fit");
-    this.unwatchCsvFit();
-    this.unwatchPaneCut();
-  }
-  watchCsvFit(element?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    this.unwatchCsvFit();
-    let element2: Dynamic = element.querySelector(":scope > table");
-    if (!element2) {
-      this.stampFitWidth(element, null);
-      return;
-    }
-    let value = (..._extraArguments: unknown[]): undefined => {
-      if (
-        this.destroyed ||
-        this.render !== element ||
-        element2.parentNode !== element
-      )
-        return;
-      let value3: Dynamic = resolveRenderedCodeAndProofreadingWidth(element2);
-      if (value3 != null) this.stampFitWidth(element, value3);
-    };
-    let value2: Dynamic =
-      element.ownerDocument.defaultView?.ResizeObserver ??
-      (globalThis).ResizeObserver;
-    if (typeof value2 === "function") {
-      let value3: Dynamic = new (value2 as Dynamic)(value);
-      if (
-        typeof value3.observe === "function" &&
-        typeof value3.disconnect === "function"
-      ) {
-        value3.observe(element2);
-        this.csvFitOff = (..._extraArguments: unknown[]): Dynamic =>
-          value3.disconnect();
-      }
-    }
-    value();
-  }
-  unwatchCsvFit(..._extraArguments: unknown[]): undefined {
-    let csvFitOff = this.csvFitOff;
-    this.csvFitOff = null;
-    csvFitOff?.();
-  }
-  outsideSeatCrowded(..._extraArguments: unknown[]) {
-    let bounds = this.dom.getBoundingClientRect();
-    if (!(bounds.width > 0)) return false;
-    let ownerDocument = this.dom.ownerDocument;
-    let defaultView: Dynamic = ownerDocument.defaultView;
-    let value: number =
-      (ownerDocument.documentElement.clientWidth ||
-        defaultView?.innerWidth ||
-        0) - documentIconGutter(ownerDocument);
-    let value2: Dynamic =
-      typeof defaultView?.matchMedia === "function" &&
-      defaultView.matchMedia("(pointer:coarse)").matches;
-    return !resolveRenderedCodeAndProofreadingValue50(
-      value,
-      bounds.right,
-      value2,
-    );
-  }
-  stampCodeFit(..._extraArguments: unknown[]): undefined {
-    let value = this.getPos();
-    if (value != null && this.view.state.doc.resolve(value).depth > 0) {
-      this.dom.style.removeProperty("--cw-fit");
-      this.dropCodeSeat();
-      return;
-    }
-    this.watchCodeSeat();
-    let ownerDocument = this.dom.ownerDocument;
-    let defaultView: Dynamic = ownerDocument.defaultView;
-    let value2: Dynamic =
-      updateRenderedCodeAndProofreadingCanvas(ownerDocument);
-    if (!this.dom.isConnected) {
-      this.dom.style.removeProperty("--cw-fit");
-      queueMicrotask((..._extraArguments: unknown[]): undefined => {
-        if (
-          !this.destroyed &&
-          this.dom.isConnected &&
-          !this.dom.hasAttribute("data-live")
-        )
-          this.stampCodeFit();
-      });
-      return;
-    }
-    let value3 = (input?: Dynamic, ..._extraArguments: unknown[]) =>
-      Number.parseFloat(input ?? "") || 0;
-    let value4: Dynamic = defaultView?.getComputedStyle(this.contentDOM);
-    let value5: Dynamic = defaultView?.getComputedStyle(this.pre);
-    let value6: Dynamic = null;
-    if (value2 && value4 && value5) {
-      value2.font = "10px sans-serif";
-      let value7 = this.codeFont(value4);
-      if (value7 !== this.fitFont || this.fitAdvances.size > 4096)
-        this.fitAdvances.clear();
-      this.fitFont = value7;
-      value2.font = value7;
-      if (value2.font !== "10px sans-serif") {
-        let value8: number =
-          value3(value5.paddingLeft) +
-          value3(value5.paddingRight) +
-          value3(value5.borderLeftWidth) +
-          value3(value5.borderRightWidth);
-        let fitAdvances: Dynamic = this.fitAdvances;
-        let value9 = (
-          input?: unknown,
-          ..._extraArguments: unknown[]
-        ): Dynamic => {
-          let entry: Dynamic = fitAdvances.get(input);
-          if (entry === undefined)
-            fitAdvances.set(input, (entry = value2.measureText(input).width));
-          return entry;
-        };
-        value6 = resolveRenderedCodeAndProofreadingRepeat2(
-          this.node.textContent,
-          value9,
-          Number.parseInt(value5.tabSize, 10),
-          value8 + 1,
-        );
-      }
-    }
-    if (value6 === null) this.dom.style.removeProperty("--cw-fit");
-    else this.dom.style.setProperty("--cw-fit", `${value6}px`);
-    if (
-      ownerDocument.fonts &&
-      !renderedCodeAndProofreadingWeakSet4.has(ownerDocument)
-    ) {
-      renderedCodeAndProofreadingWeakSet4.add(ownerDocument);
-      ownerDocument.fonts.addEventListener(
-        "loadingdone",
-        (..._extraArguments: unknown[]): undefined => {
-          for (let value7 of renderedCodeAndProofreadingSet12 as Dynamic) {
-            if (
-              value7.destroyed ||
-              value7.dom.ownerDocument !== ownerDocument ||
-              value7.dom.hasAttribute("data-live")
-            )
-              continue;
-            value7.fitAdvances.clear();
-            value7.stampCodeFit();
-          }
-        },
-      );
-    }
-  }
-  codeFont(input?: Dynamic, ..._extraArguments: unknown[]) {
-    let value: Dynamic =
-      input ??
-      this.dom.ownerDocument.defaultView?.getComputedStyle(this.contentDOM);
-    return value
-      ? `${value.fontStyle} ${value.fontWeight} ${value.fontSize} ${value.fontFamily}`
-      : "";
-  }
-  watchCodeSeat(..._extraArguments: unknown[]): undefined {
-    if (this.seatWatchOff) return;
-    let ownerDocument = this.dom.ownerDocument;
-    let value = (..._extraArguments: unknown[]) =>
-      this.judgeCodeSeat();
-    let value2: Dynamic =
-      ownerDocument.defaultView?.ResizeObserver ??
-      (globalThis).ResizeObserver;
-    let value3: Dynamic = null;
-    if (typeof value2 === "function") {
-      let value5: Dynamic = new (value2 as Dynamic)(value);
-      if (
-        typeof value5.observe === "function" &&
-        typeof value5.disconnect === "function"
-      ) {
-        value5.observe(this.dom);
-        value3 = value5;
-      }
-    }
-    let defaultView: Dynamic = ownerDocument.defaultView;
-    defaultView?.addEventListener("resize", value, {
-      passive: true,
-    });
-    let value4: Dynamic = clearRenderedCodeAndProofreadingSubs(
-      ownerDocument,
-      value,
-    );
-    this.seatWatchOff = (..._extraArguments: unknown[]): undefined => {
-      value3?.disconnect();
-      defaultView?.removeEventListener("resize", value);
-      value4();
-    };
-    if (!value3) value();
-  }
-  judgeCodeSeat(..._extraArguments: unknown[]): undefined {
-    if (this.destroyed) return;
-    if (this.codeFont() !== this.fitFont) this.stampCodeFit();
-    let value = this.outsideSeatCrowded();
-    if (value === this.seatCrowded) return;
-    this.seatCrowded = value;
-    this.syncSeat();
-  }
-  dropCodeSeat(..._extraArguments: unknown[]): undefined {
-    if (!this.seatWatchOff) return;
-    this.seatWatchOff();
-    this.seatWatchOff = null;
-    this.fitFont = "";
-    this.fitAdvances.clear();
-    if (!this.seatCrowded) return;
-    this.seatCrowded = false;
-    this.syncSeat();
-  }
-  watchPaneCut(element?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let value: Dynamic =
-      element.querySelector(":scope > svg") ??
-      element.querySelector(":scope > table");
-    if (this.cutOff && this.cutWatching === value) return;
-    this.unwatchPaneCut();
-    let ownerDocument: Dynamic = element.ownerDocument;
-    let value2 = (..._extraArguments: unknown[]) =>
-      !this.destroyed && this.render === element;
-    let value3 = (..._extraArguments: unknown[]): undefined => {
-      if (!value2()) return;
-      let value8 = resolveRenderedCodeAndProofreadingScrollWidth(element);
-      if (
-        value8 !==
-        (this.dom.getAttribute(
-          renderedCodeAndProofreadingProsePluginsDataLdocClipAlias,
-        ) ===
-          "right")
-      )
-        if (value8)
-          this.dom.setAttribute(
-            renderedCodeAndProofreadingProsePluginsDataLdocClipAlias,
-            "right",
-          );
-        else
-          this.dom.removeAttribute(
-            renderedCodeAndProofreadingProsePluginsDataLdocClipAlias,
-          );
-    };
-    let value4 = (..._extraArguments: unknown[]): undefined => {
-      if (!value2()) return;
-      value3();
-      let value8 = this.outsideSeatCrowded();
-      if (value8 !== this.seatCrowded) {
-        this.seatCrowded = value8;
-        this.syncSeat();
-      }
-    };
-    let value5: Dynamic =
-      ownerDocument.defaultView?.ResizeObserver ??
-      (globalThis).ResizeObserver;
-    let value6: Dynamic = null;
-    if (typeof value5 === "function") {
-      let value8: Dynamic = new (value5 as Dynamic)(value4);
-      if (
-        typeof value8.observe === "function" &&
-        typeof value8.disconnect === "function"
-      ) {
-        value8.observe(element);
-        if (value) value8.observe(value);
-        value8.observe(this.view.dom);
-        value6 = value8;
-      }
-    }
-    let value7: Dynamic = clearRenderedCodeAndProofreadingSubs(
-      ownerDocument,
-      value4,
-    );
-    element.addEventListener("scroll", value3, {
-      passive: true,
-    });
-    this.cutWatching = value;
-    this.cutOff = (..._extraArguments: unknown[]): undefined => {
-      value6?.disconnect();
-      value7();
-      element.removeEventListener("scroll", value3);
-      this.dom.removeAttribute(
-        renderedCodeAndProofreadingProsePluginsDataLdocClipAlias,
-      );
-      this.cutWatching = null;
-      this.seatCrowded = false;
-      this.syncSeat();
-    };
-    if (!value6) value4();
-  }
-  unwatchPaneCut(..._extraArguments: unknown[]): undefined {
-    let cutOff = this.cutOff;
-    this.cutOff = null;
-    cutOff?.();
-  }
+
   syncMermaid(input: string, ..._extraArguments: unknown[]): undefined {
     let render = this.render;
     if (!render) return;
@@ -121750,7 +121265,7 @@ class CodeBlockNodeView implements NodeView {
           : "Loading diagram renderer…";
       render.classList.add("cw-mm-loading");
       render.classList.toggle("cw-wait-box", this.firstWait());
-      this.stampFitWidth(render, null);
+      this.layout.stampFitWidth(render, null);
       this.lastPane = null;
       this.lastErr = null;
     }
@@ -121797,7 +121312,7 @@ class CodeBlockNodeView implements NodeView {
           if (value5) this.mountMermaidSvg(render, value5.html);
           else {
             render.innerHTML = input2.html;
-            this.stampFitWidth(render, null);
+            this.layout.stampFitWidth(render, null);
           }
           this.dom.classList.toggle("cw-stale", value5 != null);
           this.setStatus(input2.error, value5 ?? undefined, input2.at);
@@ -122227,62 +121742,28 @@ class CodeBlockNodeView implements NodeView {
     }
     this.applyActivePaneHighlight();
   }
-  splitCommentRanges(..._extraArguments: unknown[]): Dynamic {
-    let length = this.node.textContent.length;
-    let entries: Dynamic = new (Map as Dynamic)();
-    for (let value2 of this.commentRanges() as Dynamic) {
-      let entry: Dynamic = entries.get(value2.threadId);
-      entries.set(
-        value2.threadId,
-        entry
-          ? {
-              from: Math.min(entry.from, value2.from),
-              to: Math.max(entry.to, value2.to),
-            }
-          : {
-              from: value2.from,
-              to: value2.to,
-            },
-      );
-    }
+  splitCommentRanges(..._extraArguments: unknown[]): CodeCommentRange[] {
+    const { whole, inline } = partitionCodeComments(
+      this.node.textContent,
+      this.commentRanges(),
+      renderedCodeAndProofreadingSet13,
+    );
     this.wholeThreads.clear();
-    let items: Dynamic = [];
-    let textContent = this.node.textContent;
-    let index = 0;
-    while (index < length && /\s/.test(textContent[index])) index++;
-    let value: Dynamic = length;
-    while (value > index && /\s/.test(textContent[value - 1])) value--;
-    for (let [value2, value3] of entries as Dynamic) {
-      if (renderedCodeAndProofreadingSet13.has(value2)) continue;
-      if (value > index && value3.from <= index && value3.to >= value)
-        this.wholeThreads.add(value2);
-      else
-        items.push({
-          from: value3.from,
-          to: value3.to,
-          threadId: value2,
-        });
-    }
-    if (!this.wholeThreads.size)
-      this.dom.removeAttribute("data-code-comment-active");
-    if (!this.wholeThreads.size)
-      this.dom.removeAttribute("data-code-comment-whole");
+    for (const thread of whole) this.wholeThreads.add(thread);
+    if (!this.wholeThreads.size) this.dom.removeAttribute("data-code-comment-active");
+    if (!this.wholeThreads.size) this.dom.removeAttribute("data-code-comment-whole");
     else {
-      let value2 = [...this.wholeThreads].every(
-        (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-          renderedCodeAndProofreadingSet14.has(input),
+      let value2 = [...this.wholeThreads].every((input: string): boolean =>
+        renderedCodeAndProofreadingSet14.has(input),
       )
         ? "res"
         : "";
       if (this.dom.getAttribute("data-code-comment-whole") !== value2)
         this.dom.setAttribute("data-code-comment-whole", value2);
     }
-    renderedCodeAndProofreadingMap7.set(
-      this,
-      new (Set as Dynamic)(this.wholeThreads),
-    );
+    renderedCodeAndProofreadingMap7.set(this, new Set(this.wholeThreads));
     filterRenderedCodeAndProofreadingValues(this.dom.ownerDocument);
-    return items;
+    return inline;
   }
   ringForThread(
     input: string | null,
@@ -122334,7 +121815,7 @@ class CodeBlockNodeView implements NodeView {
   }
   faceForThread(input?: unknown, ..._extraArguments: unknown[]): Dynamic {
     if (!this.render) return null;
-    if (this.wholeThreads.has(input)) return this.dom;
+    if (typeof input === "string" && this.wholeThreads.has(input)) return this.dom;
     let element: Dynamic = this.render.querySelector(
       resolveRenderedCodeAndProofreadingEscape(input),
     );
@@ -122406,7 +121887,7 @@ class CodeBlockNodeView implements NodeView {
   }
   paneTopForThread(input?: unknown, ..._extraArguments: unknown[]): Dynamic {
     if (!this.render || this.threadRange(input) == null) return null;
-    if (this.wholeThreads.has(input))
+    if (typeof input === "string" && this.wholeThreads.has(input))
       return this.dom.getBoundingClientRect().top;
     let element: Dynamic = this.render.querySelector(
       resolveRenderedCodeAndProofreadingEscape(input),
@@ -122708,7 +122189,7 @@ class CodeBlockNodeView implements NodeView {
     ..._extraArguments: unknown[]
   ) {
     if (node.type.name !== "codeBlock") return false;
-    let value: Dynamic = resolveRenderedCodeAndProofreadingFrom10(
+    let value: Dynamic = decoratedCodeCommentRanges(
       context,
       node.content.size,
     );
@@ -122835,10 +122316,10 @@ class CodeBlockNodeView implements NodeView {
     this.extrasWait?.();
     this.extrasWait = null;
     this.cancelSyncSoon();
-    this.unwatchCsvFit();
-    this.unwatchPaneCut();
+    this.layout.unwatchCsvFit();
+    this.layout.unwatchPaneCut();
     this.paneSelOff?.();
-    this.dropCodeSeat();
+    this.layout.dropCodeSeat();
     if (this.editor) {
       this.editor.unwire();
       this.editor.host.remove();
@@ -122856,25 +122337,12 @@ class CodeBlockNodeView implements NodeView {
     filterRenderedCodeAndProofreadingValues(this.dom.ownerDocument);
     updateRenderedCodeAndProofreadingBongoLiveSrcHover(this.dom.ownerDocument);
   }
-  commentRanges(..._extraArguments: unknown[]): Dynamic {
-    let value: Dynamic = resolveRenderedCodeAndProofreadingFrom9(this.node);
-    return this.decoAnchors.length ? [...value, ...this.decoAnchors] : value;
+  commentRanges(): CodeCommentRange[] {
+    const marked = markedCodeCommentRanges(this.node);
+    return this.decoAnchors.length ? [...marked, ...this.decoAnchors] : marked;
   }
-  threadRange(input?: unknown, ..._extraArguments: unknown[]): Dynamic {
-    let value: Dynamic = null;
-    for (let value2 of this.commentRanges() as Dynamic) {
-      if (value2.threadId !== input) continue;
-      value = value
-        ? {
-            from: Math.min(value.from, value2.from),
-            to: Math.max(value.to, value2.to),
-          }
-        : {
-            from: value2.from,
-            to: value2.to,
-          };
-    }
-    return value;
+  threadRange(thread: unknown) {
+    return codeThreadRange(this.commentRanges(), thread);
   }
 }
 var renderedCodeAndProofreadingMap9: Dynamic = new (Map as Dynamic)();
@@ -174058,35 +173526,7 @@ var resolveOperationModelGetMap2 = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) => input.getMap() === ProseMirrorStepMap.empty;
-function isOperationModelFrom14(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  if (!(input instanceof (ProseMirrorReplaceAroundStep as Dynamic)))
-    return false;
-  let value: Dynamic = input;
-  if (value.from > options.content.size || value.to > options.content.size)
-    return false;
-  let value2: Dynamic = options.nodeAt(value.from);
-  let value3: Dynamic =
-    value.slice.content.childCount === 1
-      ? value.slice.content.firstChild
-      : null;
-  return (
-    !!value2 &&
-    !!value3 &&
-    !value2.isInline &&
-    value3.type === value2.type &&
-    value3.content.size === 0 &&
-    typeof value2.attrs.bid === "string" &&
-    value3.attrs.bid === value2.attrs.bid &&
-    value.insert === 1 &&
-    value.gapFrom === value.from + 1 &&
-    value.gapTo === value.to - 1 &&
-    value.to === value.from + value2.nodeSize
-  );
-}
+
 var resolveOperationModelAttr2 = (
   input?: Dynamic,
   options?: Dynamic,
@@ -174096,7 +173536,7 @@ var resolveOperationModelAttr2 = (
   input instanceof (ProseMirrorRemoveMarkStep as Dynamic) ||
   (input instanceof (ProseMirrorAttrStep as Dynamic) && input.attr !== "bid") ||
   resolveOperationModelCell7(input, options) !== null ||
-  isOperationModelFrom14(input, options);
+  isSameTypeBlockShellReplacement(input, options);
 var isOperationModelFrom15 = (
   input?: Dynamic,
   options?: Dynamic,
@@ -174220,8 +173660,8 @@ function createOperationalTransformProseBridge(
     message === "" && !BridgeData3 && !readonly;
   let values: Dynamic = new (Set as Dynamic)();
   let values2: Dynamic = new (Set as Dynamic)();
-  let values3: Dynamic = new (Set as Dynamic)();
-  let entries: Dynamic = new (Map as Dynamic)();
+  const knownCharacters = new KnownCharacters();
+
   let BridgeData5 = false;
   let state7: Dynamic = null;
   let BridgeData6 = false;
@@ -174257,81 +173697,22 @@ function createOperationalTransformProseBridge(
   let resolveBridgeOperation2 = (
     ..._extraArguments: unknown[]
   ): boolean => BridgeData5 && !BridgeData6 && (born || !owed);
-  let isBridgeDescendants = (
-    documentNode?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
+  const learnKnownCharacters = (
+    document: ProseMirrorNode,
+    blocks: readonly BlockCharacterRuns[],
+  ): void => {
     BridgeData5 = true;
-    documentNode.descendants(
-      (input?: Dynamic, ..._extraArguments: unknown[]) => {
-        if (input.isInline) return false;
-        if (typeof input.attrs.bid === "string" && input.attrs.bid)
-          values3.add(input.attrs.bid);
-        return true;
-      },
-    );
-    for (let BridgeData109 of options as Dynamic) {
-      values3.add(BridgeData109.bid);
-      for (let BridgeData110 of BridgeData109.runs as Dynamic) {
-        let BridgeData111 = parseCharacterId(BridgeData110.id);
-        if (BridgeData111 === null || BridgeData110.len <= 0) continue;
-        let BridgeSess: Dynamic = entries.get(BridgeData111.sess);
-        if (BridgeSess)
-          BridgeSess.push([
-            BridgeData111.i,
-            BridgeData111.i + BridgeData110.len - 1,
-          ]);
-        else
-          entries.set(BridgeData111.sess, [
-            [BridgeData111.i, BridgeData111.i + BridgeData110.len - 1],
-          ]);
-      }
-    }
-    for (let [BridgeData109, BridgeData210] of entries as Dynamic) {
-      BridgeData210.sort(
-        (
-          input?: Dynamic,
-          options2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): number => input[0] - options2[0],
-      );
-      let BridgeData110: Dynamic = [];
-      for (let BridgeData111 of BridgeData210 as Dynamic) {
-        let BridgeData112: Dynamic = BridgeData110.at(-1);
-        if (BridgeData112 && BridgeData111[0] <= BridgeData112[1] + 1)
-          BridgeData112[1] = Math.max(BridgeData112[1], BridgeData111[1]);
-        else BridgeData110.push([BridgeData111[0], BridgeData111[1]]);
-      }
-      entries.set(BridgeData109, BridgeData110);
-    }
+    knownCharacters.learn(document, blocks);
   };
-  let isBridgeOperation = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) => {
-    let BridgeData109: Dynamic = entries.get(input);
-    if (!BridgeData109) return false;
-    let index32 = 0;
-    let BridgeData210 = BridgeData109.length - 1;
-    while (index32 <= BridgeData210) {
-      let BridgeData110 = (index32 + BridgeData210) >> 1;
-      if (options < BridgeData109[BridgeData110][0])
-        BridgeData210 = BridgeData110 - 1;
-      else if (options > BridgeData109[BridgeData110][1])
-        index32 = BridgeData110 + 1;
-      else return true;
-    }
-    return false;
-  };
+
   let resolveBridgeOperation3 = (
-    input?: unknown,
-    options?: unknown,
+    input: string,
+    options: number,
     ..._extraArguments: unknown[]
   ): Dynamic =>
     resolveBridgeOperation2() &&
-    (isBridgeOperation(input, options) || resolveBridgeSome3(input, options));
+    (knownCharacters.contains(input, options) ||
+      foreignEdits.containsCharacter(input, options));
   let resolveBridgeSess = (
     input: string,
     ..._extraArguments: unknown[]
@@ -174342,651 +173723,41 @@ function createOperationalTransformProseBridge(
       resolveBridgeOperation3(BridgeData109.sess, BridgeData109.i)
     );
   };
-  let isBridgeFrom = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) => {
-    if (!(input instanceof (ProseMirrorReplaceAroundStep as Dynamic)))
-      return false;
-    let input2: Dynamic = input;
-    if (input2.from > options.content.size || input2.to > options.content.size)
-      return false;
-    let BridgeNodeAt: Dynamic = options.nodeAt(input2.from);
-    let BridgeChildCount: Dynamic =
-      input2.slice.content.childCount === 1
-        ? input2.slice.content.firstChild
-        : null;
-    return (
-      !!BridgeNodeAt &&
-      !!BridgeChildCount &&
-      !BridgeNodeAt.isInline &&
-      BridgeChildCount.content.size === 0 &&
-      typeof BridgeNodeAt.attrs.bid === "string" &&
-      BridgeChildCount.attrs.bid === BridgeNodeAt.attrs.bid &&
-      input2.insert === 1 &&
-      input2.gapFrom === input2.from + 1 &&
-      input2.gapTo === input2.to - 1 &&
-      input2.to === input2.from + BridgeNodeAt.nodeSize
-    );
-  };
-  let isBridgeFrom2 = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
-    if (!(input instanceof (ProseMirrorReplaceStep as Dynamic))) return false;
-    let { from: from, to: to2, slice: slice }: Dynamic = input;
-    if (
-      to2 !== from + 1 ||
-      to2 > options.content.size ||
-      slice.openStart !== 0 ||
-      slice.openEnd !== 0 ||
-      slice.content.childCount !== 1
-    )
-      return false;
-    let BridgeNodeAt: Dynamic = options.nodeAt(from);
-    let firstChild: Dynamic = slice.content.firstChild;
-    return (
-      !!BridgeNodeAt &&
-      BridgeNodeAt.isInline &&
-      BridgeNodeAt.isLeaf &&
-      !BridgeNodeAt.isText &&
-      firstChild.type === BridgeNodeAt.type
-    );
-  };
-  let isBridgeFrom3 = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) => {
-    let BridgeData109 = false;
-    input
-      .getMap()
-      .forEach(
-        (..._extraArguments: unknown[]): undefined =>
-          void (BridgeData109 = true),
-      );
-    if (
-      !BridgeData109 ||
-      isOperationModelFrom14(input, options) ||
-      isBridgeFrom(input, options) ||
-      isBridgeFrom2(input, options)
-    )
-      return true;
-    if (!(input instanceof (ProseMirrorReplaceStep as Dynamic))) return false;
-    let { from: from, to: to2, slice: slice }: Dynamic = input;
-    return from === to2 && slice.openStart === 0 && slice.openEnd === 0;
-  };
-  let BridgeData8: Dynamic = [];
-  let index = 0;
+
+  const foreignEdits = new ForeignEditHistory(
+    () => resolveBridgeSome(),
+    (event) => resolveOperationModelValue10(event.name, event.details),
+  );
+
   let cache5: Dynamic = new (WeakMap as Dynamic)();
-  let state10: Dynamic = null;
-  let resolveBridgeEnded = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) =>
-    state10 === null
-      ? input.ended === null
-      : input.born <= state10.lo &&
-        (input.ended === null || input.ended > state10.hi);
-  let isBridgeEnded = (..._extraArguments: unknown[]) => {
-    if (BridgeData8.length < 64) return true;
-    if (resolveBridgeSome()) return false;
-    for (
-      let BridgeData109 = BridgeData8.length - 1;
-      BridgeData109 >= 0;
-      BridgeData109--
-    )
-      if (BridgeData8[BridgeData109].ended !== null)
-        BridgeData8.splice(BridgeData109, 1);
-    while (BridgeData8.length >= 64) BridgeData8.shift();
-    return true;
-  };
-  let resolveBridgeSome2 = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    BridgeData8.some(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        input2.blocks.has(input) && resolveBridgeEnded(input2),
-    );
-  let resolveBridgeSome3 = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    BridgeData8.some(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        input2.runs.some(
-          (input3?: Dynamic, ..._extraArguments: unknown[]) =>
-            input3.sess === input &&
-            options >= input3.lo &&
-            options <= input3.hi,
-        ) && resolveBridgeEnded(input2),
-    );
-  let isBridgeHead = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (!table || input.steps.length === 0) return;
-    let BridgeData109: Dynamic;
-    let resolveBridgeBefore = (
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      if (BridgeData109 !== undefined) return BridgeData109;
-      BridgeData109 = null;
-      if (region || !table) return null;
-      let BridgeData110: Dynamic = filterBridgeFilter();
-      if (
-        BridgeData110.length === 0 &&
-        !(table === input.before || table.eq(input.before))
-      )
-        return null;
-      let size: Dynamic = table.content.size;
-      for (let BridgeData111 of BridgeData110 as Dynamic)
-        BridgeData111.getMap().forEach(
-          (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => void (size += value - context - (options - input2)),
-        );
-      if (size !== input.before.content.size) return null;
-      let bridgeProseMirrorMapping =
-        new (ProseMirrorMapping)();
-      for (
-        let BridgeData111 = BridgeData110.length - 1;
-        BridgeData111 >= 0;
-        BridgeData111--
-      )
-        bridgeProseMirrorMapping.appendMap(
-          BridgeData110[BridgeData111].getMap().invert(),
-        );
-      return (BridgeData109 = bridgeProseMirrorMapping);
-    };
-    let blocks: Dynamic = new (Set as Dynamic)();
-    let BridgeData210: Dynamic = [];
-    let isBridgeOperation8 = (
-      input2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ) => !(input2 === message || input2 === "_" || values4.has(input2));
-    let state48: Dynamic = null;
-    let isBridgeDescendants6 = (
-      input2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      if (state48 === null) {
-        let values30: Dynamic = new (Set as Dynamic)();
-        input.doc.descendants(
-          (input3?: Dynamic, ..._extraArguments: unknown[]) => {
-            if (input3.isInline) return false;
-            if (typeof input3.attrs.bid === "string" && input3.attrs.bid)
-              values30.add(input3.attrs.bid);
-            return true;
-          },
-        );
-        state48 = values30;
-      }
-      return state48.has(input2);
-    };
-    let resolveBridgeHead2 = (
-      range?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments: unknown[]
-    ) => {
-      let BridgeHead = {
-        head: 0,
-        tail: 0,
-      };
-      if (
-        !(range instanceof (ProseMirrorReplaceStep as Dynamic)) ||
-        range.from === range.to ||
-        range.slice.openStart ||
-        range.slice.openEnd
-      )
-        return BridgeHead;
-      let content: Dynamic = range.slice.content;
-      for (let index32 = 0; index32 < content.childCount; index32++)
-        if (!content.child(index32).isText) return BridgeHead;
-      if (!options.resolve(range.from).sameParent(options.resolve(range.to)))
-        return BridgeHead;
-      let BridgeTextBetween: Dynamic = options.textBetween(
-        range.from,
-        range.to,
-        "￼",
-        "￼",
-      );
-      let BridgeTextBetween2: Dynamic = content.textBetween(0, content.size);
-      if (
-        BridgeTextBetween.includes("￼") ||
-        BridgeTextBetween.length !== range.to - range.from
-      )
-        return BridgeHead;
-      let head = 0;
-      while (
-        head < BridgeTextBetween.length &&
-        head < BridgeTextBetween2.length &&
-        BridgeTextBetween[head] === BridgeTextBetween2[head]
-      )
-        head++;
-      let tail = 0;
-      while (
-        tail < BridgeTextBetween.length - head &&
-        tail < BridgeTextBetween2.length - head &&
-        BridgeTextBetween[BridgeTextBetween.length - 1 - tail] ===
-          BridgeTextBetween2[BridgeTextBetween2.length - 1 - tail]
-      )
-        tail++;
-      return {
-        head: head,
-        tail: tail,
-      };
-    };
-    input.steps.forEach(
-      (
-        input2?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        if (
-          !(input2 instanceof (ProseMirrorReplaceStep as Dynamic)) &&
-          !(input2 instanceof (ProseMirrorReplaceAroundStep as Dynamic))
-        )
-          return;
-        let BridgeDocs: Dynamic = input.docs[options];
-        if (
-          isOperationModelFrom14(input2, BridgeDocs) ||
-          isBridgeFrom(input2, BridgeDocs) ||
-          isBridgeFrom2(input2, BridgeDocs)
-        )
-          return;
-        let BridgeData110 = resolveBridgeHead2(input2, BridgeDocs);
-        let state49: Dynamic = null;
-        let resolveBridgeAppendMap = (
-          ..._extraArguments: unknown[]
-        ): Dynamic => {
-          if (state49 === null) {
-            state49 = new (ProseMirrorMapping)();
-            for (
-              let BridgeData111 = options - 1;
-              BridgeData111 >= 0;
-              BridgeData111--
-            )
-              state49.appendMap(input.steps[BridgeData111].getMap().invert());
-          }
-          return state49;
-        };
-        let resolveBridgeSess4 = (
-          input3?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): Dynamic => {
-          let BridgeMapResult: Dynamic = resolveBridgeAppendMap().mapResult(
-            input3,
-            1,
-          );
-          if (BridgeMapResult.deleted) return null;
-          let BridgeData111: Dynamic = resolveBridgeBefore();
-          if (BridgeData111 === null) return null;
-          let BridgeMapResult2: Dynamic = BridgeData111.mapResult(
-            BridgeMapResult.pos,
-            1,
-          );
-          if (BridgeMapResult2.deleted) return null;
-          let BridgeIdAt = table2.idAt(BridgeMapResult2.pos);
-          return BridgeIdAt === null
-            ? null
-            : ((
-                characterId2?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic =>
-                characterId2 === null
-                  ? null
-                  : {
-                      sess: characterId2.sess,
-                      i: characterId2.i,
-                    })(parseCharacterId(BridgeIdAt));
-        };
-        let resolveBridgeSess22 = (
-          input3?: Dynamic,
-          options2?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          for (
-            let BridgeData111: Dynamic = input3;
-            BridgeData111 < options2;
-            BridgeData111++
-          ) {
-            let BridgeData112: Dynamic = resolveBridgeSess4(BridgeData111);
-            if (
-              BridgeData112 !== null &&
-              isBridgeOperation8(BridgeData112.sess) &&
-              !isBridgeOperation(BridgeData112.sess, BridgeData112.i)
-            )
-              BridgeData210.push(BridgeData112);
-          }
-        };
-        let resolveBridgeOperation49 = (
-          input3?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let BridgeData111: Dynamic =
-            typeof input3.attrs.bid === "string" ? input3.attrs.bid : "";
-          if (
-            BridgeData111 &&
-            !resolveBridgeSess2(BridgeData111) &&
-            !values3.has(BridgeData111)
-          )
-            blocks.add(BridgeData111);
-        };
-        input2
-          .getMap()
-          .forEach(
-            (
-              input3?: Dynamic,
-              options2?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              if (
-                input3 > BridgeDocs.content.size ||
-                options2 > BridgeDocs.content.size
-              )
-                return;
-              let [BridgeHead, BridgeHead2]: Dynamic = [
-                input3 + BridgeData110.head,
-                options2 - BridgeData110.tail,
-              ];
-              if (BridgeHead2 > BridgeHead)
-                BridgeDocs.nodesBetween(
-                  BridgeHead,
-                  BridgeHead2,
-                  (
-                    input4?: Dynamic,
-                    options3?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ) => {
-                    if (input4.isInline) return false;
-                    let BridgeData111 = options3 >= BridgeHead;
-                    if (
-                      BridgeData111 &&
-                      typeof input4.attrs.bid === "string" &&
-                      input4.attrs.bid &&
-                      isBridgeDescendants6(input4.attrs.bid)
-                    )
-                      return false;
-                    if (BridgeData111) resolveBridgeOperation49(input4);
-                    if (input4.isTextblock) {
-                      resolveBridgeSess22(
-                        BridgeData111
-                          ? options3 + 1
-                          : Math.max(BridgeHead, options3 + 1),
-                        BridgeData111
-                          ? options3 + 1 + input4.content.size
-                          : Math.min(
-                              BridgeHead2,
-                              options3 + 1 + input4.content.size,
-                            ),
-                      );
-                      return false;
-                    }
-                    return true;
-                  },
-                );
-              else if (
-                options2 === input3 &&
-                input2 instanceof (ProseMirrorReplaceStep as Dynamic) &&
-                input2.slice.openStart > 0 &&
-                input2.slice.openEnd > 0
-              ) {
-                let BridgeResolve: Dynamic = BridgeDocs.resolve(BridgeHead);
-                for (
-                  let depth: Dynamic = BridgeResolve.depth,
-                    openStart: Dynamic = input2.slice.openStart;
-                  depth > 0 && openStart > 0;
-                  depth--, openStart--
-                )
-                  resolveBridgeOperation49(BridgeResolve.node(depth));
-              }
-            },
-          );
+
+  const captureForeignTransaction = (transaction: ProseMirrorTransaction): void =>
+    captureForeignEdit(transaction, {
+      get document(): ProseMirrorNode | null {
+        return table;
       },
-    );
-    if (blocks.size === 0 && BridgeData210.length === 0) return;
-    if (resolveBridgeBefore() === null)
-      return void resolveOperationModelValue10("undo.foreign.took.blind", {
-        region: region,
-      });
-    BridgeData210.sort(
-      (
-        characterId2?: Dynamic,
-        characterId22?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): number =>
-        characterId2.sess < characterId22.sess
-          ? -1
-          : characterId2.sess > characterId22.sess
-            ? 1
-            : characterId2.i - characterId22.i,
-    );
-    let runs: Dynamic = [];
-    for (let BridgeData110 of BridgeData210 as Dynamic) {
-      let BridgeData111: Dynamic = runs.at(-1);
-      if (
-        BridgeData111 &&
-        BridgeData111.sess === BridgeData110.sess &&
-        BridgeData110.i <= BridgeData111.hi + 1
-      )
-        BridgeData111.hi = Math.max(BridgeData111.hi, BridgeData110.i);
-      else
-        runs.push({
-          sess: BridgeData110.sess,
-          lo: BridgeData110.i,
-          hi: BridgeData110.i,
-        });
-    }
-    if (!isBridgeEnded())
-      return void resolveOperationModelValue10("undo.foreign.took.full", {
-        takings: BridgeData8.length,
-      });
-    BridgeData8.push({
-      blocks: blocks,
-      runs: runs,
-      born: ++index,
-      ended: null,
-    });
-    resolveOperationModelValue10("undo.foreign.took", {
-      blocks: blocks.size,
-      runs: runs.length,
-    });
-  };
-  let resolveBridgeTakings = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    let takings = 0;
-    for (let BridgeData109 of BridgeData8 as Dynamic)
-      if (BridgeData109.ended === null && input(BridgeData109)) {
-        BridgeData109.ended = index + 1;
-        takings++;
-      }
-    if (takings === 0) return;
-    index++;
-    resolveOperationModelValue10("undo.foreign.took.ended", {
-      takings: takings,
-      owed: resolveBridgeSome(),
-      why: options,
-    });
-  };
-  let isBridgeOperation2 = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ) => resolveBridgeTakings((..._extraArguments: unknown[]) => true, input);
-  let isBridgeSess = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (
-      !BridgeData8.some(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-          input2.ended === null,
-      )
-    )
-      return;
-    let values30: Dynamic = new (Set as Dynamic)();
-    let values210: Dynamic = new (Set as Dynamic)();
-    let BridgeData109: Dynamic = [];
-    let BridgeNames = input.getMeta("op$") === "names";
-    let BridgeData210 = false;
-    input.steps.forEach(
-      (
-        input2?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): undefined => {
-        let BridgeDocs: Dynamic = input.docs[options];
-        let BridgeData110 = false;
-        input2
-          .getMap()
-          .forEach(
-            (..._extraArguments: unknown[]): undefined =>
-              void (BridgeData110 = true),
-          );
-        if (
-          !BridgeData110 ||
-          isOperationModelFrom14(input2, BridgeDocs) ||
-          isBridgeFrom(input2, BridgeDocs) ||
-          isBridgeFrom2(input2, BridgeDocs)
-        )
-          return;
-        let slice: Dynamic = input2.slice;
-        if (slice && slice.size > 0)
-          if (BridgeNames) BridgeData210 = true;
-          else
-            slice.content.descendants(
-              (input3?: Dynamic, ..._extraArguments: unknown[]) => {
-                if (input3.isInline) return false;
-                if (typeof input3.attrs.bid === "string" && input3.attrs.bid)
-                  values210.add(input3.attrs.bid);
-                return true;
-              },
-            );
-        let resolveBridgeOperation49 = (
-          input3?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          if (typeof input3.attrs.bid === "string" && input3.attrs.bid)
-            values30.add(input3.attrs.bid);
-          else BridgeData210 = true;
-        };
-        input2
-          .getMap()
-          .forEach(
-            (
-              input3?: Dynamic,
-              options2?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              if (
-                input3 > BridgeDocs.content.size ||
-                options2 > BridgeDocs.content.size
-              )
-                return void (BridgeData210 = true);
-              let BridgeResolve: Dynamic = BridgeDocs.resolve(input3);
-              if (BridgeResolve.parent.isTextblock)
-                resolveBridgeOperation49(BridgeResolve.parent);
-              if (options2 > input3)
-                BridgeDocs.nodesBetween(
-                  input3,
-                  options2,
-                  (input4?: Dynamic, ..._extraArguments: unknown[]) =>
-                    input4.isTextblock
-                      ? (resolveBridgeOperation49(input4), false)
-                      : !input4.isInline,
-                );
-            },
-          );
+      get region() {
+        return region;
       },
-    );
-    for (let BridgeData110 of (input.getMeta(OpInsertedClass) ??
-      []) as Dynamic) {
-      let BridgeFirstId = parseCharacterId(BridgeData110.firstId);
-      if (BridgeFirstId !== null && BridgeData110.len > 0)
-        BridgeData109.push({
-          sess: BridgeFirstId.sess,
-          lo: BridgeFirstId.i,
-          hi: BridgeFirstId.i + BridgeData110.len - 1,
-        });
-    }
-    if (
-      values30.size === 0 &&
-      values210.size === 0 &&
-      BridgeData109.length === 0 &&
-      !BridgeData210
-    )
-      return;
-    if (values30.size > 0 && table !== null && table !== input.before)
-      BridgeData210 = true;
-    let resolveBridgeSome7 = (
-      input2: string,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      let BridgeData110 = parseCharacterId(input2);
-      return (
-        BridgeData110 !== null &&
-        BridgeData109.some(
-          (input3?: Dynamic, ..._extraArguments: unknown[]) =>
-            input3.sess === BridgeData110.sess &&
-            BridgeData110.i >= input3.lo &&
-            BridgeData110.i <= input3.hi,
-        )
-      );
-    };
-    resolveBridgeTakings(
-      (input2?: Dynamic, ..._extraArguments: unknown[]) => {
-        if (BridgeData210) return true;
-        for (let BridgeData110 of input2.blocks as Dynamic)
-          if (values210.has(BridgeData110) || resolveBridgeSome7(BridgeData110))
-            return true;
-        if (
-          BridgeData109.some(
-            (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              input2.runs.some(
-                (input4?: Dynamic, ..._extraArguments: unknown[]) =>
-                  input4.sess === input3.sess &&
-                  input4.lo <= input3.hi &&
-                  input4.hi >= input3.lo,
-              ),
-          )
-        )
-          return true;
-        for (let BridgeData110 of values30 as Dynamic) {
-          if (input2.blocks.has(BridgeData110)) return true;
-          let BridgeRunsOf = table2.runsOf(BridgeData110);
-          if (!BridgeRunsOf || BridgeRunsOf.opaque) {
-            if (input2.runs.length > 0) return true;
-            continue;
-          }
-          if (
-            BridgeRunsOf.spans.some(
-              (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                input2.runs.some(
-                  (input4?: Dynamic, ..._extraArguments: unknown[]) =>
-                    input4.sess === input3.sess &&
-                    input4.lo <= input3.start + input3.len - 1 &&
-                    input4.hi >= input3.start,
-                ),
-            )
-          )
-            return true;
-        }
-        return false;
+      get ledger() {
+        return table2;
       },
-      BridgeNames ? "rolled-back" : "written",
+      known: knownCharacters,
+      history: foreignEdits,
+      pendingSteps: filterBridgeFilter,
+      isForeignSession: (session) =>
+        !(session === message || session === "_" || values4.has(session)),
+      ownsBlock: resolveBridgeSess2,
+    });
+
+  const releaseForeignTransaction = (transaction: ProseMirrorTransaction): void =>
+    releaseForeignEdit(
+      transaction,
+      table,
+      table2,
+      foreignEdits,
+      transaction.getMeta(OpInsertedClass) ?? [],
     );
-  };
   let resolveBridgeOperation4 = (
     input: string,
     ..._extraArguments: unknown[]
@@ -175029,57 +173800,26 @@ function createOperationalTransformProseBridge(
   ): Dynamic =>
     resolveBridgeSess2(input) ||
     (resolveBridgeOperation2() &&
-      (values3.has(input) || resolveBridgeSome2(input)));
+      (knownCharacters.blocks.has(input) || foreignEdits.containsBlock(input)));
   let values7: Dynamic = new (Set as Dynamic)();
   let ownKept: Dynamic = new (Map as Dynamic)();
   let BridgeData9: Dynamic = [];
   let cache6: Dynamic = new (WeakMap as Dynamic)();
-  let resolveBridgeEvery = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    resolveBridgeMine(input).every(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input2.mine,
+  const isEntireSpanOwned = (span: CharacterSpan): boolean =>
+    splitOwnedCharacters(span).every((segment) => segment.mine);
+  const ownsCharacter = (session: string, counter: number): boolean =>
+    session === message ||
+    session === "_" ||
+    values4.has(session) ||
+    values.has(characterId(session, counter)) ||
+    values2.has(characterId(session, counter)) ||
+    resolveBridgeOperation3(session, counter);
+  const splitOwnedCharacters = (span: CharacterSpan) =>
+    splitCharacterOwnership(
+      span,
+      (session) => session === message || session === "_" || values4.has(session),
+      ownsCharacter,
     );
-  let resolveBridgeSess3 = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    input.sess === message ||
-    input.sess === "_" ||
-    values4.has(input.sess) ||
-    values.has(characterId(input.sess, input.start + options)) ||
-    values2.has(characterId(input.sess, input.start + options)) ||
-    resolveBridgeOperation3(input.sess, input.start + options);
-  let resolveBridgeMine = (
-    input?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
-    let BridgeData109: Dynamic = [];
-    if (input.sess === message || input.sess === "_" || values4.has(input.sess))
-      return input.len > 0
-        ? [
-            {
-              at: 0,
-              len: input.len,
-              mine: true,
-            },
-          ]
-        : [];
-    for (let index32 = 0; index32 < input.len; index32++) {
-      let mine: Dynamic = resolveBridgeSess3(input, index32);
-      let BridgeData110: Dynamic = BridgeData109.at(-1);
-      if (BridgeData110 && BridgeData110.mine === mine) BridgeData110.len++;
-      else
-        BridgeData109.push({
-          at: index32,
-          len: 1,
-          mine: mine,
-        });
-    }
-    return BridgeData109;
-  };
   let isBridgeRunsOf = (
     input: string,
     ..._extraArguments: unknown[]
@@ -175090,7 +173830,7 @@ function createOperationalTransformProseBridge(
         !BridgeRunsOf.opaque &&
         BridgeRunsOf.spans.some(
           (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-            !resolveBridgeEvery(input2),
+            !isEntireSpanOwned(input2),
         )
       );
     let BridgePosOfBlock = table ? table2.posOfBlock(input) : null;
@@ -175114,58 +173854,10 @@ function createOperationalTransformProseBridge(
     );
     return BridgeData109;
   };
-  let others = (
-    input: string,
-    options: ProseMirrorNode,
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
-    let BridgeRunsOf = table2.runsOf(input);
-    if (
-      !BridgeRunsOf ||
-      BridgeRunsOf.opaque ||
-      !BridgeRunsOf.spans.some(
-        (input2?: Dynamic, ..._extraArguments: unknown[]) =>
-          !resolveBridgeEvery(input2),
-      )
-    )
-      return null;
-    let BridgeData109 = [...pmCharacterOffsets(options)];
-    if (BridgeData109.length !== BridgeRunsOf.length) return [];
-    let BridgeData210: Dynamic = [];
-    let index32: number = 0;
-    for (let BridgeData110 of BridgeRunsOf.spans as Dynamic) {
-      for (let BridgeData111 of resolveBridgeMine(BridgeData110) as Dynamic) {
-        if (BridgeData111.mine) continue;
-        let BridgeData112: Dynamic =
-          BridgeData109[index32 + BridgeData111.at][0];
-        let BridgeData211: Dynamic =
-          BridgeData109[index32 + BridgeData111.at + BridgeData111.len - 1][1];
-        let BridgeData310: Dynamic = BridgeData210.at(-1);
-        if (BridgeData310 && BridgeData310[1] === BridgeData112)
-          BridgeData310[1] = BridgeData211;
-        else BridgeData210.push([BridgeData112, BridgeData211]);
-      }
-      index32 += BridgeData110.len;
-    }
-    return BridgeData210;
-  };
-  let resolveBridgeRunsOf = (
-    input: string,
-    options: ProseMirrorNode,
-    ..._extraArguments: unknown[]
-  ): Dynamic => {
-    let BridgeRunsOf = table2.runsOf(input);
-    if (!BridgeRunsOf || BridgeRunsOf.opaque) return null;
-    let BridgeData109 = [...pmCharacterOffsets(options)];
-    if (BridgeData109.length !== BridgeRunsOf.length) return null;
-    let BridgeData210: Dynamic = [];
-    for (let BridgeData110 of BridgeRunsOf.spans as Dynamic)
-      for (let index32 = 0; index32 < BridgeData110.len; index32++)
-        BridgeData210.push(
-          characterId(BridgeData110.sess, BridgeData110.start + index32),
-        );
-    return BridgeData210.length === BridgeData109.length ? BridgeData210 : null;
-  };
+  const foreignRangesInBlock = (blockId: string, node: ProseMirrorNode) =>
+    foreignCharacterRanges(table2.runsOf(blockId), node, splitOwnedCharacters);
+  const idsInBlock = (blockId: string, node: ProseMirrorNode) =>
+    characterIdsForBlock(table2.runsOf(blockId), node);
   let cache7: Dynamic = new (WeakMap as Dynamic)();
   let keptTheirs: Dynamic = [];
   let values8: Dynamic = new (Set as Dynamic)();
@@ -175310,7 +174002,7 @@ function createOperationalTransformProseBridge(
     let BridgeData210: Dynamic = [];
     let index32: number = 0;
     for (let BridgeData110 of BridgeRunsOf.spans as Dynamic) {
-      for (let BridgeData111 of resolveBridgeMine(BridgeData110) as Dynamic) {
+      for (let BridgeData111 of splitOwnedCharacters(BridgeData110) as Dynamic) {
         if (!BridgeData111.mine) continue;
         let BridgeData112: Dynamic =
           BridgeData109[index32 + BridgeData111.at][0];
@@ -181462,7 +180154,7 @@ function createOperationalTransformProseBridge(
     options?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    isBridgeOperation2("forgot");
+    foreignEdits.endAll("forgot");
     let BridgeData109: Dynamic = BridgeFlightSteps.get(input);
     BridgeFlightSteps.delete(input);
     if (!state || !BridgeData109?.length) return;
@@ -192361,7 +191053,7 @@ function createOperationalTransformProseBridge(
       !input.partial &&
       !input.delta
     ) {
-      isBridgeDescendants(BridgeData210.doc, input.blocks);
+      learnKnownCharacters(BridgeData210.doc, input.blocks);
       state7 = BridgeData210;
     }
     init.seated = true;
@@ -203493,7 +202185,7 @@ function createOperationalTransformProseBridge(
     let BridgeData210 = !(
       BridgePasteFlights.has(opId2) || getBridgeSome2(opId2)
     );
-    isBridgeOperation2("peeled");
+    foreignEdits.endAll("peeled");
     let BridgeData310: Dynamic =
       state &&
       table &&
@@ -209655,7 +208347,7 @@ function createOperationalTransformProseBridge(
               !seen7.has(input) || cache2.get(input) === true,
           )
         : null;
-      state10 = BridgeData7
+      foreignEdits.window = BridgeData7
         ? BridgeData172.reduce(
             (
               input?: Dynamic,
@@ -209710,7 +208402,7 @@ function createOperationalTransformProseBridge(
       state9 = null;
       state16 = null;
       state8 = null;
-      state10 = null;
+      foreignEdits.window = null;
       BridgeData7 = false;
       state23 = null;
     }
@@ -210305,7 +208997,7 @@ function createOperationalTransformProseBridge(
         editorState.getMeta("history$") === undefined &&
         editorState.steps.some(
           (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) =>
-            !isBridgeFrom3(input, editorState.docs[options]),
+            !isStructurePreservingStep(input, editorState.docs[options]),
         )
       ) {
         if (resolveBridgeSome()) owed = true;
@@ -210317,14 +209009,14 @@ function createOperationalTransformProseBridge(
         });
       }
       if (
-        BridgeData8.length > 0 &&
+        foreignEdits.size > 0 &&
         editorState.docChanged &&
         editorState !== state7 &&
         resolveOperationModelGetMeta3(editorState) &&
         editorState.getMeta("op$") !== "carry" &&
         editorState.getMeta("history$") === undefined
       )
-        isBridgeSess(editorState);
+        releaseForeignTransaction(editorState);
       if (
         !editorState.docChanged ||
         resolveOperationModelGetMeta3(editorState) ||
@@ -210403,9 +209095,9 @@ function createOperationalTransformProseBridge(
             resolveBridgeOperation6(input) && !values8.has(input),
           made: (input: string, ..._extraArguments: unknown[]): Dynamic =>
             resolveBridgeSess2(input) && !values8.has(input),
-          others: others,
+          others: foreignRangesInBlock,
           ownKept: ownKept,
-          ids: resolveBridgeRunsOf,
+          ids: idsInBlock,
           keptTheirs: keptTheirs,
           retired: (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
             getBridgeInto(input),
@@ -211428,7 +210120,7 @@ function createOperationalTransformProseBridge(
           !resolveOperationModelGetMeta3(BridgeData110) &&
           BridgeData110.getMeta("history$") === undefined
         )
-          isBridgeHead(BridgeData110);
+          captureForeignTransaction(BridgeData110);
         if (!BridgeData111 && !resolveOperationModelGetMeta3(BridgeData110))
           BridgeData21.born(hostDropOf?.(BridgeData110));
         if (BridgeData111) cache9.delete(BridgeData110);
@@ -211499,7 +210191,7 @@ function createOperationalTransformProseBridge(
             for (let BridgeData113 of BridgeFilter as Dynamic) {
               seen7.add(BridgeData113);
               cache2.set(BridgeData113, resolveBridgeOperation2());
-              cache5.set(BridgeData113, index);
+              cache5.set(BridgeData113, foreignEdits.revision);
             }
           if (BridgeData110.getMeta("history$") !== undefined)
             for (let BridgeData113 of BridgeFilter as Dynamic) {
