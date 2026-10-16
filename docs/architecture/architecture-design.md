@@ -1162,7 +1162,7 @@ interface SpaceEntry {
 
 规则对所有的库相同：
 
-- **进入视频时拷贝**。视频使用库里的条目时，把它当时的内容拷进视频：素材走普通的素材导入并收进视频（`managed`：库里的文件不是用户的原文件，不能链接，§5.1），样式与模板成为视频里的实体，并在 Provenance 里记下来自哪个库条目的哪个版本。之后修改或删除库条目，不改变任何已有的视频。「用库里的新版本更新这个视频」是一次显式的编辑事务。拷贝是 `library.applyToVideo`，一笔普通的编辑事务，操作者按发起的连接认定（界面与 CLI 是用户）：图片、视频、贴纸、字体经 `importAsset` 以 `managed` 收进视频目录，Provenance 的 `origin` 为 `library`，`source.library` 记下 `library`、`entryId`、`version`、`contentHash`、`name` 与 `kind`；字幕样式经 `putDocument` 成为 `caption-style` 文档，扩展 `baocut.library` 记下同样的出处，给了 `captionItemIds` 时在同一笔事务里 `setCaptionStyle`。术语表、音色与颜色不是视频里的实体，拷贝以 `LIBRARY_ENTRY_NOT_APPLICABLE` 拒绝；它们由使用它们的步骤按引用冻结（见下）。
+- **进入视频时拷贝**。视频使用库里的条目时，把它当时的内容拷进视频：素材走普通的素材导入并收进视频（`managed`：库里的文件不是用户的原文件，不能链接，§5.1），样式与模板成为视频里的实体，并在 Provenance 里记下来自哪个库条目的哪个版本。之后修改或删除库条目，不改变任何已有的视频。「用库里的新版本更新这个视频」是一次显式的编辑事务。拷贝是 `library.applyToVideo`，一笔普通的编辑事务，操作者按发起的连接认定（界面与 CLI 是用户）：图片、视频、贴纸、字体经 `importAsset` 以 `managed` 收进视频目录，Provenance 的 `origin` 为 `library`，`source.library` 记下 `library`、`entryId`、`version`、`contentHash`、`name` 与 `kind`；字幕样式经 `putDocument` 成为 `caption-style` 文档，扩展 `baocut.library` 记下同样的出处，给了 `captionItemIds` 时在同一笔事务里 `setCaptionStyle`；叠加模板经 `setTemplate` 成为序列（`sequenceId`，缺省根序列）的模板层，`id` 与 `from` 是条目 ID、去掉内置标记，定义声明的套用画幅不在这一笔里改。术语表、音色与颜色不是视频里的实体，拷贝以 `LIBRARY_ENTRY_NOT_APPLICABLE` 拒绝；它们由使用它们的步骤按引用冻结（见下）。
 - **启用是视频自己的事**。库只保存内容。一个视频的哪一步用哪几张术语表、哪个说话人用哪个音色，记录在视频里；新视频的默认勾选是库条目上的一个标记（`defaultEnabled`）。记录的位置是视频里一份 `library-selection` 文档（视频格式规范 §4.6，每个视频至多一份）：按步骤列出启用的术语表（`transcribe` 只放转写用，`translate` 只放翻译用，靠前的优先），以及说话人的音色绑定（哪份转写的哪位说话人用哪个音色）。它记的是条目 ID，不是内容：用到时读当时的版本并冻结。没有这份文档等于什么都没启用。
   - **新视频**（`videos.create`，不含打开便携包）采用库里标了 `defaultEnabled` 的术语表：建好之后写一份这样的文档，行为者是 `system:library`，不进用户的撤销栈；没有默认启用的条目时不写；对外服务的客户端建的视频不采用。采用失败不影响新建，只记日志。
   - **读写**。`library.getVideoSelection` 读；`library.setVideoSelection` 改，是一笔普通的编辑事务（操作者按发起的连接认定，能撤销），给了的字段整体替换、没给的照旧。写入时只校验这次给的：术语表在库里、种类与步骤相符（否则 `LIBRARY_ENTRY_NOT_APPLICABLE`），`library:` 音色在库里且不带 `providerId`，说话人在那份转写里。之后库里删了的条目留在文档里，用到时再处理：转写跳过；翻译跳过并在摘要里列出；配音不合成那位说话人的句子并逐句报告（§7.9）。
@@ -1191,9 +1191,9 @@ library/
 | --- | --- | --- |
 | 术语表 | `name`、`kind`、`defaultEnabled`、`terms`。转写用（`transcription`）：可选的 `language`，每条是规范写法 `canonical` 与误听写法 `misheard[]`；翻译用（`translation`）：可选的 `sourceLanguage`、必填的 `targetLanguage`，每条是 `source`、`target` 与可选的 `note` | 语言是合法的 BCP 47 标签；规范写法或原文不重复、不含换行 |
 | 音色 | `name`、`language`、参考录音的逐字稿 `transcript`、`origin`（`recorded`、`imported`）、`consent`（`declared`、`declaredAt`、`statement`）、参考录音；可选的授权声明录音 `consentClip`（`language`：BCP 47 或 `custom`，`custom` 时 `text` 是念的那句话；`durationSec` 由 ffprobe 探测；录音文件）、种子 `seed` 与 `seeds`（本机模型 ID → 种子） | 参考录音 wav、mp3 或 flac，≤ 20 MiB，文件头相符且 ffprobe 能解码出声音；授权声明录音同样的格式，≤ 3 MiB，`text` ≤ 500 字，`put` 时 `consentClip` 与录音文件（`consentSource`）必须同给；种子是 0–4294967295 的整数，`seeds` 至多 50 项；没给的新字段沿用上一版，老条目的内容与摘要不变；改声明文字时更新 `declaredAt` |
-| 品牌库 | `name` 与 `kind`：`image`、`video`、`sticker`（图片或 Lottie）、`font`（ttf、otf、woff2）带一个文件；`color` 是 `#RRGGBB` 或 `#RRGGBBAA`；`captionStyle` 是带字符串 `schema` 的样式对象（≤ 64 KiB），拷进视频时成为文档正文 | 图片、贴纸、字体 ≤ 50 MiB，Lottie ≤ 10 MiB，视频 ≤ 4 GiB；`overlayTemplate` 只保留种类，`put` 以 `LIBRARY_KIND_RESERVED` 拒绝（§14） |
+| 品牌库 | `name` 与 `kind`：`image`、`video`、`sticker`（图片或 Lottie）、`font`（ttf、otf、woff2）带一个文件；`color` 是 `#RRGGBB` 或 `#RRGGBBAA`；`captionStyle` 是带字符串 `schema` 的样式对象（≤ 64 KiB），拷进视频时成为文档正文；`overlayTemplate` 的 `template` 是一套模板层定义（视频格式规范 §3.17，带 `layers` 数组的对象，≤ 64 KiB），拷进视频时成为序列的模板层 | 图片、贴纸、字体 ≤ 50 MiB，Lottie ≤ 10 MiB，视频 ≤ 4 GiB；模板只查外形与大小，图层字段由编辑引擎在套用时校验 |
 
-**交换格式**。导入时按内容认：front matter 里有 `format: baocut.glossary` 的文本是术语表；`format` 为 `baocut.voice-package` 的 JSON 是音色包；`baocut.library-item` 的 JSON 是品牌库的颜色或字幕样式；Lottie 的 JSON 与 `.lottie` 压缩包（zip 的中央目录里有 `animations/*.json` 或 `a/*.json`）是贴纸；png、jpeg、gif、webp 是图片（贴纸导入之后再改种类）；mp4、mov、webm、mkv 是视频；ttf、otf、woff2 是字体。单独的音频文件不能导入（音色还要逐字稿与授权声明），其余一律 `LIBRARY_FORMAT_INVALID`。
+**交换格式**。导入时按内容认：front matter 里有 `format: baocut.glossary` 的文本是术语表；`format` 为 `baocut.voice-package` 的 JSON 是音色包；`baocut.library-item` 的 JSON 是品牌库的颜色、字幕样式或叠加模板；Lottie 的 JSON 与 `.lottie` 压缩包（zip 的中央目录里有 `animations/*.json` 或 `a/*.json`）是贴纸；png、jpeg、gif、webp 是图片（贴纸导入之后再改种类）；mp4、mov、webm、mkv 是视频；ttf、otf、woff2 是字体。单独的音频文件不能导入（音色还要逐字稿与授权声明），其余一律 `LIBRARY_FORMAT_INVALID`。
 
 - **术语表**是 UTF-8 的 Markdown，≤ 4 MiB。front matter 里 `format: baocut.glossary`、`version: 1`、`name`（JSON 字符串或纯文本，省略时用文件名）、`kind`，转写用的可选 `language`，翻译用的可选 `source` 与必填 `target`，`default: true | false`（省略为 false）。正文恰好一张表，表前可以有说明文字；表头不分大小写，转写用是 `| Term | Misheard |`，翻译用是 `| Source | Target | Note |`。单元格里 `\|` 与 `\\` 转义；误听写法以 `,`、`，` 或 `、` 分隔，写法本身含分隔符时用 `\` 转义。
 
@@ -1213,7 +1213,7 @@ library/
   ```
 
 - **音色包** `.bcvoice` 是一个 UTF-8 的 JSON 文件，参考录音以 base64 内嵌：`format: "baocut.voice-package"`、`version: 2`、`name`、`language`、`transcript`、`origin`、`consent`、`reference: { fileName, mediaType, sha256, byteLength, data }`；版本 2 另有可选的 `consentClip: { language, text, durationSec, fileName, mediaType, sha256, byteLength, data }`（授权声明录音，≤ 3 MiB，导入时重新探测时长）、`seed` 与 `seeds`，没有时省略。导出写版本 2，导入也接受版本 1（没有这三项）。整个文件 ≤ 32 MiB，录音 ≤ 20 MiB。导入时校验格式与版本、字段、base64、解出的长度与摘要、文件头是 wav、mp3 或 flac 且与 `mediaType` 一致，最后用 ffprobe 解码一遍；包里的声明时间沿用。各 Provider 上的克隆不导出：换机器或换账号都要重新克隆。
-- **品牌库**带文件的条目导出原文件；颜色与字幕样式导出 `{ "format": "baocut.library-item", "version": 1, "library": "brand", "content": { … } }`。
+- **品牌库**带文件的条目导出原文件；颜色、字幕样式与叠加模板导出 `{ "format": "baocut.library-item", "version": 1, "library": "brand", "content": { … } }`。
 
 **转写用术语表**。`models.transcribe` 的 `glossaries: [{ id, version? }]`（最多 20 张，只能是转写用的，否则 `LIBRARY_ENTRY_NOT_APPLICABLE`）在提交时解析并冻结；解析在 JobManager 里，网关的 `models.transcribe` 与转录流程（智能体的 `transcribe` 工具，用视频启用的术语表）走同一条路，合成的 `library:<id>` 音色同样。模型接受提示（`acceptsHint`）时，各表的规范写法按顺序去重、用「、」连接，接在用户提示的下一行，整体不超过 1200 字，放不下的写法舍去并计数；不接受提示时忽略术语表，不报错；用户给的 `hint` 同样不交给模型，任务从提交起带 `hint-ignored` 警告，完成时与结果的警告并在一起。`JobRecord.library.glossaryHint` 记下 `status`（`sent`、`unsupported`）、送出的条数与舍去的条数。误听写法不进提示，留给文稿润色。
 
@@ -3287,8 +3287,8 @@ v3 是 v2（`baocut-app`）的架构重做。成熟的领域实现从 v2 原样�
 | 下载工具自己的网络请求（§7.9） | 是否把 yt-dlp 的请求限制在公网（固定解析结果、经本地代理检查每个请求） | 只在提交时检查链接与它的解析结果；DNS 变化、重定向与提取器另外请求的地址不在检查范围内 |
 | 从网络取用的贴纸资源 | 原型从社区站点拉取动态贴纸目录与文件。来源的许可、校验与缓存 | 只用随应用发布的与用户自己上传的 |
 | 云端账号 | 原型的隐私页有「删除云端账号数据」；本文没有 BaoCut 自己的云端账号 | 不存在云端账号；该项不做 |
-| 用户库条目的交换格式（§5.9） | 音色包、术语表文件的具体格式与版本 | 已定：术语表是带 front matter 的 Markdown 表格（`baocut.glossary` 版本 1）；音色包是内嵌录音的 JSON（`baocut.voice-package` 版本 1，≤ 32 MiB）；颜色与字幕样式是 `baocut.library-item` 版本 1（§5.9） |
-| 品牌库的叠加模板（§5.9） | 模板的内容格式、参数与拷进视频之后成为什么实体 | 只保留种类 `overlayTemplate`：`library.put` 以 `LIBRARY_KIND_RESERVED` 拒绝，等视频格式定义模板之后再开放 |
+| 用户库条目的交换格式（§5.9） | 音色包、术语表文件的具体格式与版本 | 已定：术语表是带 front matter 的 Markdown 表格（`baocut.glossary` 版本 1）；音色包是内嵌录音的 JSON（`baocut.voice-package` 版本 1，≤ 32 MiB）；颜色、字幕样式与叠加模板是 `baocut.library-item` 版本 1（§5.9） |
+| 品牌库的叠加模板（§5.9） | 模板的内容格式、参数与拷进视频之后成为什么实体 | 已定：内容是视频格式规范 §3.17 的模板层定义；拷进视频是 `setTemplate`，成为序列的模板层，`id` 与 `from` 记下条目 ID；套用时的画幅由调用方另外改画布 |
 | 用户库条目在视频里的启用（§5.9） | 视频的哪一步用哪几张术语表、哪个说话人用哪个音色记在视频的什么位置；新视频怎样采用 `defaultEnabled` | 已定：视频里一份 `library-selection` 文档（视频格式规范 §4.6），记条目 ID 不记内容，经 `library.getVideoSelection` / `setVideoSelection` 读写；新建的视频由 `system:library` 写入默认启用的术语表，不进撤销栈。转写、翻译与配音在调用没有显式给出时用它；翻译用到的版本记在译文的 `glossaryRef`（§5.3） |
 | 音色克隆的建立与删除（§5.9） | 何时、经哪个方法把参考录音上传给 Provider 建立克隆；条目删除或录音更换后怎样请求 Provider 删除旧克隆 | 已定：`library.createVoiceClone` 是一个 `voiceClone` 任务，`library.removeVoiceClone` 先删远端再清记录；重新克隆之后请求删除被替换的旧克隆，删不掉时告警。条目删除时不自动删除远端克隆，由用户 `removeVoiceClone` |
 | ElevenLabs 克隆接口的细节（§6.4） | 按公开文档写成，离线没能核对：远端已经没有这个音色时删除返回的状态码；`requires_verification` 为 true 的克隆能不能立即用于合成；单个文件与总上传大小的上限 | 删除的 404 当作远端已经没有；需要验证的克隆照常记为有效，合成失败时如实报告；参考录音只受库的上限（20 MiB）约束 |

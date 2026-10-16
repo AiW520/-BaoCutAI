@@ -933,6 +933,65 @@ fn image_logos_in_templates_are_refused() {
     assert_eq!(error.items[0].reason, "template-logo-image-not-supported");
 }
 
+/// 从品牌库拷进视频的图片素材（`provenance.source.library` 记着条目 `bm1`）。
+fn brand_logo_asset(id: &str, version: u64) -> (String, Value) {
+    let (id, mut value) = svg_asset(id, 10, 10);
+    value["revisions"]["rev_1"]["provenance"] = json!({ "origin": "library", "source": { "library": { "library": "brand", "entryId": "bm1", "version": version, "kind": "image" } } });
+    (id, value)
+}
+
+fn brand_logo_video(assets: Vec<(String, Value)>) -> video_model::VideoSnapshot {
+    video(
+        vec![],
+        assets,
+        json!({
+            "durationPolicy": { "kind": "fixed", "frames": 90 },
+            "template": { "id": "tpl", "name": "条", "layers": [
+                { "id": "logo", "box": { "x": 0, "y": 0, "w": 50, "h": 50 }, "kind": "logo", "src": { "brandLogo": "bm1" }, "color": "#FFFFFF" }
+            ] }
+        }),
+    )
+}
+
+#[test]
+fn brand_logos_draw_the_image_copied_from_the_brand_library() {
+    // 拷过两次的取库版本新的那一份（`a_new` 上红下蓝，`a_old` 没有字节）。
+    let video = brand_logo_video(vec![brand_logo_asset("a_old", 1), brand_logo_asset("a_new", 2)]);
+    let mut media = Media::default();
+    media.assets.insert("a_new".into(), FLAT_SVG.as_bytes().to_vec());
+    let frame = render(&video, 0.5, &mut media);
+    // 盒子 80×45，方图等比放进去、横向居中：上半红、下半蓝，两边留空。
+    near(px(&frame, 40, 10), RED, 8);
+    near(px(&frame, 40, 35), BLUE, 8);
+    near(px(&frame, 5, 20), BLACK, 2);
+}
+
+#[test]
+fn brand_logos_not_copied_into_the_video_are_refused() {
+    let video = brand_logo_video(vec![]);
+    let error = try_render(
+        &mut renderer(false, frame_render::Documents::default()),
+        &video,
+        0.5,
+        &mut Media::default(),
+    )
+    .unwrap_err();
+    assert_eq!(error.items[0].reason, "template-logo-asset-missing");
+    // 素材登记了、字节读不到（预览里还在取）：同一个原因，按素材报。
+    let video = brand_logo_video(vec![brand_logo_asset("a_new", 1)]);
+    let error = try_render(
+        &mut renderer(false, frame_render::Documents::default()),
+        &video,
+        0.5,
+        &mut Media::default(),
+    )
+    .unwrap_err();
+    assert_eq!(
+        (error.items[0].reason.as_str(), error.items[0].scope),
+        ("template-logo-asset-missing", "asset")
+    );
+}
+
 /// 纯色填充的 SVG：上半红、下半蓝。
 const FLAT_SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="5" fill="#FF0000"/><rect y="5" width="10" height="5" fill="#0000ff"/></svg>"##;
 

@@ -3,10 +3,11 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { setLocale } from '@baocut/protocol';
 import { ELEMENT_TILES } from '../../model/element-catalog.ts';
+import { demoMarkers, templateGroups } from '../../model/template-layers.ts';
 import { TEXT_PRESETS } from '../../model/text-presets.ts';
 import { RenderPlanner } from '../../render/render-planner.ts';
 import { opaqueBounds, thumbSequence } from '../../render/thumbnails.ts';
-import { CAPTION_BEAT, captionFrame, captionSample, captionThumb, confettiThumb, layerThumb, lottieMeta, lottieThumb, presetThumb, type ThumbPicture } from './thumb-scenes.ts';
+import { CAPTION_BEAT, captionFrame, captionSample, captionThumb, confettiThumb, layerThumb, lottieMeta, lottieThumb, presetThumb, templateThumb, TEMPLATE_DEMO_SECONDS, type ThumbPicture } from './thumb-scenes.ts';
 
 // 缩略图由编出来的预览 WASM 画（与导出同一个内核）；Node 没有 ImageData，补一个装下像素的。
 vi.stubGlobal('ImageData', function (data: Uint8ClampedArray, width: number, height: number) {
@@ -175,5 +176,19 @@ describe.skipIf(!built)('缩略图由渲染内核画', () => {
     const framed = presetThumb(planner, scene, { num: 30, den: 1 }, 2, 360, 200);
     expect(framed.blits).toHaveLength(1);
     expect(opaque(framed)).toBeGreaterThan(0);
+  });
+
+  it('模板缩略图：内置每一款都画出东西，按模板画幅居中放进格子', () => {
+    const markers = demoMarkers(['Intro', 'Setup', 'Demo', 'Wrap-up'], TEMPLATE_DEMO_SECONDS);
+    const docs = templateGroups('en', []).flatMap((group) => group.items.map((item) => item.doc));
+    expect(docs).toHaveLength(17);
+    for (const doc of docs) {
+      const picture = templateThumb(planner, doc, markers, 'Demo video', 160, 90);
+      expect(picture.problems, doc.id).toEqual([]);
+      expect(opaque(picture), doc.id).toBeGreaterThan(0);
+      const { target } = picture.blits[0]!;
+      if (doc.canvas === '9:16') expect(target.width).toBeLessThan(target.height);
+      else expect(target).toMatchObject({ x: 0, y: 0, width: 160, height: 90 });
+    }
   });
 });

@@ -295,7 +295,7 @@ fn check_content(
                 let reason = match template {
                     None => Some("template-missing"),
                     Some(doc) if !doc.layers.iter().any(|l| l.id == layer_id) => Some("template-missing"),
-                    Some(doc) => crate::template::unsupported_reason(doc, layer_id),
+                    Some(doc) => crate::template::unsupported_reason(doc, layer_id, parameters),
                 };
                 if let Some(reason) = reason {
                     return Some(UnsupportedItem::layer(
@@ -347,7 +347,11 @@ fn unsupported_message(reason: &str) -> Text {
         ),
         "template-logo-image-not-supported" => msg!(
             "frameRender.templateLogoImage",
-            "Image logos in templates can’t be drawn (only text logos are drawn)"
+            "Image logos referenced by file path can’t be drawn in templates (use a brand kit logo or a text logo)"
+        ),
+        "template-logo-asset-missing" => msg!(
+            "frameRender.templateLogoAssetMissing",
+            "The brand kit image used as the template logo isn’t in this video (pick the logo again to copy it in)"
         ),
         _ => msg!("frameRender.layerUnsupported", "This clip can’t be drawn"),
     }

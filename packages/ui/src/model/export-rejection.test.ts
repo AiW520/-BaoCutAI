@@ -29,7 +29,7 @@ describe('导出被拒', () => {
           scope: 'layer',
           layerKind: 'generator',
           reason: 'template-logo-image-not-supported',
-          message: 'Image logos in templates can’t be drawn (only text logos are drawn)',
+          message: 'Image logos referenced by file path can’t be drawn in templates (use a brand kit logo or a text logo)',
           messageRef: { key: 'frameRender.templateLogoImage' },
         },
         {
@@ -43,14 +43,14 @@ describe('导出被拒', () => {
       ],
     });
     expect(explainExportError(error, { kind: 'video', stage: 'rejected' }).items).toEqual([
-      '模板的图片台标画不出来（只画文字台标）',
+      '模板里按路径引用的图片台标画不出来（换成品牌库的台标或文字台标）',
       '「baocut.future」画不出来',
     ]);
     vi.stubEnv('BAOCUT_LOCALE', 'en');
     setLocale('en');
     try {
       expect(explainExportError(error, { kind: 'video', stage: 'rejected' }).items).toEqual([
-        'Image logos in templates can’t be drawn (only text logos are drawn)',
+        'Image logos referenced by file path can’t be drawn in templates (use a brand kit logo or a text logo)',
         'Generator baocut.future can’t be drawn',
       ]);
     } finally {

@@ -148,6 +148,8 @@ pub struct FrameRenderer {
     lotties: HashMap<String, Option<Arc<Lottie>>>,
     /// SVG 图片按输出长边光栅好的画面（键是 `素材ID@版本`，换过色的是它的变体 ID）；读不出来的是 `None`。换尺寸时作废。
     svgs: HashMap<String, Option<Arc<Pixmap>>>,
+    /// 模板台标的图片（键是 `素材ID@版本`；SVG 按输出长边光栅）；读不出来的是 `None`。换尺寸时作废。
+    template_logos: HashMap<String, Option<Arc<Pixmap>>>,
     /// 解好的 GIF（键是 `素材ID@版本`）；读不出来的是 `None`。与输出尺寸无关，换尺寸时留着。
     gifs: HashMap<String, Option<Arc<crate::Gif>>>,
     /// 声波实例 → 它的频谱轨（键变了就重拼）。
@@ -204,6 +206,7 @@ impl FrameRenderer {
             templates: TemplateScenes::default(),
             lotties: HashMap::new(),
             svgs: HashMap::new(),
+            template_logos: HashMap::new(),
             gifs: HashMap::new(),
             viz: HashMap::new(),
             speakers: None,
@@ -345,6 +348,7 @@ impl FrameRenderer {
         self.drop_captions();
         self.templates = TemplateScenes::default();
         self.svgs.clear();
+        self.template_logos.clear();
         Ok(())
     }
 
@@ -554,6 +558,15 @@ impl FrameRenderer {
             let Some(doc) = context.sequence.header.template.as_ref() else {
                 return Ok(None);
             };
+            // 图片台标：帧计划解析好的素材（品牌库拷进来的那一份，render-graph `brand_logo_asset`）。
+            let asset: Option<VersionRef> = parameters.get("asset").cloned().and_then(|v| serde_json::from_value(v).ok());
+            let logo = match asset {
+                Some(asset) => match self.template_logo(context, layer, &asset, media)? {
+                    Some(pixmap) => Some((format!("{}@{}", asset.id, asset.revision), pixmap)),
+                    None => return Ok(None),
+                },
+                None => None,
+            };
             self.element_plan(context)?;
             let plan = self.elements.as_mut().expect("刚编好");
             let pixmap = self
@@ -562,6 +575,7 @@ impl FrameRenderer {
                     context.sequence,
                     doc,
                     &layer_id,
+                    logo,
                     seconds,
                     context.duration,
                     context.fps,
@@ -780,6 +794,58 @@ impl FrameRenderer {
             self.lotties.insert(key.clone(), entry);
         }
         Ok(self.lotties.get(&key).cloned().flatten())
+    }
+
+    /// 模板台标的图片：素材字节解成画面（SVG 按输出的长边光栅，其余取第一帧），按素材版本缓存。读不到（预览里字节
+    /// 还在取）时不缓存，按选项报错或跳过（`template-logo-asset-missing`）；解不开的记下来（`asset-undecodable`）。
+    fn template_logo(
+        &mut self,
+        context: &SequenceContext,
+        layer: &VisualLayer,
+        asset: &VersionRef,
+        media: &mut dyn LayerMedia,
+    ) -> Result<Option<Arc<Pixmap>>, RenderError> {
+        let key = format!("{}@{}", asset.id, asset.revision);
+        if !self.template_logos.contains_key(&key) {
+            let Some(bytes) = media.asset_bytes(asset) else {
+                self.refuse_or_skip(vec![asset_item(
+                    layer,
+                    "template-logo-asset-missing",
+                    format!("模板台标的图片 {} 读不到", asset.id),
+                )])?;
+                return Ok(None);
+            };
+            let decoded = if context.is_svg(Some(asset)) {
+                crate::decode_svg(&bytes, self.options.width.max(self.options.height))
+            } else {
+                render_raster::source::animated_image::decode_first_frame(&asset.id, &bytes)
+            };
+            match decoded {
+                Ok(pixmap) => {
+                    self.template_logos.insert(key.clone(), Some(Arc::new(pixmap)));
+                }
+                Err(error) => {
+                    self.template_logos.insert(key.clone(), None);
+                    self.refuse_or_skip(vec![asset_item(
+                        layer,
+                        "asset-undecodable",
+                        format!("模板台标的图片解不开：{error:#}"),
+                    )])?;
+                    return Ok(None);
+                }
+            }
+        }
+        match self.template_logos.get(&key).cloned().flatten() {
+            Some(pixmap) => Ok(Some(pixmap)),
+            None => {
+                self.refuse_or_skip(vec![asset_item(
+                    layer,
+                    "asset-undecodable",
+                    format!("模板台标的图片 {} 解不开", asset.id),
+                )])?;
+                Ok(None)
+            }
+        }
     }
 
     /// SVG 图片的画面：素材字节按输出的长边光栅（[`crate::decode_svg`]），贴纸带 `fillOverrides` 时先换色
