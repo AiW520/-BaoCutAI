@@ -301,9 +301,14 @@
   background: color-mix(in srgb, var(--media-bg) 88%, transparent);
   backdrop-filter: blur(4px);
 }
+/*
+ * 全窗口查看器只淡入，不要 S2 进场的下移 20px：它贴着窗口底边，下移会把文档撑出根滚动条，
+ * React Aria 随即给 <html> 留出 scrollbar-gutter，查看器右边就空出一条白边。
+ */
 [data-rac]:has(> .bc-image-lightbox) {
   background: transparent;
   padding-bottom: 0;
+  translate: none;
 }
 /*
  * Electron 按几何位置叠窗口拖动区，不看层级：标题栏的 .bc-drag 会透过盖在它上面的全屏对话框，
