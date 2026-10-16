@@ -29,20 +29,23 @@ import {
 } from "./provider-and-layers";
 import type * as ReactComponentTypes from "react";
 
-export const UiOverlaysAndIconsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
+export const UiOverlaysAndIconsActionsRef: ReactComponentTypes.FC<{
+  actionsRef: ReactComponentTypes.RefObject<{ close?: () => void } | null>;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   actionsRef: actionsRef,
   children: children,
 }) => {
-  let [uniqueItemsState]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic => new (Set as Dynamic)(),
+  let [uniqueItemsState] = (0, React.useState)(
+    (..._extraArguments: unknown[]) => new Set<Element>(),
   );
-  let enabledRef: Dynamic = (0, React.useRef)(false);
+  let enabledRef = (0, React.useRef)(false);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => (
       enabledRef.current && ((enabledRef.current = false), actionsRef.current?.close?.()),
       (..._extraArguments: unknown[]): undefined => {
         enabledRef.current = false;
-        for (let uiOverlaysAndIconsActionsRefResult of uniqueItemsState as Dynamic)
+        for (let uiOverlaysAndIconsActionsRefResult of uniqueItemsState)
           if (
             isUiOverlaysAndIconsNone(uiOverlaysAndIconsActionsRefResult) &&
             isUiOverlaysAndIconsDataOpen(uiOverlaysAndIconsActionsRefResult)
@@ -564,7 +567,7 @@ function resolveUiOverlaysAndIconsValue3(
   );
 }
 
-var UiOverlaysAndIconsCreateContext5: Dynamic;
+var UiOverlaysAndIconsCreateContext5: ReactComponentTypes.Context<Set<Element> | null>;
 
 function isUiOverlaysAndIconsNone(
   uiOverlaysAndIconsNone?: Dynamic,
@@ -1017,7 +1020,7 @@ export function initializeUiOverlaysAndIconsStep1(): void {
   (UiOverlaysAndIconsCreateContext3 = (0, React.createContext)(null));
   (UiOverlaysAndIconsCreateContext4 = (0, React.createContext)(null));
   (UiOverlaysAndIconsHttpWwwW3Org1999Xhtml = `http://www.w3.org/1999/xhtml`);
-  (UiOverlaysAndIconsCreateContext5 = (0, React.createContext)(null));
+  (UiOverlaysAndIconsCreateContext5 = (0, React.createContext)<Set<Element> | null>(null));
   (UiOverlaysAndIconsState = null);
   (uiOverlaysAndIconsDragendDropPointerdownValues = [
     `dragend`,

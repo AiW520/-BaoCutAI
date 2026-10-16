@@ -30,8 +30,10 @@ import {
   REACT_MEMO_SYMBOL,
 } from "../connection-and-errors/shared";
 import type * as ReactComponentTypes from "react";
+import type { BottomSheetProps } from "../../design-system/sheets/bottom-sheet";
+import type { ConfirmationDialogProps } from "../../platform/ui/dialogs";
 
-export const BottomSheet: ReactComponentTypes.FC<Dynamic> = (bottomSheet) => {
+export const BottomSheet: ReactComponentTypes.FC<BottomSheetProps> = (bottomSheet) => {
   let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
     useBottomSheetModule(true);
   let shouldCloseRef: Dynamic = (0, React.useRef)(bottomSheet.shouldClose);
@@ -158,7 +160,7 @@ export const ExportProgressDialog: ReactComponentTypes.FC<
   );
 };
 
-export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (
+export const PhoneConfirmationDialog: ReactComponentTypes.FC<ConfirmationDialogProps> = (
   phoneConfirmationDialog,
 ) => {
   let phoneConfirmationDialogResult: Dynamic = resolvePlatformSyncAndRoutingValue10();

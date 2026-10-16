@@ -20,6 +20,10 @@ import {
   resolveUiOverlaysAndIconsValue4,
 } from "./overlays-and-icons";
 import type * as ReactComponentTypes from "react";
+import type {
+  TooltipPositionerProps,
+  TooltipPortalProps,
+} from "@base-ui/react/tooltip";
 
 export interface ShortcutProps
   extends ReactComponentTypes.HTMLAttributes<HTMLSpanElement> {
@@ -117,20 +121,27 @@ export const UiShortcutsAndSizingKeys: ReactComponentTypes.FC<ShortcutProps> = (
   );
 };
 
-export const UiShortcutsAndSizingOverride: ReactComponentTypes.FC<Dynamic> = ({
+export const UiShortcutsAndSizingOverride: ReactComponentTypes.FC<{
+  override?: TooltipPositionerProps["collisionPadding"];
+  container?: TooltipPortalProps["container"];
+  provideInherit?: boolean;
+  children: (
+    padding: TooltipPositionerProps["collisionPadding"],
+  ) => ReactComponentTypes.ReactNode;
+}> = ({
   override: override,
   container: container,
   provideInherit = false,
   children: children,
 }) => {
-  let collisionPadding: Dynamic = resolveUiShortcutsAndSizingTop(override, container);
+  let collisionPadding: TooltipPositionerProps["collisionPadding"] = resolveUiShortcutsAndSizingTop(override, container);
   let memoized: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => ({
       collisionPadding: collisionPadding,
     }),
     [collisionPadding],
   );
-  let children2: Dynamic = children(collisionPadding);
+  let children2 = children(collisionPadding);
   return provideInherit ? (
     <UiShortcutsAndSizingCreateContext3.Provider value={memoized}>
       {children2}
@@ -1875,14 +1886,14 @@ function useUiShortcutsAndSizingUseSyncExternalStore2(
 }
 
 function resolveUiShortcutsAndSizingTop(
-  uiShortcutsAndSizing?: Dynamic,
-  options?: Dynamic,
+  uiShortcutsAndSizing?: TooltipPositionerProps["collisionPadding"],
+  options?: TooltipPortalProps["container"],
   ..._extraArguments: unknown[]
-): Dynamic {
-  let useUiShortcutsAndSizingUseSyncExternalStore22: Dynamic =
+): TooltipPositionerProps["collisionPadding"] {
+  let useUiShortcutsAndSizingUseSyncExternalStore22: number =
     useUiShortcutsAndSizingUseSyncExternalStore2(options);
   return (0, React.useMemo)(
-    (..._extraArguments: unknown[]): Dynamic => {
+    (..._extraArguments: unknown[]) => {
       if (uiShortcutsAndSizing !== undefined) return uiShortcutsAndSizing;
       if (!(useUiShortcutsAndSizingUseSyncExternalStore22 <= 0))
         return {

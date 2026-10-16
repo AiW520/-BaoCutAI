@@ -832,7 +832,7 @@ var SELECTION_ACTIONS_GAP: number;
 function selectionActionsPlacement(
   selectionActionsPlacement2?: Dynamic,
   ..._extraArguments: unknown[]
-) {
+): { side: "top" | "bottom"; align: "start" | "center"; sideOffset: number } {
   return selectionActionsPlacement2 === null ||
     selectionActionsPlacement2.w === undefined ||
     selectionActionsPlacement2.h === undefined

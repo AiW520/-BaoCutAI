@@ -49,6 +49,25 @@ import {
   MenuPopupsView,
 } from "./items";
 import type * as ReactComponentTypes from "react";
+import type { MenuRootProps } from "@base-ui/react/menu";
+
+type MenuRenderProps<Payload> = Parameters<
+  Exclude<MenuRootProps<Payload>["children"], ReactComponentTypes.ReactNode>
+>[0];
+
+export interface MenuRootWithSheetProps<Payload = unknown>
+  extends MenuRootProps<Payload> {
+  sheetTitle?: ReactComponentTypes.ReactNode;
+  backLabel?: string;
+  closeLabel?: string;
+}
+
+interface SheetMenuRootComponent {
+  <Payload = unknown>(
+    props: MenuRootWithSheetProps<Payload>,
+  ): ReactComponentTypes.JSX.Element;
+  displayName?: string;
+}
 
 export const MenuPopupsTriggerRef: ReactComponentTypes.FC<Dynamic> = (input) => {
   let value: Dynamic = resolveSheetsUseContext4();
@@ -125,14 +144,14 @@ export const MenuPopupsOpen: ReactComponentTypes.FC<Dynamic> = (input) => {
   );
 };
 
-export const MenuPopupsSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) => {
+export const MenuPopupsSheetTitle: SheetMenuRootComponent = <Payload,>(input: MenuRootWithSheetProps<Payload>) => {
   let {
     children: value,
     sheetTitle: value2,
     backLabel: value3,
     closeLabel: value4,
     ...value5
-  }: Dynamic = input;
+  } = input;
   let value6: Dynamic = resolveSheetsUseContext4();
   let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
   let { onOpenChange: value8, triggerRef: value9 }: Dynamic = useMenuPopupsTriggerRef(
@@ -156,7 +175,7 @@ export const MenuPopupsSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) => 
           onOpenChange={value10.onOpenChange}
         >
           {typeof value == `function`
-            ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            ? (input2: MenuRenderProps<Payload>, ..._extraArguments: unknown[]) =>
                 MenuPopupsValue(value(input2), value10.cell, value11)
             : MenuPopupsValue(value, value10.cell, value11)}
         </BaseMenuRoot>
@@ -165,14 +184,14 @@ export const MenuPopupsSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) => 
   );
 };
 
-export const MenuPopupsSheetTitle2: ReactComponentTypes.FC<Dynamic> = (input) => {
+export const MenuPopupsSheetTitle2: SheetMenuRootComponent = <Payload,>(input: MenuRootWithSheetProps<Payload>) => {
   let {
     children: value,
     sheetTitle: value2,
     backLabel: value3,
     closeLabel: value4,
     ...value5
-  }: Dynamic = input;
+  } = input;
   let value6: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => ({
       sheetTitle: value2,
@@ -217,7 +236,7 @@ export const MenuPopupsSheetTitle2: ReactComponentTypes.FC<Dynamic> = (input) =>
             onOpenChangeComplete={value13.onOpenChangeComplete}
           >
             {typeof value == `function`
-              ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+              ? (input2: MenuRenderProps<Payload>, ..._extraArguments: unknown[]) =>
                   MenuPopupsValue(value(input2), value10.cell, value13.actionsRef)
               : MenuPopupsValue(value, value10.cell, value13.actionsRef)}
           </BaseMenuRoot>
@@ -227,7 +246,9 @@ export const MenuPopupsSheetTitle2: ReactComponentTypes.FC<Dynamic> = (input) =>
   );
 };
 
-export const MenuPopupsPart: ReactComponentTypes.FC<Dynamic> = ({ size: input }) => {
+export const MenuPopupsPart: ReactComponentTypes.FC<{
+  size?: "xs" | "sm" | "md" | "lg";
+}> = ({ size: input }) => {
   let value: Dynamic = resolveUiProviderAndLayersUseContext2();
   let value2: Dynamic = resolveUiTooltipsAndControlsUseContext2();
   return (
@@ -528,7 +549,7 @@ var MenuPopupsDisabled: Dynamic;
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeMenuRootStep1(): void {
   (MenuPopupsTriggerRef as Dynamic).displayName = `Menu`;
-  (MenuPopupsSheetTitle as Dynamic).displayName = `Menu.Root`;
+  MenuPopupsSheetTitle.displayName = `Menu.Root`;
   MenuPopupsDisabled = (0, React.forwardRef)(function (
     { children: input, id: input2, ...input3 }: Dynamic,
     options?: Dynamic,

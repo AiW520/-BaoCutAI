@@ -30,7 +30,7 @@ import { SheetPopupHost } from "./host";
 import { MenuSheetPopup } from "./menu";
 import type * as ReactComponentTypes from "react";
 
-export const SheetBackMenuItem: ReactComponentTypes.FC<Dynamic> = ({ nested: input }) => {
+export const SheetBackMenuItem: ReactComponentTypes.FC<{ nested: boolean }> = ({ nested: input }) => {
   let value: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext);
   let { label: value2 }: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext2);
   let value3: Dynamic = (0, React.useContext)(MenuInteractionsSheetTitle);
@@ -69,9 +69,7 @@ export const SheetBackMenuItem: ReactComponentTypes.FC<Dynamic> = ({ nested: inp
   );
 };
 
-export const SheetCloseMenuItem: ReactComponentTypes.FC<
-  Readonly<Record<string, unknown>>
-> = () => {
+export const SheetCloseMenuItem: ReactComponentTypes.FC = () => {
   let value: Dynamic = (0, React.useContext)(SheetsCreateContext);
   let value2: Dynamic = resolveUiLinksAndFoundationUseContext3(`close`, `Close`);
   let value3: Dynamic =

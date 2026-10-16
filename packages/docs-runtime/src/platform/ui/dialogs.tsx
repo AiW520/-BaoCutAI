@@ -43,8 +43,54 @@ import {
   useUiTooltipsAndControlsTop,
 } from "./tooltips-and-controls";
 import type * as ReactComponentTypes from "react";
+import type { DialogRootProps, DialogRootActions } from "@base-ui/react/dialog";
+import type {
+  AlertDialogRootProps,
+  AlertDialogRootActions,
+} from "@base-ui/react/alert-dialog";
+import type { ButtonVariant } from "./tooltips-and-controls";
 
-export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
+export interface ConfirmationDialogProps {
+  open: boolean;
+  onOpenChange: (
+    open: boolean,
+    details: { reason: "confirm" | "dismiss" },
+  ) => void;
+  title: ReactComponentTypes.ReactNode;
+  description?: ReactComponentTypes.ReactNode;
+  confirmLabel?: ReactComponentTypes.ReactNode;
+  cancelLabel?: ReactComponentTypes.ReactNode;
+  confirmVariant?: ButtonVariant;
+  initialFocus?: "confirm" | "cancel";
+  disabled?: boolean;
+  confirmDisabledReason?: ReactComponentTypes.ReactNode;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+  className?: string;
+  portalClassName?: string;
+  onConfirm: () => unknown;
+  closeOnConfirm?: boolean;
+  children?: ReactComponentTypes.ReactNode;
+}
+
+export interface DialogProps<Payload = unknown>
+  extends DialogRootProps<Payload> {
+  dismissible?: boolean;
+}
+
+interface DialogRootComponent {
+  <Payload = unknown>(
+    props: DialogProps<Payload>,
+  ): ReactComponentTypes.JSX.Element;
+  displayName?: string;
+}
+interface AlertDialogRootComponent {
+  <Payload = unknown>(
+    props: AlertDialogRootProps<Payload>,
+  ): ReactComponentTypes.JSX.Element;
+  displayName?: string;
+}
+
+export const UiDialogsOpen: ReactComponentTypes.FC<ConfirmationDialogProps> = ({
   open: open,
   onOpenChange: onOpenChange,
   title: title,
@@ -62,27 +108,27 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
   closeOnConfirm = false,
   children: children,
 }) => {
-  let defaultConfirmLabel: Dynamic = resolveUiLinksAndFoundationUseContext3(
+  let defaultConfirmLabel: string = resolveUiLinksAndFoundationUseContext3(
     `confirm`,
     `Confirm`,
   );
-  let defaultCancelLabel: Dynamic = resolveUiLinksAndFoundationUseContext3(
+  let defaultCancelLabel: string = resolveUiLinksAndFoundationUseContext3(
     `cancel`,
     `Cancel`,
   );
-  let resolvedConfirmLabel: Dynamic = confirmLabel ?? defaultConfirmLabel;
-  let resolvedCancelLabel: Dynamic = cancelLabel ?? defaultCancelLabel;
-  let [confirming, setConfirming]: Dynamic = (0, React.useState)(false);
-  let cancelButtonRef: Dynamic = (0, React.useRef)(null);
-  let confirmButtonRef: Dynamic = (0, React.useRef)(null);
+  let resolvedConfirmLabel = confirmLabel ?? defaultConfirmLabel;
+  let resolvedCancelLabel = cancelLabel ?? defaultCancelLabel;
+  let [confirming, setConfirming] = (0, React.useState)(false);
+  let cancelButtonRef = (0, React.useRef)<HTMLButtonElement | null>(null);
+  let confirmButtonRef = (0, React.useRef)<HTMLButtonElement | null>(null);
   let {
     finalFocus: finalFocus,
     popupRef: useUiTooltipsAndControlsFinalFocus22,
   }: Dynamic = useUiTooltipsAndControlsFinalFocus2(open);
-  let initialFocusTarget = (..._extraArguments: unknown[]) =>
+  let initialFocusTarget = (..._extraArguments: unknown[]): "confirm" | "cancel" | "pending" =>
     initialFocus === `cancel` ? `cancel` : disabled ? `pending` : `confirm`;
-  let [focusTarget, setFocusTarget]: Dynamic = (0, React.useState)(initialFocusTarget);
-  let focusTargetRef: Dynamic = (0, React.useRef)(focusTarget);
+  let [focusTarget, setFocusTarget] = (0, React.useState)(initialFocusTarget);
+  let focusTargetRef = (0, React.useRef)(focusTarget);
   UiDesignSystemUseLayoutEffect(
     (..._extraArguments: unknown[]): undefined => {
       focusTargetRef.current = focusTarget;
@@ -102,8 +148,8 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
     },
     [useUiTooltipsAndControlsFinalFocus22],
   );
-  let userFocusedRef: Dynamic = (0, React.useRef)(false);
-  let markUserFocused: Dynamic = (0, React.useCallback)(
+  let userFocusedRef = (0, React.useRef)(false);
+  let markUserFocused = (0, React.useCallback)(
     (..._extraArguments: unknown[]): undefined => {
       userFocusedRef.current = true;
     },
@@ -118,8 +164,8 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
     },
     [open],
   );
-  let changeFocusTarget: Dynamic = (0, React.useCallback)(
-    (uiDialogsOpen?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let changeFocusTarget = (0, React.useCallback)(
+    (uiDialogsOpen: "confirm" | "cancel" | "pending", ..._extraArguments: unknown[]): undefined => {
       setFocusTarget(uiDialogsOpen);
       let confirmButton2: Dynamic =
         uiDialogsOpen === `confirm` ? confirmButtonRef.current : cancelButtonRef.current;
@@ -182,15 +228,15 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
     userFocusedRef,
     initialFocusElement,
   );
-  let preventRepeatedActivation: Dynamic = (0, React.useCallback)(
-    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let preventRepeatedActivation = (0, React.useCallback)(
+    (event: ReactComponentTypes.KeyboardEvent<HTMLButtonElement>, ..._extraArguments: unknown[]): undefined => {
       if (event.repeat && (event.key === `Enter` || event.key === ` `)) {
         event.preventDefault();
       }
     },
     [],
   );
-  let confirmedRef: Dynamic = (0, React.useRef)(false);
+  let confirmedRef = (0, React.useRef)(false);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (open) {
@@ -200,7 +246,7 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
     [open],
   );
   let container: Dynamic = resolveUiProviderAndLayersUseContext9();
-  let confirm: Dynamic = (0, React.useCallback)(
+  let confirm = (0, React.useCallback)(
     (..._extraArguments: unknown[]): undefined => {
       if (confirming || disabled || !open || confirmedRef.current) return;
       if (closeOnConfirm) {
@@ -208,10 +254,10 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
       } else {
         setConfirming(true);
       }
-      let uiDialogsOpenResult: Dynamic;
+      let uiDialogsOpenResult: Promise<unknown>;
       try {
         uiDialogsOpenResult = Promise.resolve(onConfirm());
-      } catch (uiDialogsOpenResult2: Dynamic) {
+      } catch (uiDialogsOpenResult2) {
         uiDialogsOpenResult = Promise.reject(uiDialogsOpenResult2);
       }
       if (closeOnConfirm) {
@@ -227,8 +273,8 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
     },
     [confirming, closeOnConfirm, disabled, onConfirm, onOpenChange, open],
   );
-  let changeOpen: Dynamic = (0, React.useCallback)(
-    (uiDialogsOpen?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let changeOpen = (0, React.useCallback)(
+    (uiDialogsOpen: boolean, ..._extraArguments: unknown[]): undefined => {
       if (!(confirming || !open)) {
         onOpenChange(uiDialogsOpen, {
           reason: `dismiss`,
@@ -240,7 +286,7 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
   let modalContext: Dynamic = resolveUiProviderAndLayersValue3(`modal`);
   useUiDialogsState(portalClassName);
   let popupRef: Dynamic = (0, React.useRef)(null);
-  let confirmButton: Dynamic = (
+  let confirmButton = (
     <Button
       ref={confirmButtonRef}
       variant={confirmVariant}
@@ -331,9 +377,7 @@ export const UiDialogsOpen: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiDialogsAriaHidden: ReactComponentTypes.FC<
-  Readonly<Record<string, unknown>>
-> = () => {
+export const UiDialogsAriaHidden: ReactComponentTypes.FC = () => {
   return (
     <div
       aria-hidden={true}
@@ -344,7 +388,11 @@ export const UiDialogsAriaHidden: ReactComponentTypes.FC<
   );
 };
 
-export const Dialog_CloseButton: ReactComponentTypes.FC<Dynamic> = ({
+export const Dialog_CloseButton: ReactComponentTypes.FC<{
+  "aria-label"?: string;
+  className?: string;
+  flush?: boolean;
+}> = ({
   "aria-label": ariaLabel,
   className: className,
   flush = false,
@@ -372,7 +420,14 @@ export const Dialog_CloseButton: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const Dialog_Header: ReactComponentTypes.FC<Dynamic> = ({
+export const Dialog_Header: ReactComponentTypes.FC<{
+  actions?: ReactComponentTypes.ReactNode;
+  description?: ReactComponentTypes.ReactNode;
+  showClose?: boolean;
+  closeLabel?: string;
+  className?: string;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   actions: actions,
   description: description,
   showClose = true,
@@ -409,7 +464,11 @@ export const Dialog_Header: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const Dialog_Footer: ReactComponentTypes.FC<Dynamic> = ({
+export const Dialog_Footer: ReactComponentTypes.FC<{
+  align?: "start" | "center" | "end" | "between";
+  className?: string;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   align = `end`,
   className: className,
   children: children,
@@ -428,16 +487,16 @@ export const Dialog_Footer: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const Dialog_Root: ReactComponentTypes.FC<Dynamic> = ({
+export const Dialog_Root: DialogRootComponent = <Payload,>({
   dismissible: dismissible,
   disablePointerDismissal: disablePointerDismissal,
   actionsRef: actionsRef,
   ...dialogRoot
-}) => {
+}: DialogProps<Payload>) => {
   let elementRef: Dynamic = (0, React.useRef)(null);
-  let actionsRef2: Dynamic = (0, React.useRef)(null);
+  let actionsRef2 = (0, React.useRef)<DialogRootActions | null>(null);
   resolveUiTooltipsAndControlsClose(actionsRef2, actionsRef);
-  let disablePointerDismissal2: Dynamic =
+  let disablePointerDismissal2 =
     disablePointerDismissal ?? (dismissible === false ? true : undefined);
   return (
     <UiDialogsCreateContext2.Provider value={false}>
@@ -458,11 +517,11 @@ export const Dialog_Root: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const AlertDialog_Root: ReactComponentTypes.FC<Dynamic> = ({
+export const AlertDialog_Root: AlertDialogRootComponent = <Payload,>({
   actionsRef: actionsRef,
   ...alertDialogRoot
-}) => {
-  let actionsRef2: Dynamic = (0, React.useRef)(null);
+}: AlertDialogRootProps<Payload>) => {
+  let actionsRef2 = (0, React.useRef)<AlertDialogRootActions | null>(null);
   resolveUiTooltipsAndControlsClose(actionsRef2, actionsRef);
   return (
     <UiDialogsCreateContext2.Provider value={true}>
@@ -930,8 +989,8 @@ export function initializeUiDialogsStep1(): void {
   ));
   Dialog_Title.displayName = `Dialog.Title`;
   (UiDialogsMePadSmMtPadSm = `-me-pad-sm -mt-pad-sm`);
-  (Dialog_CloseButton as Dynamic).displayName = `Dialog.CloseButton`;
-  (Dialog_Header as Dynamic).displayName = `Dialog.Header`;
+  Dialog_CloseButton.displayName = `Dialog.CloseButton`;
+  Dialog_Header.displayName = `Dialog.Header`;
   (Dialog_Description = (0, React.forwardRef)(
     (
       { className: className, ...dialogDescription }: Dynamic,
@@ -952,8 +1011,8 @@ export function initializeUiDialogsStep1(): void {
     end: `sm:justify-end`,
     between: `sm:justify-between`,
   });
-  (Dialog_Footer as Dynamic).displayName = `Dialog.Footer`;
-  (Dialog_Root as Dynamic).displayName = `Dialog.Root`;
+  Dialog_Footer.displayName = `Dialog.Footer`;
+  Dialog_Root.displayName = `Dialog.Root`;
   (UiDialogsRoot = {
     Root: Dialog_Root,
     Trigger: Dialog_Trigger,
@@ -966,7 +1025,7 @@ export function initializeUiDialogsStep1(): void {
     Close: DialogClose,
     CloseButton: Dialog_CloseButton,
   });
-  (AlertDialog_Root as Dynamic).displayName = `AlertDialog.Root`;
+  AlertDialog_Root.displayName = `AlertDialog.Root`;
   (UiDialogsRoot2 = {
     Root: AlertDialog_Root,
     Trigger: AlertDialogTrigger,

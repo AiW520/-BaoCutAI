@@ -26,19 +26,29 @@ import { MenuPopupsAnchor } from "./menu/popup-frame";
 import { MenuPopupsValue, isMenuPopupsReason } from "./menu/popup";
 import { Menu } from "./menu/search";
 import type * as ReactComponentTypes from "react";
+import type {
+  ContextMenuRootProps,
+  ContextMenuRootChangeEventDetails,
+} from "@base-ui/react/context-menu";
 
-export const ContextMenuSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) => {
+export interface ContextMenuProps extends ContextMenuRootProps {
+  sheetTitle?: ReactComponentTypes.ReactNode;
+  backLabel?: string;
+  closeLabel?: string;
+}
+
+export const ContextMenuSheetTitle: ReactComponentTypes.FC<ContextMenuProps> = (input) => {
   let {
     sheetTitle: value,
     backLabel: value2,
     closeLabel: value3,
     ...value4
-  }: Dynamic = input;
+  } = input;
   let value5: Dynamic = resolveSheetsUseContext4();
   let value6: Dynamic = (0, React.useRef)(null);
   resolveUiTooltipsAndControlsClose(value6, value4.actionsRef);
   let value7: Dynamic = useUiOverlaysAndIconsUseInsertionEffect2(
-    (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    (input2: boolean, options: ContextMenuRootChangeEventDetails, ..._extraArguments: unknown[]): undefined => {
       value4.onOpenChange?.(input2, options);
       updateMenuInteractionsIsCanceled(value6, input2, options);
     },
@@ -56,14 +66,14 @@ export const ContextMenuSheetTitle: ReactComponentTypes.FC<Dynamic> = (input) =>
   );
 };
 
-export const ContextMenuSheetTitle2: ReactComponentTypes.FC<Dynamic> = (input) => {
+export const ContextMenuSheetTitle2: ReactComponentTypes.FC<ContextMenuProps> = (input) => {
   let {
     children: value,
     sheetTitle: value2,
     backLabel: value3,
     closeLabel: value4,
     ...value5
-  }: Dynamic = input;
+  } = input;
   let value6: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => ({
       sheetTitle: value2,
@@ -153,7 +163,7 @@ export function initializeContextMenuStep1(): void {
     },
   );
   ContextMenuRef2.displayName = `ContextMenu.Popup`;
-  (ContextMenuSheetTitle as Dynamic).displayName = `ContextMenu.Root`;
+  ContextMenuSheetTitle.displayName = `ContextMenu.Root`;
   ContextMenu = {
     Root: ContextMenuSheetTitle,
     Trigger: BaseContextMenuTrigger,

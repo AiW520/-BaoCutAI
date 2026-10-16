@@ -53,6 +53,35 @@ import {
   resolveMenuPopupsCell,
 } from "./focus";
 import type * as ReactComponentTypes from "react";
+import type {
+  MenuPopupProps as BaseMenuPopupProps,
+  MenuPositionerProps,
+  MenuPortalProps,
+  MenuRootProps,
+} from "@base-ui/react/menu";
+import type { DialogPopupProps } from "@base-ui/react/dialog";
+
+export interface MenuPopupProps
+  extends Omit<BaseMenuPopupProps, "className">,
+    Pick<
+      MenuPositionerProps,
+      | "side"
+      | "align"
+      | "sideOffset"
+      | "collisionPadding"
+      | "collisionAvoidance"
+      | "anchor"
+    > {
+  container?: MenuPortalProps["container"];
+  className?: string;
+  header?: ReactComponentTypes.ReactNode;
+  footer?: ReactComponentTypes.ReactNode;
+  maxVisibleItems?: number;
+  layerOffset?: number;
+  stableWhileOpen?: boolean;
+  initialFocus?: DialogPopupProps["initialFocus"];
+  "data-cds"?: string;
+}
 
 export const MenuPopupsKeys: ReactComponentTypes.FC<{ keys: string }> = ({ keys: input }) => {
   return (
@@ -166,13 +195,13 @@ function useMenuPopupsUseContext(
 }
 
 function MenuPopupsValue(
-  input?: Dynamic,
+  input?: ReactComponentTypes.ReactNode,
   options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = false,
+  context?: MenuRootProps["actionsRef"],
+  value: boolean = false,
   ..._extraArguments: unknown[]
-): Dynamic {
-  let value2: Dynamic = (
+): ReactComponentTypes.JSX.Element {
+  let value2 = (
     <MenuPopupsCreateContext.Provider value={options}>
       <MenuInteractionsCreateContext5.Provider value={context}>
         <MenuInteractionsCreateContext6.Provider value={null}>
@@ -492,12 +521,12 @@ function resolveMenuPopupsTabularNums(
 }
 
 function MenuPopupsSide(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  input: MenuPopupProps,
+  options?: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
+  context?: boolean,
+  value?: boolean,
   ..._extraArguments: unknown[]
-): Dynamic {
+): ReactComponentTypes.JSX.Element {
   let {
     side: value2,
     align: value16 = `start`,
@@ -516,7 +545,7 @@ function MenuPopupsSide(
     "data-cds": value18 = `Menu`,
     initialFocus: value14,
     ...value15
-  }: Dynamic = input;
+  } = input;
   let value19: Dynamic = resolveUiProviderAndLayersUseContext9();
   let value20: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext);
   let value21: Dynamic =
@@ -598,9 +627,9 @@ function MenuPopupsSide(
   );
 }
 
-var MenuPopupsAlign: Dynamic;
+var MenuPopupsAlign: ReactComponentTypes.ForwardRefExoticComponent<Omit<MenuPopupProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLDivElement>>;
 
-var MenuPopupsPending: Dynamic;
+var MenuPopupsPending: ReactComponentTypes.ForwardRefExoticComponent<Omit<MenuPopupProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLDivElement>>;
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeMenuPopupStep1(): void {
@@ -679,18 +708,18 @@ export function initializeMenuPopupStep1(): void {
         stableWhileOpen: input3 = false,
         "data-cds": input4 = `Menu`,
         ...input
-      }: Dynamic,
-      options?: Dynamic,
+      }: MenuPopupProps,
+      options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
       ..._extraArguments: unknown[]
-    ): Dynamic => {
-      let state: Dynamic = {
+    ) => {
+      let state: MenuPopupProps = {
         align: input2,
         stableWhileOpen: input3,
         "data-cds": input4,
         ...input,
       };
       let value: boolean = resolveSheetsUseContext3();
-      let value2: Dynamic = MenuPopupsSide(state, options, !value, false);
+      let value2 = MenuPopupsSide(state, options, !value, false);
       return value ? (
         <MenuPopupsPending {...state} ref={options} />
       ) : (

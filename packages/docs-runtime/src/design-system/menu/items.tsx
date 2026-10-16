@@ -48,8 +48,12 @@ import {
   useMenuPopupsLabel,
 } from "./popup";
 import type * as ReactComponentTypes from "react";
+import type {
+  MenuSubmenuRootProps,
+  MenuSubmenuRootChangeEventDetails,
+} from "@base-ui/react/menu";
 
-export const MenuPopupsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
+export const MenuPopupsActionsRef: ReactComponentTypes.FC<MenuSubmenuRootProps> = ({
   actionsRef: input,
   ...input2
 }) => {
@@ -69,8 +73,8 @@ export const MenuPopupsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
     [],
   );
   let [value10, value11]: Dynamic = (0, React.useState)(null);
-  let value12: Dynamic = (0, React.useCallback)(
-    (input3?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let value12: NonNullable<MenuSubmenuRootProps["onOpenChange"]> = (0, React.useCallback)(
+    (input3: boolean, options: MenuSubmenuRootChangeEventDetails, ..._extraArguments: unknown[]): undefined => {
       if (!(value5 && resolveMenuPopupsCancel(input3, options, value7))) {
         if (value5 && !input3 && value6?.refusesAmbientClose(options) === true) {
           options.cancel();
@@ -154,9 +158,7 @@ export const MenuPopupsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const MenuPopupsView: ReactComponentTypes.FC<
-  Readonly<Record<string, unknown>>
-> = () => {
+export const MenuPopupsView: ReactComponentTypes.FC = () => {
   return (
     <BaseSeparator className={`compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border`} />
   );

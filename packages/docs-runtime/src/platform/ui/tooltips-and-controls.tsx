@@ -76,8 +76,77 @@ import {
   useUiShortcutsAndSizingUseSyncExternalStore,
 } from "./shortcuts-and-sizing";
 import type * as ReactComponentTypes from "react";
+import type {
+  TooltipPortalProps,
+  TooltipPositionerProps,
+  TooltipRootProps,
+  TooltipRootChangeEventDetails,
+  TooltipRootActions,
+} from "@base-ui/react/tooltip";
 
-export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
+export interface TooltipProps
+  extends Pick<
+    TooltipPositionerProps,
+    "side" | "align" | "sideOffset" | "collisionPadding"
+  > {
+  content?:
+    | ReactComponentTypes.ReactNode
+    | (() => ReactComponentTypes.ReactNode);
+  detail?: ReactComponentTypes.ReactNode;
+  secondaryHint?: { label: ReactComponentTypes.ReactNode; shortcut: string };
+  multiline?: boolean;
+  shortcut?: string;
+  trackCursorAxis?: TooltipRootProps["trackCursorAxis"];
+  delay?: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  closeDelay?: number;
+  hoverable?: boolean;
+  closeOnClick?: boolean;
+  lazy?: boolean;
+  openOnHandedBackFocus?: boolean;
+  triggerRef?: ReactComponentTypes.ComponentProps<typeof TooltipTrigger>["ref"];
+  container?: TooltipPortalProps["container"];
+  className?: string;
+  children?: ReactComponentTypes.ReactNode;
+}
+
+export interface DisabledReasonTooltipProps
+  extends Pick<
+    TooltipProps,
+    | "side"
+    | "align"
+    | "sideOffset"
+    | "multiline"
+    | "delay"
+    | "collisionPadding"
+    | "hoverable"
+    | "className"
+    | "children"
+  > {
+  reason?: ReactComponentTypes.ReactNode;
+  wrapperClassName?: string;
+}
+
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "brand"
+  | "onContent"
+  | "onAccent";
+
+interface TooltipDisplayState {
+  open: boolean;
+  body: ReactComponentTypes.ReactNode;
+}
+interface TooltipCloseController {
+  closeInstant: () => void;
+}
+type TooltipStateUpdater = (state: TooltipDisplayState) => TooltipDisplayState;
+
+export const Tooltip: ReactComponentTypes.FC<TooltipProps> = ({
   content: content,
   detail: detail,
   secondaryHint: secondaryHint,
@@ -105,33 +174,33 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
   let delays: Dynamic = useUiShortcutsAndSizingEnabled({
     immediate: true,
   });
-  let tooltipId: Dynamic = (0, React.useId)();
-  let tooltipHandleRef: Dynamic = (0, React.useRef)(null);
-  let [forceInstantClose, setForceInstantClose]: Dynamic = (0, React.useState)(false);
-  let closeControllerRef: Dynamic = (0, React.useRef)({
+  let tooltipId = (0, React.useId)();
+  let tooltipHandleRef = (0, React.useRef)<TooltipRootActions | null>(null);
+  let [forceInstantClose, setForceInstantClose] = (0, React.useState)(false);
+  let closeControllerRef = (0, React.useRef)<TooltipCloseController>({
     closeInstant: (..._extraArguments: unknown[]): undefined => {
       setForceInstantClose(true);
       tooltipHandleRef.current?.close();
     },
   });
-  let [cursorPosition, setCursorPosition]: Dynamic = (0, React.useState)(null);
-  let [tooltipState, setTooltipState]: Dynamic = (0, React.useState)(
+  let [cursorPosition, setCursorPosition] = (0, React.useState)<Element | null>(null);
+  let [tooltipState, setTooltipState] = (0, React.useState)<TooltipDisplayState>(
     UiTooltipsAndControlsOpen,
   );
   if (open === false && tooltipState.open) {
     setTooltipState(resolveUiTooltipsAndControlsOpen2);
   }
-  let lazyContent = typeof content == `function`;
+  const lazyContent = typeof content == `function`;
   let hasContent = lazyContent || !resolveUiTooltipsAndControlsEvery(content);
-  let displayedBody: Dynamic = !lazyContent && hasContent ? content : tooltipState.body;
+  let displayedBody: ReactComponentTypes.ReactNode = !lazyContent && hasContent ? content : tooltipState.body;
   let hasDisplayedBody = !resolveUiTooltipsAndControlsEvery(displayedBody);
-  let visible: Dynamic =
+  let visible =
     (open ?? tooltipState.open) && (!lazyContent || hasDisplayedBody);
   if (!lazyContent && hasContent && visible && !Object.is(tooltipState.body, content)) {
     setTooltipState(resolveUiTooltipsAndControlsBody2(content));
   }
-  let changeOpen: Dynamic = (0, React.useCallback)(
-    (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {
+  let changeOpen = (0, React.useCallback)(
+    (input: boolean, options: TooltipRootChangeEventDetails, ..._extraArguments: unknown[]) => {
       if (
         !openOnHandedBackFocus &&
         resolveUiTooltipsAndControlsTriggerFocus(input, options)
@@ -169,7 +238,7 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
     [onOpenChange, openOnHandedBackFocus, content, visible],
   );
   let controlled = open !== undefined;
-  let internalOpen: Dynamic = tooltipState.open;
+  let internalOpen = tooltipState.open;
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
       if (!(!controlled || !hasContent || !hasDisplayedBody)) {
@@ -189,8 +258,8 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
     },
     [controlled, open, hasContent, hasDisplayedBody, internalOpen, lazyContent],
   );
-  let onClosed: Dynamic = (0, React.useCallback)(
-    (input?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let onClosed = (0, React.useCallback)(
+    (input: boolean, ..._extraArguments: unknown[]): undefined => {
       if (!input) {
         setForceInstantClose(false);
         setCursorPosition(null);
@@ -231,14 +300,14 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
     [],
   );
   let modalContext: Dynamic = resolveUiProviderAndLayersValue3(`tooltip`);
-  let [lazyHandle]: Dynamic = (0, React.useState)(
-    (..._extraArguments: unknown[]): Dynamic =>
+  let [lazyHandle] = (0, React.useState)(
+    (..._extraArguments: unknown[]) =>
       lazy2 && open === undefined ? createTooltipHandle() : null,
   );
-  let [lazyReady, setLazyReady]: Dynamic = (0, React.useState)(false);
-  let renderReady: Dynamic = lazyReady || lazyHandle === null;
-  let contentResolvedRef: Dynamic = (0, React.useRef)(false);
-  let markLazyReady: Dynamic = (0, React.useCallback)(
+  let [lazyReady, setLazyReady] = (0, React.useState)(false);
+  let renderReady = lazyReady || lazyHandle === null;
+  let contentResolvedRef = (0, React.useRef)(false);
+  let markLazyReady = (0, React.useCallback)(
     (..._extraArguments: unknown[]): undefined => {
       contentResolvedRef.current = true;
       setLazyReady(true);
@@ -246,8 +315,8 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
     [],
   );
   let hoverDelay: Dynamic = useUiShortcutsAndSizingStart();
-  let hoveredTriggerRef: Dynamic = (0, React.useRef)(null);
-  let handedBackOpenRef: Dynamic = (0, React.useRef)(false);
+  let hoveredTriggerRef = (0, React.useRef)<HTMLElement | null>(null);
+  let handedBackOpenRef = (0, React.useRef)(false);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (open === false) {
@@ -260,7 +329,7 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
     (..._extraArguments: unknown[]): undefined => {
       if (contentResolvedRef.current || renderReady || !hasContent || open !== undefined)
         return;
-      let tooltipResult: Dynamic;
+      let tooltipResult: ReactComponentTypes.ReactNode;
       if (typeof content == `function`) {
         let uiTooltipsAndControlsValue: Dynamic =
           resolveUiTooltipsAndControlsValue(content);
@@ -314,8 +383,8 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
   if (lazyHandle !== null && open === true && !lazyReady) {
     setLazyReady(true);
   }
-  let onOpenChange2: Dynamic = (0, React.useCallback)(
-    (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let onOpenChange2 = (0, React.useCallback)(
+    (input: boolean, options: TooltipRootChangeEventDetails, ..._extraArguments: unknown[]): undefined => {
       if (
         !(
           !openOnHandedBackFocus &&
@@ -611,7 +680,7 @@ export const UiTooltipsAndControlsKeys: ReactComponentTypes.FC<{
   );
 };
 
-export const DisabledReasonTooltip: ReactComponentTypes.FC<Dynamic> = ({
+export const DisabledReasonTooltip: ReactComponentTypes.FC<DisabledReasonTooltipProps> = ({
   reason: reason,
   side: side,
   align: align,
@@ -677,7 +746,9 @@ export const TooltipGroup: ReactComponentTypes.FC<{
   );
 };
 
-export const UiTooltipsAndControlsImpl: ReactComponentTypes.FC<Dynamic> = (node) => {
+export const UiTooltipsAndControlsImpl: ReactComponentTypes.FC<
+  TooltipProps & { autoFocus?: boolean }
+> = (node) => {
   let {
     impl: useUiTooltipsAndControlsImpl2,
     wasCold: useUiTooltipsAndControlsImpl3,
@@ -693,7 +764,7 @@ export const UiTooltipsAndControlsImpl: ReactComponentTypes.FC<Dynamic> = (node)
     ) : (
       <useUiTooltipsAndControlsImpl2.Tooltip {...node} />
     );
-  let { children: node2 }: Dynamic = node;
+  let { children: node2 } = node;
   if (!(0, React.isValidElement)(node2))
     return <jsxRuntime.Fragment>{node2}</jsxRuntime.Fragment>;
   let node3: Dynamic = node2;
@@ -703,7 +774,7 @@ export const UiTooltipsAndControlsImpl: ReactComponentTypes.FC<Dynamic> = (node)
   });
 };
 
-export const UiTooltipsAndControlsImpl2: ReactComponentTypes.FC<Dynamic> = (node) => {
+export const UiTooltipsAndControlsImpl2: ReactComponentTypes.FC<DisabledReasonTooltipProps> = (node) => {
   let {
     impl: useUiTooltipsAndControlsImpl2,
     wasCold: useUiTooltipsAndControlsImpl3,
@@ -781,11 +852,11 @@ export const UiTooltipsAndControlsChecked: ReactComponentTypes.FC<{
 
 var UiTooltipsAndControlsDisabledReasonTooltip: Dynamic;
 
-var UiTooltipsAndControlsState: Dynamic;
+var UiTooltipsAndControlsState: ReactComponentTypes.RefObject<TooltipCloseController> | null;
 
 function resolveUiTooltipsAndControlsTriggerFocus(
-  ui2?: Dynamic,
-  options?: Dynamic,
+  ui2: boolean,
+  options: TooltipRootChangeEventDetails,
   ..._extraArguments: unknown[]
 ) {
   return ui2 &&
@@ -796,7 +867,7 @@ function resolveUiTooltipsAndControlsTriggerFocus(
 }
 
 function resolveUiTooltipsAndControlsCurrent(
-  ui2?: Dynamic,
+  ui2: ReactComponentTypes.RefObject<TooltipCloseController>,
   ..._extraArguments: unknown[]
 ): undefined {
   if (
@@ -837,17 +908,17 @@ var UiTooltipsAndControlsOpen: {
     body: undefined;
 };
 
-var resolveUiTooltipsAndControlsOpen: Dynamic;
+var resolveUiTooltipsAndControlsOpen: TooltipStateUpdater;
 
-var resolveUiTooltipsAndControlsOpen2: Dynamic;
+var resolveUiTooltipsAndControlsOpen2: TooltipStateUpdater;
 
-var resolveUiTooltipsAndControlsBody: Dynamic;
+var resolveUiTooltipsAndControlsBody: TooltipStateUpdater;
 
-var resolveUiTooltipsAndControlsOpen3: Dynamic;
+var resolveUiTooltipsAndControlsOpen3: (body?: ReactComponentTypes.ReactNode) => TooltipStateUpdater;
 
-var resolveUiTooltipsAndControlsBody2: Dynamic;
+var resolveUiTooltipsAndControlsBody2: (body?: ReactComponentTypes.ReactNode) => TooltipStateUpdater;
 
-var resolveUiTooltipsAndControlsOpen4: Dynamic;
+var resolveUiTooltipsAndControlsOpen4: TooltipStateUpdater;
 
 var UiTooltipsAndControlsState3: string;
 
@@ -2314,9 +2385,9 @@ export function initializeUiTooltipsAndControlsStep1(): void {
     body: undefined,
   });
   (resolveUiTooltipsAndControlsOpen = (
-    ui2?: Dynamic,
+    ui2: TooltipDisplayState,
     ..._extraArguments: unknown[]
-  ): Dynamic =>
+  ): TooltipDisplayState =>
     ui2.open
       ? ui2
       : {
@@ -2324,9 +2395,9 @@ export function initializeUiTooltipsAndControlsStep1(): void {
           open: true,
         });
   (resolveUiTooltipsAndControlsOpen2 = (
-    ui2?: Dynamic,
+    ui2: TooltipDisplayState,
     ..._extraArguments: unknown[]
-  ): Dynamic =>
+  ): TooltipDisplayState =>
     ui2.open
       ? {
           ...ui2,
@@ -2334,25 +2405,25 @@ export function initializeUiTooltipsAndControlsStep1(): void {
         }
       : ui2);
   (resolveUiTooltipsAndControlsBody = (
-    ui2?: Dynamic,
+    ui2: TooltipDisplayState,
     ..._extraArguments: unknown[]
-  ): Dynamic =>
+  ): TooltipDisplayState =>
     ui2.body === undefined
       ? ui2
       : {
           ...ui2,
           body: undefined,
         });
-  (resolveUiTooltipsAndControlsOpen3 = (body?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-    (ui2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+  (resolveUiTooltipsAndControlsOpen3 = (body?: ReactComponentTypes.ReactNode, ..._extraArguments: unknown[]): TooltipStateUpdater =>
+    (ui2: TooltipDisplayState, ..._extraArguments: unknown[]): TooltipDisplayState =>
       ui2.open && Object.is(ui2.body, body)
         ? ui2
         : {
             open: true,
             body: body,
           });
-  (resolveUiTooltipsAndControlsBody2 = (body?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-    (ui2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+  (resolveUiTooltipsAndControlsBody2 = (body?: ReactComponentTypes.ReactNode, ..._extraArguments: unknown[]): TooltipStateUpdater =>
+    (ui2: TooltipDisplayState, ..._extraArguments: unknown[]): TooltipDisplayState =>
       Object.is(ui2.body, body)
         ? ui2
         : {
@@ -2360,9 +2431,9 @@ export function initializeUiTooltipsAndControlsStep1(): void {
             body: body,
           });
   (resolveUiTooltipsAndControlsOpen4 = (
-    ui2?: Dynamic,
+    ui2: TooltipDisplayState,
     ..._extraArguments: unknown[]
-  ): Dynamic =>
+  ): TooltipDisplayState =>
     ui2.open || ui2.body !== undefined ? UiTooltipsAndControlsOpen : ui2);
   (UiTooltipsAndControlsState3 = UiShortcutsAndSizingState2);
   (UiTooltipsAndControlsTextBalance = `text-balance`);

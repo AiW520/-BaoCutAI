@@ -18,8 +18,35 @@ import {
   PHONE_TOUCH_TARGET_CLASS as SHEET_CONTROL_CLASS,
 } from "../../document-app/index";
 import type * as ReactComponentTypes from "react";
+import { useRef, useState } from "react";
+import type {
+  DialogPopupProps,
+  DialogRootChangeEventDetails,
+} from "@base-ui/react/dialog";
+import type { ConfirmationDialogProps } from "../../platform/ui/dialogs";
 
-export const BottomSheet: ReactComponentTypes.FC<Dynamic> = ({
+export type BottomSheetCloseReason = "backdrop" | "escape" | "close" | "swipe";
+export interface BottomSheetProps {
+  shouldClose?: (reason: BottomSheetCloseReason) => boolean | void;
+  onClose: (reason: BottomSheetCloseReason) => void;
+  title: ReactComponentTypes.ReactNode;
+  titleHidden?: boolean;
+  leading?: ReactComponentTypes.ReactNode;
+  trailing?: ReactComponentTypes.ReactNode;
+  children?: ReactComponentTypes.ReactNode;
+  footer?: ReactComponentTypes.ReactNode;
+  bodyClassName?: string;
+  bottomInset?: number;
+  closeLabel?: string;
+  detent?: "content" | "high" | "tall";
+  onHeightChange?: (height: number) => void;
+  initialFocus?: DialogPopupProps["initialFocus"];
+  finalFocus?: DialogPopupProps["finalFocus"];
+  "data-testid"?: string;
+  "data-mode"?: string;
+}
+
+export const BottomSheet: ReactComponentTypes.FC<BottomSheetProps> = ({
   shouldClose: shouldClose,
   onClose: onClose,
   title: title,
@@ -39,7 +66,7 @@ export const BottomSheet: ReactComponentTypes.FC<Dynamic> = ({
   "data-mode": dataMode,
 }) => {
   let popupRef: Dynamic = (0, React.useRef)(null);
-  let openRef: Dynamic = (0, React.useRef)(onHeightChange);
+  let openRef = useRef(onHeightChange);
   openRef.current = onHeightChange;
   let observerRef: Dynamic = (0, React.useRef)(null);
   let [popupElement, setPopupElement]: Dynamic = (0, React.useState)(null);
@@ -78,12 +105,12 @@ export const BottomSheet: ReactComponentTypes.FC<Dynamic> = ({
     ),
     [],
   );
-  let shouldCloseRef: Dynamic = (0, React.useRef)(shouldClose);
+  let shouldCloseRef = useRef(shouldClose);
   shouldCloseRef.current = shouldClose;
-  let onCloseRef: Dynamic = (0, React.useRef)(onClose);
+  let onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   let requestClose: Dynamic = (0, React.useCallback)(
-    (bottomSheet?: Dynamic, ..._extraArguments: unknown[]): boolean =>
+    (bottomSheet: BottomSheetCloseReason, ..._extraArguments: unknown[]): boolean =>
       closingPromiseRef.current === null
         ? shouldCloseRef.current?.(bottomSheet) === false
           ? false
@@ -167,8 +194,8 @@ export const BottomSheet: ReactComponentTypes.FC<Dynamic> = ({
     <UiDialogsRoot.Root
       open={true}
       onOpenChange={(
-        bottomSheet?: Dynamic,
-        options?: Dynamic,
+        bottomSheet: boolean,
+        options: DialogRootChangeEventDetails,
         ..._extraArguments: unknown[]
       ): undefined => {
         if (bottomSheet) return;
@@ -327,12 +354,12 @@ export const PhonePopupContent: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (props) => {
+export const PhoneConfirmationDialog: ReactComponentTypes.FC<ConfirmationDialogProps> = (props) => {
   let phone: Dynamic = resolvePlatformSyncAndRoutingValue10();
-  let [pending, setPending]: Dynamic = (0, React.useState)(false);
+  let [pending, setPending] = useState(false);
   let confirmRef: Dynamic = (0, React.useRef)(null);
   let cancelRef: Dynamic = (0, React.useRef)(null);
-  let confirmedRef: Dynamic = (0, React.useRef)(false);
+  let confirmedRef = useRef(false);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (props.open) {
@@ -356,13 +383,13 @@ export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (props) 
     onConfirm: props7,
     closeOnConfirm: props14 = false,
     children: props8,
-  }: Dynamic = props;
+  } = props;
   let confirm = async (..._extraArguments: unknown[]): Promise<undefined> => {
     if (pending || props13 || !props2 || confirmedRef.current) return;
-    let phoneConfirmationDialogResult: Dynamic;
+    let phoneConfirmationDialogResult: Promise<unknown>;
     try {
       phoneConfirmationDialogResult = Promise.resolve(props7());
-    } catch (phoneConfirmationDialogResult2: Dynamic) {
+    } catch (phoneConfirmationDialogResult2) {
       phoneConfirmationDialogResult = Promise.reject(phoneConfirmationDialogResult2);
     }
     if (props14) {
@@ -383,7 +410,7 @@ export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (props) 
     <UiDialogsRoot2.Root
       open={props2}
       onOpenChange={(
-        phoneConfirmationDialog?: Dynamic,
+        phoneConfirmationDialog: boolean,
         ..._extraArguments: unknown[]
       ): undefined => {
         if (!(pending || !props2)) {
@@ -415,7 +442,7 @@ export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (props) 
             busy={pending}
             disabled={props13}
             onClick={(..._extraArguments: unknown[]): undefined => void confirm()}
-            onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            onKeyDown={(event: ReactComponentTypes.KeyboardEvent<HTMLButtonElement>, ..._extraArguments: unknown[]): undefined => {
               if (event.repeat && (event.key === `Enter` || event.key === ` `)) {
                 event.preventDefault();
               }
@@ -429,7 +456,7 @@ export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (props) 
   );
 };
 
-export const SheetCloseButton: ReactComponentTypes.FC<Dynamic> = ({ label: label }) => {
+export const SheetCloseButton: ReactComponentTypes.FC<{ label?: string }> = ({ label: label }) => {
   return (
     <UiDialogsRoot.Close
       render={
@@ -445,7 +472,9 @@ export const SheetCloseButton: ReactComponentTypes.FC<Dynamic> = ({ label: label
   );
 };
 
-export const SheetDragStrip: ReactComponentTypes.FC<Dynamic> = ({ drag: drag }) => {
+export const SheetDragStrip: ReactComponentTypes.FC<{
+  drag?: ReactComponentTypes.HTMLAttributes<HTMLDivElement>;
+}> = ({ drag: drag }) => {
   return (
     <div
       aria-hidden={true}
@@ -456,7 +485,7 @@ export const SheetDragStrip: ReactComponentTypes.FC<Dynamic> = ({ drag: drag }) 
   );
 };
 
-export const SheetSafeAreaFoot: ReactComponentTypes.FC<Dynamic> = ({
+export const SheetSafeAreaFoot: ReactComponentTypes.FC<{ folded?: boolean }> = ({
   folded = false,
 }) => {
   return (

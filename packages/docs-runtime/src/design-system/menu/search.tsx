@@ -54,8 +54,23 @@ import {
   MenuPopupsTriggerRef,
 } from "./root";
 import type * as ReactComponentTypes from "react";
+import type { MenuPopupProps } from "./popup";
 
-export const MenuPopupsSearchLabel: ReactComponentTypes.FC<Dynamic> = ({
+export interface SearchMenuProps
+  extends Omit<MenuPopupProps, "children" | "header"> {
+  children: (
+    normalizedQuery: string,
+    query: string,
+  ) => ReactComponentTypes.ReactNode;
+  searchLabel: string;
+  query?: string;
+  onQueryChange?: (query: string) => void;
+  resetQueryOnClose?: boolean;
+  onSubmitQuery?: (query: string) => void;
+  beforeSearch?: ReactComponentTypes.ReactNode;
+}
+
+export const MenuPopupsSearchLabel: ReactComponentTypes.FC<SearchMenuProps> = ({
   children: input,
   searchLabel: input2,
   query: input3,
@@ -337,7 +352,13 @@ export const MenuPopupsSearchLabel: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const MenuPopupsPending2: ReactComponentTypes.FC<Dynamic> = ({
+export const MenuPopupsPending2: ReactComponentTypes.FC<{
+  pending?: boolean;
+  loading?: boolean;
+  placeholderRows?: number | readonly number[];
+  icon?: boolean;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   pending: input2 = false,
   loading: input3 = false,
   placeholderRows: input4 = 3,
