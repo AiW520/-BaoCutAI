@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { editorWasmAvailable, sfxRecipes, sfxRender } from '@baocut/editor-wasm';
-import { ANALYSIS_DIR, AudioTools, SFX_RECIPES } from './audio-tools.ts';
+import { ANALYSIS_DIR, AudioTools, MAX_SHEET_SECONDS, SFX_RECIPES } from './audio-tools.ts';
 import type { ToolPrincipal, ToolScope } from './tool-scope.ts';
 
 /** `assets_analyze` 走真的 ffmpeg 解码与编辑语义 WASM；`assets_sfx` 的配方表与 WASM 里的一致。 */
@@ -26,6 +26,28 @@ function tools() {
   return new AudioTools({ videos: { mirror: () => undefined } as never, scope, ffmpeg: () => ffmpeg });
 }
 
+/** 四下 kick，每 0.5 秒一下，写成工作目录里的 kicks.wav（起音在 0.5、1、1.5 秒）。 */
+async function writeKicks(): Promise<void> {
+  const kick = sfxRender({ recipe: 'kick', seconds: 0.5 });
+  const parts = await Promise.all(
+    [0, 1, 2, 3].map(async (n) => {
+      const file = path.join(dir, `kick-${n}.wav`);
+      await fs.writeFile(file, kick);
+      return file;
+    }),
+  );
+  const concat = spawnSync(ffmpeg, [
+    '-v',
+    'error',
+    ...parts.flatMap((file) => ['-i', file]),
+    '-filter_complex',
+    'concat=n=4:v=0:a=1',
+    '-y',
+    path.join(dir, 'kicks.wav'),
+  ]);
+  expect(concat.status, String(concat.stderr)).toBe(0);
+}
+
 beforeAll(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-audio-tools-'));
 });
@@ -40,26 +62,7 @@ describe.skipIf(!ready)('audio tools', () => {
   });
 
   it('analyzes a file in the working directory and writes the full result', async () => {
-    // 四下 kick，每 0.5 秒一下。
-    const kick = sfxRender({ recipe: 'kick', seconds: 0.5 });
-    const parts = await Promise.all(
-      [0, 1, 2, 3].map(async (n) => {
-        const file = path.join(dir, `kick-${n}.wav`);
-        await fs.writeFile(file, kick);
-        return file;
-      }),
-    );
-    const track = path.join(dir, 'kicks.wav');
-    const concat = spawnSync(ffmpeg, [
-      '-v',
-      'error',
-      ...parts.flatMap((file) => ['-i', file]),
-      '-filter_complex',
-      'concat=n=4:v=0:a=1',
-      '-y',
-      track,
-    ]);
-    expect(concat.status, String(concat.stderr)).toBe(0);
+    await writeKicks();
 
     const result = (await tools().dispatch('assets_analyze', { video: 'demo', path: 'kicks.wav', beats: false }, agent)) as {
       file: string;
@@ -77,6 +80,46 @@ describe.skipIf(!ready)('audio tools', () => {
     const saved = JSON.parse(await fs.readFile(result.file, 'utf8')) as { schema: string; frames: { level: number[] } };
     expect(saved.schema).toBe('baocut.audio-analysis/1');
     expect(saved.frames.level).toHaveLength(60);
+  });
+
+  it('checks cues in source-file seconds and draws a listening sheet', async () => {
+    await writeKicks();
+    const args = { video: 'demo', path: 'kicks.wav', range: '0.25:2', beats: false, cues: [1.01, 1.6, 0.8, 0.1], sheet: true };
+    const result = (await tools().dispatch('assets_analyze', args, agent)) as {
+      file: string;
+      sheet: string;
+      accentCount: number;
+      sync: {
+        inside: number;
+        ok: number;
+        outside: number;
+        hitRate: number;
+        chance: number;
+        misses: Array<{ t: number; delta: number | null; status: string }>;
+      };
+    };
+    // 1.01 对上 1 秒的起音；1.6 离 1.5 秒 0.1 秒，差一点；0.8 附近没有；0.1 在 range 之前。
+    expect(result.sync).toMatchObject({ inside: 3, ok: 1, outside: 1 });
+    expect(result.sync.misses.map((m) => [m.t, m.status])).toEqual([
+      [1.6, 'near'],
+      [0.8, 'none'],
+      [0.1, 'outside'],
+    ]);
+    expect(result.sync.misses[0]!.delta).toBeLessThan(0);
+    expect(result.sync.chance).toBeGreaterThan(0);
+    expect(result.sync.chance).toBeLessThan(0.2);
+    expect(result.accentCount).toBeGreaterThan(0);
+    const saved = JSON.parse(await fs.readFile(result.file, 'utf8')) as { sync: { cues: Array<{ t: number }> } };
+    expect(saved.sync.cues.map((c) => c.t)).toEqual(args.cues);
+
+    expect(result.sheet).toBe(result.file.replace(/\.json$/, '.png'));
+    const png = await fs.readFile(result.sheet);
+    expect(png.subarray(1, 4).toString()).toBe('PNG');
+    expect(png.readUInt32BE(16)).toBe(1600);
+
+    await expect(
+      tools().dispatch('assets_analyze', { video: 'demo', path: 'kicks.wav', range: `0:${MAX_SHEET_SECONDS + 1}`, sheet: true }, agent),
+    ).rejects.toMatchObject({ code: 'AUDIO_SHEET_TOO_LONG' });
   });
 
   it('reports a file with no audio and needs exactly one source', async () => {

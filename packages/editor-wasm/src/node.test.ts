@@ -7,6 +7,7 @@ import {
   SENTENCE_DERIVATION,
   applySpeakers,
   audioAnalysis,
+  audioSheet,
   editorWasmAvailable,
   locateEditorWasm,
   sfxRecipes,
@@ -170,6 +171,14 @@ describe.skipIf(!built)('editor-wasm audio（Node）', () => {
     expect(() => audioAnalysis(new Float32Array(0), { sampleRate: rate, fps: 25 })).toThrow(
       expect.objectContaining({ code: 'AUDIO_EMPTY' }),
     );
+    const synced = audioAnalysis(pcm, { sampleRate: rate, fps: 25, beats: false, cues: [0.76, 1.5, 9] });
+    expect(synced.sync?.cues.map((c) => c.status)).toEqual(['ok', 'none', 'outside']);
+    expect(synced.sync?.chance).toBeGreaterThan(0);
+    expect(result.sync).toBeUndefined();
+    const sheet = audioSheet(pcm, { sampleRate: rate, width: 320, beats: false, cues: [0.76] });
+    expect(sheet.width).toBe(320);
+    expect(sheet.rgba.length).toBe(320 * sheet.height * 4);
+    expect(sheet.height).toBeGreaterThan(100);
 
     const wav = sfxRender({ recipe: 'blip', seed: 1 });
     expect(new TextDecoder().decode(wav.slice(0, 4))).toBe('RIFF');

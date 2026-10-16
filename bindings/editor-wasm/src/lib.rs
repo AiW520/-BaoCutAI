@@ -20,7 +20,7 @@
 //! - `bc_element_presets`：见 [`presets::element_presets`]；
 //! - `bc_speaker_proposal` / `bc_apply_speakers`：已有转写的识别说话人，见 [`speakers`]；
 //! - `bc_source_chapters`：来源自带章节（平台的 `chapters[]`、简介里的时间戳大纲或显式大纲）的解析与吸附，见 [`source_chapters`]；
-//! - `bc_audio_analysis` / `bc_sfx_render` / `bc_sfx_recipes`：音频的逐帧特征与节拍、程序化音效，见 [`audio`]（前两个的输入或输出是二进制）。
+//! - `bc_audio_analysis` / `bc_audio_sheet` / `bc_sfx_render` / `bc_sfx_recipes`：音频的逐帧特征与节拍、听音表、程序化音效，见 [`audio`]（前三个的输入或输出是二进制）。
 
 pub mod audio;
 pub mod presets;
@@ -175,6 +175,7 @@ export! {
 export! {
     bytes:
     bc_sfx_render => audio::sfx_render;
+    bc_audio_sheet => audio::audio_sheet;
 }
 
 #[unsafe(no_mangle)]

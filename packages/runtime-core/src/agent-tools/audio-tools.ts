@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
 import type { EditResult, VideoOpenResult } from '@baocut/protocol';
-import { EditorWasmError, audioAnalysis, sfxRender, type AudioAnalysis } from '@baocut/editor-wasm';
+import { EditorWasmError, audioAnalysis, audioSheet, sfxRender, type AudioAnalysis } from '@baocut/editor-wasm';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { VideoService } from '../videos/video-service.ts';
 import { videoChangeOf } from '../compositions/composition-service.ts';
@@ -18,8 +18,9 @@ import { commandIdArg, revisionArg, videoArg } from './video-tools.ts';
 
 /**
  * 音频的两件事（Agent 面设计 §4.3）：`assets_sfx` 用内置配方合成一段音效（`crates/audio-dsp` 的 `sfx`，经 editor-wasm），作为 managed
- * 素材导入（可以同时放上时间线）；`assets_analyze` 把一段音频解码成单声道 PCM，算逐帧特征、起音与节拍（`waveform::beats`），整份写成
- * JSON 给代码画面读，结果里只回摘要。
+ * 素材导入（可以同时放上时间线）；`assets_analyze` 把一段音频解码成单声道 PCM，算逐帧特征、起音、重音与节拍（`waveform::beats`、
+ * `waveform::cues`），可选地核对一串时刻对不对得上起音、画一张听音表（`waveform::sheet`，ffmpeg 编成 PNG），整份写成 JSON 给代码画面读，
+ * 结果里只回摘要。
  */
 
 export interface AudioToolsDeps {
@@ -56,6 +57,13 @@ const ANALYSIS_RATE = 22_050;
 export const MAX_ANALYSIS_SECONDS = 20 * 60;
 /** 结果里直接列出的起音条数；整份在文件里。 */
 const INLINE_ONSETS = 120;
+/** 结果里直接列出的重音、没对上的时刻条数。 */
+const INLINE_EVENTS = 60;
+/** 一次最多核对的时刻数。 */
+const MAX_CUES = 500;
+/** 听音表最长覆盖的时长（秒）：再长，1600 像素宽里 80 ms 间隔的起音就分不开了。 */
+export const MAX_SHEET_SECONDS = 120;
+const SHEET_WIDTH = 1600;
 const SFX_REF = 'sfx';
 
 const placeArg = z
@@ -115,6 +123,24 @@ const schemas = {
     fps: z.number().min(1).max(120).optional().describe('可选。逐帧特征的帧率，默认视频的帧率（代码画面按帧取值）'),
     beats: z.boolean().optional().describe('可选。false 时不找节拍（讲话、环境声）；默认 true'),
     beatsPerBar: z.number().int().min(2).max(12).optional().describe('可选。每小节几拍，默认 4'),
+    cues: z
+      .array(z.number().min(0))
+      .min(1)
+      .max(MAX_CUES)
+      .optional()
+      .describe(
+        `可选。要核对的时刻（源文件里的秒，与 range 同一个时钟，最多 ${MAX_CUES} 个）：切点、动画落点、放音效的地方。每个时刻对到最近的起音，回 ok / near / none / outside 与碰巧命中的基线`,
+      ),
+    tolerance: z
+      .number()
+      .min(0.005)
+      .max(0.5)
+      .optional()
+      .describe('可选。核对时刻时算「对上了」的容差（秒），默认 0.05；「差一点」是它的 3 倍'),
+    sheet: z
+      .boolean()
+      .optional()
+      .describe(`可选。true 时另画一张听音表 PNG（频谱、波形、起音与节拍、时刻），用看图的工具看；最长 ${MAX_SHEET_SECONDS} 秒`),
   }),
 };
 
@@ -146,15 +172,22 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '分析一段音频的逐帧特征、起音与节拍，写成 JSON 文件给代码画面读。',
       `源是视频里的素材（asset）或工作目录里的文件（path），range 是源文件里的秒数；解码成 ${ANALYSIS_RATE / 1000} kHz 单声道再分析，最长 ${MAX_ANALYSIS_SECONDS / 60} 分钟（AUDIO_TOO_LONG 时分段给 range）。只读，不改视频。`,
       `整份写在写文件目录（会话与终端是工作目录）下的 ${ANALYSIS_DIR}/<videoId>/<素材或文件名>[-<起>-<止>].json：frames（fps 一帧一个 0..1 的值：level 是绝对响度，−60..0 dBFS；bass、mid、treble 是 150 Hz 以下、150 Hz–2 kHz、2–8 kHz 的能量，按这段音频归一；onset 是起音强度）、onsets（t、strength）、beats（tempo、confidence、residual、downbeat、beatsPerBar、times、bars、sections）。时间与第 0 帧都从 source.offset 算起（源文件里的秒）：源文件时间 = 结果里的时间 + source.offset。`,
-      `结果回 file、fps、frameCount、duration、source、onsets（前 ${INLINE_ONSETS} 条）与 onsetCount、beats 的摘要（tempo、confidence、downbeat、beatsPerBar、beatCount、barCount、sections），找不到稳定节拍时 beats 为 null、beatsError 说原因（讲话通常没有拍）。`,
-      '用法：配乐导入之后分析它，把文件拷进代码包，在代码画面里按这一刻对应的源文件时间取值（源文件时间 = 时间线时间 − 片段在时间线上的开始 + 片段的源起点），让画面跟着节拍与能量动；剪辑点对到 beats.times 或 bars 的开始；音效对到 onsets。',
-      '错误码：ASSET_NOT_FOUND、AUDIO_NO_STREAM（没有音轨）、AUDIO_TOO_LONG、AUDIO_EMPTY、AUDIO_DECODE_FAILED、PATH_OUTSIDE_WORKSPACE。',
+      `结果回 file、fps、frameCount、duration、source、onsets（前 ${INLINE_ONSETS} 条）与 onsetCount、accents（重音：比前面的底子高至少 6 dB、在全部起音里排前 20% 的起音，t 与 prominenceDb，前 ${INLINE_EVENTS} 条）与 accentCount、beats 的摘要（tempo、confidence、downbeat、beatsPerBar、beatCount、barCount、sections），找不到稳定节拍时 beats 为 null、beatsError 说原因（讲话通常没有拍）。`,
+      `给了 cues 时另回 sync：tolerance、nearTolerance、inside（落在分析范围里的时刻数）、ok、near、none、outside、hitRate（ok ÷ inside）、chance（随便放一个时刻也能落进某个起音 ±tolerance 里的概率），以及没对上的时刻 misses（t 是你给的时刻原样，delta 是最近的起音减去它，正的是声音晚到；前 ${INLINE_EVENTS} 条，全部在文件的 sync.cues 里）。hitRate 要跟 chance 比：起音很密时 chance 本身就高，hitRate 只比它高一点说明并没有对上。`,
+      `给了 sheet 时另回 sheet（PNG 路径，与 JSON 同目录同名），${SHEET_WIDTH} 像素宽，横轴与时间成正比，图上不写字。自上而下：频谱（40 Hz–11 kHz 按对数，越亮越响）；波形（淡色是峰值、亮色是均方根，按满刻度画，小就是轻）；事件条（灰色竖线是拍、更亮的是小节第一拍，白色刻度是起音、越高越强，橙色整条是重音）。前两条上下沿的短刻度是时间网格：30 秒以内每秒一个、每 5 秒一个长的，更长时每 5 秒一个、每 30 秒一个长的。时刻是贯穿全图的竖线：绿 ok、琥珀 near、红 none。`,
+      '用法：配乐导入之后分析它，把文件拷进代码包，在代码画面里按这一刻对应的源文件时间取值（源文件时间 = 时间线时间 − 片段在时间线上的开始 + 片段的源起点），让画面跟着节拍与能量动；剪辑点对到 beats.times、bars 的开始或 accents；音效对到 onsets。',
+      '核对成片的声画对位：export 导出时间线的音频（kind audio，format wav；不给 range 时文件里的秒就是时间线的秒），按 path 分析它，cues 填 videos_shots 的 cuts[].at、动画落点或放音效的时间线时刻，sheet: true 再看一眼图。',
+      `错误码：ASSET_NOT_FOUND、AUDIO_NO_STREAM（没有音轨）、AUDIO_TOO_LONG、AUDIO_EMPTY、AUDIO_DECODE_FAILED、AUDIO_SHEET_TOO_LONG（听音表超过 ${MAX_SHEET_SECONDS} 秒，给 range 分段画）、AUDIO_SHEET_FAILED、PATH_OUTSIDE_WORKSPACE。`,
     ].join('\n'),
     annotations: { readOnlyHint: true },
     effect: 'query',
     examples: [
       { title: '分析导入的配乐', args: { video: 'demo', asset: 'asset_01J…' } },
       { title: '分析工作目录里一首歌的前 30 秒，按 30 fps', args: { video: 'demo', path: 'music/theme.wav', range: '0:30', fps: 30 } },
+      {
+        title: '核对导出音频里三个切点对不对得上声音，并画听音表',
+        args: { video: 'demo', path: 'exports/mix.wav', cues: [2.4, 5.1, 8.75], sheet: true },
+      },
     ],
     surfaces: ['agent', 'mcp', 'cli'],
     positional: 'video',
@@ -289,19 +322,30 @@ export class AudioTools implements ToolSet {
       throw new ToolError('INVALID_ARGUMENTS', `range end ${end} must be after its start ${start}`);
     }
     if (end !== null && end! - start! > MAX_ANALYSIS_SECONDS) throw tooLong();
-    const pcm = await decodeMono(await this.#deps.ffmpeg(), file, start!, end);
+    if (args.sheet && end !== null && end! - start! > MAX_SHEET_SECONDS) throw sheetTooLong();
+    const ffmpeg = await this.#deps.ffmpeg();
+    const pcm = await decodeMono(ffmpeg, file, start!, end);
+    if (args.sheet && pcm.length > MAX_SHEET_SECONDS * ANALYSIS_RATE) throw sheetTooLong();
     const sequence = video.sequences[video.rootSequenceId]!;
     const fps = args.fps ?? sequence.fps.num / sequence.fps.den;
+    // 时刻是源文件里的秒；分析的时钟从 range 的起点算起。
+    const cues = args.cues?.map((t) => t - start!);
+    const shared = {
+      sampleRate: ANALYSIS_RATE,
+      beats: args.beats ?? true,
+      ...(args.beatsPerBar !== undefined ? { beatsPerBar: args.beatsPerBar } : {}),
+      ...(cues ? { cues } : {}),
+      ...(args.tolerance !== undefined ? { tolerance: args.tolerance } : {}),
+    };
     let analysis: AudioAnalysis;
     try {
-      analysis = audioAnalysis(pcm, {
-        sampleRate: ANALYSIS_RATE,
-        fps,
-        beats: args.beats ?? true,
-        ...(args.beatsPerBar !== undefined ? { beatsPerBar: args.beatsPerBar } : {}),
-      });
+      analysis = audioAnalysis(pcm, { ...shared, fps });
     } catch (error) {
       throw wasmError(error, 'AUDIO_ANALYSIS_FAILED');
+    }
+    if (analysis.sync && args.cues) {
+      const given = args.cues;
+      analysis.sync.cues = analysis.sync.cues.map((cue, index) => ({ ...cue, t: given[index]! }));
     }
     const source = {
       ...(args.asset !== undefined ? { asset: args.asset } : { path: file }),
@@ -309,11 +353,25 @@ export class AudioTools implements ToolSet {
       ...(end !== null ? { end } : {}),
     };
     const dir = await framesDirectory(scope.saveRoot(access, opened), videoId, null, ANALYSIS_DIR);
-    const out = path.join(dir, `${safeName(label)}${args.range ? `-${ms(start!)}-${ms(end!)}ms` : ''}.json`);
+    const base = path.join(dir, `${safeName(label)}${args.range ? `-${ms(start!)}-${ms(end!)}ms` : ''}`);
+    const out = `${base}.json`;
     await fs.writeFile(out, `${JSON.stringify({ schema: 'baocut.audio-analysis/1', source, sampleRate: ANALYSIS_RATE, ...analysis })}\n`);
+    let sheet: string | null = null;
+    if (args.sheet) {
+      let image: ReturnType<typeof audioSheet>;
+      try {
+        image = audioSheet(pcm, { ...shared, width: SHEET_WIDTH });
+      } catch (error) {
+        throw wasmError(error, 'AUDIO_SHEET_FAILED');
+      }
+      sheet = `${base}.png`;
+      await encodePng(ffmpeg, image, sheet);
+    }
     const beats = analysis.beats;
+    const sync = analysis.sync;
     return {
       file: out,
+      ...(sheet ? { sheet } : {}),
       source,
       fps: analysis.fps,
       frameCount: analysis.frameCount,
@@ -332,6 +390,24 @@ export class AudioTools implements ToolSet {
           }
         : null,
       ...(analysis.beatsError ? { beatsError: analysis.beatsError } : {}),
+      accentCount: analysis.accents.length,
+      accents: analysis.accents.slice(0, INLINE_EVENTS),
+      ...(sync
+        ? {
+            sync: {
+              tolerance: sync.tolerance,
+              nearTolerance: sync.nearTolerance,
+              inside: sync.inside,
+              ok: sync.ok,
+              near: sync.near,
+              none: sync.none,
+              outside: sync.outside,
+              hitRate: sync.hitRate,
+              chance: sync.chance,
+              misses: sync.cues.filter((cue) => cue.status !== 'ok').slice(0, INLINE_EVENTS),
+            },
+          }
+        : {}),
       next: 'Times and frame 0 start at source.offset seconds into the source file. Copy the file into the code bundle; at source time s read frames.*[Math.floor((s - source.offset) * fps)].',
     };
   }
@@ -358,6 +434,63 @@ export class AudioTools implements ToolSet {
     );
     scope.recordChange(access, videoChangeOf(videos, opened, result));
     return result;
+  }
+}
+
+function sheetTooLong(): ToolError {
+  return new ToolError('AUDIO_SHEET_TOO_LONG', `A listening sheet covers at most ${MAX_SHEET_SECONDS} seconds`, {
+    next: `Pass range as "start:end" seconds of at most ${MAX_SHEET_SECONDS} seconds, or drop sheet to analyze the whole file`,
+  });
+}
+
+/** RGBA 像素经一个临时文件交给 ffmpeg 编成 PNG。 */
+async function encodePng(ffmpeg: string, image: { width: number; height: number; rgba: Uint8Array }, output: string): Promise<void> {
+  const work = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-sheet-'));
+  try {
+    const raw = path.join(work, 'sheet.rgba');
+    await fs.writeFile(raw, image.rgba);
+    const args = [
+      '-nostdin',
+      '-v',
+      'error',
+      '-f',
+      'rawvideo',
+      '-pix_fmt',
+      'rgba',
+      '-s',
+      `${image.width}x${image.height}`,
+      '-i',
+      raw,
+      '-frames:v',
+      '1',
+      '-c:v',
+      'png',
+      '-y',
+      output,
+    ];
+    const { code, stderr } = await new Promise<{ code: number | null; stderr: string }>((resolve, reject) => {
+      const child = spawn(ffmpeg, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+      let text = '';
+      child.stderr.setEncoding('utf8');
+      child.stderr.on('data', (chunk: string) => {
+        text = (text + chunk).slice(-4000);
+      });
+      child.on('error', reject);
+      child.on('close', (exit) => resolve({ code: exit, stderr: text }));
+    }).catch((error: Error) => {
+      throw new ToolError('AUDIO_SHEET_FAILED', `ffmpeg could not start: ${error.message}`);
+    });
+    if (code !== 0) {
+      throw new ToolError(
+        'AUDIO_SHEET_FAILED',
+        `ffmpeg failed to encode the listening sheet (exit code ${code}): ${stderr.trim().slice(-400)}`,
+        {
+          next: 'The analysis JSON was written; check that ffmpeg is available (BAOCUT_FFMPEG or ffmpeg on PATH)',
+        },
+      );
+    }
+  } finally {
+    await fs.rm(work, { recursive: true, force: true }).catch(() => {});
   }
 }
 

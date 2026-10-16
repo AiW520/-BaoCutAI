@@ -53,5 +53,5 @@ Runtime 只把 `baocut/built-in-skills/` 当内置 skill 目录加载，说明�
 - 页面互相引用用相对链接（`catalog/subtitles.md`、`../conventions.md`），由渲染器按面改写。
 - 共享参考表只在目录页维护一份。craft 用 `skills_read` 读 `baocut-catalog-<页>`，同步成 CLI 面时改为该页链接，不把数据复制进 craft；其他目录页直接用相对链接引用。模型专属音色表一套模型系列一个文件，并在 `voice.md` 登记入口。
 - 写法按 [§8.7](../docs/design/agent-surface/agent-surface-design.md#87-说明书的写法)：方法（craft、workflows）与机制（conventions、catalog）分层；catalog 页按「何时用 → 前置检查 → 命令与例子 → 结果怎么读 → 常见错误码 → 下一步 → 验收」；workflows 每条按「适用与不适用 → 判断表 → 步骤 → 完成标准」；参数不抄旗标说明，指向帮助或工具说明。
-- 说明书与 craft 是给 agent 读的：拆小、按需读，一个主题一页，代码与样例写成真实文件（[文档约定「写作规则」](../docs/README.md#写作规则)）。SKILL.md 正文不超过 300 行，front matter 的 `description` 不超过 300 个字符。目录页、`workflows.md` 与 `conventions.md` 也带只有 `description` 的 front matter（一句话：讲什么、什么时候读），它是会话 skill 索引里这一页的说明。
+- SKILL.md 正文不超过 300 行，front matter 的 `description` 不超过 300 个字符。目录页、`workflows.md` 与 `conventions.md` 也带只有 `description` 的 front matter（一句话：讲什么、什么时候读），它是会话 skill 索引里这一页的说明。
 - 全部以中文写作；做法对任意语言的视频与目标语言都适用。

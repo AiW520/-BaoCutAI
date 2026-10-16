@@ -48,6 +48,7 @@ export const {
   applySpeakers,
   sourceChapters,
   audioAnalysis,
+  audioSheet,
   sfxRender,
   sfxRecipes,
 } = semanticsApi(editorSemantics);

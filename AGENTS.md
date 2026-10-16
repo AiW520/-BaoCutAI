@@ -17,7 +17,6 @@ BaoCut 编码代理的通用规则。本文只保留全局约束和阅读入口�
 | 新增或修改代码标识、枚举、分类或结果键（必须用英文） | [仓库约定 §3](docs/repo-conventions.md#3-命名) |
 | 产品、架构、格式、协议或领域行为 | [文档阅读路线](docs/README.md#阅读路线)，选择对应主题与章节 |
 | 修改规范或其他文档 | [文档约定](docs/README.md#文档约定)；[开发流程 §1](docs/development-workflow.md#1-规范与实现) |
-| 写给 agent 读的文字（`AGENTS.md`、skill、提示词）：要拆小，给人读的设计文档可以整篇 | [文档约定「写作规则」](docs/README.md#写作规则) |
 | 准备验证改动 | [开发流程 §2](docs/development-workflow.md#2-验证)；通过标准见[验收与测试](docs/acceptance/acceptance-spec.md) |
 | 修改用户可见 UI（按改动分档） | [开发流程 §3](docs/development-workflow.md#3-多端同步)；图标见[仓库约定 §4](docs/repo-conventions.md#4-界面图标) |
 | 修改原型 | [原型 README](designs/baocut/README.md) → [原型局部协议](designs/baocut/AGENTS.md) |
