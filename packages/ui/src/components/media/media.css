@@ -307,6 +307,14 @@
 .bc-media-dialog {
   -webkit-app-region: no-drag;
 }
+/* 查看器表头顶替了标题栏：空白处照样拖动窗口；控件（React Aria 元素都带 data-rac）与输入框保持可点。 */
+.bc-image-lightbox .bc-image-header {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.bc-image-lightbox .bc-image-header :is(button, input, textarea, [role='button'], [data-rac]) {
+  -webkit-app-region: no-drag;
+}
 /* macOS 的红绿灯压在全屏查看器左上角：各表头（查看、标注、全景）左边让出与标题栏相同的 84px。 */
 .bc-image-lightbox--mac .bc-image-header {
   padding-inline-start: 84px;
