@@ -31,10 +31,11 @@
     </div>;
   }
 
-  /* 一行的花费：报告 / 估算 / 都有 / 未知分开写 */
+  /* 一行的花费：报告 / 估算 / 都有 / 未知 / 订阅内分开写 */
   function costText(r) {
     if (r.costKind === 'none') return '—';
     if (r.costKind === 'unknown') return '费用未知';
+    if (r.costKind === 'subscription') return '订阅内';
     const est = U().fmtMoneyMap(Object.keys(r.est).length ? r.est : null);
     const rep = U().fmtMoneyMap(Object.keys(r.rep).length ? r.rep : null);
     return [rep ? `${rep} 报告` : '', est ? `≈ ${est}` : '', r.unknownCalls ? `另 ${r.unknownCalls} 次未知` : ''].filter(Boolean).join(' · ');

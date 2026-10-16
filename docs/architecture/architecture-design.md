@@ -1648,7 +1648,7 @@ Worker 内部用 f32 秒计算，输出一律换算为声明 `timescale` 的整�
 - **描述如实声明限制**：一个模型（`image-gen`，实际的图片模型由智能体运行时与账号决定），`maxCount` 为 1，只有 `png`，`sizes` 与 `aspectRatios` 为空、`defaultSize` 为 null，`acceptsSeed` 为 false，费用状态是 `subscription`（「订阅内，额度未知」），`notes` 一句话说明串行、耗时与额度。不支持的参数在提交时拒绝，不标为被忽略：给了尺寸或宽高比、seed、多于一张、别的格式都是 `invalid-request`，不创建任务。队列按 Provider 划分，同一时间只运行 1 个任务。
 - **可用性来自 Driver 的状态**（§3.11），按顺序：没有安装（`not-installed`）、没有登录（`signed-out`）、Driver 别的不可用（`unsupported`）、版本低于这个 Provider 要求的最低版本（`outdated`；`agent:codex` 要求 0.158.0，即协议对照的版本）、用户没有启用（`not-configured`）。前四种的补救是 `setup-agent`：在智能体运行时自己的界面里安装、登录或升级，`hint` 给出做法；最后一种是 `enable-provider`。`models.capabilities` 只探测这个 Provider 对应的 Driver：Driver 注册表（§3.11）里 10 秒之内的结果直接用，否则只重新探测这一个 Driver 并等它，结果写回注册表的缓存（也经 `agents` 主题推送），不等别的 Driver 的探测；选择与视图只在用户启用了它时探测，没启用时用最近一次的结果，不为没启用的 Provider 启动外部命令。执行前再确认一次：排队期间被停用、退出登录或卸载的，不再开会话，Job 以 `MODEL_LOAD_FAILED` 失败。
 - **启用是唯一的配置**（§6.8）：`agent:codex` 未保存过配置时默认启用，视图的 `enabledAt` 为 null；已保存的开关优先，用户手动停用后重启仍保持停用。不为出厂开关写入配置或伪造启用时间；用户显式启用时按 §6.8 记录启用时间。没有密钥、端点与模型声明，用的是智能体运行时自己的登录。启用允许把提示词与参考图交给该智能体运行时登录的账号与服务方，用的是用户自己的订阅额度。
-- **选择规则**（§6.2）：它可以被显式指定，也可以被设为 `generateImage` 的默认；没有用户默认值时它排在出厂默认顺序的第一位。Codex 以 API key 等非 ChatGPT 订阅的方式登录时（Driver 探测的 `account`），画图不一定能用、费用也不在订阅里：Provider 照样可用、可以显式选择或设为默认，但模型描述的 `cost` 为 `unknown`（ChatGPT 登录时为 `subscription`），`notes` 写明这一点，出厂默认跳过它。
+- **选择规则**（§6.2）：它可以被显式指定，也可以被设为 `generateImage` 的默认；没有用户默认值时它排在出厂默认顺序的第一位。Codex 以 API key 等非 ChatGPT 订阅的方式登录时（Driver 探测的 `account`），画图不一定能用、费用也不在订阅里：Provider 照样可用、可以显式选择或设为默认，但模型描述的 `cost` 为 `unknown`（ChatGPT 登录时为 `subscription`），`notes` 写明这一点，出厂默认跳过它。用量账本按执行前确认时探测到的登录方式记这次调用的费用（§6.10）。
 - 其他能力与其他 Driver 按同一模式加入，各自经过验证后开放。
 
 ### 6.10 用量账本
@@ -1667,7 +1667,7 @@ interface UsageRecord {
   source: 'job' | 'inline' | 'agent-tool' | 'verify';
   ref?: { jobId?: string; taskId?: string; conversationId?: string };
   units: UsageUnits;
-  cost: { kind: 'reported'; amount: string; currency: 'USD' | 'CNY' } | { kind: 'unknown' };   // 估算不写进账本
+  cost: { kind: 'reported'; amount: string; currency: 'USD' | 'CNY' } | { kind: 'subscription' } | { kind: 'unknown' };   // 估算不写进账本
   durationMs: number;
   status: 'ok' | 'error';
   error?: string;                     // 错误码与一句说明，不含密钥
@@ -1675,20 +1675,20 @@ interface UsageRecord {
 interface UsageUnits { inputTokens?: number; outputTokens?: number; cachedTokens?: number; audioSeconds?: number; chars?: number; images?: number }
 ```
 
-**写入点**。在线 Provider 的每次调用在结束处（成功或失败）写一条：转写、语音合成、生图与文本生成各一处。文本生成的两个入口都记，`models.generateText` 的 Job 是 `job`，进程内 `TextGenerator` 的调用是 `inline`；智能体工具直接发起的是 `agent-tool`。一次调用内部的切块（§6.4）与有界重试合成一条，用量相加。验证密钥（`verify`）也记一条：它不属于某种能力或某个模型，`capability` 与 `modelId` 为 null（其余来源都必须给出），`units` 为空、不计费用；验证不通过、账号没有保存时 `accountId` 为 null。智能体 Provider（`agent:codex`）同样记录，`accountId` 为 null，费用是 `unknown`。本地与局域网节点的调用不记：它们不计费，数据也不离开用户自己的设备。
+**写入点**。在线 Provider 的每次调用在结束处（成功或失败）写一条：转写、语音合成、生图与文本生成各一处。文本生成的两个入口都记，`models.generateText` 的 Job 是 `job`，进程内 `TextGenerator` 的调用是 `inline`；智能体工具直接发起的是 `agent-tool`。一次调用内部的切块（§6.4）与有界重试合成一条，用量相加。验证密钥（`verify`）也记一条：它不属于某种能力或某个模型，`capability` 与 `modelId` 为 null（其余来源都必须给出），`units` 为空、不计费用；验证不通过、账号没有保存时 `accountId` 为 null。智能体 Provider（`agent:codex`）同样记录，`accountId` 为 null；执行前确认的是 ChatGPT 登录（订阅，§6.9）时费用是 `subscription`，API key 等别的登录方式是 `unknown`。之前写下的智能体记录仍是 `unknown`，不回填。旧版 Runtime 不认 `subscription`，读到这样的行按坏的行跳过。本地与局域网节点的调用不记：它们不计费，数据也不离开用户自己的设备。
 
 **用量**按能力填：文本是输入、输出与缓存命中的 token，转写是音频秒数，语音合成是字符数（按 Unicode 码点，与 §6.4 的上限同一口径），生图是张数。供应商报告了的用报告的，没有报告的项留空，不估算用量。
 
-**费用**。账本只记 API 提供方报告的金额（`reported`，原样的币种）；没有报告时是 `unknown`。估算不写进账本，在读的时候按价目表算：`packages/models/src/model-prices.ts` 是一张常量表，按 `providerId/modelId` 给出每百万输入、输出与缓存 token、每分钟音频、每千字符与每张图的单价和币种，每个单价在注释里写明官方价目页与查阅日期，拿不准的不填。价目表更新之后，过去的估算按新表重算：估算只是参考，不是账单。
+**费用**。账本只记 API 提供方报告的金额（`reported`，原样的币种）与算在智能体订阅里的调用（`subscription`）；都不是时是 `unknown`。估算不写进账本，在读的时候按价目表算：`packages/models/src/model-prices.ts` 是一张常量表，按 `providerId/modelId` 给出每百万输入、输出与缓存 token、每分钟音频、每千字符与每张图的单价和币种，每个单价在注释里写明官方价目页与查阅日期，拿不准的不填。价目表更新之后，过去的估算按新表重算：估算只是参考，不是账单。
 
-金额分三种：提供方报告（`reported`）、按标价估算（`estimated`）与未知（`unknown`），不得合成一个数掩盖其中的差别。一条记录有报告就用报告；验证密钥与失败且没有用量（各项用量都没有或为 0）的调用不计费用，也不算未知；否则价目表里有这个模型的单价、所需的用量也齐全时算出估算；否则是未知，计入未知的次数。不同币种分别汇总，不换算。
+金额分三种：提供方报告（`reported`）、按标价估算（`estimated`）与未知（`unknown`），不得合成一个数掩盖其中的差别；算在订阅里的调用（`subscription`）不计金额，也不算未知，只计次数。一条记录有报告就用报告；验证密钥与失败且没有用量（各项用量都没有或为 0）的调用不计费用，也不算未知或订阅内；否则记的是 `subscription` 时计入订阅内的次数；否则价目表里有这个模型的单价、所需的用量也齐全时算出估算；否则是未知，计入未知的次数。不同币种分别汇总，不换算。
 
 **读取**。`models.usage { period, providerId? }` 返回 `UsageReport`；`period` 是 `today`、`7d`、`30d` 或 `all`，按 Runtime 所在机器的本地日期划分，`providerId` 只看一家 API 提供方。
 
 ```ts
 interface UsageReport {
   period: { from: string; to: string };
-  totals: { calls: number; failed: number; units: UsageUnits; cost: { estimated: Money[]; reported: Money[]; unknownCalls: number } };
+  totals: { calls: number; failed: number; units: UsageUnits; cost: { estimated: Money[]; reported: Money[]; unknownCalls: number; subscriptionCalls: number } };
   byDay: Array<{ day: string; calls: number; units: UsageUnits; byCapability: Partial<Record<ModelServiceCapability, number>> }>;
   byProvider: UsageRow[]; byCapability: UsageRow[]; byModel: UsageRow[]; byAccount: UsageRow[];
 }
@@ -1696,11 +1696,11 @@ interface UsageRow {
   key: string; label: string; providerId?: string;
   calls: number; failed: number; units: UsageUnits;
   cost: Money[];                                      // 按币种，一种一项；没有可计的金额时为空
-  costKind: 'reported' | 'estimated' | 'mixed' | 'unknown' | 'none';
+  costKind: 'reported' | 'estimated' | 'mixed' | 'unknown' | 'subscription' | 'none';
 }
 ```
 
-`Money` 是 `{ amount, currency }`，金额是十进制字符串（与 §7.8 相同）。`costKind` 说明这一行的金额从哪里来：全部报告、全部估算、两者都有，或一个都没有（`unknown`：有费用未知的调用；`none`：没有要计费的调用，只有验证或失败且没有用量的调用，界面写「—」）。账号的 `label` 为空时用掩码；已经删掉的账号仍按 `accountId` 列出。用量不进视频，也不进 Space。
+`Money` 是 `{ amount, currency }`，金额是十进制字符串（与 §7.8 相同）。`costKind` 说明这一行的金额从哪里来：全部报告、全部估算、两者都有，或一个都没有（`unknown`：有费用未知的调用；`subscription`：没有费用未知的调用，有算在订阅里的调用，界面写「订阅内」；`none`：没有要计费的调用，只有验证或失败且没有用量的调用，界面写「—」）。一行既有金额又有订阅内的调用时（例如按能力的生图同时用了 API 提供方与 Codex）只写金额。账号的 `label` 为空时用掩码；已经删掉的账号仍按 `accountId` 列出。用量不进视频，也不进 Space。
 
 **余额（P1）**。`models.checkBalance { providerId, accountId? }` 用账号的密钥向 API 提供方查余额，返回余额（按币种）与查询的时间；`accountId` 不给时用第一个启用且有密钥的账号。只有开放了查询接口的提供方才支持：DeepSeek（`/user/balance`）、OpenRouter（`/api/v1/credits`）与 Moonshot（`/v1/users/me/balance`）；其余的以 `invalid-request` 拒绝。查到的余额不写进用量账本，也不参与预算。
 

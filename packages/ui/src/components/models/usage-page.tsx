@@ -188,11 +188,12 @@ function unitsText(units: UsageUnits): string {
   return parts.join(' · ') || '—';
 }
 
-/** 一行的花费：按 `costKind` 写报告 / 估算 / 两者都有 / 未知；没有要计费的调用（`none`）写「—」。 */
+/** 一行的花费：按 `costKind` 写报告 / 估算 / 两者都有 / 未知 / 订阅内；没有要计费的调用（`none`）写「—」。 */
 function costText(r: UsageRow): string {
   const copy = USAGE_COPY.cost;
   const money = formatMoney(r.cost);
   if (r.costKind === 'none') return '—';
+  if (r.costKind === 'subscription') return copy.subscription;
   if (r.costKind === 'unknown' || !money) return copy.unknown;
   if (r.costKind === 'reported') return copy.reported(money);
   if (r.costKind === 'mixed') return copy.mixed(money);
