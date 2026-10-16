@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { silentLogger } from '@baocut/harness';
 import { createFakePi, type FakePi } from '../testing/fake-pi.ts';
-import { parsePiVersion } from './pi-binary.ts';
+import { parsePiVersion, piCommand, piSearch } from './pi-binary.ts';
 import { derivePiModels, parseModelReference, piThinkingLevels } from './pi-models.ts';
 import { PiDriver, PI_MIN_VERSION } from './pi-driver.ts';
 
@@ -146,5 +146,26 @@ describe('pi 模型与版本的解析', () => {
   it('get_state 的模型是 unknown（没配模型）时没有默认', () => {
     const models = derivePiModels([{ id: 'a', provider: 'p' }], { provider: 'unknown', id: 'unknown' });
     expect(models[0]!.isDefault).toBe(false);
+  });
+});
+
+describe('Windows 上找 pi（纯函数；未在 Windows 上验证）', () => {
+  it('文件名与常见位置：pi.exe 与 npm 的 pi.cmd；其他平台看 ~/.local/bin、Homebrew 与 nvm 各版本', () => {
+    expect(piSearch('win32', { APPDATA: 'C:\\Users\\me\\AppData\\Roaming' }, 'C:\\Users\\me')).toEqual({
+      names: ['pi.exe', 'pi.cmd'],
+      locations: ['C:\\Users\\me\\AppData\\Roaming\\npm\\pi.cmd'],
+    });
+    expect(piSearch('win32', {}, 'C:\\Users\\用户 甲', ['v22.0.0']).locations).toEqual(['C:\\Users\\用户 甲\\AppData\\Roaming\\npm\\pi.cmd']);
+    expect(piSearch('darwin', {}, '/Users/me', ['v22.0.0'])).toEqual({
+      names: ['pi'],
+      locations: ['/Users/me/.local/bin/pi', '/opt/homebrew/bin/pi', '/usr/local/bin/pi', '/Users/me/.nvm/versions/node/v22.0.0/bin/pi'],
+    });
+    expect(piSearch('linux', { NVM_DIR: '/opt/nvm' }, '/home/me', ['v20.1.0']).locations.at(-1)).toBe('/opt/nvm/versions/node/v20.1.0/bin/pi');
+  });
+
+  it('npm 垫片还原出的 cli.js 交给 node 跑，参数跟在后面；其余直接跑', () => {
+    const js = 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules\\@earendil-works\\pi-coding-agent\\dist\\bundle\\cli.js';
+    expect(piCommand(js, ['--mode', 'rpc', '--no-session'])).toEqual({ file: 'node', args: [js, '--mode', 'rpc', '--no-session'] });
+    expect(piCommand('/usr/local/bin/pi', ['--version'])).toEqual({ file: '/usr/local/bin/pi', args: ['--version'] });
   });
 });

@@ -9,6 +9,7 @@ import type { Localized } from '@baocut/protocol';
 import { DriversPi } from '@baocut/protocol/messages/agent-drivers';
 import type { Logger } from '@baocut/harness';
 import { LocalizedError } from '../driver-text.ts';
+import { piCommand } from './pi-binary.ts';
 
 const STDERR_LIMIT = 8192;
 const GRACEFUL_MS = 2_000;
@@ -51,7 +52,9 @@ export class PiRpcProcess {
 
   constructor(launch: PiRpcLaunch, log: Logger) {
     this.#log = log;
-    this.#child = spawn(launch.command, launch.args, { cwd: launch.cwd, env: launch.env, stdio: ['pipe', 'pipe', 'pipe'] });
+    // Windows 上 npm 装的 pi 还原成了 `cli.js`（见 `inspectPi`），交给 node 起。
+    const exec = piCommand(launch.command, launch.args);
+    this.#child = spawn(exec.file, exec.args, { cwd: launch.cwd, env: launch.env, stdio: ['pipe', 'pipe', 'pipe'] });
     this.#child.stdout.setEncoding('utf8');
     this.#child.stderr.setEncoding('utf8');
     this.#child.stdout.on('data', (chunk: string) => this.#read(chunk));
