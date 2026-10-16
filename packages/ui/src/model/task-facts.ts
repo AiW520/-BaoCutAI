@@ -149,10 +149,10 @@ export function cancellationCost(cancellation: Pick<JobCancellation, 'remote' | 
   return TASK_VIEW_COPY.costPossible;
 }
 
-/** 补救去处：与 shell 的路由同形（`models` 的类与页、设置 › Agent 或某家 API 提供方、服务）。 */
+/** 补救去处：与 shell 的路由同形（`models` 的类与页、设置 › Agent、语义索引或某家 API 提供方、服务）。 */
 export type RemedyTarget =
   | { tab: 'models'; category: ModelCategory; page?: ModelPage }
-  | { tab: 'settings'; section: 'agent' }
+  | { tab: 'settings'; section: 'agent' | 'semantic' }
   | { tab: 'settings'; section: 'providers'; providerId: string }
   | { tab: 'services'; service: 'remote' }
   | { tab: 'tasks'; taskId: string };

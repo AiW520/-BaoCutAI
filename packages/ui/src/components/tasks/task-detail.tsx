@@ -10,6 +10,7 @@ import { exportSpeedParts } from '../../model/export-job.ts';
 import { setupTaskId } from '../../model/agent-setup-task.ts';
 import { agoLabel } from '../../model/format.ts';
 import { isLinkImport } from '../../model/link-import.ts';
+import { installRemedy } from '../../model/models-install.ts';
 import { jobRemedy, taskFacts } from '../../model/task-facts.ts';
 import type { TaskRow } from '../../model/task-list.ts';
 import { chargesOnRetry, reconcileOptions } from '../../model/task-reconcile.ts';
@@ -19,6 +20,7 @@ import { useRuntime } from '../../runtime/context.tsx';
 import { useAgentSetup } from '../../state/agent-setup-store.ts';
 import { useExportSpeed, useImageTimeLeft, useJobs } from '../../state/jobs-store.ts';
 import { useLegacyImport } from '../../state/legacy-import-store.ts';
+import { useModels } from '../../state/models-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useTasks } from '../../state/tasks-store.ts';
 import { AgentIcon } from '../agent-icon.tsx';
@@ -135,7 +137,9 @@ function TaskDetailBody({
   const now = useNow(1000, row.live);
   const speed = exportSpeedParts(useExportSpeed(job?.jobId));
   const imageLeft = useImageTimeLeft(job?.jobId, now);
-  const remedy = job ? jobRemedy(job) : null;
+  const bundles = useModels((s) => s.bundles);
+  // 失败的模型安装：按模型包现在的样子给「去补齐 / 去重新下载」（设计稿 page-tasks.jsx 的安装失败卡）。
+  const remedy = job ? (jobRemedy(job) ?? installRemedy(job, bundles)) : null;
   const failed = job ? job.state === 'failed' : task ? task.status === 'failed' : setupRun?.state === 'failed';
   // 视频工具的运行（转录、翻译字幕、翻译配音）：步骤、停住的说明与重试都在 ToolRunPanel 里，不再另写一段失败说明。
   const toolRun = job ? toolRunOf(job) : null;

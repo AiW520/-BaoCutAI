@@ -531,6 +531,10 @@ export const fr: CopyMessages = {
     remedyDefault: "Choisir les modèles par défaut",
     remedyNode: "Voir les nœuds distants",
     remedyAgent: "Ouvrir les réglages Agent",
+    remedyComplete: 'Compléter le téléchargement',
+    remedyRedownload: 'Télécharger à nouveau',
+    completeHint: 'Les parties déjà téléchargées sont conservées : compléter ne télécharge que ce qui manque. Si la connexion échoue encore, changez d’abord de source dans Réglages › Général › Sources de téléchargement.',
+    redownloadHint: 'Si la connexion échoue, changez de source dans Réglages › Général › Sources de téléchargement avant de télécharger à nouveau.',
   },
 
   taskPill: {
