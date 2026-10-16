@@ -34,7 +34,7 @@ export const fr: SettingDescriptionMessages = {
   'resources.capacity':
     "Avancé : capacité pour la planification { memoryMiB, gpuMemoryMiB, cpuThreads } ; null détecte une valeur automatiquement ; null global détecte tout (mémoire et CPU du système, mémoire GPU Apple silicon estimée depuis la mémoire unifiée)",
   'runtime.idleExitMinutes':
-    "Minutes d’inactivité avant arrêt automatique d’un Runtime démarré par CLI (1–1440) : aucune connexion, tâche ni service externe ouvert. Application de bureau et Runtimes démarrés manuellement non concernés",
+    "Minutes d’inactivité avant arrêt automatique d’un Runtime démarré par CLI (1–1440) : aucune connexion, tâche ni service externe ouvert. Un Runtime laissé en arrière-plan à la fermeture de l’application de bureau s’arrête aussi ce délai après la fin de ses tâches. Autres Runtimes non concernés",
   'updates.autoCheck': "Rechercher automatiquement les mises à jour",
   'updates.autoDownload': "Télécharger les nouvelles versions en arrière-plan (sans installation automatique)",
   'diagnostics.enabled': "Envoyer des statistiques anonymes et résumés de performance (sans média, texte ni chemin)",

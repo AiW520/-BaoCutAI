@@ -205,7 +205,12 @@ function broadcast(channel: string, payload: unknown): void {
   }
 }
 
-export function installAppUpdates(): AppUpdateService {
+export interface InstallAppUpdatesOptions {
+  /** 换包程序起好之后怎么退出应用（缺省 `app.quit()`）：主进程据此知道这次退出不能取消。 */
+  quit?: () => void;
+}
+
+export function installAppUpdates(options: InstallAppUpdatesOptions = {}): AppUpdateService {
   const override = process.env[APPCAST_ENV]?.trim() || null;
   const platform = process.platform;
   const macos = platform === 'darwin';
@@ -272,7 +277,7 @@ export function installAppUpdates(): AppUpdateService {
     },
     reveal: (file) => shell.showItemInFolder(file),
     openDownloadPage: () => void shell.openExternal(DOWNLOAD_PAGE),
-    quit: () => app.quit(),
+    quit: options.quit ?? (() => app.quit()),
     rolloutBucket: () => installationBucket(path.join(app.getPath('userData'), INSTALLATION_ID_FILE)),
     now: () => Date.now(),
     schedule: (run, ms) => {

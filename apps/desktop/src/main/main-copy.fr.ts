@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { MainMessages } from './main-copy.ts';
 
 export const fr: MainMessages = {
@@ -51,6 +52,11 @@ export const fr: MainMessages = {
   runtimeTimeout: "Le démarrage du Runtime a pris trop de temps",
   runtimeExited: (code: number | null) => `Le démarrage du Runtime a échoué (code de sortie ${code})`,
   runtimeQuitting: 'L’application se ferme',
+  quitBusyTitle: (count: number) => pluralForm('fr', count, { one: `${count} tâche est encore en cours`, other: `${count} tâches sont encore en cours` }),
+  quitBusyDetail: 'Si vous quittez maintenant, elles seront interrompues. Vous pouvez aussi les laisser continuer en arrière-plan ; BaoCut s’arrêtera de lui-même une fois qu’elles seront terminées.',
+  quitKeepRunning: 'Continuer en arrière-plan',
+  quitStop: 'Arrêter et quitter',
+  cancel: 'Annuler',
 
   webCreateNotWindow: "Seules les fenêtres de l’application peuvent créer des onglets web",
   webTooManyTabs: "Trop d’onglets web ouverts",

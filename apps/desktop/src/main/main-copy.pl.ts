@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { MainMessages } from './main-copy.ts';
 
 export const pl: MainMessages = {
@@ -50,6 +51,11 @@ export const pl: MainMessages = {
   runtimeTimeout: "Uruchamianie Runtime trwało zbyt długo",
   runtimeExited: (code: number | null) => `Runtime nie został uruchomiony (kod zakończenia ${code})`,
   runtimeQuitting: 'Aplikacja jest zamykana',
+  quitBusyTitle: (count: number) => pluralForm('pl', count, { one: `${count} zadanie wciąż trwa`, few: `${count} zadania wciąż trwają`, many: `${count} zadań wciąż trwa`, other: `${count} zadania wciąż trwają` }),
+  quitBusyDetail: 'Jeśli zakończysz teraz, zostaną przerwane. Możesz też pozwolić im działać dalej w tle — BaoCut sam się zatrzyma, gdy się zakończą.',
+  quitKeepRunning: 'Kontynuuj w tle',
+  quitStop: 'Zatrzymaj i zakończ',
+  cancel: 'Anuluj',
 
   webCreateNotWindow: "Tylko okna aplikacji mogą tworzyć karty internetowe",
   webTooManyTabs: "Otwarto zbyt wiele kart internetowych",

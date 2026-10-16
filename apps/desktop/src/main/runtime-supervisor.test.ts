@@ -40,17 +40,20 @@ function supervisorFor(home: RuntimeHome, legacyAutoDetect = false) {
   });
 }
 
-/** 报告就绪的 Runtime 子进程；收到停止消息就退出。 */
-function fakeRuntime() {
+/** 报告就绪的 Runtime 子进程；收到停止消息就退出，别的消息按 `replies` 回答（没有的不回）。 */
+function fakeRuntime(replies: Record<string, object> = {}) {
   const received: unknown[] = [];
   const child = Object.assign(new EventEmitter(), {
     stdout: new PassThrough(),
     exitCode: null as number | null,
     signalCode: null,
     connected: true,
-    send(message: unknown, callback: (error: Error | null) => void) {
+    send(message: { type: string }, callback: (error: Error | null) => void) {
       received.push(message);
       callback(null);
+      const reply = replies[message.type];
+      if (reply) setImmediate(() => child.emit('message', reply));
+      if (message.type !== STOP_MESSAGE.type) return true;
       setImmediate(() => {
         child.exitCode = 0;
         child.connected = false;
@@ -145,4 +148,38 @@ it('does not start a Runtime after quitting even when it used someone else’s R
   await supervisor.stop();
   await expect(supervisor.connection()).rejects.toThrow(M.runtimeQuitting);
   expect(mocks.spawn).not.toHaveBeenCalled();
+});
+
+it('asks its own Runtime about running work and leaves it running in the background on request', async () => {
+  const home = resolveRuntimeHome({ BAOCUT_HOME: path.join(os.tmpdir(), 'desktop-quit-home') });
+  const runtime = fakeRuntime({ status: { type: 'status', jobs: 1, tasks: 2 }, detach: { type: 'detached' } });
+  mocks.spawn.mockReturnValueOnce(runtime.child);
+  mocks.readDiscovery.mockResolvedValueOnce(null).mockResolvedValue(DISCOVERY);
+  const supervisor = supervisorFor(home);
+  await supervisor.connection();
+
+  await expect(supervisor.activeWork()).resolves.toEqual({ jobs: 1, tasks: 2 });
+  await supervisor.detach();
+  await supervisor.stop();
+  // 放手之后不再请它停，也不再拉起新的。
+  expect(runtime.received).toEqual([{ type: 'status' }, { type: 'detach' }]);
+  await expect(supervisor.connection()).rejects.toThrow(M.runtimeQuitting);
+  expect(mocks.spawn).toHaveBeenCalledTimes(1);
+});
+
+it('knows no running work for someone else’s Runtime or one that does not answer', async () => {
+  const home = resolveRuntimeHome({ BAOCUT_HOME: path.join(os.tmpdir(), 'desktop-quit-home') });
+  mocks.readDiscovery.mockResolvedValue(DISCOVERY);
+  const foreign = supervisorFor(home);
+  await foreign.connection();
+  await expect(foreign.activeWork()).resolves.toBeNull();
+
+  const runtime = fakeRuntime();
+  mocks.spawn.mockReturnValueOnce(runtime.child);
+  mocks.readDiscovery.mockReset().mockResolvedValueOnce(null).mockResolvedValue(DISCOVERY);
+  const silent = supervisorFor(home);
+  await silent.connection();
+  await expect(silent.activeWork(10)).resolves.toBeNull();
+  await silent.stop();
+  expect(runtime.received).toEqual([{ type: 'status' }, STOP_MESSAGE]);
 });

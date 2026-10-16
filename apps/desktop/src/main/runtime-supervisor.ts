@@ -46,6 +46,14 @@ export interface RuntimeSupervisorOptions {
 }
 
 const READY_TIMEOUT_MS = 20_000;
+/** 退出前问 Runtime 的期限：问不到（卡住、通道断了）就照常停，不让退出挂住。 */
+const ASK_TIMEOUT_MS = 2_000;
+
+/** 自己起的 Runtime 手上的活（架构设计 §2.2）：排队或运行中的 Job，与还没结束的 Agent 任务。 */
+export interface ActiveWork {
+  jobs: number;
+  tasks: number;
+}
 
 /**
  * 找到或启动 Runtime（架构设计 §2.2）。
@@ -146,6 +154,50 @@ export class RuntimeSupervisor {
         } catch {
           // 不是就绪消息，忽略。
         }
+      });
+    });
+  }
+
+  /**
+   * 退出前问自己起的 Runtime 手上的活（经 IPC 通道发 `{ type: 'status' }`）。连上的是别人的 Runtime（退出不停它）、它已经
+   * 退出或问不到时 null。
+   */
+  async activeWork(timeoutMs = ASK_TIMEOUT_MS): Promise<ActiveWork | null> {
+    const reply = await this.#ask({ type: 'status' }, 'status', timeoutMs);
+    if (typeof reply?.jobs !== 'number' || typeof reply.tasks !== 'number') return null;
+    return { jobs: reply.jobs, tasks: reply.tasks };
+  }
+
+  /**
+   * 退出时用户选了在后台继续：请自己起的 Runtime 开启空闲退出（`{ type: 'detach' }`，活做完自己停），然后放手：`stop` 不再
+   * 停它，也不再拉起 Runtime。等它确认；问不到也照样放手，它照旧留着，下一次启动经发现文件找回它。
+   */
+  async detach(timeoutMs = ASK_TIMEOUT_MS): Promise<void> {
+    this.#stopped = true;
+    await this.#ask({ type: 'detach' }, 'detached', timeoutMs);
+    this.#child = null;
+  }
+
+  /** 经 IPC 通道发一条消息，等类型为 `replyType` 的回复。没有通道、发不出去、子进程退出或超时都得到 null。 */
+  #ask(message: { type: string }, replyType: string, timeoutMs: number): Promise<Record<string, unknown> | null> {
+    const child = this.#child;
+    if (!child?.connected) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => finish(null), timeoutMs);
+      const finish = (reply: Record<string, unknown> | null) => {
+        clearTimeout(timer);
+        child.removeListener('message', onMessage);
+        child.removeListener('exit', onExit);
+        resolve(reply);
+      };
+      const onMessage = (reply: unknown) => {
+        if ((reply as { type?: unknown } | null)?.type === replyType) finish(reply as Record<string, unknown>);
+      };
+      const onExit = () => finish(null);
+      child.on('message', onMessage);
+      child.once('exit', onExit);
+      child.send(message, (error) => {
+        if (error) finish(null);
       });
     });
   }

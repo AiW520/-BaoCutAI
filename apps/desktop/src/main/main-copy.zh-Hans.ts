@@ -50,6 +50,11 @@ export const zhHans: MainMessages = {
   runtimeTimeout: 'Runtime 启动超时',
   runtimeExited: (code: number | null) => `Runtime 启动失败（退出码 ${code}）`,
   runtimeQuitting: '应用正在退出',
+  quitBusyTitle: (count: number) => `还有 ${count} 个任务正在进行`,
+  quitBusyDetail: '现在退出会中断这些任务。也可以让它们在后台继续运行，完成后 BaoCut 会自己停止。',
+  quitKeepRunning: '继续在后台运行',
+  quitStop: '停止并退出',
+  cancel: '取消',
 
   webCreateNotWindow: '只能由应用窗口创建网页标签',
   webTooManyTabs: '网页标签太多了',

@@ -15,7 +15,7 @@ import { tr } from './main-copy.tr.ts';
 import { vi } from './main-copy.vi.ts';
 
 /**
- * 桌面端主进程的文案：应用菜单、打开 / 存储对话框、Runtime 起不来与网页标签的错误。英文是键与类型的来源，译文在
+ * 桌面端主进程的文案：应用菜单、打开 / 存储对话框、退出确认、Runtime 起不来与网页标签的错误。英文是键与类型的来源，译文在
  * `main-copy.<语言>.ts`。菜单项沿用各平台的固定说法（Electron 缺省菜单的英文）；界面语言变了主进程重建菜单（index.ts）。
  */
 const en = {
@@ -71,6 +71,13 @@ const en = {
   runtimeTimeout: 'Runtime took too long to start',
   runtimeExited: (code: number | null) => `Runtime failed to start (exit code ${code})`,
   runtimeQuitting: 'The app is quitting',
+
+  // ---- 退出时自己起的 Runtime 还有活（quit-prompt.ts，架构设计 §2.2）----
+  quitBusyTitle: (count: number) => (count === 1 ? '1 task is still running' : `${count} tasks are still running`),
+  quitBusyDetail: 'Quitting now interrupts them. You can keep them running in the background instead; BaoCut stops by itself after they finish.',
+  quitKeepRunning: 'Keep Running in Background',
+  quitStop: 'Stop and Quit',
+  cancel: 'Cancel',
 
   // ---- 网页标签（web-tabs.ts）----
   webCreateNotWindow: 'Only app windows can create web tabs',

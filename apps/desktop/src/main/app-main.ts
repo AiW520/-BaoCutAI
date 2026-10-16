@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { BrowserWindow, Menu, app, dialog, ipcMain, nativeTheme, session, shell } from 'electron';
+import { BrowserWindow, Menu, app, dialog, ipcMain, nativeTheme, powerMonitor, session, shell } from 'electron';
 import { onLocaleChange, setLocale } from '@baocut/protocol';
 import { resolveRuntimeHome } from '@baocut/runtime-storage';
 import { appMenuTemplate } from './app-menu.ts';
@@ -10,6 +10,7 @@ import { M } from './main-copy.ts';
 import { messageFileProperties, messageFiles } from './message-files.ts';
 import { localeFromRenderer, startupLocale } from './main-locale.ts';
 import { packagedResources } from './packaged-resources.ts';
+import { quitChoice, quitPrompt, type QuitChoice } from './quit-prompt.ts';
 import { RuntimeSupervisor } from './runtime-supervisor.ts';
 import { installWebTabs } from './web-tabs.ts';
 import { openLocalFile } from './open-local-file.ts';
@@ -278,7 +279,17 @@ export function startDesktopApp(): void {
     // i18n-ignore: 诊断日志，只打到主进程的终端
     void connection().catch((error) => console.error('[baocut] Runtime 启动失败', error));
     // 应用自动更新（架构设计 §2.6）：检查、下载、校验都在 Main 里，Runtime 不参与。
-    updates = installAppUpdates();
+    updates = installAppUpdates({
+      // 换包程序已经起了、在等应用退出：这次退出不能取消，不问手上的活。
+      quit: () => {
+        quitWithoutAsking = true;
+        app.quit();
+      },
+    });
+    // 系统关机、重启或注销（macOS、Linux）：退出对话框会挡住系统，不问，照常停。Windows 上这时不发 `before-quit`，用不着。
+    powerMonitor.on('shutdown', () => {
+      quitWithoutAsking = true;
+    });
     // macOS 的 Dock 图标不认 BrowserWindow 的 icon，开发态单独设。
     if (devIcon && process.platform === 'darwin') app.dock?.setIcon(devIcon);
     createWindow();
@@ -291,19 +302,48 @@ export function startDesktopApp(): void {
     if (process.platform !== 'darwin') app.quit();
   });
 
-  let quitting = false;
+  /** `asking`：退出对话框开着；`stopping`：在停 Runtime，之后的退出（再按一次退出，或最后的 `app.quit`）直接放行。 */
+  let quitState: 'idle' | 'asking' | 'stopping' = 'idle';
+  /** 这次退出不问手上的活：换包程序已在等应用退出，或系统在关机。 */
+  let quitWithoutAsking = false;
   app.on('before-quit', (event) => {
-    if (quitting) return;
-    quitting = true;
+    if (quitState === 'stopping') return;
     event.preventDefault();
-    void supervisor.stop().finally(async () => {
+    if (quitState === 'asking') return;
+    quitState = 'asking';
+    void (async () => {
+      // 对话框出了错也要能退出，不卡在 asking。
+      const choice = quitWithoutAsking ? 'stop' : await confirmQuit().catch((): QuitChoice => 'stop');
+      if (choice === 'cancel') {
+        quitState = 'idle';
+        // Windows / Linux 上关掉最后一个窗口会退出：取消之后不能留下一个没有窗口的应用。
+        if (process.platform !== 'darwin' && BrowserWindow.getAllWindows().length === 0) createWindow();
+        return;
+      }
+      quitState = 'stopping';
+      if (choice === 'background') await supervisor.detach();
+      await supervisor.stop().catch(() => {});
       // 退出即安装（架构设计 §2.6）：Runtime 停下之后把已下载、已就位的更新交给换包程序，换完不重新打开。有时限、不抛；
-      // 「重启并更新」引起的退出已在安装中，这里什么都不做。之后停掉还在跑的下载与校验。
-      await updates?.installOnQuit();
+      // 「重启并更新」引起的退出已在安装中，这里什么都不做。留在后台继续的 Runtime 还在用旧包里的文件，更新留到下次退出再装。
+      // 之后停掉还在跑的下载与校验。
+      if (choice === 'stop') await updates?.installOnQuit();
       updates?.dispose();
       app.quit();
-    });
+    })();
   });
+
+  /**
+   * 自己起的 Runtime 手上还有活时问用户（架构设计 §2.2、产品设计 §7.8）：在后台继续、停止并退出，或取消。没有活、问不到或
+   * 连的是别人的 Runtime 时不问，照常停。
+   */
+  async function confirmQuit(): Promise<QuitChoice> {
+    const options = quitPrompt(await supervisor.activeWork());
+    if (!options) return 'stop';
+    const parent = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    if (parent?.isMinimized()) parent.restore();
+    const { response } = parent ? await dialog.showMessageBox(parent, options) : await dialog.showMessageBox(options);
+    return quitChoice(response);
+  }
 }
 
 function systemDownloadsDir(): string | null {

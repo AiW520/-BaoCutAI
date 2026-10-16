@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { MainMessages } from './main-copy.ts';
 
 export const ptBR: MainMessages = {
@@ -8,5 +9,10 @@ export const ptBR: MainMessages = {
   runtimeNoDiscovery: 'O Runtime iniciou, mas não gravou seu arquivo de descoberta', runtimeTimeout: 'O Runtime demorou demais para iniciar',
   runtimeExited: (code: number | null) => `O Runtime não iniciou (código de saída ${code})`,
   runtimeQuitting: 'O app está sendo encerrado',
+  quitBusyTitle: (count: number) => pluralForm('pt-BR', count, { one: `${count} tarefa ainda está em andamento`, other: `${count} tarefas ainda estão em andamento` }),
+  quitBusyDetail: 'Se você sair agora, elas serão interrompidas. Você também pode deixá-las continuar em segundo plano; o BaoCut para sozinho quando elas terminarem.',
+  quitKeepRunning: 'Continuar em segundo plano',
+  quitStop: 'Parar e sair',
+  cancel: 'Cancelar',
   webCreateNotWindow: 'Somente janelas do aplicativo podem criar abas web', webTooManyTabs: 'Há abas web demais abertas', webTabMissing: 'Esta aba web não existe mais', webClearNotWindow: 'Somente janelas do aplicativo podem limpar dados web', webOpenNotWindow: 'Somente janelas do aplicativo podem abrir links externos', webOpenScheme: 'Somente URLs http e https podem ser abertas',
 };

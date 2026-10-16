@@ -276,6 +276,15 @@ export interface RunningRuntime {
   /** 按需下载的字体（架构设计 §9.1）。 */
   fonts: FontService;
   log: Logger;
+  /**
+   * 手上的活（§2.2，桌面端退出前问）：排队或运行中的 Job（含历史版本迁移），与还没结束的 Agent 任务。停下 Runtime 会中断它们。
+   */
+  activeWork(): { jobs: number; tasks: number };
+  /**
+   * 桌面端退出时选了在后台继续（§2.2）：开启空闲退出，手上的活做完、没有桌面端与 CLI 连着满 `runtime.idleExitMinutes` 时调用
+   * `onIdle`（入口在那里停下 Runtime）。开着的对外服务与智能体连接不留住它：用户要的是把活做完，不是让服务一直开着。
+   */
+  detach(onIdle: () => void): void;
   close(): Promise<void>;
 }
 
@@ -999,26 +1008,29 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       startedAt: nowIso(),
       launchedBy: options.launchedBy ?? null,
     };
+    // 空闲退出：先删发现文件再停（§2.2）：停任务与服务要一会儿，这期间来找 Runtime 的 CLI 看不到它、等它放开实例锁后另起一个，
+    // 不会连上一个正在退出的。
+    const idleExit = (onIdle: () => void): IdleExitOptions => ({
+      minutes: () => settings.store.get('runtime.idleExitMinutes'),
+      onIdle: () =>
+        void removeDiscovery(home, instanceId)
+          .catch(() => {})
+          .finally(onIdle),
+    });
+    const activeJobs = () => models.jobs.list().filter((job) => !isTerminal(job.state)).length + Number(legacyUpgrade.active);
+    const activeWork = () => ({
+      jobs: activeJobs(),
+      tasks: harness.tasksSnapshot().tasks.filter((task) => task.status === 'running' || task.status === 'stopping').length,
+    });
     // 有没有人在用（§2.2）：`runtime.status` 报告它，CLI 拉起的按它空闲退出。
     const activity = new RuntimeActivity(
       {
         info,
-        activeJobs: () => models.jobs.list().filter((job) => !isTerminal(job.state)).length + Number(legacyUpgrade.active),
+        activeJobs,
         runningServices: () =>
           services.manager.list().flatMap((service) => (service.state === 'off' || service.state === 'error' ? [] : [service.serviceId])),
       },
-      options.idleExit
-        ? {
-            ...options.idleExit,
-            minutes: () => settings.store.get('runtime.idleExitMinutes'),
-            // 先删发现文件再停（§2.2）：停任务与服务要一会儿，这期间来找 Runtime 的 CLI 看不到它、等它放开实例锁后另起一个，
-            // 不会连上一个正在退出的。
-            onIdle: () =>
-              void removeDiscovery(home, instanceId)
-                .catch(() => {})
-                .finally(() => options.idleExit!.onIdle()),
-          }
-        : null,
+      options.idleExit ? { ...options.idleExit, ...idleExit(options.idleExit.onIdle) } : null,
     );
     const token = crypto.randomBytes(32).toString('base64url');
     const handlerDeps = {
@@ -1171,6 +1183,15 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       externalTools,
       fonts,
       log,
+      activeWork,
+      detach: (onIdle) =>
+        activity.enableIdleExit({
+          ...idleExit(onIdle),
+          busy: ({ desktop, cli }) => {
+            const work = activeWork();
+            return desktop + cli > 0 || work.jobs + work.tasks > 0;
+          },
+        }),
       close,
     };
   } catch (error) {

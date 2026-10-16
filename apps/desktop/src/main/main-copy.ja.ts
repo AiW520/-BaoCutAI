@@ -50,6 +50,11 @@ export const ja: MainMessages = {
   runtimeTimeout: 'Runtime の起動に時間がかかりすぎています',
   runtimeExited: (code: number | null) => `Runtime を起動できませんでした（終了コード ${code}）`,
   runtimeQuitting: 'アプリを終了しています',
+  quitBusyTitle: (count: number) => `実行中のタスクが ${count} 件あります`,
+  quitBusyDetail: '今終了すると、これらのタスクは中断されます。バックグラウンドで実行を続けることもできます。完了すると BaoCut は自動的に停止します。',
+  quitKeepRunning: 'バックグラウンドで実行を続ける',
+  quitStop: '停止して終了',
+  cancel: 'キャンセル',
 
   webCreateNotWindow: 'Web タブを作成できるのはアプリのウインドウだけです',
   webTooManyTabs: '開いている Web タブが多すぎます',

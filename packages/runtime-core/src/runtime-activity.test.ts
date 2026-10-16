@@ -96,6 +96,42 @@ describe('Runtime 的空闲退出', () => {
     expect(later.onIdle).toHaveBeenCalledTimes(1);
   });
 
+  it('桌面端退出时选了在后台继续：运行中开启空闲退出，只等手上的活做完', () => {
+    let now = 0;
+    let work = 1;
+    const onIdle = vi.fn();
+    // 开着的对外服务与智能体连接不再挡着退出，否则留在后台的 Runtime 永远停不下来。
+    const activity = new RuntimeActivity({ info, activeJobs: () => 0, runningServices: () => ['mcp'] }, null);
+    activity.start();
+    activity.connected(principal('desktop'));
+    activity.connected(principal('agent'));
+    const busy = ({ desktop, cli }: { desktop: number; cli: number }) => desktop + cli + work > 0;
+    activity.enableIdleExit({ minutes: () => 10, onIdle, checkMs: 1_000_000, now: () => now, busy });
+    expect(activity.status().idleExit).toEqual({ minutes: 10, idleSince: null });
+
+    activity.disconnected(principal('desktop'));
+    now += 60 * 60_000;
+    activity.check();
+    expect(onIdle).not.toHaveBeenCalled();
+    work = 0;
+    activity.check();
+    now += 9 * 60_000;
+    activity.check();
+    expect(onIdle).not.toHaveBeenCalled();
+    now += 60_000;
+    activity.check();
+    expect(onIdle).toHaveBeenCalledTimes(1);
+  });
+
+  it('已经带空闲退出的不被后来的开启改掉', () => {
+    const { activity, onIdle, advance } = setup({ jobs: 1 });
+    activity.enableIdleExit({ minutes: () => 10, onIdle: vi.fn(), busy: () => false });
+    advance(60 * 60_000);
+    activity.check();
+    expect(onIdle).not.toHaveBeenCalled();
+    activity.stop();
+  });
+
   it('不带空闲退出时只报告，不计时', () => {
     const activity = new RuntimeActivity({ info, activeJobs: () => 0, runningServices: () => [] }, null);
     activity.start();

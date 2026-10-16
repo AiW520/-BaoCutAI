@@ -33,7 +33,7 @@ export const ko: SettingDescriptionMessages = {
   'resources.capacity':
     '고급: 리소스 스케줄링에 쓰는 머신 용량 { memoryMiB, gpuMemoryMiB, cpuThreads }. 항목을 null로 두면 자동으로 감지하고, null이면 모두 감지합니다(메모리와 CPU는 시스템에서 가져오고, Apple 실리콘의 GPU 메모리는 통합 메모리로 추정)',
   'runtime.idleExitMinutes':
-    'CLI가 시작한 Runtime이 유휴 상태로 몇 분이 지나면 스스로 종료할지(1–1440): 연결도, 작업도, 열린 외부 서비스도 없는 상태. 데스크톱 앱과 직접 시작한 Runtime에는 영향이 없습니다',
+    'CLI가 시작한 Runtime이 유휴 상태로 몇 분이 지나면 스스로 종료할지(1–1440): 연결도, 작업도, 열린 외부 서비스도 없는 상태. 데스크톱 앱을 종료할 때 백그라운드에서 계속 실행하도록 한 Runtime도 작업이 끝나고 이 시간이 지나면 종료됩니다. 그 밖의 Runtime에는 영향이 없습니다',
   'updates.autoCheck': '앱 업데이트 자동 확인',
   'updates.autoDownload': '새 버전을 백그라운드에서 다운로드(자동으로 설치하지 않음)',
   'diagnostics.enabled': '익명 사용 통계와 성능 요약 보내기(미디어, 텍스트, 경로는 포함하지 않음)',

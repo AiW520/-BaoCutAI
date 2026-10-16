@@ -4,7 +4,8 @@ import type { TrustedPrincipal } from './gateway.ts';
 /**
  * Runtime 有没有人在用（架构设计 §2.2）：本机网关上已认证的连接、还没结束的任务、开着的对外服务，以及同一端口上的 HTTP 请求
  * （会话里的智能体经工具桥调用工具，不占 WebSocket 连接）。`runtime.status` 报告它；CLI 拉起的 Runtime（`--idle-exit`）
- * 空闲满 `runtime.idleExitMinutes` 时经 `onIdle` 自己退出。
+ * 空闲满 `runtime.idleExitMinutes` 时经 `onIdle` 自己退出。桌面端退出时选了在后台继续的 Runtime 运行中才开启空闲退出
+ * （`enableIdleExit`），并换一种「忙」的算法：只等手上的活做完。
  *
  * Web 服务与对外服务的连接走各自的端口，不在连接数里；它们开着就算不空闲。
  *
@@ -24,6 +25,10 @@ export interface IdleExitOptions {
   /** 空闲多少分钟后退出（设置 `runtime.idleExitMinutes`，每次检查时读）。 */
   minutes: () => number;
   onIdle: () => void;
+  /**
+   * 换一种「忙」的算法，参数是在用的连接数（只查过状态的 CLI 连接不算）。不给时连接、任务与开着的对外服务都算忙。
+   */
+  busy?: (connections: Readonly<RuntimeStatus['connections']>) => boolean;
   /** 检查的间隔（默认 15 秒）。测试用短的。 */
   checkMs?: number;
   now?: () => number;
@@ -38,8 +43,8 @@ type CountedKind = keyof RuntimeStatus['connections'];
 
 export class RuntimeActivity {
   readonly #sources: ActivitySources;
-  readonly #idle: IdleExitOptions | null;
-  readonly #now: () => number;
+  #idle: IdleExitOptions | null;
+  #now: () => number;
   readonly #connections: Record<CountedKind, number> = { desktop: 0, cli: 0, agent: 0 };
   /** 还没发过别的请求的 CLI 连接。 */
   readonly #passive = new Set<string>();
@@ -64,6 +69,14 @@ export class RuntimeActivity {
   stop(): void {
     if (this.#timer) clearInterval(this.#timer);
     this.#timer = null;
+  }
+
+  /** 运行中开启空闲退出并开始检查（桌面端退出时选了在后台继续，架构设计 §2.2）。已经开着的不变。 */
+  enableIdleExit(idle: IdleExitOptions): void {
+    if (this.#idle) return;
+    this.#idle = idle;
+    this.#now = idle.now ?? Date.now;
+    this.start();
   }
 
   connected(principal: TrustedPrincipal): void {
@@ -124,6 +137,8 @@ export class RuntimeActivity {
 
   #busy(): boolean {
     const { desktop, cli, agent } = this.#connections;
+    const busy = this.#idle?.busy;
+    if (busy) return busy({ desktop, cli: Math.max(0, cli - this.#passive.size), agent });
     return desktop + cli + agent - this.#passive.size > 0 || this.#sources.activeJobs() > 0 || this.#sources.runningServices().length > 0;
   }
 }

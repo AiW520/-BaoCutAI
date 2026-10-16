@@ -103,8 +103,16 @@ async function main(): Promise<void> {
   process.on('SIGHUP', () => stop('SIGHUP'));
   // 由父进程以 IPC 通道启动时（桌面端），父进程经通道发 `{ type: 'stop' }` 请 Runtime 停下：Windows 上 SIGTERM 等于直接
   // 结束进程，处理不到。通道断开（父进程退出或崩溃）不停：Runtime 照旧留着，下一次启动经发现文件找回它（架构设计 §2.2）。
+  // 桌面端退出前经 `{ type: 'status' }` 问手上的活；用户选了在后台继续时发 `{ type: 'detach' }`：开启空闲退出，活做完自己停。
   process.on('message', (message) => {
-    if ((message as { type?: unknown } | null)?.type === 'stop') stop('ipc');
+    const type = (message as { type?: unknown } | null)?.type;
+    if (type === 'stop') stop('ipc');
+    else if (type === 'status') process.send?.({ type: 'status', ...runtime.activeWork() });
+    else if (type === 'detach') {
+      runtime.detach(() => stop('idle'));
+      runtime.log.info('Desktop quit; running in the background until work finishes');
+      process.send?.({ type: 'detached' });
+    }
   });
   process.on('uncaughtException', (error) => {
     runtime.log.error('Uncaught exception', { error: error.stack ?? String(error) });

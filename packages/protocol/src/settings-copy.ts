@@ -49,7 +49,7 @@ const en = {
   'resources.capacity':
     'Advanced: machine capacity for resource scheduling { memoryMiB, gpuMemoryMiB, cpuThreads }; an item set to null is detected automatically; null detects everything (memory and CPU come from the system, GPU memory on Apple silicon is estimated from unified memory)',
   'runtime.idleExitMinutes':
-    'Minutes a Runtime started by the CLI stays idle before it exits on its own (1–1440): no connections, no tasks, no open external services. The desktop app and Runtimes started by hand are not affected',
+    'Minutes a Runtime started by the CLI stays idle before it exits on its own (1–1440): no connections, no tasks, no open external services. A Runtime kept running in the background when the desktop app quit also exits this long after its tasks finish. Other Runtimes are not affected',
   'updates.autoCheck': 'Check for app updates automatically',
   'updates.autoDownload': 'Download new versions in the background (without installing them automatically)',
   'diagnostics.enabled': 'Send anonymous usage statistics and performance summaries (no media, text, or paths)',
