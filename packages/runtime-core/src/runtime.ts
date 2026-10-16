@@ -128,6 +128,7 @@ import { SpeechSentenceTools } from './agent-tools/speech-sentence-tools.ts';
 import { MemoryCitationRegistry } from './ai-tools/citation-registry.ts';
 import { TemplateCatalog, resolveBuiltinTemplatesDir } from './templates/template-catalog.ts';
 import { StickerPacks, resolveStickerPacksDir } from './templates/sticker-packs.ts';
+import { templateLogoPreparer } from './templates/template-logos.ts';
 import { SkillCatalog, resolveBuiltinSkillsDir } from './skills/skill-catalog.ts';
 import { SkillInstaller } from './skills/skill-installer.ts';
 import { skillIndexBlock } from './skills/skill-brief.ts';
@@ -483,6 +484,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     });
     // 新视频采用用户库里默认启用的条目（§5.9）。
     videos.onCreated((videoId, principal) => library.adoptDefaults(videoId, principal));
+    // 模板台标用到的图片在写模板的同一笔事务里登记成素材（视频格式规范 §3.17）。
+    videos.prepareOperations(templateLogoPreparer({ videos, brand: library }));
     // 偏好设置在模型任务之前读入：模型目录（`models.dir`，§6.3）决定模型目录的根。
     const settings = await openSettings(home, log);
     let settingsStore: RuntimeSettings['store'] | null = settings.store;

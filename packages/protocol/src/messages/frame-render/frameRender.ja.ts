@@ -19,7 +19,7 @@ export const ja: FrameRenderMessages = {
   stickerAssetUnsupported: 'このステッカーの素材は描画できません（ステッカーの素材は画像、動画、Lottie のいずれかです）',
   placeholderAssetUnsupported: 'このプレースホルダーの素材は描画できません（画像か動画である必要があります）',
   templateMissing: 'このテンプレートレイヤーはシーケンスのテンプレートにありません',
-  templateLogoImage: 'テンプレートでファイルパス指定の画像ロゴは描画できません（ブランドキットのロゴかテキストロゴを使ってください）',
+  templateLogoFileMissing: 'テンプレートのロゴに使う画像ファイルがこの動画にありません（プロジェクトにファイルが残っているか確認してください）',
   templateLogoAssetMissing: 'テンプレートのロゴに使うブランドキットの画像がこの動画にありません（ロゴを選び直すとコピーされます）',
   layerUnsupported: 'このクリップは描画できません',
   captionDocumentMissing: (p) => `字幕ドキュメント ${p.document} はもうありません`,

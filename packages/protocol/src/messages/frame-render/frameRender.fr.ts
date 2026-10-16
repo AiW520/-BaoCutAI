@@ -19,7 +19,7 @@ export const fr: FrameRenderMessages = {
   stickerAssetUnsupported: 'Impossible de dessiner la ressource de cet autocollant (elle doit être une image, une vidéo ou un Lottie)',
   placeholderAssetUnsupported: 'Impossible de dessiner la ressource de cet espace réservé (elle doit être une image ou une vidéo)',
   templateMissing: 'Ce calque de modèle ne figure pas dans le modèle de la séquence',
-  templateLogoImage: 'Les logos image référencés par chemin de fichier ne peuvent pas être dessinés dans les modèles (utilisez un logo du kit de marque ou un logo texte)',
+  templateLogoFileMissing: 'Le fichier image utilisé comme logo du modèle n’est pas dans cette vidéo (vérifiez que le fichier est toujours dans le projet)',
   templateLogoAssetMissing: 'L’image du kit de marque utilisée comme logo du modèle n’est pas dans cette vidéo (choisissez à nouveau le logo pour la copier)',
   layerUnsupported: 'Impossible de dessiner ce clip',
   captionDocumentMissing: (p) => `Le document de sous-titres ${p.document} n’existe plus`,

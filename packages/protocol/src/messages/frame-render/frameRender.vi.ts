@@ -19,7 +19,7 @@ export const vi: FrameRenderMessages = {
   stickerAssetUnsupported: 'Không vẽ được tài nguyên của nhãn dán này (tài nguyên nhãn dán phải là ảnh, video hoặc Lottie)',
   placeholderAssetUnsupported: 'Không vẽ được tài nguyên trong ô giữ chỗ này (phải là ảnh hoặc video)',
   templateMissing: 'Lớp mẫu này không có trong mẫu của chuỗi',
-  templateLogoImage: 'Không vẽ được logo dạng ảnh tham chiếu theo đường dẫn tệp trong mẫu (hãy dùng logo trong Bộ thương hiệu hoặc logo dạng chữ)',
+  templateLogoFileMissing: 'Không có tệp ảnh dùng làm logo của mẫu trong video này (hãy kiểm tra tệp còn trong dự án không)',
   templateLogoAssetMissing: 'Ảnh trong Bộ thương hiệu dùng làm logo của mẫu không có trong video này (chọn lại logo để sao chép vào)',
   layerUnsupported: 'Không vẽ được clip này',
   captionDocumentMissing: (p) => `Tài liệu phụ đề ${p.document} không còn nữa`,

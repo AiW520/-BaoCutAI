@@ -17,6 +17,7 @@ import {
   normalizeColor,
   stickerMatches,
 } from './library-brand.ts';
+import { currentAsset } from './new-items.ts';
 
 const revision = (patch: Partial<AssetRevision>): AssetRevision => ({
   revision: 'r1',
@@ -84,7 +85,7 @@ describe('条目说明与放法', () => {
   });
 
   it('Lottie 一层：指向素材当前版本、循环、画面中央 18% 宽的正方', () => {
-    const layer = lottieLayer('挥手', asset('ast_1', 'other', '挥手', { mediaType: 'application/json' }), { width: 1920, height: 1080 });
+    const layer = lottieLayer('挥手', currentAsset(asset('ast_1', 'other', '挥手', { mediaType: 'application/json' })));
     expect(layer).toMatchObject({
       type: 'sticker',
       name: '挥手',

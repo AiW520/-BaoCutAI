@@ -19,7 +19,7 @@ export const ko: FrameRenderMessages = {
   stickerAssetUnsupported: '이 스티커의 에셋은 그릴 수 없습니다(스티커 에셋은 이미지, 동영상 또는 Lottie여야 합니다)',
   placeholderAssetUnsupported: '이 플레이스홀더의 에셋은 그릴 수 없습니다(이미지나 동영상이어야 합니다)',
   templateMissing: '이 템플릿 레이어가 시퀀스의 템플릿에 없습니다',
-  templateLogoImage: '템플릿에서 파일 경로로 참조한 이미지 로고는 그릴 수 없습니다(브랜드 키트 로고나 텍스트 로고를 사용하세요)',
+  templateLogoFileMissing: '템플릿 로고에 쓰는 이미지 파일이 이 동영상에 없습니다(프로젝트에 파일이 남아 있는지 확인하세요)',
   templateLogoAssetMissing: '템플릿 로고로 쓰는 브랜드 키트 이미지가 이 동영상에 없습니다(로고를 다시 선택하면 복사됩니다)',
   layerUnsupported: '이 클립은 그릴 수 없습니다',
   captionDocumentMissing: (p) => `자막 문서 ${p.document}이(가) 더 이상 없습니다`,

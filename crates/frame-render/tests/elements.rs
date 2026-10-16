@@ -917,18 +917,43 @@ fn template_layers_draw_from_the_sequence_template() {
     assert!(logo[1] > 150, "{logo:?}");
 }
 
-#[test]
-fn image_logos_in_templates_are_refused() {
-    let video = video(
+/// 按路径引用的台标（`src: { file: "logo.png" }`）登记成的图片素材（`provenance.source.templateLogo.file`）。
+fn file_logo_asset(id: &str, file: &str) -> (String, Value) {
+    let (id, mut value) = svg_asset(id, 10, 10);
+    value["revisions"]["rev_1"]["provenance"] = json!({ "origin": "template-logo", "source": { "templateLogo": { "file": file } } });
+    (id, value)
+}
+
+fn file_logo_video(assets: Vec<(String, Value)>) -> video_model::VideoSnapshot {
+    video(
         vec![],
-        vec![],
+        assets,
         json!({
             "durationPolicy": { "kind": "fixed", "frames": 90 },
             "template": { "id": "tpl", "name": "条", "layers": [
-                { "id": "logo", "box": { "x": 2, "y": 4, "w": 20, "h": 12 }, "kind": "logo", "src": { "file": "logo.png" }, "color": "#FFFFFF" }
+                { "id": "logo", "box": { "x": 0, "y": 0, "w": 50, "h": 50 }, "kind": "logo", "src": { "file": "brand/logo.png" }, "color": "#FFFFFF" }
             ] }
         }),
-    );
+    )
+}
+
+#[test]
+fn file_logos_draw_the_registered_image() {
+    // 别的路径登记的素材不算。
+    let video = file_logo_video(vec![
+        file_logo_asset("a_other", "other.png"),
+        file_logo_asset("a_logo", "brand/logo.png"),
+    ]);
+    let mut media = Media::default();
+    media.assets.insert("a_logo".into(), FLAT_SVG.as_bytes().to_vec());
+    let frame = render(&video, 0.5, &mut media);
+    near(px(&frame, 40, 10), RED, 8);
+    near(px(&frame, 40, 35), BLUE, 8);
+}
+
+#[test]
+fn file_logos_not_registered_are_refused() {
+    let video = file_logo_video(vec![file_logo_asset("a_other", "other.png")]);
     let error = try_render(
         &mut renderer(false, frame_render::Documents::default()),
         &video,
@@ -936,7 +961,7 @@ fn image_logos_in_templates_are_refused() {
         &mut Media::default(),
     )
     .unwrap_err();
-    assert_eq!(error.items[0].reason, "template-logo-image-not-supported");
+    assert_eq!(error.items[0].reason, "template-logo-file-missing");
 }
 
 /// 从品牌库拷进视频的图片素材（`provenance.source.library` 记着条目 `bm1`）。

@@ -19,7 +19,7 @@ export const it: FrameRenderMessages = {
   stickerAssetUnsupported: 'Impossibile disegnare la risorsa di questo sticker (le risorse degli sticker devono essere immagini, video o Lottie)',
   placeholderAssetUnsupported: 'Impossibile disegnare la risorsa in questo segnaposto (deve essere un’immagine o un video)',
   templateMissing: 'Questo livello del modello non è nel modello della sequenza',
-  templateLogoImage: 'I loghi immagine indicati con un percorso di file non possono essere disegnati nei modelli (usa un logo del kit del brand o un logo di testo)',
+  templateLogoFileMissing: 'Il file immagine usato come logo del modello non è in questo video (controlla che il file sia ancora nel progetto)',
   templateLogoAssetMissing: 'L’immagine del kit del brand usata come logo del modello non è in questo video (scegli di nuovo il logo per copiarla)',
   layerUnsupported: 'Impossibile disegnare questa clip',
   captionDocumentMissing: (p) => `Il documento dei sottotitoli ${p.document} non esiste più`,

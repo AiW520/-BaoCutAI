@@ -19,7 +19,7 @@ export const tr: FrameRenderMessages = {
   stickerAssetUnsupported: 'Bu çıkartmanın varlığı çizilemiyor (çıkartma varlıkları görsel, video veya Lottie olmalıdır)',
   placeholderAssetUnsupported: 'Bu yer tutucudaki varlık çizilemiyor (görsel veya video olmalıdır)',
   templateMissing: 'Bu şablon katmanı, dizinin şablonunda yok',
-  templateLogoImage: 'Dosya yoluyla belirtilen görsel logolar şablonlarda çizilemiyor (marka kitinden bir logo ya da metin logosu kullanın)',
+  templateLogoFileMissing: 'Şablon logosu olarak kullanılan görsel dosyası bu videoda yok (dosyanın hâlâ projede olup olmadığını kontrol edin)',
   templateLogoAssetMissing: 'Şablon logosu olarak kullanılan marka kiti görseli bu videoda yok (kopyalamak için logoyu yeniden seçin)',
   layerUnsupported: 'Bu klip çizilemiyor',
   captionDocumentMissing: (p) => `${p.document} altyazı belgesi artık yok`,

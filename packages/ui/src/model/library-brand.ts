@@ -1,5 +1,5 @@
 import { defineMessages, type AssetRecord, type BrandContent, type BrandKind, type BrandMediaKind, type DocumentRecord, type Id, type LibrarySource, type Sequence } from '@baocut/protocol';
-import { placeBox, type VisualLayer } from './new-items.ts';
+import { placeBox, type LayerAsset, type VisualLayer } from './new-items.ts';
 import { zhHans } from './library-brand.zh-Hans.ts';
 import { zhHant } from './library-brand.zh-Hant.ts';
 import { ja } from './library-brand.ja.ts';
@@ -272,14 +272,14 @@ export function brandPlacement(content: BrandContent): BrandPlacement {
 }
 
 /**
- * Lottie 贴纸的一层画面：素材贴纸指向素材的当前版本，循环播放；宽 18%，高按动画的宽高比，放在画面中央。
+ * Lottie 贴纸的一层画面：素材贴纸指向素材（已有的版本，或同一笔事务里拷进来的），循环播放；宽 18%，高按动画的宽高比，放在画面中央。
  */
-export function lottieLayer(name: string, asset: AssetRecord, _canvas: { width: number; height: number }): VisualLayer {
+export function lottieLayer(name: string, asset: LayerAsset): VisualLayer {
   return {
     type: 'sticker',
     name,
     place: placeBox({ x: 50, y: 50, w: 18 }),
-    assetRef: { id: asset.id, revision: asset.currentRevision },
+    ...asset,
     sticker: { source: 'asset', loop: 'loop' },
   };
 }

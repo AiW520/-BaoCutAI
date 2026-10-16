@@ -571,7 +571,7 @@ impl FrameRenderer {
             let Some(doc) = context.sequence.header.template.as_ref() else {
                 return Ok(None);
             };
-            // 图片台标：帧计划解析好的素材（品牌库拷进来的那一份，render-graph `brand_logo_asset`）。
+            // 图片台标：帧计划解析好的素材（品牌库拷进来或按路径登记的那一份，render-graph `template_logo_asset`）。
             let asset: Option<VersionRef> = parameters.get("asset").cloned().and_then(|v| serde_json::from_value(v).ok());
             let logo = match asset {
                 Some(asset) => match self.template_logo(context, layer, &asset, media)? {

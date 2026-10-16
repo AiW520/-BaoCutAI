@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  APPLIED_ASSET_REF,
   RpcError,
   STICKER_PACK_ORIGIN,
   packSticker,
@@ -52,7 +53,8 @@ export interface StickerPacksOptions {
 
 /**
  * 随包贴纸（`stickers.*`）：目录在 `@baocut/protocol` 的 `sticker-packs.ts`，字节在应用的 `stickers/`。只读：句柄只发给
- * 目录里的贴纸；拷进视频是一笔普通的编辑事务（`importAsset`，`managed`），之后与应用里的那份无关。
+ * 目录里的贴纸；拷进视频是一笔普通的编辑事务（`importAsset`，`managed`；调用方给的 `operations` 接在后面，一步撤销），
+ * 之后与应用里的那份无关。
  */
 export class StickerPacks {
   readonly #options: StickerPacksOptions;
@@ -94,16 +96,19 @@ export class StickerPacks {
             type: 'importAsset',
             path: path.join(root, file),
             name,
-            ref: 'asset',
+            ref: APPLIED_ASSET_REF,
             storage: 'managed',
             provenance: { origin: STICKER_PACK_ORIGIN, source: { stickerPack: { id: sticker.id } } },
           },
+          ...(p.operations ?? []),
         ],
-        label: RcStickers.addStickerLabel({ name }).text,
+        ...(p.label !== undefined
+          ? { label: p.label, ...(p.labelRef ? { labelRef: p.labelRef } : {}) }
+          : { label: RcStickers.addStickerLabel({ name }).text }),
       },
       principal,
     );
-    const assetId = result.receipt.refs?.asset;
+    const assetId = result.receipt.refs?.[APPLIED_ASSET_REF];
     if (!assetId) throw new RpcError('internal', RcStickers.stickerNotFound({ id: sticker.id }));
     return { ...result, assetId };
   }

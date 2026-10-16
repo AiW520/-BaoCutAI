@@ -836,6 +836,35 @@ export function brandLogoAsset(assets: Record<Id, AssetRecord>, entryId: string)
   return best ? { id: best.asset.id, revision: best.asset.currentRevision } : null;
 }
 
+/** 模板里按项目相对路径引用的台标（`src: { file }`）的路径，去重。 */
+export function templateFileLogos(template: TemplateLayers | null | undefined): string[] {
+  const files = new Set<string>();
+  for (const layer of template?.layers ?? []) {
+    if (layer.kind === 'logo' && layer.src && typeof layer.src === 'object' && 'file' in layer.src) files.add(layer.src.file);
+  }
+  return [...files];
+}
+
+/** 按路径引用的模板台标登记成素材时的来源（视频格式规范 §4.5）；`source.templateLogo.file` 记路径。 */
+export const TEMPLATE_LOGO_ORIGIN = 'template-logo';
+
+/**
+ * 按路径引用的模板台标在这部视频里的素材（视频格式规范 §3.17）：来源是 `template-logo`、`source.templateLogo.file`
+ * 是这个路径的图片素材，登记过几次的取素材 ID 最小的一份。与渲染内核的 `render_graph::file_logo_asset` 同一条规则。
+ * 没登记是 `null`。
+ */
+export function fileLogoAsset(assets: Record<Id, AssetRecord>, file: string): VersionRef | null {
+  let best: AssetRecord | null = null;
+  for (const asset of Object.values(assets)) {
+    if (asset.kind !== 'image') continue;
+    const provenance = asset.revisions[asset.currentRevision]?.provenance;
+    const source = provenance?.source as { templateLogo?: { file?: unknown } } | undefined;
+    if (provenance?.origin !== TEMPLATE_LOGO_ORIGIN || source?.templateLogo?.file !== file) continue;
+    if (!best || asset.id < best.id) best = asset;
+  }
+  return best ? { id: best.id, revision: best.currentRevision } : null;
+}
+
 export interface Sequence {
   id: Id;
   revision: Revision;

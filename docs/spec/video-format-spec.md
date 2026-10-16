@@ -1273,7 +1273,7 @@ type TemplateLayer = {
 
 - 颜色一律 `#RRGGBB` 或 `#RRGGBBAA`。`size` 与 `pad` 是画面高的百分比：章节条缺省 `size` 2.6、台标 3.0、文字 2.8；`pad` 缺省按字号推。文字的 `weight` 在 [100, 900]，缺省 700。章节条的 `fill` 缺省 `bar`，`divider` 缺省 true。台标的 `src` 缺省 `'text'`，`shape` 缺省 `badge`，`align` 缺省 `center`，`opacity` 读时夹到 [0.05, 1]、缺省 1；文字的 `align` 缺省 `left`。
 - 盒子：`x`、`y` ≥ 0，`w` ≥ 4，`h` ≥ 0.6，`x + w` ≤ 100，`y + h` ≤ 100，容差 0.051。
-- 台标的 `file` 是项目里的相对路径，`brandLogo` 是品牌库里的图片 id；用到时按素材登记（§4.1）。品牌库的台标在套用或选台标时把那张图片拷进视频（`library.applyToVideo` 的图片，`provenance` 记着 `{ library: 'brand', entryId }`），渲染按来源找：当前修订的来源是品牌库这一条的图片素材里取库版本最新的，同版本取 ID 小的；找不到时这一层画不出来（`template-logo-asset-missing`）。这样的素材算被模板用着，不当作没用的素材清掉。`file` 来源目前画不出来（`template-logo-image-not-supported`）。
+- 台标的 `file` 是项目里的相对路径（相对视频所在的来源目录：项目，或会话的工作目录），`brandLogo` 是品牌库里的图片 id；用到时按素材登记（§4.1）。Runtime 在写模板（`setTemplate`，任何行为者的提交）的同一笔事务里补上视频里还没有的台标图片，一步撤销：品牌库的图片拷进视频（`managed`，`provenance` 与 `library.applyToVideo` 的图片相同，记着 `{ library: 'brand', entryId }`）；项目里的文件按路径链接（`linked`，`provenance` 为 `{ origin: 'template-logo', source: { templateLogo: { file } } }`，§4.5）。库里已经没有的、解开链接后在来源目录之外的、不在了的与扩展名不是 png、jpg、jpeg、webp、gif、svg 的不登记，模板照写。渲染按来源找：品牌库的台标取当前修订的来源是品牌库这一条的图片素材里库版本最新的，同版本取 ID 小的，找不到时这一层画不出来（`template-logo-asset-missing`）；路径台标取当前修订的来源是 `template-logo`、`file` 相同的图片素材里 ID 小的，找不到时画不出来（`template-logo-file-missing`）。导入的字节与视频里已有的素材相同时引擎复用那个素材（`importAsset` 不新增记录）、不改它的来源，这时按来源认不出，同样画不出来。这样登记的素材算被模板用着，不当作没用的素材清掉。存进品牌库的模板不留路径：视频里登记了的那张图存成品牌库的图片（库里已有同样字节的就用那一条），台标改成 `{ brandLogo }`；没登记的照旧留着路径。
 - **时间**。章节条按序列上 `kind: 'chapter'` 的标记（§3.13）分段，当前段高亮；没有章节时整条是一段。进度线的进度是 clamp(t / 序列长度, 0, 1)。
 - **文字变量**。文字层里的 `{chapter}`、`{n}`、`{count}`、`{time}`、`{remain}`、`{total}`、`{percent}`、`{title}` 按当前时刻替换：当前章节名、序号、章节数、已播时间、剩余时间、总长、百分比、视频标题。认不出的变量原样显示。
 - **字幕避让**。`subsAvoid` 为 true 时，打开的、`y` ≥ 50 的整宽横条（章节条、进度线）把字幕抬起来：字幕的锚线（样式的 `y`，画面高的百分比）不低于 `y − 2`，几条横条取最高的一条。只挪位置，不改字号、宽度与底板；双语的两行一起挪，居中摆放的字幕不动。
@@ -1419,6 +1419,7 @@ interface Provenance {
 - 从链接下载的素材，`origin` 为 `link-import`（架构设计 §7.9），`source` 记：`url`（脱敏的链接）、`webpageUrl`、`platform`、`mediaId`、`title`、`uploader`、`uploadDate`、`durationSec`、`description`（页面简介，去掉首尾空白，最多 20000 个字符）、`chapters`（平台给的章节 `[{ start, end?, title }]`，源时间秒：丢掉起点不是有限非负数的与空标题，标题合并空白、最多 160 个字符，按起点排序、同起点只留第一条，最多 400 条；`end` 只在大于 `start` 时写；yt-dlp 给没标题的章节填的 `<Untitled Chapter N>` 照原样记下，读取时当作只有分界、没有标题，见架构设计 §7.9）、`tool`（`{ name, version, source }`）、`downloadedAt` 与流程的 `jobId`。平台没有给简介或章节时这两个字段省略，之前的版本导入的素材也没有它们。简介与章节是作者写的参考：读取视频的摘要列出它们，`chapters_adopt` 把章节吸附到转写后写成序列的章节（§3.13）；素材本身不因它们改变。
 - 从用户库拷进来的素材，`origin` 为 `library`，`source.library` 记下条目所在的库、条目 ID、版本、内容摘要、名字与种类（架构设计 §5.9）；之后库里的修改与删除不改变这个素材。
 - 从随应用分发的贴纸拷进来的素材（元素面板的贴纸与动态贴纸，命令与协议规范 §4.1 的 `stickers.applyToVideo`），`origin` 为 `sticker-pack`，`source.stickerPack.id` 记贴纸 ID（`<包>-<文件>`，如 `featured-01.svg`）；文件以 `managed` 拷进视频，之后应用升级换了这张贴纸也不改变这个素材。
+- 叠加模板按路径引用的台标（§3.17 的 `src: { file }`）登记成的素材，`origin` 为 `template-logo`，`source.templateLogo.file` 记模板里的那个相对路径；文件以 `linked` 留在项目里，渲染按这个来源找到它。
 - 用户上传的媒体只记录已知的出处；上传不代表拥有第三方素材的全部权利。
 - 临时 URL、blob URL、签名地址、浏览器对象和 GPU 句柄不得进入视频格式。
 - 生成的素材应在 `source` 里记下任务、供应方、模型、输入输出的摘要与费用；费用未知时写 `unknown`，不从估算伪造实付金额。这些字段的结构，以及派生关系、授权与许可状态，待生成与授权功能加入时确定（§9）。

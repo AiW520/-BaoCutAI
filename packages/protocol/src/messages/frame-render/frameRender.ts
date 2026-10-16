@@ -40,7 +40,7 @@ const en = {
   stickerAssetUnsupported: 'This sticker’s asset can’t be drawn (sticker assets must be images, videos, or Lottie)',
   placeholderAssetUnsupported: 'The asset in this placeholder can’t be drawn (it must be an image or video)',
   templateMissing: 'This template layer isn’t in the sequence’s template',
-  templateLogoImage: 'Image logos referenced by file path can’t be drawn in templates (use a brand kit logo or a text logo)',
+  templateLogoFileMissing: 'The image file used as the template logo isn’t in this video (check that the file is still in the project)',
   templateLogoAssetMissing: 'The brand kit image used as the template logo isn’t in this video (pick the logo again to copy it in)',
   layerUnsupported: 'This clip can’t be drawn',
   captionDocumentMissing: (p: P<'document'>) => `Subtitle document ${p.document} no longer exists`,

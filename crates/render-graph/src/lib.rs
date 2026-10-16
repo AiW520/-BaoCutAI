@@ -585,11 +585,8 @@ pub fn plan_frame_with_speech(
                 flip_y: false,
             };
             let mut parameters = serde_json::json!({ "layerId": layer.id });
-            if let timeline::template::LayerKind::Logo {
-                src: timeline::template::LogoSrc::BrandLogo { brand_logo },
-                ..
-            } = &layer.kind
-                && let Some(asset) = brand_logo_asset(video.assets, brand_logo)
+            if let timeline::template::LayerKind::Logo { src, .. } = &layer.kind
+                && let Some(asset) = template_logo_asset(video.assets, src)
             {
                 parameters["asset"] = serde_json::to_value(asset).unwrap_or(Value::Null);
             }
@@ -934,6 +931,45 @@ pub fn brand_logo_asset(assets: &BTreeMap<Id, AssetRecord>, entry_id: &str) -> O
             revision: asset.current_revision.clone(),
         })
 }
+
+/// 台标层画的图片在这部视频里的素材（格式规范 §3.17）：品牌库的图片按 [`brand_logo_asset`]，项目里的文件按
+/// [`file_logo_asset`]；文字台标是 `None`。素材的引用（`video-engine` 的 `asset_users`）按同一条规则认。
+pub fn template_logo_asset(assets: &BTreeMap<Id, AssetRecord>, src: &timeline::template::LogoSrc) -> Option<VersionRef> {
+    match src {
+        timeline::template::LogoSrc::Text(_) => None,
+        timeline::template::LogoSrc::BrandLogo { brand_logo } => brand_logo_asset(assets, brand_logo),
+        timeline::template::LogoSrc::File { file } => file_logo_asset(assets, file),
+    }
+}
+
+/// 台标层按项目相对路径引用的图片（`src: { file }`）在这部视频里的素材：来源是 `template-logo`、
+/// `provenance.source.templateLogo.file` 是这个路径的图片素材（Runtime 提交模板时登记，格式规范 §4.5）。
+/// 登记过几次的取素材 ID 最小的一份（`assets` 按 ID 排，取第一个）。没有登记的是 `None`，这一层画不出来。
+pub fn file_logo_asset(assets: &BTreeMap<Id, AssetRecord>, file: &str) -> Option<VersionRef> {
+    assets
+        .values()
+        .filter(|asset| asset.kind == AssetKind::Image)
+        .find(|asset| {
+            asset.revisions.get(&asset.current_revision).is_some_and(|revision| {
+                let provenance = &revision.provenance;
+                provenance.origin == TEMPLATE_LOGO_ORIGIN
+                    && provenance
+                        .source
+                        .as_ref()
+                        .and_then(|source| source.get("templateLogo"))
+                        .and_then(|logo| logo.get("file"))
+                        .and_then(Value::as_str)
+                        == Some(file)
+            })
+        })
+        .map(|asset| VersionRef {
+            id: asset.id.clone(),
+            revision: asset.current_revision.clone(),
+        })
+}
+
+/// 按路径引用的模板台标登记成素材时的来源（格式规范 §4.5）。
+pub const TEMPLATE_LOGO_ORIGIN: &str = "template-logo";
 
 /// 视频贴纸在实例里过了 `elapsed` 秒时取源的时刻与速度（`sticker.loop`，格式规范 §3.7）：`loop`（缺省）对素材时长
 /// 取模，`once` 播完停在末尾，`hold` 定格第一帧。不知道素材时长时按经过的时间取。

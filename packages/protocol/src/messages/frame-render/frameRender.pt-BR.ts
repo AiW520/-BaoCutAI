@@ -19,7 +19,7 @@ export const ptBR: FrameRenderMessages = {
   stickerAssetUnsupported: 'Não é possível desenhar o recurso desta figurinha (recursos de figurinha devem ser imagens, vídeos ou Lottie)',
   placeholderAssetUnsupported: 'Não é possível desenhar o recurso deste espaço reservado (deve ser uma imagem ou um vídeo)',
   templateMissing: 'Esta camada de modelo não está no modelo da sequência',
-  templateLogoImage: 'Logotipos de imagem referenciados por caminho de arquivo não podem ser desenhados em modelos (use um logotipo do kit de marca ou um logotipo de texto)',
+  templateLogoFileMissing: 'O arquivo de imagem usado como logotipo do modelo não está neste vídeo (verifique se o arquivo ainda está no projeto)',
   templateLogoAssetMissing: 'A imagem do kit de marca usada como logotipo do modelo não está neste vídeo (escolha o logotipo de novo para copiá-la)',
   layerUnsupported: 'Não é possível desenhar este clipe',
   captionDocumentMissing: (p) => `O documento de legendas ${p.document} não existe mais`,

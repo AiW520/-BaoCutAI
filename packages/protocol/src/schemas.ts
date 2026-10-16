@@ -89,6 +89,12 @@ const cropsDisjoint = (crops: { from: number; to: number }[]) =>
  * 引擎拒绝未知字段并按操作序号报错。
  */
 const editOperation = z.looseObject({ type: z.string().min(1).max(50) });
+/** 拷进视频的命令同一笔事务里接着做的修改与修改名（`library.applyToVideo`、`stickers.applyToVideo`）。 */
+const followUpEdits = {
+  operations: z.array(editOperation).min(1).max(499).optional(),
+  label: z.string().trim().min(1).max(200).optional(),
+  labelRef: messageRef.optional(),
+};
 const undoTarget = z.union([z.enum(['undo', 'redo']), z.object({ transaction: id }).strict()]);
 const bundleId = z.string().min(1).max(200);
 /** Provider：`local`、`node:<nodeId 或别名>`、`openai`、`google`、`custom:<slug>`；认不认识由 Runtime 判断。 */
@@ -1350,6 +1356,7 @@ export const methodParamSchemas = {
       name: z.string().trim().min(1).max(200).optional(),
       captionItemIds: z.array(id).min(1).max(1000).optional(),
       sequenceId: id.optional(),
+      ...followUpEdits,
     })
     .strict(),
   'library.getVideoSelection': z.object({ videoId: id }).strict(),
@@ -1389,6 +1396,7 @@ export const methodParamSchemas = {
       commandId: id,
       expectedRevision: revision.optional(),
       name: z.string().trim().min(1).max(200).optional(),
+      ...followUpEdits,
     })
     .strict(),
   'library.createVoiceClone': z

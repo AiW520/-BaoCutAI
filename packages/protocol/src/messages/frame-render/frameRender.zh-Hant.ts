@@ -19,7 +19,7 @@ export const zhHant: FrameRenderMessages = {
   stickerAssetUnsupported: '這種素材的貼紙畫不出來（貼紙素材須是圖片、影片或 Lottie）',
   placeholderAssetUnsupported: '佔位框裡的素材畫不出來（須是圖片或影片）',
   templateMissing: '在序列的範本裡找不到這個範本圖層',
-  templateLogoImage: '範本裡按路徑引用的圖片台標畫不出來（換成品牌庫的台標或文字台標）',
+  templateLogoFileMissing: '範本台標用的圖片檔案不在這部影片裡（看看專案裡還有沒有這個檔案）',
   templateLogoAssetMissing: '範本台標用的品牌庫圖片不在這部影片裡（重新選一次台標就會拷進來）',
   layerUnsupported: '這一層畫不出來',
   captionDocumentMissing: (p) => `字幕文件 ${p.document} 不在了`,

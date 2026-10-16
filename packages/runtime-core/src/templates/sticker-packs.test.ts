@@ -76,5 +76,37 @@ describe('随包贴纸', () => {
         provenance: { origin: 'sticker-pack', source: { stickerPack: { id: 'cta-like.svg' } } },
       },
     ]);
+    expect(applied[0]).toMatchObject({ label: expect.stringContaining('cta-like.svg') });
+  });
+
+  it('调用方的后续修改接在导入后面、同一笔事务（一步撤销），修改名用调用方的', async () => {
+    const applied: { operations: EditOperation[]; expectedRevision: string; label?: string; labelRef?: unknown }[] = [];
+    const videos = {
+      mirror: () => ({ video: { revision: '7' } }),
+      apply: async (p: (typeof applied)[number]) => {
+        applied.push(p);
+        return { receipt: { refs: { asset: 'a_1' } }, replayed: false };
+      },
+    } as unknown as VideoService;
+    const insert = {
+      type: 'insertItems',
+      sequenceId: 's1',
+      items: [{ type: 'sticker', assetImportRef: 'asset' }],
+    } as unknown as EditOperation;
+    await new StickerPacks({ dir, videos }).applyToVideo(
+      {
+        videoId: 'v1',
+        id: 'cta-like.svg',
+        commandId: 'c1',
+        expectedRevision: '6',
+        operations: [insert],
+        label: '添加 · 赞',
+        labelRef: { key: 'editLabel.addNamed', params: { name: '赞' } },
+      },
+      {} as TrustedPrincipal,
+    );
+    expect(applied[0]!.expectedRevision).toBe('6');
+    expect(applied[0]!.operations.map((op) => op.type)).toEqual(['importAsset', 'insertItems']);
+    expect(applied[0]).toMatchObject({ label: '添加 · 赞', labelRef: { key: 'editLabel.addNamed', params: { name: '赞' } } });
   });
 });
