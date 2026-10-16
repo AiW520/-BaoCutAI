@@ -201,7 +201,7 @@ export function ImagePanorama({
         }}
         onPointerMove={(e) => {
           if (!drag.current) return;
-          camera.current.yaw = drag.current.yaw - (e.clientX - drag.current.x) * 0.005;
+          camera.current.yaw = drag.current.yaw + (e.clientX - drag.current.x) * 0.005;
           camera.current.pitch = Math.max(-1.5, Math.min(1.5, drag.current.pitch + (e.clientY - drag.current.y) * 0.005));
           setTurned(true);
           render.current();
