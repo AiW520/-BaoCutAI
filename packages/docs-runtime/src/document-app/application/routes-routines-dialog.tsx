@@ -73,17 +73,13 @@ import {
   resolveApplicationRoutesKind,
   resolveApplicationRoutesRuns,
 } from "./routes-filmed-prose-page";
-import {
-  DatabaseDetail,
-  DuplicateNameInput,
-  RoutineDetail,
-  UseApplicationRootDisabledComponent,
-  UseApplicationRootTextComponent,
-  loadApplicationRootRows,
-  loadApplicationRootStatus,
-  resolveApplicationRootKind2,
-  updateApplicationRootValue,
-} from "./root-routine-detail";
+import { DatabaseDetail } from "./databases/detail";
+import { ProjectDuplicateDialog } from "./project-duplicate-dialog";
+import { RoutineDetail } from "./routines/detail";
+import { DisabledMenuItem } from "./disabled-menu-item";
+import { DetailMessage } from "./detail-message";
+import { loadRoutineList, loadDatabaseList, isDatabaseFeedUpdate } from "./project-data";
+import { toggleHistoryRail } from "./history-rail-toggle";
 
 function VersionPicker(
   {
@@ -677,7 +673,7 @@ function HeaderPath(
                 icon={`Database`}
               >{`Data sources`}</Menu.Item>
             )}
-            <UseApplicationRootDisabledComponent
+            <DisabledMenuItem
               data-testid={`more-comments-btn`}
               disabled={
                 matchesFileId || (fileId !== undefined && !proseSurface)
@@ -698,7 +694,7 @@ function HeaderPath(
                 PlatformSyncAndRoutingState4.getState().set(false);
                 SessionNavigationPanel.getState().close();
               }}
-            >{`Show all comments`}</UseApplicationRootDisabledComponent>
+            >{`Show all comments`}</DisabledMenuItem>
             {embed2 && (
               <Menu.Item
                 data-testid={`menu-history`}
@@ -706,7 +702,7 @@ function HeaderPath(
                 disabled={!fileId}
                 checked={checked3}
                 checkedRole={`radio`}
-                onClick={updateApplicationRootValue}
+                onClick={toggleHistoryRail}
               >{`Version history`}</Menu.Item>
             )}
             <Menu.Item
@@ -768,7 +764,7 @@ function HeaderPath(
         source={`workspace`}
         container={`project/${pid}`}
       />
-      <DuplicateNameInput
+      <ProjectDuplicateDialog
         open={open2}
         onOpenChange={onOpenChange2}
         pid={pid}
@@ -845,7 +841,7 @@ function RoutinesDialog(
           return;
         }
         enabled3 = true;
-        loadApplicationRootRows(pid)
+        loadRoutineList(pid)
           .then(
             (result2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
               if (enabled) {
@@ -914,7 +910,7 @@ function RoutinesDialog(
           return;
         }
         enabled3 = true;
-        loadApplicationRootStatus(pid)
+        loadDatabaseList(pid)
           .then(
             (result2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
               if (enabled) {
@@ -947,7 +943,7 @@ function RoutinesDialog(
           routinesDialog?: Dynamic,
           ..._extraArguments: unknown[]
         ): undefined => {
-          if (resolveApplicationRootKind2(routinesDialog)) {
+          if (isDatabaseFeedUpdate(routinesDialog)) {
             result();
           }
         },
@@ -1353,7 +1349,7 @@ function RoutinesDialog(
                 )}
               {routinesDialogState7?.kind === `routine` ? (
                 rows === undefined ? (
-                  <UseApplicationRootTextComponent
+                  <DetailMessage
                     text={
                       routinesDialogState === null
                         ? `loading…`
@@ -1363,7 +1359,7 @@ function RoutinesDialog(
                     }
                   />
                 ) : row === undefined ? (
-                  <UseApplicationRootTextComponent
+                  <DetailMessage
                     text={`That routine isn't available in this project`}
                   />
                 ) : (
@@ -1378,7 +1374,7 @@ function RoutinesDialog(
               ) : routinesDialogState7?.kind === `database` ? (
                 <DatabaseDetail pid={pid} dbId={routinesDialogState7.ref} key={routinesDialogState7.ref} />
               ) : (
-                <UseApplicationRootTextComponent
+                <DetailMessage
                   text={
                     kind === null
                       ? `Select a routine or data source`

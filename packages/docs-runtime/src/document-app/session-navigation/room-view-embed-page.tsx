@@ -322,15 +322,10 @@ import {
   HeaderPath,
   RoutinesDialog,
 } from "../application/routes-routines-dialog";
-import {
-  HistoryRailToggle,
-  RoomviewAuthorityFailed,
-  RoutinePage,
-  UseApplicationRootHasFilesComponent,
-  loadApplicationRootRows,
-  resolveApplicationRootKind,
-  updateApplicationRootValue,
-} from "../application/root-routine-detail";
+import { HistoryRailToggle, toggleHistoryRail } from "../application/history-rail-toggle";
+import { DocumentConnectionError, EmptyDocumentView } from "../application/document-states";
+import { RoutinePage } from "../application/routines/page";
+import { loadRoutineList, isRoutineFeedUpdate } from "../application/project-data";
 
 function RoomViewEmbedPage(..._extraArguments: unknown[]) {
   // BaoCut: per-render live bindings preserve callback timing and local state ownership.
@@ -368,7 +363,7 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
     get ResolvePlatformSyncAndRoutingValue18Component(): Dynamic { return ResolvePlatformSyncAndRoutingValue18Component; },
     get RoomDeniedScreen(): Dynamic { return RoomDeniedScreen; },
     get RoomSigninFace(): Dynamic { return RoomSigninFace; },
-    get RoomviewAuthorityFailed(): Dynamic { return RoomviewAuthorityFailed; },
+    get RoomviewAuthorityFailed(): Dynamic { return DocumentConnectionError; },
     get RoomviewEmbedCommentsSeat(): Dynamic { return RoomviewEmbedCommentsSeat; },
     get RoomviewFrameToolbar(): Dynamic { return RoomviewFrameToolbar; },
     get RouteErrorBoundary(): Dynamic { return RouteErrorBoundary; },
@@ -383,7 +378,7 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
     get Tooltip(): Dynamic { return Tooltip; },
     get UiDialogsRoot(): Dynamic { return UiDialogsRoot; },
     get UiOverlaysAndIconsCustomIcon(): Dynamic { return UiOverlaysAndIconsCustomIcon; },
-    get UseApplicationRootHasFilesComponent(): Dynamic { return UseApplicationRootHasFilesComponent; },
+    get UseApplicationRootHasFilesComponent(): Dynamic { return EmptyDocumentView; },
     get UseDocumentHostStateParticipantsComponent(): Dynamic { return UseDocumentHostStateParticipantsComponent; },
     get UseDocumentPreviewUseLayoutEffectComponent(): Dynamic { return UseDocumentPreviewUseLayoutEffectComponent; },
     get apiFetcher(): Dynamic { return apiFetcher; },
@@ -470,7 +465,7 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
     get latestSidebarVisibility(): Dynamic { return latestSidebarVisibility; },
     get liveDoor(): Dynamic { return liveDoor; },
     get liveSupportCode(): Dynamic { return liveSupportCode; },
-    get loadApplicationRootRows(): Dynamic { return loadApplicationRootRows; },
+    get loadApplicationRootRows(): Dynamic { return loadRoutineList; },
     get loadDataOperationControlDialect(): Dynamic { return loadDataOperationControlDialect; },
     get loadPlatformLiveDocumentAndHistoryLimit(): Dynamic { return loadPlatformLiveDocumentAndHistoryLimit; },
     get matchShell(): Dynamic { return matchShell; },
@@ -544,7 +539,7 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
     get readOnly2(): boolean { return readOnly2; },
     get reason(): string | undefined { return reason; },
     get recordRef(): Dynamic { return recordRef; },
-    get resolveApplicationRootKind(): Dynamic { return resolveApplicationRootKind; },
+    get resolveApplicationRootKind(): Dynamic { return isRoutineFeedUpdate; },
     get resolveCommentsActionsAndSelectionValue3(): Dynamic { return resolveCommentsActionsAndSelectionValue3; },
     get resolveDataContentAndReferencesKind(): Dynamic { return resolveDataContentAndReferencesKind; },
     get resolveDataContentAndReferencesKind2(): Dynamic { return resolveDataContentAndReferencesKind2; },
@@ -1601,7 +1596,7 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
       clearDocumentRuntimeRequest().request(),
     versionHistoryV2: versionHistoryV2,
     historyReady: resolveDocumentTabsValue6(roomViewEmbedPageResult28, posture),
-    versionHistory: updateApplicationRootValue,
+    versionHistory: toggleHistoryRail,
     viewerClass: viewerClass,
     exports:
       label === null || label === `booting`

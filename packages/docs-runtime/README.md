@@ -40,6 +40,8 @@ TSX 使用 React 标准自动 JSX runtime，不再包装 props 或扩展 JSX 的
 
 本包与 `apps/docs-editor/src` 单独进行 strict 类型检查，保留原工程的 `noUncheckedIndexedAccess: false` 和 `vite/client`。依赖适配优先使用 npm 原生类型，业务合同在所属领域声明。`interop/legacy-dynamic.ts` 中的 `Dynamic = any` 仍用于尚未恢复的合同，当前源码尚未达到个位数目标；不能通过改名、取消检查或引入新的无约束类型来隐藏这些用量。
 
+`assistant/refusal-shadow.ts` 保留惰性加载入口；`assistant/refusal/` 按规则数据、索引、分类策略、重试状态、观测与事件组装分工。规则表保持原顺序与首个匹配优先级，状态机使用可判别联合和每个观测器独立的计数集合。`document-app/application/routines/` 与 `databases/` 分离页面 hooks、数据加载和展示组件，复制对话框、文档状态与历史栏控件各自独立；实现直接引用负责该功能的模块。网络响应经 schema 校验后进入组件，React hooks 和事件沿用原生类型。
+
 `prose-editor/character-ledger.ts` 管理会话字符 ID、连续字符区间、Unicode／UTF-16 位置索引与事务后的账本映射；集合与缓存使用具体的键值类型，事务与节点沿用 ProseMirror 原生合同。相邻测试覆盖行内原子、代理对、插入映射、确认重命名、回滚与漂移。代码块视图实现原生 `NodeView` 接口，主要 DOM、选区和渲染缓存按实际用途定义，不提供任意属性的索引签名。
 
 `tools/type-debt.mjs` 通过 TypeScript AST 统计 `Dynamic` 类型引用、显式 `any` 与无类型模块声明，排除导入名称、注释、字符串和 JSX 文案；该统计不等于对推导类型安全性的完整证明。带 `--check-target` 时要求前两项各不超过 9、无类型模块声明为 0，未达标返回非零。

@@ -65,7 +65,7 @@ import { initializeSessionNavigationCreateFilePlacementWaiterStep1 } from "./ses
 import { initializeSessionNavigationLdocCommentsBtnStep1 } from "./session-navigation/ldoc-comments-btn";
 import { initializeApplicationRoutesFilmedProsePageStep1 } from "./application/routes-filmed-prose-page";
 import { initializeApplicationRoutesRoutinesDialogStep1 } from "./application/routes-routines-dialog";
-import { initializeApplicationRootRoutineDetailStep1 } from "./application/root-routine-detail";
+import { initializeApplicationDebugPages } from "./application/debug-pages";
 import { initializeApplicationRootStep1 } from "./application/root";
 
 initializeBootstrapStep1();
@@ -137,5 +137,5 @@ initializeSessionNavigationCreateFilePlacementWaiterStep1();
 initializeSessionNavigationLdocCommentsBtnStep1();
 initializeApplicationRoutesFilmedProsePageStep1();
 initializeApplicationRoutesRoutinesDialogStep1();
-initializeApplicationRootRoutineDetailStep1();
+initializeApplicationDebugPages();
 initializeApplicationRootStep1();

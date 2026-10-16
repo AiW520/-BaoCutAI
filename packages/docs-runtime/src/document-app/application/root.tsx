@@ -92,13 +92,7 @@ import {
 import {
   RoomViewEmbedPage,
 } from "../session-navigation/room-view-embed-page";
-import {
-  ApplicationRootDefault,
-  ApplicationRootDefault2,
-  ApplicationRootThen,
-  ApplicationRootThen2,
-  ApplicationRootThen3,
-} from "./root-routine-detail";
+import { TranscriptDebugPage, FilmedMountDebugPage, HeroDesignPage, FeedbackDesignPage, CodePaneDebugPage } from "./debug-pages";
 
 function UseApplicationRootModeComponent(
   { mode: mode, children: children }: Dynamic,
@@ -290,13 +284,13 @@ function ApplicationRoot(
   if (enabled && resetKey.startsWith(`/design/hero`))
     return (
       <React.Suspense fallback={null}>
-        <ApplicationRootThen />
+        <HeroDesignPage />
       </React.Suspense>
     );
   if (enabled && resetKey.startsWith(`/design/feedback`))
     return (
       <React.Suspense fallback={null}>
-        <ApplicationRootThen2 />
+        <FeedbackDesignPage />
       </React.Suspense>
     );
   if (resetKey === `/auth/done`)
@@ -367,17 +361,17 @@ function ApplicationRoot(
                         {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/sessions/:id?`} component={ApplicationRootDefault10} />}
                         {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/code-pane`}>
                             <React.Suspense fallback={null}>
-                              <ApplicationRootThen3 />
+                              <CodePaneDebugPage />
                             </React.Suspense>
                           </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
                         {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/transcript-fold`}>
                             <React.Suspense fallback={null}>
-                              <ApplicationRootDefault />
+                              <TranscriptDebugPage />
                             </React.Suspense>
                           </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
                         {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/filmed-mount`}>
                             <React.Suspense fallback={null}>
-                              <ApplicationRootDefault2 />
+                              <FilmedMountDebugPage />
                             </React.Suspense>
                           </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
                         {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/:id?`} component={Debug} />}

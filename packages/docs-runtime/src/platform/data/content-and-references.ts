@@ -934,26 +934,14 @@ function resolveDataContentAndReferencesKind2(
 }
 
 function resolveDataContentAndReferencesKind3(
-  dataContentAndReferencesKind3?: Dynamic,
-  address?: Dynamic,
-  slug?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let dataContentAndReferencesKind32: Dynamic =
-    dataContentAndReferencesKind3.find(
-      (rolldownNImport2?: Dynamic, ..._extraArguments: unknown[]) =>
-        rolldownNImport2.id === address,
-    );
-  return dataContentAndReferencesKind32 === undefined || slug === undefined
-    ? {
-        kind: `missing`,
-      }
-    : {
-        kind: `ready`,
-        slug: slug,
-        address: address,
-        displayName: dataContentAndReferencesKind32.name,
-      };
+  rows: readonly { id?: string; name: string }[],
+  address: string,
+  slug?: string,
+): { kind: "missing" } | { kind: "ready"; slug: string; address: string; displayName: string } {
+  const row = rows.find(candidate => candidate.id === address);
+  return row === undefined || slug === undefined
+    ? { kind: "missing" }
+    : { kind: "ready", slug, address, displayName: row.name };
 }
 
 function filterDataContentAndReferencesFilter(

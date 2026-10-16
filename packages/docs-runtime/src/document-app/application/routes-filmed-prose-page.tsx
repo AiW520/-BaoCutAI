@@ -1,3 +1,4 @@
+import type { RoutineRun } from "./project-contracts";
 /** BaoCut: application routes from index-CX4IZqzA.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
@@ -103,10 +104,8 @@ import {
   sessionNavigationLimit20002,
   sessionNavigationLimit4,
 } from "../session-navigation/ldoc-comments-btn";
-import {
-  RoomTabUnbound,
-  resolveApplicationRootKind,
-} from "./root-routine-detail";
+import { RoomTabUnbound } from "./document-states";
+import { isRoutineFeedUpdate } from "./project-data";
 
 var applicationRoutesLimit640: number;
 
@@ -1347,7 +1346,7 @@ function resolveApplicationRoutesKind(
   entry?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  return resolveApplicationRootKind(entry)
+  return isRoutineFeedUpdate(entry)
     ? true
     : entry.kind === `envelope`
       ? entry.envelope.diff.some(
@@ -1357,11 +1356,11 @@ function resolveApplicationRoutesKind(
       : false;
 }
 
-var ApplicationRoutesStaged: Dynamic;
+var ApplicationRoutesStaged: Readonly<Record<string, string>>;
 
-var applicationRoutesSet: Dynamic;
+var applicationRoutesSet: Set<string>;
 
-var resolveApplicationRoutesRuns: Dynamic;
+var resolveApplicationRoutesRuns: (row: { runs?: readonly RoutineRun[] | null }) => RoutineRun | undefined;
 
 function RoutineInflightChip(
   { run: run }: Dynamic,
@@ -1404,19 +1403,13 @@ export function initializeApplicationRoutesFilmedProsePageStep1(): void {
     error: `Failed`,
     cancelled: `Cancelled`,
   });
-  (applicationRoutesSet = new (Set as Dynamic)([
+  (applicationRoutesSet = new Set<string>([
     `staged`,
     `pending`,
     `running`,
   ]));
-  (resolveApplicationRoutesRuns = (
-    applicationRoutesRuns?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    applicationRoutesRuns.runs?.find(
-      (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        applicationRoutesSet.has(response.status),
-    ));
+  (resolveApplicationRoutesRuns = (row) =>
+    row.runs?.find(run => applicationRoutesSet.has(run.status)));
   (ApplicationRoutes_Styles = `hover:bg-alpha-1 data-[popup-open]:bg-alpha-1 text-primary flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[13px] font-semibold transition-colors outline-none`);
 }
 
