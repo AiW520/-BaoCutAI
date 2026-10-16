@@ -6,6 +6,8 @@ export const ru: AgentToolStepsMessages = {
     translate: "Перевести",
     cut: "Вырезать",
     importAssets: "Импортировать материалы",
+    searchOnlineAssets: "Искать материалы в сети",
+    downloadOnlineAsset: "Скачать материал из сети",
     editVideo: "Редактировать видео",
     listVideos: "Показать список видео",
     newVideo: "Новое видео",

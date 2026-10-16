@@ -32,6 +32,8 @@ export const ptBR: ServicesMcpMessages = {
     videos_history: "Ver histórico de edição",
     documents_put: "Gravar documento",
     assets_import: "Importar mídias",
+    assets_search: "Buscar mídias online",
+    assets_download: "Baixar mídias online",
     compositions_import: "Importar gráfico animado",
     compositions_preview: "Visualizar gráfico animado",
     assets_prune: "Limpar mídias não usadas",

@@ -5,6 +5,8 @@ export const vi: AgentToolStepsMessages = {
     translate: "Dịch",
     cut: "Cắt",
     importAssets: "Nhập tư liệu",
+    searchOnlineAssets: "Tìm tư liệu trực tuyến",
+    downloadOnlineAsset: "Tải tư liệu trực tuyến",
     editVideo: "Chỉnh sửa video",
     listVideos: "Liệt kê video",
     newVideo: "Video mới",

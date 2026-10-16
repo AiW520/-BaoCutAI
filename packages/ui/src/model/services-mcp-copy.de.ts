@@ -32,6 +32,8 @@ export const de: ServicesMcpMessages = {
     videos_history: "Bearbeitungsverlauf anzeigen",
     documents_put: "Dokument schreiben",
     assets_import: "Material importieren",
+    assets_search: "Online-Material suchen",
+    assets_download: "Online-Material herunterladen",
     compositions_import: "Motion-Grafik importieren",
     compositions_preview: "Vorschau der Motion-Grafik anzeigen",
     assets_prune: "Unbenutztes Material bereinigen",

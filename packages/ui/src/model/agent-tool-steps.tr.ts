@@ -5,6 +5,8 @@ export const tr: AgentToolStepsMessages = {
     translate: "Çevir",
     cut: "Kes",
     importAssets: "Medya içe aktar",
+    searchOnlineAssets: "Çevrimiçi medya ara",
+    downloadOnlineAsset: "Çevrimiçi medya indir",
     editVideo: "Videoyu düzenle",
     listVideos: "Videoları listele",
     newVideo: "Yeni video",

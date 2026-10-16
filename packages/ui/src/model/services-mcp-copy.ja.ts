@@ -31,6 +31,8 @@ export const ja: ServicesMcpMessages = {
     videos_history: '編集履歴を表示',
     documents_put: 'ドキュメントを書き込む',
     assets_import: '素材を読み込む',
+    assets_search: 'ネットの素材を検索',
+    assets_download: 'ネットの素材をダウンロード',
     compositions_import: 'モーショングラフィックを読み込む',
     compositions_preview: 'モーショングラフィックをプレビュー',
     assets_prune: '未使用の素材を整理',

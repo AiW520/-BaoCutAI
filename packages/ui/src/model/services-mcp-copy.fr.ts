@@ -32,6 +32,8 @@ export const fr: ServicesMcpMessages = {
     videos_history: "Voir l’historique des modifications",
     documents_put: "Écrire un document",
     assets_import: "Importer des médias",
+    assets_search: "Rechercher des médias en ligne",
+    assets_download: "Télécharger des médias en ligne",
     compositions_import: "Importer un graphisme animé",
     compositions_preview: "Prévisualiser un graphisme animé",
     assets_prune: "Nettoyer les médias inutilisés",

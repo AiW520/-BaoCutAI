@@ -5,6 +5,8 @@ export const zhHant: AgentToolStepsMessages = {
     translate: '翻譯',
     cut: '剪下',
     importAssets: '匯入素材',
+    searchOnlineAssets: '檢索網路素材',
+    downloadOnlineAsset: '下載網路素材',
     editVideo: '修改影片',
     listVideos: '列出影片',
     newVideo: '新增影片',

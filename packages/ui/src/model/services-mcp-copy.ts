@@ -46,6 +46,8 @@ const en = {
     videos_history: 'View edit history',
     documents_put: 'Write document',
     assets_import: 'Import assets',
+    assets_search: 'Search online assets',
+    assets_download: 'Download online assets',
     compositions_import: 'Import motion graphic',
     compositions_preview: 'Preview motion graphic',
     assets_prune: 'Clean up unused assets',

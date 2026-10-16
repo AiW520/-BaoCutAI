@@ -33,8 +33,10 @@ MCP 工具 `<名词>_<动词>` 就是 CLI 的 `baocut <名词> <动词>`，参�
 <!-- generated: tool-map -->
 | MCP 工具 | CLI 命令 | 效果 |
 | --- | --- | --- |
+| `assets_download` | `baocut assets download` | mutation |
 | `assets_import` | `baocut assets import` | mutation |
 | `assets_prune` | `baocut assets prune` | mutation |
+| `assets_search` | `baocut assets search` | query |
 | `captions_create` | `baocut captions create` | mutation |
 | `chapters_adopt` | `baocut chapters adopt` | mutation |
 | `compositions_import` | `baocut compositions import` | mutation |

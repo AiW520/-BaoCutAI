@@ -49,6 +49,8 @@ export const ru: RcAgentToolsMessages = {
   translationDocumentName: (p) => `${p.language} — перевод`,
   importAssetSummary: (p) => `Импортировать материал ${p.name}${p.place ? " и добавить на таймлайн" : ""}`,
   importAssetLabel: (p) => `Импортировать ${p.name}${p.place ? " и добавить на таймлайн" : ""}`,
+  openMediaDownloadSummary: (p) => `Скачать «${p.title}» с ${p.source} (${p.license}) и импортировать${p.place ? " на таймлайн" : ""}`,
+ 
   replaceCompositionSummary: (p) => `Импортировать ${p.name} и заменить им клип ${p.clip} на таймлайне`,
   replaceCompositionLabel: (p) => `Заменить анимированную графику на ${p.name}`,
   pruneAssetsSummary: (p) => `Удалить из видео неиспользуемые материалы (${p.count}): ${p.names}`,

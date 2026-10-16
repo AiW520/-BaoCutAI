@@ -31,6 +31,8 @@ export const ru: ServicesMcpMessages = {
     videos_history: "Показать историю правок",
     documents_put: "Записать документ",
     assets_import: "Импортировать материалы",
+    assets_search: "Искать материалы в сети",
+    assets_download: "Скачать материалы из сети",
     compositions_import: "Импортировать анимированную графику",
     compositions_preview: "Предпросмотр анимированной графики",
     assets_prune: "Удалить неиспользуемые материалы",

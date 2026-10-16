@@ -31,6 +31,8 @@ export const zhHans: ServicesMcpMessages = {
     videos_history: '查看修改历史',
     documents_put: '写入文档',
     assets_import: '导入素材',
+    assets_search: '检索网上素材',
+    assets_download: '下载网上素材',
     compositions_import: '导入代码画面',
     compositions_preview: '预览代码画面',
     assets_prune: '清理没用到的素材',
