@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { silentLogger, type AgentEvent } from '@baocut/harness';
 import { createFakeCodex, fakeModel, type FakeCodex } from '../testing/fake-codex.ts';
-import { describeCodexAccount } from './codex-binary.ts';
+import { codexCommand, codexSearch, describeCodexAccount } from './codex-binary.ts';
 import { CodexDriver } from './codex-driver.ts';
 import { CODEX_TOOL_TIMEOUT_SEC, codexPolicy } from './codex-session.ts';
 
@@ -220,5 +220,31 @@ describe('CodexDriver（假 codex）', () => {
       await until(() => events.find((e) => e.type === 'turn.completed'));
       await session.close();
     }
+  });
+});
+
+describe('Windows 上找 codex（纯函数；未在 Windows 上验证）', () => {
+  it('文件名与常见位置：codex.exe 与 npm 的 codex.cmd；macOS 看随桌面应用装的；Linux 只看 PATH', () => {
+    expect(codexSearch('win32', { APPDATA: 'C:\\Users\\me\\AppData\\Roaming' }, 'C:\\Users\\me')).toEqual({
+      names: ['codex.exe', 'codex.cmd'],
+      locations: ['C:\\Users\\me\\AppData\\Roaming\\npm\\codex.cmd'],
+    });
+    expect(codexSearch('win32', {}, 'C:\\Users\\用户 甲').locations).toEqual(['C:\\Users\\用户 甲\\AppData\\Roaming\\npm\\codex.cmd']);
+    expect(codexSearch('darwin', {}, '/Users/me')).toEqual({
+      names: ['codex'],
+      locations: [
+        '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
+        '/Users/me/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
+        '/Applications/Codex.app/Contents/Resources/codex',
+        '/Users/me/Applications/Codex.app/Contents/Resources/codex',
+      ],
+    });
+    expect(codexSearch('linux', {}, '/home/me')).toEqual({ names: ['codex'], locations: [] });
+  });
+
+  it('npm 垫片还原出的 codex.js 交给 node 跑，子命令跟在后面；其余直接跑', () => {
+    const js = 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules\\@openai\\codex\\bin\\codex.js';
+    expect(codexCommand(js, ['app-server'])).toEqual({ file: 'node', args: [js, 'app-server'] });
+    expect(codexCommand('/opt/homebrew/bin/codex', ['login', 'status'])).toEqual({ file: '/opt/homebrew/bin/codex', args: ['login', 'status'] });
   });
 });

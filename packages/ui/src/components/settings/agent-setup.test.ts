@@ -180,6 +180,13 @@ describe('问题条与排查', () => {
     expect(diagnosisVerdict(steps)).toEqual({ ok: false, text: '卡在「BaoCut 支持这个版本」：当前 0.100.0，最低要求 0.120.0' });
     const missing = diagnose(driver({ state: 'not-installed', version: null, executable: null }));
     expect(missing.map((s) => s.state)).toEqual(['fail', 'skip', 'skip', 'skip', 'skip']);
+    expect(missing[0]?.detail).toBe('在常见安装位置和 PATH 里都没找到 codex');
+    // 手动指定了位置：说的是那个位置（探测的说明），不说常见位置和 PATH。
+    const at = 'C:\\Users\\me\\AppData\\Roaming\\npm\\codex.cmd';
+    const missingAt = diagnose(
+      driver({ state: 'not-installed', version: null, executable: at, executableOverride: at, detail: `指定的 codex（${at}）不存在或不能执行。` }),
+    );
+    expect(missingAt[0]?.detail).toBe(`指定的 codex（${at}）不存在或不能执行。`);
     const ok = diagnose(driver());
     expect(ok.every((s) => s.state === 'ok')).toBe(true);
     expect(ok[4]?.detail).toBe('它没有报告模型列表，会话用 Agent 默认模型');

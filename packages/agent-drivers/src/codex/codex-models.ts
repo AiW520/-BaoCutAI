@@ -10,7 +10,7 @@ import { spawn } from 'node:child_process';
 import os from 'node:os';
 import { RUNTIME_VERSION, type DriverModel, type ModelTier } from '@baocut/protocol';
 import type { Logger } from '@baocut/harness';
-import type { CodexInstall } from './codex-binary.ts';
+import { codexCommand, type CodexInstall } from './codex-binary.ts';
 import type { CodexModel, InitializeParams, ModelListParams, ModelListResponse } from './codex-protocol.ts';
 import { CodexRpcConnection } from './rpc-connection.ts';
 
@@ -27,7 +27,8 @@ const MAX_PAGES = 5;
  * 没登录时能不能拿到：未验证（本机的 codex 是登录状态）；拿不到时调用方给空表。
  */
 export async function listCodexModels(install: CodexInstall, log: Logger, timeoutMs = 15_000): Promise<CodexCatalog> {
-  const child = spawn(install.command, ['app-server'], {
+  const exec = codexCommand(install.command, ['app-server']);
+  const child = spawn(exec.file, exec.args, {
     cwd: os.tmpdir(),
     env: install.env,
     stdio: ['pipe', 'pipe', 'pipe'],

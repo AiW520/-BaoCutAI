@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { DriversCodex } from '@baocut/protocol/messages/agent-drivers';
+import { nodeCliCommand, resolveCmdShim } from '../cli-command.ts';
 import type { DriverText } from '../driver-text.ts';
 import { agentEnv, findOnPath, isExecutable, pickNewest } from '../login-shell.ts';
 
@@ -23,6 +24,20 @@ const BUNDLED_CODEX = [
   '/Applications/Codex.app/Contents/Resources/codex',
 ];
 
+/**
+ * 在 PATH 上找的文件名，与另外再看的位置。
+ * - macOS：随桌面应用安装的 codex（`/Applications` 与 `~/Applications`）。
+ * - Windows：独立的 `codex.exe`；npm 全局安装的批处理垫片 `%APPDATA%\npm\codex.cmd`（见 `resolveCmdShim`）。未在 Windows 上验证。
+ */
+export function codexSearch(platform: NodeJS.Platform, env: NodeJS.ProcessEnv, home: string): { names: string[]; locations: string[] } {
+  if (platform === 'win32') {
+    const win = path.win32;
+    return { names: ['codex.exe', 'codex.cmd'], locations: [win.join(env.APPDATA || win.join(home, 'AppData', 'Roaming'), 'npm', 'codex.cmd')] };
+  }
+  const locations = platform === 'darwin' ? BUNDLED_CODEX.flatMap((file) => [file, path.join(home, file)]) : [];
+  return { names: ['codex'], locations };
+}
+
 let located: { at: number; result: Promise<CodexInstall | null> } | null = null;
 
 /**
@@ -39,31 +54,46 @@ export function locateCodex(): Promise<CodexInstall | null> {
 async function findCodex(): Promise<CodexInstall | null> {
   const env = await agentEnv();
   const override = process.env.BAOCUT_CODEX_PATH;
-  if (override) return { command: override, version: await readCodexVersion(override, env), env };
+  if (override) return inspectCodex(override, env);
 
+  const search = codexSearch(process.platform, env, os.homedir());
   const candidates: string[] = [];
-  const onPath = await findOnPath(process.platform === 'win32' ? 'codex.exe' : 'codex', env.PATH ?? '');
-  if (onPath) candidates.push(onPath);
-  if (process.platform === 'darwin') {
-    for (const file of BUNDLED_CODEX) {
-      for (const candidate of [file, path.join(os.homedir(), file)]) {
-        if (await isExecutable(candidate)) candidates.push(candidate);
-      }
-    }
+  for (const name of search.names) {
+    const onPath = await findOnPath(name, env.PATH ?? '');
+    if (onPath) candidates.push(onPath);
   }
-  return pickNewest(candidates, async (command) => ({ command, version: await readCodexVersion(command, env), env }));
+  for (const file of search.locations) {
+    if (await isExecutable(file)) candidates.push(file);
+  }
+  const resolved = process.platform === 'win32' ? await Promise.all(candidates.map(resolveCmdShim)) : candidates;
+  return pickNewest(resolved, (command) => inspectCodex(command, env));
 }
 
 /** 用户手动指定的 codex：只认这一个，不再到别处找。不存在或不可执行时为 null。 */
 export async function codexAt(command: string): Promise<CodexInstall | null> {
   if (!(await isExecutable(command))) return null;
-  const env = await agentEnv();
-  return { command, version: await readCodexVersion(command, env), env };
+  return inspectCodex(command, await agentEnv());
+}
+
+/**
+ * Windows 上 npm 装的 `codex.cmd` 不能不经 shell 直接起，换成垫片指向的 `codex.js`（之后交给 node，见 `codexCommand`）。
+ * 跑一次 `--version`，读不出版本时 version 为 null（探测报「出错」）。
+ */
+async function inspectCodex(command: string, env: NodeJS.ProcessEnv): Promise<CodexInstall> {
+  const file = process.platform === 'win32' ? await resolveCmdShim(command) : command;
+  return { command: file, version: await readCodexVersion(file, env), env };
+}
+
+/** 起 codex 子命令（`--version`、`login status`、`app-server`）的程序与参数：`.js` 入口交给 node。 */
+export function codexCommand(command: string, args: string[]): { file: string; args: string[] } {
+  const exec = nodeCliCommand(command);
+  return { file: exec.file, args: [...exec.args, ...args] };
 }
 
 async function readCodexVersion(command: string, env: NodeJS.ProcessEnv): Promise<string | null> {
   try {
-    const { stdout } = await run(command, ['--version'], { env, timeout: 10_000 });
+    const exec = codexCommand(command, ['--version']);
+    const { stdout } = await run(exec.file, exec.args, { env, timeout: 10_000 });
     return stdout.trim().replace(/^codex-cli\s+/, '') || null;
   } catch {
     return null;
@@ -92,7 +122,8 @@ export function describeCodexAccount(status: string): string {
 /** `codex login status` 退出码为 0 表示已登录。 */
 export async function readCodexLogin(install: CodexInstall): Promise<{ loggedIn: boolean; detail: string }> {
   try {
-    const { stdout, stderr } = await run(install.command, ['login', 'status'], {
+    const exec = codexCommand(install.command, ['login', 'status']);
+    const { stdout, stderr } = await run(exec.file, exec.args, {
       env: install.env,
       timeout: 10_000,
     });

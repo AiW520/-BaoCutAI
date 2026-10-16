@@ -153,10 +153,14 @@ export interface DiagnosisStep {
 
 /**
  * 五步按依赖顺序排（model-agent-setup.js:96-117）：前一步不过，后面的没法测，标 skip 而不是 fail——
- * 用户只需要看第一条红的。全部来自探测结果，不另外跑命令。
+ * 用户只需要看第一条红的。全部来自探测结果，不另外跑命令。手动指定了位置却没找到时，第一步说的是那个位置
+ * （探测的说明），不说「常见位置和 PATH 里都没有」——那时根本没去别处找。
  */
 export function diagnose(
-  driver: Pick<DriverInfo, 'state' | 'command' | 'executable' | 'version' | 'minVersion' | 'detail' | 'detailRef' | 'account' | 'accountRef' | 'models'>,
+  driver: Pick<
+    DriverInfo,
+    'state' | 'command' | 'executable' | 'executableOverride' | 'version' | 'minVersion' | 'detail' | 'detailRef' | 'account' | 'accountRef' | 'models'
+  >,
 ): DiagnosisStep[] {
   const found = driver.state !== 'not-installed';
   const runs = found && driver.state !== 'error';
@@ -169,8 +173,9 @@ export function diagnose(
     detail: !reachable ? M.stepSkipped : pass ? ok : fail,
   });
   const models = driver.models.length;
+  const findFail = (driver.executableOverride && localizeText(driver.detail, driver.detailRef)) || M.stepFindFail(driver.command);
   return [
-    step('find', M.stepFind, found, true, driver.executable ?? driver.command, M.stepFindFail(driver.command)),
+    step('find', M.stepFind, found, true, driver.executable ?? driver.command, findFail),
     step('run', M.stepRun, runs, found, M.stepRunOk(driver.command, driver.version ?? '—'), localizeText(driver.detail, driver.detailRef) ?? M.stepRunFail),
     step(
       'version',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILTIN_DRIVER_IDS, isBuiltinDriverId, isDriverId } from './domain.ts';
+import { BUILTIN_DRIVER_IDS, cleanExecutablePath, isBuiltinDriverId, isDriverId } from './domain.ts';
 import { methodParamSchemas } from './schemas.ts';
 import { WEB_DEFAULT_METHODS, WEB_READ_METHODS } from './web.ts';
 
@@ -40,5 +40,18 @@ describe('DriverId', () => {
       expect(WEB_DEFAULT_METHODS).not.toContain(method);
       expect(WEB_READ_METHODS).not.toContain(method);
     }
+  });
+});
+
+describe('cleanExecutablePath', () => {
+  it('去掉首尾空白与包住整条路径的一对引号；空的为 null', () => {
+    expect(cleanExecutablePath('"C:\\Users\\admin\\AppData\\Roaming\\npm\\codex.cmd"')).toBe('C:\\Users\\admin\\AppData\\Roaming\\npm\\codex.cmd');
+    expect(cleanExecutablePath("  '/Users/用户 甲/bin/codex'  ")).toBe('/Users/用户 甲/bin/codex');
+    expect(cleanExecutablePath(' /opt/codex ')).toBe('/opt/codex');
+    // 只去成对的、包住整条的：路径里面的引号、只有一边的引号原样留着。
+    expect(cleanExecutablePath('"/opt/codex')).toBe('"/opt/codex');
+    expect(cleanExecutablePath(`"/opt/codex'`)).toBe(`"/opt/codex'`);
+    expect(cleanExecutablePath('/opt/it"s/codex')).toBe('/opt/it"s/codex');
+    for (const empty of ['', '   ', '""', "' '", null, undefined]) expect(cleanExecutablePath(empty)).toBeNull();
   });
 });

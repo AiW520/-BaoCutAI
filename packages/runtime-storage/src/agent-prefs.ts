@@ -1,4 +1,5 @@
 import {
+  cleanExecutablePath,
   isDriverId,
   type AgentDriverPreferences,
   type AgentPolicy,
@@ -78,7 +79,8 @@ function normalize(data: Partial<AgentPreferences>): AgentPreferences {
       enabled: typeof raw.enabled === 'boolean' ? raw.enabled : true,
       defaultModel: typeof raw.defaultModel === 'string' && raw.defaultModel ? raw.defaultModel : null,
       defaultEffort: typeof raw.defaultEffort === 'string' && raw.defaultEffort ? raw.defaultEffort : null,
-      executable: typeof raw.executable === 'string' && raw.executable ? raw.executable : null,
+      // 早先存下的带引号路径在这里一并去掉，不必重新保存。
+      executable: typeof raw.executable === 'string' ? cleanExecutablePath(raw.executable) : null,
     };
   }
   const policy = { ...base.policy };

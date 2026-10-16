@@ -9,6 +9,7 @@ import {
   defaultSettingsSnapshot,
   customAgentProviderView,
   AGENT_DEFAULT_MODEL,
+  cleanExecutablePath,
   driverAvailability,
   recommendedDriverModel,
   isBuiltinDriverId,
@@ -2107,6 +2108,8 @@ export class Harness {
   }): Promise<AgentsView> {
     this.#drivers.get(params.driverId);
     const before = this.#prefs.driver(params.driverId);
+    // 粘贴来的路径常带一对引号（Windows「复制文件地址」）：去掉再存，只剩引号与空白时回到自动查找。
+    const executable = params.executable === undefined ? undefined : cleanExecutablePath(params.executable);
     const givenModel = params.defaultModel !== undefined;
     // `defaultModel: null` 是明确选了「Agent 默认模型」，存成 `AGENT_DEFAULT_MODEL`（存储里的 null 是没设过，用推荐模型）。
     const wantedModel = params.defaultModel === AGENT_DEFAULT_MODEL ? null : params.defaultModel;
@@ -2135,11 +2138,11 @@ export class Harness {
         if (givenModel) current.defaultModel = checked.model ?? AGENT_DEFAULT_MODEL;
         current.defaultEffort = checked.effort;
       }
-      if (params.executable !== undefined) current.executable = params.executable;
+      if (executable !== undefined) current.executable = executable;
       p.drivers[params.driverId] = current;
     });
     // 换了可执行文件：丢掉旧结果（它属于另一个可执行文件），只重新探测这一个。
-    if (params.executable !== undefined && this.#drivers.setExecutable(params.driverId, params.executable)) {
+    if (executable !== undefined && this.#drivers.setExecutable(params.driverId, executable)) {
       void this.#drivers.refresh([params.driverId], { force: true, reason: 'configure' });
       this.agentsChanged();
     }

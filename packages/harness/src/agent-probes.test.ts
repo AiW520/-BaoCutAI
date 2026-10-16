@@ -313,6 +313,20 @@ describe('Agent 探测缓存', () => {
     expect(claude.calls).toHaveLength(1);
   });
 
+  it('改可执行文件：粘贴来的路径带一对引号时去掉再存；只剩引号回到自动查找', async () => {
+    const codex = new FakeDriver('codex');
+    const h = await open([codex]);
+    await h.agents();
+
+    const view = await h.configureAgent({ driverId: 'codex', executable: ' "C:\\Users\\me\\AppData\\Roaming\\npm\\codex.cmd" ' });
+    expect(view.drivers[0]).toMatchObject({ executableOverride: 'C:\\Users\\me\\AppData\\Roaming\\npm\\codex.cmd' });
+    expect(codex.calls.at(-1)).toMatchObject({ executable: 'C:\\Users\\me\\AppData\\Roaming\\npm\\codex.cmd' });
+
+    const restored = await h.configureAgent({ driverId: 'codex', executable: '""' });
+    expect(restored.drivers[0]).toMatchObject({ executableOverride: null });
+    expect(codex.calls.at(-1)).toMatchObject({ executable: null });
+  });
+
   it('缓存里的可执行文件与偏好不一致时丢弃那一条', async () => {
     const prefs = new AgentPrefsStore(home.agentPrefsFile);
     await prefs.load();

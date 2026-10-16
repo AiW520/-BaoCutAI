@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { AgentSetupAction, AgentSetupRun, DriverInfo } from '@baocut/protocol';
+import { cleanExecutablePath, type AgentSetupAction, type AgentSetupRun, type DriverInfo } from '@baocut/protocol';
 import { ActionButton, AlertDialog, Button, ProgressCircle, TextField, ToastQueue } from '@react-spectrum/s2';
 import AlertTriangle from '@react-spectrum/s2/icons/AlertTriangle';
 import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
@@ -204,7 +204,8 @@ export function ExecutableField({ driver, label, isDisabled }: { driver: DriverI
   const [value, setValue] = useState(saved);
   const [busy, setBusy] = useState(false);
   useEffect(() => setValue(saved), [saved]);
-  const next = value.trim();
+  // 与 Runtime 同样去掉包住路径的引号：保存按钮、提示里的路径都按实际会存下的值。
+  const next = cleanExecutablePath(value) ?? '';
   const save = async (executable: string | null) => {
     setBusy(true);
     try {

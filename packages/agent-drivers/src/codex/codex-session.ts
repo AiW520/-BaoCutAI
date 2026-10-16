@@ -30,7 +30,7 @@ import {
   type McpServerSpec,
   type TurnSettings,
 } from '@baocut/harness';
-import type { CodexInstall } from './codex-binary.ts';
+import { codexCommand, type CodexInstall } from './codex-binary.ts';
 import type {
   ApprovalsReviewer,
   AskForApproval,
@@ -186,7 +186,8 @@ export class CodexSession implements AgentSession {
   }
 
   static async start(install: CodexInstall, options: CreateSessionOptions, log: Logger): Promise<CodexSession> {
-    const child = spawn(install.command, ['app-server'], {
+    const exec = codexCommand(install.command, ['app-server']);
+    const child = spawn(exec.file, exec.args, {
       cwd: options.cwd,
       env: install.env,
       stdio: ['pipe', 'pipe', 'pipe'],

@@ -729,6 +729,16 @@ export interface DriverInfo extends Omit<DriverProbe, 'state'> {
 }
 
 /**
+ * 手动指定的可执行文件路径：去掉首尾空白与包住整条路径的一对引号（Windows「复制文件地址」得到的就是 `"C:\…\codex.cmd"`），
+ * 引号原样传给文件系统会找不到文件。空串为 null（回到自动查找）。
+ */
+export function cleanExecutablePath(raw: string | null | undefined): string | null {
+  let value = (raw ?? '').trim();
+  if (value.length >= 2 && (value[0] === '"' || value[0] === "'") && value.at(-1) === value[0]) value = value.slice(1, -1).trim();
+  return value || null;
+}
+
+/**
  * 「Agent 默认模型」的存法：Agent 偏好的 `defaultModel` 与偏好设置 `agent.defaultModel` 存这个值，表示用户明确选了
  * 不传模型、按 Agent 自己的 CLI 配置走。null 是没设过，用推荐模型（`recommendedDriverModel`）。不会与原生模型 id 相撞
  * （Cursor 就有一个叫 `auto` 的模型）。只在存储里出现：`DriverInfo.defaultModel` 与会话的 `model` 用 null 表示它，

@@ -59,6 +59,20 @@ describe('Agent 偏好', () => {
     expect(prefs.rules).toEqual(['ok']);
   });
 
+  it('早先存下的带引号的可执行文件路径，读回来时去掉引号', async () => {
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(
+      file,
+      JSON.stringify({
+        schemaVersion: 1,
+        drivers: { codex: { executable: '"C:\\Users\\admin\\AppData\\Roaming\\npm\\codex.cmd"' }, claude: { executable: '""' } },
+      }),
+    );
+    const prefs = await new AgentPrefsStore(file).load();
+    expect(prefs.drivers.codex?.executable).toBe('C:\\Users\\admin\\AppData\\Roaming\\npm\\codex.cmd');
+    expect(prefs.drivers.claude?.executable).toBeNull();
+  });
+
   it('读不了的 JSON 不拦启动', async () => {
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, '{ not json');
