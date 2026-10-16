@@ -18,6 +18,7 @@ import { vi } from './rc-stickers.vi.ts';
 const en = {
   stickerNotFound: (p: { id: string }) => `Sticker not found: ${p.id}`,
   stickersMissing: "This copy of BaoCut doesn't include the bundled stickers",
+  onlineAssetUnavailable: (p: { reason: string }) => `Couldn't download this sticker. Check your internet connection and try again (${p.reason})`,
   addStickerLabel: (p: { name: string }) => `Add sticker "${p.name}"`,
 };
 

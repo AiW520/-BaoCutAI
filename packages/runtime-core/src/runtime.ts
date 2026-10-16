@@ -128,6 +128,7 @@ import { SpeechSentenceTools } from './agent-tools/speech-sentence-tools.ts';
 import { MemoryCitationRegistry } from './ai-tools/citation-registry.ts';
 import { TemplateCatalog, resolveBuiltinTemplatesDir } from './templates/template-catalog.ts';
 import { StickerPacks, resolveStickerPacksDir } from './templates/sticker-packs.ts';
+import { OnlineAssets, resolveOnlineAssetsUrl } from './online-assets.ts';
 import { templateLogoPreparer } from './templates/template-logos.ts';
 import { SkillCatalog, resolveBuiltinSkillsDir } from './skills/skill-catalog.ts';
 import { SkillInstaller } from './skills/skill-installer.ts';
@@ -438,6 +439,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     });
     stops.add('videos', () => videos.shutdown(), 'Stopping the video engine failed');
     const media = new MediaRegistry({ log, originAllowed: (origin) => originAllowed(origin, options.allowedOrigins) });
+    // 动态贴纸与 Codex Pets 的精灵图不随包：用到时从素材 CDN 取进本机缓存。
+    const onlineAssets = new OnlineAssets({ baseUrl: resolveOnlineAssetsUrl(), cacheDir: path.join(home.cacheDir, 'online-assets') });
     // 幻灯片、设计稿与设计系统编辑器（docs/design/slides §6、docs/design/canvas §6、§10.4）：网关与 Web 服务共用，同一个
     // 目录只有一个存储与一个目录监听。
     const slides = new SlidesService({
@@ -1092,6 +1095,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       }),
       stickers: new StickerPacks({
         dir: options.stickersDir === undefined ? resolveStickerPacksDir() : options.stickersDir,
+        online: onlineAssets,
         videos,
       }),
       skills,
