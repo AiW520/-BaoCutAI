@@ -13,7 +13,7 @@
  * 空行上 @Agent 的行内提问不经这里：它要先让模型判断请求（sample）再决定由 Claude 直接写还是转成批注，独立页面不提供
  * （packages/docs-runtime/README.md「不提供」）。
  * 版本历史也不经 docsHost：它要的是文档服务的接口，BaoCut 不提供，独立页面不显示（versionHistoryOffered()）。项目菜单的
- * 「Data sources」与「Duplicate」同理（dataSourcesOffered()、projectDuplicateOffered()）。
+ * 「Data sources」「Duplicate」与「Send feedback」同理（dataSourcesOffered()、projectDuplicateOffered()、feedbackOffered()）。
  */
 import { isFrameArtifact } from "../boot/environment";
 
@@ -114,6 +114,16 @@ export function dataSourcesOffered(): boolean {
  * 读取点：application/routes-routines-dialog.tsx 的 HeaderPath（带 BaoCut: 注释）。
  */
 export function projectDuplicateOffered(): boolean {
+  return isFrameArtifact();
+}
+
+/**
+ * 项目菜单的「Send feedback」只在 Frame 里照原样开，独立页面不开。原版打开一个带文本框的表单，点 Send 向
+ * `<前缀>/api/feedback` 发 POST，由原平台转到反馈频道；BaoCut 的文档服务（packages/docs/src/server.ts）没有这个接口，回 404，
+ * 对话框只显示错误，反馈也没有地方收。同一菜单的「Copy support code」只把页面自己生成的支持码复制到剪贴板，不调接口，照原样保留。
+ * 读取点：application/routes-routines-dialog.tsx 的 HeaderPath（带 BaoCut: 注释）。
+ */
+export function feedbackOffered(): boolean {
   return isFrameArtifact();
 }
 

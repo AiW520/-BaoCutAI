@@ -15,6 +15,7 @@ import {
   ackOf,
   apiFetcher,
   dataSourcesOffered,
+  feedbackOffered,
   liveSupportCode,
   loadPlatformApiAndAuthDescription,
   loadPlatformLiveDocumentAndHistoryContainer2,
@@ -674,11 +675,16 @@ export const HeaderPath: ReactComponentTypes.FC<Dynamic> = ({
                 onClick={openDebugReportDialog}
               >{`Debug report…`}</Menu.Item>
             ) : null}
-            <Menu.Separator />
-            <Menu.Item
-              onClick={(..._extraArguments: unknown[]): Dynamic => onOpenChange(true)}
-              icon={`Bullhorn`}
-            >{`Send feedback`}</Menu.Item>
+            {/* BaoCut: 独立页面没有收反馈的接口（docs-host.ts 的 feedbackOffered），不列「Send feedback」与它上面的分隔线。 */}
+            {feedbackOffered() && (
+              <>
+                <Menu.Separator />
+                <Menu.Item
+                  onClick={(..._extraArguments: unknown[]): Dynamic => onOpenChange(true)}
+                  icon={`Bullhorn`}
+                >{`Send feedback`}</Menu.Item>
+              </>
+            )}
           </Menu.Popup>
         </Menu.Root>
       )}

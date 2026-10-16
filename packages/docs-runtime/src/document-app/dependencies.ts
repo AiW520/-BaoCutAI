@@ -1206,6 +1206,7 @@ export { isFrameOfflineError, isFrameArtifact, recordFramePhase } from "../boot/
 export {
   commentSummonHost,
   dataSourcesOffered,
+  feedbackOffered,
   projectDuplicateOffered,
   standaloneDocsChat,
   standaloneDocsHost,
