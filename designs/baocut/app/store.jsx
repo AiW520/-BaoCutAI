@@ -740,10 +740,10 @@
       const task = typeof t === 'string' ? tasks.find((x) => x.id === t) : t;
       if (!task || (task.status !== 'running' && task.status !== 'queued')) return;
       /* Agent 的安装与升级（product-design §7.6）：直接停、不问（BC_EXPORT.stopsDirectly），输出末尾记一行 ^C；
-         引导队列里在跑的那家交给 onboarding.jsx 收掉定时器、起下一家 */
+         定时器交给 agent-setup-runs.jsx 收掉（起跑的那一方接着处理：引导起下一家）。停过的记 `shown`，设置里的命令框接着显示它 */
       if (window.BC_EXPORT.stopsDirectly(task.kind)) {
         setTasks((ts) => ts.map((x) => (x.id === task.id
-          ? {...x, status: 'error', outcome: 'canceled', phase: null, error: '已取消', canceled: true, endedAt: Date.now(),
+          ? {...x, status: 'error', outcome: 'canceled', phase: null, error: '已取消', canceled: true, shown: true, endedAt: Date.now(),
              log: (x.log || []).concat(['^C'])} : x)));
         if (window.BC_AGENT_RUNS) window.BC_AGENT_RUNS.stopped(task.id);
         if (opts && opts.after) opts.after();

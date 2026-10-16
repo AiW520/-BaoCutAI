@@ -131,43 +131,28 @@
   }
 
   /* Agent 的安装队列（同实现 OnboardingHost，product-design §7.6）：不在引导组件里跑（引导关掉也得接着装），在模块里排队，
-     一家跑完（装好、没装成或被停止）才起下一家。轮到哪家才落一条后台任务（同实现 agent-setup-task.ts 的那一行）：
-     「安装 Agent · 名字」，在哪写实际运行的命令；没有百分比，在跑时写「正在运行」、任务页能直接停止（store.cancelTask 不问，
-     停了交给 `stopped` 起下一家）；输出一拍一行记在任务的 `log` 里，由 BC_AGENT_SETUP.demoRun 编（同 设置 › Agent 提供方 的就地运行），
-     正式版是 method.cmd 子进程的输出。装好写进探测补丁（找到了、还要登录一次）。
-     `jobs`：[{id, name, h, method, tid, failed}]，tid 是开始运行后那条任务；`live`：在跑那一家的 {tid, timer}。 */
-  const RUN_TICK = 380;   // 一拍出一行输出（同 settings-agent-provider.jsx useCmdRun）
+     一家跑完（装好、没装成或被停止）才起下一家。每家交给 agent-setup-runs.jsx 起跑（与 设置 › Agent 提供方 的 ▶ 同一个）：
+     轮到哪家才落一条后台任务（「安装 Agent · 名字」，没有百分比，任务页能直接停止，详情里是命令输出）。那一家已经在别处跑着时起不了，
+     记成没装成（同实现：请求被拒是 `failed`）。装好写进探测补丁（找到了、还要登录一次）。
+     `jobs`：[{id, name, h, method, tid, failed}]，tid 是开始运行后那条任务；`live`：在跑那一家的 tid。 */
   const runs = {jobs: [], live: null, app: null};
-  const runFailed = (code) => `没有成功（退出码 ${code}）。上面的输出里写了原因；如果需要输入密码，请在终端里运行。`;
 
   function startNextAgent() {
     const app = runs.app;
     const job = !runs.live && app ? runs.jobs.find((j) => !j.tid && !j.failed) : null;
     if (!job) return;
     const {h, method} = job;
-    const out = AS.demoRun(method, h, false, false);
-    const tid = app.addTask({kind: 'agent-install', title: `安装 Agent · ${h.name}`, sub: `${method.cmd} · 本机`,
-      phase: '正在运行', pct: null, cancellable: true, log: ['$ ' + method.cmd]});
-    job.tid = tid;
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < out.lines.length) {
-        const line = out.lines[i++];
-        app.patchTask(tid, (t) => ({log: AS.appendLog(t.log, [line])}));
-        return;
-      }
-      clearInterval(timer);
+    const tid = window.BC_AGENT_RUNS.start(app, h, method, 'install', {onEnd: (result) => {
       runs.live = null;
-      if (out.code === 0) {
-        app.patchTask(tid, {status: 'done', outcome: 'done', phase: null});
+      if (result === 'done') {
         app.patchHarness(h.id, {found: true, loggedIn: false});
         app.toast(`已装好 ${h.name} · 还需要在终端里运行 ${AS.loginCmd(h)} 登录一次`, 'positive');
-      } else {
-        app.patchTask(tid, {status: 'error', outcome: 'error', phase: null, error: runFailed(out.code)});
       }
       startNextAgent();
-    }, RUN_TICK);
-    runs.live = {tid, timer};
+    }});
+    if (!tid) { job.failed = true; startNextAgent(); return; }
+    job.tid = tid;
+    runs.live = tid;
   }
 
   /** 勾上的几家排进队（没装成的再勾上是重新排队：去掉上一次的那一条）；前面没有在跑的就立刻起第一家 */
@@ -175,14 +160,6 @@
     runs.app = app;
     runs.jobs = runs.jobs.filter((j) => !rows.some((r) => r.h.id === j.id))
       .concat(rows.map((r) => ({id: r.h.id, name: r.h.name, h: r.h, method: r.method, tid: null, failed: false})));
-    startNextAgent();
-  }
-
-  /** 任务页停掉了一条 Agent 安装（记录已由 store.cancelTask 改成已取消）：是队列里在跑的那家就收掉定时器，起下一家 */
-  function agentRunStopped(tid) {
-    if (!runs.live || runs.live.tid !== tid) return;
-    clearInterval(runs.live.timer);
-    runs.live = null;
     startNextAgent();
   }
 
@@ -398,5 +375,5 @@
     );
   }
 
-  Object.assign(window, {OnboardingDialog, OnboardingTweaks, BC_AGENT_RUNS: {stopped: agentRunStopped}});
+  Object.assign(window, {OnboardingDialog, OnboardingTweaks});
 })();

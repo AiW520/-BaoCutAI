@@ -1118,19 +1118,21 @@
     /* Agent 的安装与升级（product-design §7.6 首次启动引导末条；实现 agent-setup-task.ts）：从引导或 设置 › Agent 提供方
        在应用内运行的安装 / 升级命令，每次一行，「升级 Agent · 名字」，在哪写实际运行的命令。没有百分比，在跑时只转圈、
        「停止」直接停（不问）；详情里是命令的输出（`log`），失败那句同设置页的命令框。
+       `agent` / `cmd` 连到 设置 › Agent 提供方 那一家的命令框（BC_AGENT_SETUP.setupRun）：在跑的 su1 在 Claude Code 的升级命令下面
+       也看得到、也能停（同实现：Runtime 里在跑的那次两边都显示）；跑完的 su2、su3 这次没见过在跑，不进命令框。
        排在 j1 之后、ag1 之前：侧栏迷你条（第一条 running）与胶囊头（索引最大的 running）都不变。 */
-    {id: 'su1', kind: 'agent-upgrade', project: null, title: '升级 Agent · Claude Code',
+    {id: 'su1', kind: 'agent-upgrade', project: null, title: '升级 Agent · Claude Code', agent: 'claude', cmd: 'brew upgrade --cask claude-code',
      sub: 'brew upgrade --cask claude-code · 本机', status: 'running', pct: null, phase: '正在运行', source: 'app',
      started: '1 分钟前', cancellable: true,
      log: ['$ brew upgrade --cask claude-code', '==> Upgrading 1 outdated package:', 'claude-code 2.1.296 -> 2.2.0',
        '==> Fetching downloads for: claude-code', '==> Downloading https://ghcr.io/v2/homebrew/cask/claude-code/manifests/2.2.0']},
-    {id: 'su2', kind: 'agent-install', project: null, title: '安装 Agent · Codex CLI',
-     sub: 'npm install -g @openai/codex · 本机', status: 'error', outcome: 'error', pct: null, phase: null, source: 'app',
+    {id: 'su2', kind: 'agent-install', project: null, title: '安装 Agent · Codex CLI', agent: 'codex', cmd: 'npm install -g @openai/codex',
+     sub: 'npm install -g @openai/codex · 本机', status: 'error', outcome: 'error', code: 243, pct: null, phase: null, source: 'app',
      started: '35 分钟前',
      error: '没有成功（退出码 243）。上面的输出里写了原因；如果需要输入密码，请在终端里运行。',
      log: ['$ npm install -g @openai/codex', 'npm http fetch GET 200 https://registry.npmjs.org/@openai/codex 312ms',
        'npm error code EACCES', 'npm error syscall mkdir', 'npm error path /usr/local/lib/node_modules/@openai/codex', 'npm error errno -13']},
-    {id: 'su3', kind: 'agent-install', project: null, title: '安装 Agent · Claude Code',
+    {id: 'su3', kind: 'agent-install', project: null, title: '安装 Agent · Claude Code', agent: 'claude', cmd: 'brew install --cask claude-code',
      sub: 'brew install --cask claude-code · 本机', status: 'done', outcome: 'done', pct: 100, phase: null, source: 'app',
      started: '上周',
      log: ['$ brew install --cask claude-code', '==> Fetching downloads for: claude-code',

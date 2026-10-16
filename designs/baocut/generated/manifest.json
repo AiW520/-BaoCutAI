@@ -196,6 +196,7 @@
       "app/project-info.jsx",
       "app/legacy-import.jsx",
       "app/legacy-import-task.jsx",
+      "app/agent-setup-runs.jsx",
       "app/onboarding.jsx",
       "app/home-templates.jsx",
       "app/composer-insert-menu.jsx",
@@ -470,9 +471,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=3d42316f3377",
+    "js": "generated/app.js?v=a5aa8309fa13",
     "css": "generated/app.css?v=b3432cfda2cb",
-    "bytes": 4385508
+    "bytes": 4386106
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -715,9 +716,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=214c75837779",
+    "js": "generated/web.js?v=67be94559822",
     "css": "generated/web.css?v=a859723b8989",
-    "bytes": 2567956
+    "bytes": 2568601
   },
   "components": {
     "file": "Components.html",
