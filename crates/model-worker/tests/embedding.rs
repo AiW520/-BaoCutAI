@@ -71,7 +71,7 @@ fn embeddinggemma2_ranks_the_relevant_sentence_first() {
     let library = std::env::var("BAOCUT_TEST_LITERTLM_LIBRARY").expect("set BAOCUT_TEST_LITERTLM_LIBRARY");
     let cache = tempfile::tempdir().unwrap();
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     let hello = result(&hello);
     assert!(hello["capabilities"].as_array().unwrap().iter().any(|c| c == "embed"), "{hello}");
     assert_eq!(hello["embeddingCapabilities"]["families"], json!(["embeddinggemma2-litert"]));
@@ -139,7 +139,7 @@ fn embeddinggemma2_ranks_the_relevant_sentence_first() {
 #[test]
 fn embed_run_checks_params_before_state() {
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     result(&hello);
     // 形状不对先报 INVALID_PARAMS（与 job.run 同一个次序）。
     let (_, bad) = worker.call(
@@ -198,7 +198,7 @@ fn embeddinggemma2_embeds_a_frame_like_the_reference() {
     .unwrap();
     let cache = tempfile::tempdir().unwrap();
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     assert_eq!(result(&hello)["embeddingCapabilities"]["inputs"], json!(["text", "image"]));
     let bundle = json!({
         "bundleId": "embeddinggemma2-multimodal@litert-lm",

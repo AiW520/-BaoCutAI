@@ -108,8 +108,9 @@ export function modelWorkerHolder(bundleId: string): string {
 }
 
 /**
- * 本地转写与合成（含模型包自检）：任务自己的 staging，加上（还没有进程时）这个模型包的 Model Worker。识别与 candle 的合成
- * 按它加载后的常驻量估计（`footprint` 见 `ModelCatalog.workerFootprint`）；MLX 的合成不给 `footprint`，用固定值。
+ * 本地转写与合成（含模型包自检）：任务自己的 staging，加上（还没有进程时）这个模型包的常驻进程（识别是 Model Worker，合成是
+ * audio.cpp 的 `audiocpp_server`，同一个 holder），按它加载后的常驻量估计（`footprint` 见 `ModelCatalog.workerFootprint`）；
+ * 不知道多大时用固定值。
  */
 export function localTranscribeResources(
   bundleId: string,

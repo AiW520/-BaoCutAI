@@ -15,6 +15,5 @@ export const nl: ModelsModelCatalogMessages = {
   moving: "De modellenmap wordt verplaatst",
   notInstalled: (p: { repo: string }) => `Model ${p.repo} is niet geïnstalleerd`,
   noFilesInSubdir: (p: { subdir: string }) => `Het model heeft geen bestanden onder ${p.subdir}/`,
-  engineNoBuild: (p: { platform: string }) => `De audio.cpp-engine heeft geen build voor deze computer (${p.platform}); geef in BAOCUT_AUDIOCPP_CLI een zelf gebouwde engine op`,
-  engineNotInstalled: (p: { version: string }) => `De audio.cpp-engine ${p.version} is niet geïnstalleerd`,
+  engineMissing: "De ingebouwde audio.cpp-engine is niet gevonden: er is geen build voor deze computer of de app-installatie is onvolledig",
 };

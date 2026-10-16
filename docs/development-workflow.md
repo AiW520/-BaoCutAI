@@ -58,7 +58,7 @@ summary 写清动作、对象及关键结果，不使用 `update`、`fix some is
 
 命令默认从仓库根运行，`<受影响 crate>`、`<测试文件>` 替换为实际名称或路径。
 
-源码开发的系统依赖与平台安装步骤见[英文 README](../README.md#run-from-source)／[中文 README](../README.zh-Hans.md#从源码运行)。`npm run doctor` 只检查环境，缺少必需工具时返回非零；`npm run setup` 检查并构建原生 Worker 与 WASM。`npm run dev` 自动执行 setup，构建失败时停止启动；无 Rust 的外壳开发使用 `npm run dev:lite`，启动前明确输出能力限制，不将其作为原生功能的验收环境。Node 版本下限为 22.12（Vite 的 Node 22 要求）；直接执行 TypeScript 源码的 npm scripts 必须显式启用 `--experimental-strip-types`，兼容尚未默认开启类型擦除的 22.12–22.17。修改这组开发入口时运行 `npm test -- tools/dev-check.test.ts`，并核对正常启动与失败退出路径；跨平台模拟测试不能替代对应操作系统的实际构建。
+源码开发的系统依赖与平台安装步骤见[英文 README](../README.md#run-from-source)／[中文 README](../README.zh-Hans.md#从源码运行)。`npm run doctor` 只检查环境，缺少必需工具时返回非零；`npm run setup` 检查并构建原生 Worker、取内置的 audio.cpp 引擎（`npm run build:audiocpp`）并构建 WASM。`npm run dev` 自动执行 setup，构建失败时停止启动；无 Rust 的外壳开发使用 `npm run dev:lite`，启动前明确输出能力限制，不将其作为原生功能的验收环境。Node 版本下限为 22.12（Vite 的 Node 22 要求）；直接执行 TypeScript 源码的 npm scripts 必须显式启用 `--experimental-strip-types`，兼容尚未默认开启类型擦除的 22.12–22.17。修改这组开发入口时运行 `npm test -- tools/dev-check.test.ts`，并核对正常启动与失败退出路径；跨平台模拟测试不能替代对应操作系统的实际构建。
 
 | 改动范围 | 检查入口与范围 |
 | --- | --- |
@@ -129,6 +129,7 @@ summary 写清动作、对象及关键结果，不使用 `update`、`fix some is
 
 - 依赖变化使用对应包管理器更新并提交 lockfile，不手工编辑。根 npm workspace 对应 `package-lock.json`，Cargo workspace 对应 `Cargo.lock`；独立目录（如原型）维护自己的 lockfile。
 - 构建产物按[仓库约定](repo-conventions.md#2-放置规则)处理；原型中需要入库的生成物按[局部协议](../designs/baocut/AGENTS.md#验证)重建并提交，不手改。已有历史生成物不在无关任务中顺手暂存。
+- 内置的 audio.cpp 引擎（本地语音合成与音乐）不从源码构建：`npm run build:audiocpp` 按 `packages/models/src/audio-cpp-engine.ts` 的登记把上游预编译包下载、核对后解开到 Cargo 产物目录的 `audiocpp/`，打包脚本取目标平台的同一版本。升级版本时同步登记的大小与 sha256、`THIRD_PARTY_NOTICES.md` 的 audio.cpp 一节与 `packages/models/licenses/audio.cpp.txt`；新的专用 target 目录要重新取一次。
 - 开发态自动定位原生程序时，保持 Cargo 产物目录的查找优先级，在第一个有该程序的目录中选 `release` / `debug` 修改时间较新的文件；时间相同取 `release`，避免旧 release 遮住刚构建的 debug。显式程序路径、`BAOCUT_BIN_DIR` 与打包资源仍优先；已驻留的 Worker 要卸载或重启应用后才会换程序。
 - 临时答案、截图、渲染帧、测试项目与媒体放仓库外的临时目录；有意维护的测试夹具放所属测试目录，不把用户素材、模型权重或临时输出当作夹具提交。
 

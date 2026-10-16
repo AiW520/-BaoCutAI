@@ -68,7 +68,7 @@ describe('下载来源', () => {
 
   it('改名表与缺失表只列内置清单里真有的下载仓库', () => {
     const repos = new Set(REPO_MANIFESTS.map((m) => m.sourceRepo ?? m.repo));
-    for (const repo of ['openai/whisper-large-v3', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', 'ggerganov/whisper.cpp', 'PJMixers-Dev/lj1995_GPT-SoVITS-safetensors']) {
+    for (const repo of ['openai/whisper-large-v3', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', 'ggerganov/whisper.cpp']) {
       expect(repos.has(repo), repo).toBe(true);
     }
   });

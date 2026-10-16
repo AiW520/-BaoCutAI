@@ -5,9 +5,10 @@ import readline from 'node:readline';
 import { CodeBundleError, CompositionHost, resolveElectronBinary } from '@baocut/code-runtime';
 import { editorSemantics, locateEditorWasm } from '@baocut/editor-wasm';
 import { resolveSpeechWorkerCommand } from '@baocut/jobs';
-import { WORKER_CONTRACT_VERSION, resolveModelAssetsDir } from '@baocut/models';
+import { WORKER_CONTRACT_VERSION, audioCppServerOf, resolveModelAssetsDir } from '@baocut/models';
 import { resolveCredentialHelperCommand } from './credentials.ts';
 import { resolveExportWorkerCommand } from './exports/video-export.ts';
+import { resolveAudioCppCli } from './models/model-jobs.ts';
 import { resolveModelWorkerCommand } from './models/model-worker.ts';
 import { resolveWebDist } from './services/web-static.ts';
 import { resolveBuiltinAgentSkillsDir } from './skills/agent-skill-renderer.ts';
@@ -17,7 +18,7 @@ import { resolveEngineHostCommand } from './videos/engine-host.ts';
 
 /**
  * Runtime 的自检（`runtime --self-check [--probe]`）：不启动 Runtime，只用它找东西的同一批解析函数，报告随应用分发的原生程序
- * （Worker、凭据助手）、内置模板与 skill、模型数据、Web 客户端与 `editor.wasm` 解析到哪里、在不在。给了 `probe` 时再把每个原生程序
+ * （Worker、凭据助手、内置的 audio.cpp 引擎）、内置模板与 skill、模型数据、Web 客户端与 `editor.wasm` 解析到哪里、在不在。给了 `probe` 时再把每个原生程序
  * 起一次、走一遍它的握手，证明在这台机器上能启动（缺 DLL、架构不对都在这里暴露）；代码包的 Electron 离屏宿主也起一次、等到 ready 再关掉
  * （`probeCompositionHost`），打包后走的是主进程入口的 `--composition-host` 分支。
  *
@@ -124,12 +125,16 @@ function hasResult(reply: unknown): boolean {
 export async function runtimeSelfCheck(options: { probe?: boolean; env?: NodeJS.ProcessEnv } = {}): Promise<SelfCheckReport> {
   const env = options.env ?? process.env;
   const engineHost = resolveEngineHostCommand(env);
+  const audioCpp = resolveAudioCppCli(env);
   const binaries: Record<string, string | null> = {
     'engine-host': engineHost,
     'export-worker': resolveExportWorkerCommand(engineHost, env),
     'model-worker': resolveModelWorkerCommand(env)?.command ?? null,
     'speech-worker': resolveSpeechWorkerCommand(engineHost, env),
     'credential-helper': resolveCredentialHelperCommand(env)?.command ?? null,
+    // 本地语音合成与音乐共用的引擎（Model Worker 协议规范 §4.4）。
+    'audiocpp-cli': audioCpp,
+    'audiocpp-server': audioCpp ? audioCppServerOf(audioCpp) : null,
     // 代码包的离屏宿主用的 Electron：打包后是应用自己的可执行文件。
     electron: resolveElectronBinary(env),
   };
@@ -168,6 +173,9 @@ export async function runtimeSelfCheck(options: { probe?: boolean; env?: NodeJS.
       'speech-worker': { args: [], request: { id: 1, method: 'hello', params: {} }, accept: hasResult },
       // Render Worker 每次一个命令、没有握手：不给参数时打印用法并以 2 退出，足以证明能启动。
       'export-worker': { args: [], request: null, exitCode: 2 },
+      // audio.cpp 的两个程序都认 `--version`：打印版本与编进去的后端后以 0 退出。Windows 的 Vulkan 包启动就要 vulkan-1.dll。
+      'audiocpp-cli': { args: ['--version'], request: null, exitCode: 0 },
+      'audiocpp-server': { args: ['--version'], request: null, exitCode: 0 },
       // 凭据助手答一行就退出。macOS 以外答 unsupported 也算能启动：凭据不可用由 Runtime 如实报告（架构设计 §6.8）。
       'credential-helper': {
         args: [],

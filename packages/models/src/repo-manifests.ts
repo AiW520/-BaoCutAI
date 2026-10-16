@@ -39,12 +39,13 @@ export interface RepoManifestSpec {
 /** 本机语义检索：大小与 sha256 取自下载来源在这个版本上的 LFS 记录，按版本下载后在本机重新算过，一致。 */
 const EMBEDDING_HUB = "Sizes and sha256 come from the download source's LFS records at this revision; recomputed after downloading at this revision, identical";
 const LEGACY_PINNED = 'sha256 pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); not re-verified offline in this repo; sizes unknown';
-/** 本地语音合成：sha256 取自旧版的固定清单，大小与 sha256 和本机已装好的同一版本逐个比对一致。 */
-const TTS_PINNED_LOCAL =
-  'sha256 pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); sizes and hashes checked one by one against a local install of the same revision';
-/** 本地语音合成：sha256 取自旧版的固定清单；大小与哈希（LFS 文件的 oid、其余文件按版本下载后计算）已向下载来源逐个核对。 */
-const TTS_PINNED_HUB =
-  'sha256 pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); sizes and hashes checked one by one against the download source at this revision';
+/**
+ * 本地语音合成（audio.cpp 的 Q8 GGUF）：大小与 sha256 取自下载来源在这个版本上的 LFS 记录；OmniVoice 的 GGUF 在本机按版本下载后
+ * 重新算过，一致，其余的没有在本机装过。
+ */
+const TTS_GGUF_HUB =
+  "Sizes and sha256 come from the download source's LFS records at this revision; the OmniVoice GGUF was downloaded at this revision and rehashed, identical; the others were not installed locally";
+
 /** 本地识别：sha256 取自旧版的固定清单；大小与哈希已和本机装好的同一版本逐个核对。 */
 const ASR_PINNED_LOCAL =
   'sha256 pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); sizes and hashes checked one by one against a local install of the same revision';
@@ -75,28 +76,6 @@ const MUSIC_PINNED_HUB =
   "Sizes and the sha256 of the two GGUF files come from the download source's LFS records at this revision; the four sidecar files were streamed from the download source at this revision and hashed; no local install or inference in this repo";
 
 export const REPO_MANIFESTS: readonly RepoManifestSpec[] = [
-  {
-    repo: 'mlx-community/fish-audio-s2-pro-8bit',
-    revision: 'c8d4481b3f7cbfe64d855c8b7cda7739502fc3ff',
-    files: [
-      { path: 'config.json', size: 2315, sha256: '363895eff17c1f15a18e9bbc8ffddf3d5546219378cc37d96862892d4f93aace' },
-      { path: 'model.safetensors', size: 4847260185, sha256: 'bf31b4e5fb713a565750e120ebadd54de245eb1214e46d14fc5108f1e79171a1' },
-      { path: 'tokenizer.json', size: 12217872, sha256: 'f24e08099d45a8adf3f52f5f0b03276e433bb9d689bb15fcbcc48ce58744588b' },
-    ],
-    estimatedBytes: 4859480372,
-    provenance: 'Pinned Hugging Face revision; all files downloaded and their sizes and SHA256 verified locally',
-  },
-  {
-    repo: 'aufklarer/Fish-Audio-S2-Pro-MLX-codec',
-    revision: '254339851f9f39b68d06cc9284addab5fb32be13',
-    sourceRepo: 'aufklarer/Fish-Audio-S2-Pro-MLX-fp16',
-    files: [
-      { path: 'LICENSE.md', size: 10360, sha256: 'aa7d9206e9d710590987a3636934f643529c00cd490323594e6206aaa0c32d80' },
-      { path: 'codec.safetensors', size: 1088063508, sha256: '26da752caffb1919be8087f3428957ef11d3cf4b575c9eb7ffea93a8150437ae' },
-    ],
-    estimatedBytes: 1088073868,
-    provenance: 'Pinned Hugging Face revision; codec and upstream license downloaded and their sizes and SHA256 verified locally',
-  },
   {
     repo: 'aufklarer/Qwen3-ASR-0.6B-MLX-4bit',
     revision: 'bc441bd1e4295c1f42d9879f056049a925b6e013',
@@ -461,242 +440,78 @@ export const REPO_MANIFESTS: readonly RepoManifestSpec[] = [
     estimatedBytes: 1833055757,
     provenance: ASR_PINNED_LOCAL,
   },
-  // ---- 本地语音合成（speech-bundles.ts）----
+  // ---- 本地语音合成（speech-bundles.ts）：上游同一仓库、同一版本，每个模型包登记在兄弟目录名下，只下载自己的 GGUF ----
   {
-    repo: 'Qwen/Qwen3-TTS-Tokenizer-12Hz',
-    revision: '7dd38ad4e9bad454aae9cd937d0cd577604fe229',
-    files: [
-      { path: 'config.json', size: 2336, sha256: 'ee65bb901c876664ab8707c487157aa1a6ee57c65969b28fb5ec9dc211e68167' },
-      { path: 'model.safetensors', size: 682293092, sha256: '836b7b357f5ea43e889936a3709af68dfe3751881acefe4ecf0dbd30ba571258' },
-    ],
-    estimatedBytes: 682295428,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-qwen3-tts-0.6b-base',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'Qwen3-TTS-12Hz-0.6B-Base-GGUF/qwen3-tts-12hz-0.6b-base-q8_0.gguf', size: 1991211136, sha256: '771420bd20ff5f35407b4fa9cf9c5461e153800d3d772ef51c9febc0a520855d' }],
+    estimatedBytes: 1991211136,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'aufklarer/Qwen3-TTS-12Hz-0.6B-Base-MLX-8bit',
-    revision: '2a20f4adf0436810367cea5a51aa7eb1bc50b6d8',
-    files: [
-      { path: 'config.json', size: 431, sha256: 'cf55a8f542f56123b253833c77cde387c8953a1b9454c11c735880edeb835e39' },
-      { path: 'merges.txt', size: 1671839, sha256: '599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3' },
-      { path: 'model.safetensors', size: 1304461214, sha256: '9488e7005cc0cf44f8804eb543668d0763bb1c649ce6f1eddc663519524b3182' },
-      { path: 'model.safetensors.index.json', size: 77731, sha256: '7829f1cc24f5cbd7d7a3ba888bb08c7cf52d82ba79a4f0f3756d41f8bf5e52b4' },
-      { path: 'tokenizer_config.json', size: 7344, sha256: 'dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670' },
-      { path: 'vocab.json', size: 2776833, sha256: 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910' },
-    ],
-    estimatedBytes: 1308995392,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-qwen3-tts-1.7b-base',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf', size: 2695175104, sha256: 'b55e06c7890d43c208d15aed8b4ed3f18215f295e47d5960e061b15bff338ab0' }],
+    estimatedBytes: 2695175104,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'aufklarer/Qwen3-TTS-12Hz-0.6B-CustomVoice-MLX-bf16',
-    revision: '3affbf656d9d6aa9255ec0b31cc90055605170bc',
-    files: [
-      { path: 'config.json', size: 4908, sha256: '81aca2b6fac304944d8acf345272d8a9a727d5fc2e2e66b222ab4729340c7455' },
-      { path: 'merges.txt', size: 1671839, sha256: '599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3' },
-      { path: 'model.safetensors', size: 1811626144, sha256: '465675a36380251e143cfbca8d693f375c47ba6bf0ae334966cb529ef1be34d9' },
-      { path: 'model.safetensors.index.json', size: 30630, sha256: '463127e455292c8f002a9bfe67ec165235ecc107017228e3fb64e28fdb145f6f' },
-      { path: 'tokenizer_config.json', size: 7344, sha256: 'dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670' },
-      { path: 'vocab.json', size: 2776833, sha256: 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910' },
-    ],
-    estimatedBytes: 1816117698,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-qwen3-tts-1.7b-customvoice',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf', size: 2817044064, sha256: '3cfaac8e9f13554f6daea3c5e0c53fede71ef5500cbaae7445e5fc3a5bb12e72' }],
+    estimatedBytes: 2817044064,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'aufklarer/Qwen3-TTS-12Hz-1.7B-Base-MLX-8bit',
-    revision: '87d008f1e1a20d265bee01c7ccb0a78f5b8d1132',
-    files: [
-      { path: 'config.json', size: 431, sha256: 'ef68522ec21a47336a565d5d2e9180b48b9e307e7eaeae5d33cb87a91c7a5ef0' },
-      { path: 'merges.txt', size: 1671839, sha256: '599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3' },
-      { path: 'model.safetensors', size: 2417320525, sha256: 'b965c581ccf6aa852a4124feeb7a8a111542ee7b213139368b4cc7ba7fd4728b' },
-      { path: 'model.safetensors.index.json', size: 78070, sha256: '9592a7c0ac3261a6211978416ef1796d3841225ac0ff0f9d6bfb5d1a6b49e5e9' },
-      { path: 'tokenizer_config.json', size: 7344, sha256: 'dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670' },
-      { path: 'vocab.json', size: 2776833, sha256: 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910' },
-    ],
-    estimatedBytes: 2421855042,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-qwen3-tts-1.7b-voicedesign',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'Qwen3-TTS-12Hz-1.7B-VoiceDesign-GGUF/qwen3-tts-12hz-1.7b-voicedesign-q8_0.gguf', size: 2816988960, sha256: '1bcef9a8c021072fca40e00498e00af9091fbe6d3ae4f87567cfee885d6c7554' }],
+    estimatedBytes: 2816988960,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit',
-    revision: '41d3337e8b7f2843a75841595fc14e4b9a7a4b96',
-    files: [
-      { path: 'config.json', size: 6058, sha256: '43f29f9ab55cf387bd2ce1d07e9d95a5ca8974fa2fda4e2b45c13ae64aad3bfa' },
-      { path: 'merges.txt', size: 1671839, sha256: '599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3' },
-      { path: 'model.safetensors', size: 2393308931, sha256: 'b696f4bf45f54497b6de758981e76f1410bd68af05a657477dee466b0202df1a' },
-      { path: 'model.safetensors.index.json', size: 71786, sha256: '2551ed02dc288b90cd6b7ec98652433f08ef2ae98fb3eda5248a4b9e5b47d08b' },
-      { path: 'tokenizer_config.json', size: 7344, sha256: 'dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670' },
-      { path: 'vocab.json', size: 2776833, sha256: 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910' },
-    ],
-    estimatedBytes: 2397842791,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-indextts2',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'IndexTTS2-GGUF/index-tts2-q8_0.gguf', size: 3633888608, sha256: 'f9be73ac5b6cbdc5f603f04dcb6c9fe37b3a301a365a1ea8d580d3ef7ba22e8e' }],
+    estimatedBytes: 3633888608,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit',
-    revision: 'f90d617701d9f7f4ca499291e0b57f2b3c2fd2ee',
-    files: [
-      { path: 'config.json', size: 5437, sha256: 'b91c47798e77e259e6b86987e48d7a5eca8e703205e00afb63fe08ec5251f983' },
-      { path: 'merges.txt', size: 1671839, sha256: '599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3' },
-      { path: 'model.safetensors', size: 2393308931, sha256: '1a84179d87c972353ccdd9b48f3c4422509b3d1b11030d32358312fb0f3800d7' },
-      { path: 'model.safetensors.index.json', size: 71786, sha256: '2551ed02dc288b90cd6b7ec98652433f08ef2ae98fb3eda5248a4b9e5b47d08b' },
-      { path: 'tokenizer_config.json', size: 7344, sha256: 'dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670' },
-      { path: 'vocab.json', size: 2776833, sha256: 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910' },
-    ],
-    estimatedBytes: 2397842170,
-    provenance: TTS_PINNED_HUB,
+    repo: 'audio-cpp/audio.cpp-gguf-indextts2.5',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf', size: 3502955328, sha256: '5e827b2072042e4a1b21ccf24a5cb4f71cb1011403067a0a9b039311d8b38628' }],
+    estimatedBytes: 3502955328,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'aufklarer/IndexTTS2-MLX-fp16',
-    revision: '208b3d6ea53a119f3501b3bfd8e666b9b5e8c705',
-    files: [
-      {
-        path: 'aux/bigvgan/bigvgan_generator.safetensors',
-        size: 224558010,
-        sha256: '62d63d69265fa38d2feabc35df54bfe75a5ac3257591e17abebf792911498569',
-      },
-      { path: 'aux/bigvgan/config.json', size: 1405, sha256: '88a1f47acf747db0b21e97a389d838566147f7a5464583ff5c8d819d870f03ee' },
-      {
-        path: 'aux/campplus/campplus_cn_common.safetensors',
-        size: 13969120,
-        sha256: 'eb29858cf9ebd1b186b33ea477629e48a0f033f243cd52844ef9c5e727e7adc4',
-      },
-      { path: 'aux/campplus/configuration.json', size: 581, sha256: '6f7acaf1e81ca121f4a3c71b6ddb66beec24350a3ef330e2c846f17829176a8f' },
-      { path: 'aux/maskgct/config.json', size: 92, sha256: '00815c46d15b45071437665a85144aa4c3c6fb434080147e318612dd26617047' },
-      {
-        path: 'aux/maskgct/semantic_codec/model.safetensors',
-        size: 88603840,
-        sha256: 'a665396a04dead2e9c8f0994039e280b9ad5b1eec623bb9bd9f041b6a284eaaa',
-      },
-      { path: 'aux/w2v-bert-2.0/config.json', size: 1874, sha256: 'f5572bd5998b68182e9c328a43127ed21fed687f6910497136b91a4e3b0e3675' },
-      {
-        path: 'aux/w2v-bert-2.0/model.safetensors',
-        size: 1161076768,
-        sha256: 'e56eab7a7c9cec9e4e908bca3ec5c4b3f27a0521a7807a100e50792a2a5bb6eb',
-      },
-      {
-        path: 'aux/w2v-bert-2.0/preprocessor_config.json',
-        size: 275,
-        sha256: '8e6281aad64f97e40534135a59dcc5d33571efae376f2a25adf5551951897ab4',
-      },
-      { path: 'bpe.model', size: 475997, sha256: 'b2a5ce8090d32da3642cc4f81fdc996376bc6dd3f4cd5e3d165f71120d9f2bc8' },
-      { path: 'config.json', size: 179, sha256: 'd25c591aadbda8bf2346085f6f8f9a7c0fd68efadada4c6f05a13f122dd6b7ff' },
-      { path: 'config.yaml', size: 2882, sha256: 'ea9c2815ecc3874577c7ac158b97248c027250e5b05972fbbb1216b6d6539081' },
-      { path: 'feat1.safetensors', size: 28144, sha256: '8e61ced8f17b1997bfcf91b8fd916e6affeff5cf2448e4068fe6e3deba0b57f7' },
-      { path: 'feat2.safetensors', size: 186992, sha256: '9f5f878b4b3f85eb24813dbf3280536efb1a34b43cc1df48c1fa63c271d8c80b' },
-      { path: 'gpt.safetensors', size: 1742276006, sha256: 'a5b448aae319715abe4eb1043469ebc127dcdb1c1639620afd382f961d1c2195' },
-      { path: 's2mel.safetensors', size: 601137480, sha256: '3147c9be4811e760971715055c7e96edebdd0aaf07a9d464011bc25e897ad6c1' },
-      { path: 'soniqo_manifest.json', size: 7536, sha256: 'b86565f9a509487ca6c4977f1f06c51a50e56ebc15cf772008bdd68ae430e00f' },
-      { path: 'wav2vec2bert_stats.safetensors', size: 4264, sha256: '2ec34a778c9df8a6c5b56eeb239e6272e277936f3c41073f26ab8cdbe3355903' },
-    ],
-    estimatedBytes: 3832331445,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-voxcpm2',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'VoxCPM2-GGUF/voxcpm2-q8_0.gguf', size: 2955000480, sha256: 'c8e01ab4416011e12a28f24ede298a1aa5ce64b43f8e8aaad53b1e2fe7c96432' }],
+    estimatedBytes: 2955000480,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'mlx-community/IndexTTS-2.5-fp16',
-    revision: '65644cd70da15309ffeb74aa03f3686bb04e3eb1',
-    files: [
-      { path: 'codec.safetensors', size: 101188975, sha256: '7ba36ba12dbc6f19adaf50bb4aebee2c4092526c7f4a56479ed1e72e2562009e' },
-      { path: 'config.json', size: 3464, sha256: '438e3e76610ddcc85f764cf0a06cde43df3937ac966dc2c199a52b5f9a7eee57' },
-      { path: 'config.yaml', size: 2663, sha256: '65d07de92a2c26843c14c797951613ef939593ae1e842f31ad7d9f2d04b6eb52' },
-      { path: 'gpt.safetensors', size: 1624627631, sha256: '9603e2d7e36751133bf96a57c91c403ba40e419b646487aa93774aed25d8c757' },
-      { path: 'model_manifest.json', size: 15327, sha256: '8129939e45f444c45a00147064359b02b591b4d6f77e6ac3ef09be6091e4eba6' },
-      {
-        path: 'multilingual_zh_ja_yue_char_del.tiktoken',
-        size: 907395,
-        sha256: '747979631e813193436aabcff7c1c235d37de8097b71c563ec8b63b7a515c718',
-      },
-      { path: 's2mel.safetensors', size: 207320482, sha256: '26f8c0d388716f1adfa29919d4b924683329cda470464786759e2461ffd5233f' },
-    ],
-    estimatedBytes: 1934065937,
-    provenance: TTS_PINNED_LOCAL,
+    repo: 'audio-cpp/audio.cpp-gguf-omnivoice',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'OmniVoice-GGUF/omnivoice-q8_0.gguf', size: 1350288416, sha256: '2f4be637278043c6842de5b85d681532030e9eb6ffe0f8b0e320f68238e3da8b' }],
+    estimatedBytes: 1350288416,
+    provenance: TTS_GGUF_HUB,
   },
   {
-    repo: 'PJMixers-Dev/lj1995_GPT-SoVITS-safetensors',
-    revision: 'cea8b8279588e63c2fdc10e02610c11f02af5450',
-    files: [
-      { path: 'chinese-hubert-base/config.json', size: 1449, sha256: 'c3e5060a1277e0f078cc6be9da4528a605dba6ece93018981fe2c820e5c7b103' },
-      {
-        path: 'chinese-hubert-base/model.safetensors',
-        size: 188767040,
-        sha256: '25adc31d1889ff5d3da262189433bdc755f0ddb9f194342583dbd17e447daefe',
-      },
-      {
-        path: 'chinese-hubert-base/preprocessor_config.json',
-        size: 212,
-        sha256: 'dcd684124d06722947939d41ea6ae58dbf10968c60a11a29f23ddc602c64a29b',
-      },
-      {
-        path: 'chinese-roberta-wwm-ext-large/config.json',
-        size: 963,
-        sha256: '3d57de2fd7e80d0e5c8ff194f0bbb6baa10df7e43fc262a0cc71298a78b0a3e5',
-      },
-      {
-        path: 'chinese-roberta-wwm-ext-large/model.safetensors',
-        size: 651142416,
-        sha256: '7eb43497cb8554f77b4fffb65932ea092e5b0e2c9e12f65bc3e1f14ced336611',
-      },
-      {
-        path: 'chinese-roberta-wwm-ext-large/tokenizer.json',
-        size: 268962,
-        sha256: '173796956820ea27bd14f76bf28162607ff4254807e2948253eb5b46f5bb643b',
-      },
-      {
-        path: 'gsv-v2final-pretrained/s1bert25hz-5kh-longer-epoch=12-step=369668.json',
-        size: 674,
-        sha256: '0e267ac45532fb71968559c1e66b9869c4d1a1105b04ff1170d82d41b8aa0794',
-      },
-      {
-        path: 'gsv-v2final-pretrained/s1bert25hz-5kh-longer-epoch=12-step=369668.safetensors',
-        size: 155243444,
-        sha256: 'c3dc2caba3add5f7ccbd2629877ab617d1f0ffa33bb0f4cf053dc934999709c9',
-      },
-      {
-        path: 'gsv-v2final-pretrained/s2G2333k.json',
-        size: 1540,
-        sha256: '714a6cc1dea4087dc6e9b529ae7a53ad3f1644415b21d04cbf8ddbd78f78e0e5',
-      },
-      {
-        path: 'gsv-v2final-pretrained/s2G2333k.safetensors',
-        size: 105849754,
-        sha256: '1a8d923040aa87ac1611c9c5f2a0a52cfb7cd625baff7c5f842a89a5764034f4',
-      },
-    ],
-    estimatedBytes: 1101276454,
-    provenance: TTS_PINNED_LOCAL,
-  },
-  {
-    repo: 'aufklarer/VoxCPM2-MLX-int8',
-    revision: '471a37b830ccf5e23fdb4c822649ec7c3b7320b4',
-    files: [
-      { path: 'config.json', size: 6230, sha256: 'c62e64da1a0e1ac470f962bbcacac2a0297807090d28f452660b1125daa76258' },
-      { path: 'model.safetensors', size: 2949710312, sha256: '0b3d82c78fda5874333f3a6ae8c9b1dc9802d44932d2f822dd8accd490e33ed3' },
-      { path: 'special_tokens_map.json', size: 1632, sha256: '068594063e37662c02b21acf42ebb334ef6a74fb810e68a2368f88f08351de76' },
-      { path: 'tokenizer.json', size: 3676772, sha256: 'f8984687e4a92a3503d521396d454b7d68e9fdaab2a0288eb3536c7c1aa4bc20' },
-      { path: 'tokenizer_config.json', size: 5059, sha256: 'e78a3ebb48a0b9437efd1823b6b726c823da89e49dd8bcc90c02419d9baa772b' },
-    ],
-    estimatedBytes: 2953400005,
-    provenance: TTS_PINNED_HUB,
-  },
-  {
-    repo: 'aufklarer/OmniVoice-MLX-int8',
-    revision: 'e815dfafaf9c90f995ddc9fcfe52fd0d80babe4e',
-    files: [
-      { path: 'audio_tokenizer/config.json', size: 2531, sha256: 'eefb20806f7104e77c9a5277c9df0f9bb8826b08eb1d4e8ab2b9829b6ef9fac1' },
-      {
-        path: 'audio_tokenizer/model.safetensors',
-        size: 402864450,
-        sha256: '2ccdf29d0f01b504075fc188705458ffa4d1502a196839492bb59a941c1e70d0',
-      },
-      {
-        path: 'audio_tokenizer/preprocessor_config.json',
-        size: 206,
-        sha256: 'ae61eea88558608ee2fa86d2aec9fce8d99a5ff75d09cb7651ccce21ae1d9084',
-      },
-      { path: 'chat_template.jinja', size: 4168, sha256: 'a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8' },
-      { path: 'config.json', size: 2298, sha256: '7b3f850df9e7e9c6f4019a567747f8d7c90261f3d8bd66a35b46cf7da2f61638' },
-      { path: 'model.safetensors', size: 689415208, sha256: '0d701a35df4ad7ed9af47a2c7a17b50d2de7feff6b4ffc9500d5f8587c473ac7' },
-      { path: 'tokenizer.json', size: 11423986, sha256: '408f669b7e2b045fdf54201d815bd364e6667dbd845115da81239c40bc6dcfd1' },
-      { path: 'tokenizer_config.json', size: 533, sha256: '49f78845596a82bf15c83673794bdf9f76f812b11f60ab6a2239d9be65b00676' },
-    ],
-    estimatedBytes: 1103713380,
-    provenance: TTS_PINNED_HUB,
+    repo: 'audio-cpp/audio.cpp-gguf-fish-s2-pro',
+    sourceRepo: 'audio-cpp/audio.cpp-gguf',
+    revision: 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5',
+    files: [{ path: 'Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf', size: 6317911232, sha256: '4ffc169447b7a26df8bf49e8637adb4000bfa763a22c018b6c03968564259d0b' }],
+    estimatedBytes: 6317911232,
+    provenance: TTS_GGUF_HUB,
   },
   // ---- 本地人声分离（bundle-registry.ts 的 htdemucs-ft@mlx）----
   {

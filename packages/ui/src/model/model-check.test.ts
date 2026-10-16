@@ -25,7 +25,7 @@ import { useModels } from '../state/models-store.ts';
 
 /** 本地模型的「检查」：说法、状态行、试用面板的提醒与失败（设计稿 model-local-check.test.js 的各条，换成真实的代码与任务）。 */
 
-const TTS = 'qwen3-tts-0.6b-base@mlx-8bit';
+const TTS = 'qwen3-tts-0.6b-base@audio-cpp-q8';
 const ASR = 'qwen3-asr-0.6b@mlx-4bit';
 const NOW = Date.parse('2026-10-05T10:00:00.000Z');
 const ago = (ms: number) => new Date(NOW - ms).toISOString();

@@ -17,7 +17,7 @@ export const ptBR: DownloadSourceMessages = {
   ghDesc: "Baixar da página oficial de versões de cada projeto no GitHub.",
   modelsMirrorDesc: (base: string) => `Baixar do espelho em ${base}.`,
   toolsMirrorDesc: (base: string) => `Baixar do espelho em ${base}.`,
-  msNote: "Os poucos arquivos que o ModelScope não tem (whisper.cpp, GPT-SoVITS) continuam vindo do Hugging Face. Cada arquivo é conferido com sua soma de verificação integrada.",
+  msNote: "Os poucos arquivos que o ModelScope não tem (whisper.cpp) continuam vindo do Hugging Face. Cada arquivo é conferido com sua soma de verificação integrada.",
   envNote: (name: string) => `Se a variável de ambiente ${name} estiver definida, ela é usada no lugar.`,
   webNote: "Um navegador não pode alterar as fontes de download. Configure isso no app para desktop do BaoCut.",
   lead:

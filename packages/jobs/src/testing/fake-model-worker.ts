@@ -24,11 +24,9 @@
  * `diarizing` 阶段，单数段是 `spk-1`、双数段是 `spk-2`（段与词都标；流式的段不带）；不带这两个组件时报
  * `diarization-unavailable` 警告。
  *
- * 本地语音合成（`job.run` 的 `capability: 'synthesize'`）：控制文件的 `capabilities` 含 `synthesize` 时 `worker.hello`
- * 才报告它（默认只报告 `transcribe`），这时 `synthesizeFamilies` 默认列出全部合成 family，控制文件的 `synthesizeFamilies`
- * 可以收窄。识别同样：`capabilities`（默认 `['transcribe']`）含 `transcribe` 时 `transcribeFamilies` 默认列出全部识别 family，
- * 控制文件的 `transcribeFamilies` 可以收窄。合成写一段 1 秒的 24 kHz 单声道 WAV（440 Hz 正弦），故障标记 `silent-output` 写全零的静音，`slow` 每步 200 ms；
- * 控制文件的 `readingsDropped` 原样放进结果；`record` 给出时，每次 `job.run` 的参数追加一行到那个文件。
+ * 识别：`capabilities`（默认 `['transcribe']`）含 `transcribe` 时 `transcribeFamilies` 默认列出全部识别 family，控制文件的
+ * `transcribeFamilies` 可以收窄。`record` 给出时，每次 `job.run` 的参数追加一行到那个文件。本地语音合成不在合同里（第 2 版起
+ * 由内置的 audio.cpp 引擎执行）：`capability: 'synthesize'` 的 `job.run` 与真的 Worker 一样是 `INVALID_PARAMS`。
  *
  * 人声分离（`capability: 'separate'`）：`capabilities` 含 `separate` 时报告它，`separateFamilies` 默认 `['htdemucs-ft']`。
  * 分离按 `options.sampleRate`（null 为 44100）写 16-bit 立体声 `vocals.wav`（440 Hz）与 `background.wav`（110 Hz，
@@ -62,7 +60,6 @@ import zlib from 'node:zlib';
 const WORKER_VERSION = '0.0.0-fake';
 const DEFAULT_TRANSCRIPT = 'testing one two three baocut is ready';
 const TRANSCRIBE_FAMILIES = ['qwen3-asr', 'whisper-mlx', 'whisper-coreml', 'whisper-ggml', 'moss-transcribe-diarize'];
-const SYNTHESIZE_FAMILIES = ['qwen3-tts', 'indextts2', 'indextts2.5', 'gpt-sovits', 'voxcpm2', 'omnivoice', 'fish-s2-pro'];
 const SEPARATE_FAMILIES = ['htdemucs-ft'];
 const IMAGE_FAMILIES = ['qwen-image'];
 
@@ -78,13 +75,11 @@ interface Control {
   transcript?: string;
   capabilities?: string[];
   transcribeFamilies?: string[];
-  synthesizeFamilies?: string[];
   separateFamilies?: string[];
   separateSeconds?: number;
   imageFamilies?: string[];
   embeddingFamilies?: string[];
   litertDevices?: string[];
-  readingsDropped?: unknown[];
   record?: string;
   loads?: string;
 }
@@ -171,11 +166,11 @@ async function handle(request: Request): Promise<void> {
   const { id, method, params } = request;
   switch (method) {
     case 'worker.hello':
-      if (params.contractVersion !== 1) return fail(id, 'CONTRACT_MISMATCH', '合同版本不符');
+      if (params.contractVersion !== 2) return fail(id, 'CONTRACT_MISMATCH', '合同版本不符');
       if (control().helloDelayMs) await sleep(control().helloDelayMs!);
       return respond(id, {
         workerVersion: WORKER_VERSION,
-        contractVersion: 1,
+        contractVersion: 2,
         pid: process.pid,
         backends: [
           { id: 'mlx', available: true, devices: ['metal'] },
@@ -186,9 +181,6 @@ async function handle(request: Request): Promise<void> {
         capabilities: control().capabilities ?? ['transcribe'],
         transcribeFamilies: (control().capabilities ?? ['transcribe']).includes('transcribe')
           ? (control().transcribeFamilies ?? TRANSCRIBE_FAMILIES)
-          : [],
-        synthesizeFamilies: (control().capabilities ?? []).includes('synthesize')
-          ? (control().synthesizeFamilies ?? SYNTHESIZE_FAMILIES)
           : [],
         separateFamilies: (control().capabilities ?? []).includes('separate') ? (control().separateFamilies ?? SEPARATE_FAMILIES) : [],
         imageFamilies: (control().capabilities ?? []).includes('image') ? (control().imageFamilies ?? IMAGE_FAMILIES) : [],
@@ -243,7 +235,8 @@ async function handle(request: Request): Promise<void> {
       if (params.capability === 'separate') return separate(id, params);
       if (params.capability === 'image') return image(id, params);
       if (params.capability === 'diarize') return diarize(id, params);
-      return params.capability === 'synthesize' ? synthesize(id, params) : run(id, params);
+      if (params.capability === 'synthesize') return fail(id, 'INVALID_PARAMS', '合同里没有本地语音合成');
+      return run(id, params);
     }
     case 'embed.run': {
       if (state !== 'ready') return fail(id, 'WORKER_BUSY', `Worker 状态是 ${state}`, true, { state });
@@ -431,85 +424,6 @@ async function run(id: number, params: Record<string, unknown>): Promise<void> {
     output: { path: output, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.length },
     segmentsFile,
     stats: stats(duration / timescale),
-  });
-}
-
-/** 合成：参考录音（有时）→ 4 步合成（`job.progress` 的 `steps`）→ 编码，写 staging 里的 `speech.wav`。 */
-async function synthesize(id: number, params: Record<string, unknown>): Promise<void> {
-  const jobId = String(params.jobId);
-  const staging = String(params.staging);
-  const input = params.input as { file: string } | null;
-  const current: RunningJob = { jobId, phase: 'synthesizing', startedAt: new Date().toISOString(), cancelled: false };
-  job = current;
-  state = 'busy';
-  const finish = (result: unknown) => {
-    job = null;
-    state = 'ready';
-    respond(id, result);
-  };
-  const runError = faultArg('run-error');
-  if (runError) {
-    job = null;
-    state = 'ready';
-    return fail(id, runError, '模拟的合成失败', runError === 'INFERENCE_FAILED');
-  }
-  const phase = (name: string) => {
-    current.phase = name;
-    emit('job.phase', { jobId, phase: name });
-  };
-  if (input) {
-    phase('preparing-reference');
-    if (!fs.existsSync(input.file)) {
-      job = null;
-      state = 'ready';
-      return fail(id, 'INPUT_UNREADABLE', '参考录音读不出来');
-    }
-  }
-  phase('synthesizing');
-  const steps = 4;
-  for (let step = 1; step <= steps; step++) {
-    await sleep(fault('slow') ? 200 : 2);
-    if (current.cancelled) {
-      if (fault('hang-on-cancel')) return;
-      return finish({
-        outcome: 'cancelled',
-        output: null,
-        audio: null,
-        stats: { referenceMs: 0, synthesisMs: 0, encodeMs: 0 },
-        readingsDropped: [],
-      });
-    }
-    emit('job.progress', { jobId, phase: 'synthesizing', done: step, total: steps, unit: 'steps' });
-  }
-  phase('encoding');
-  const sampleRate = 24_000;
-  const samples = sampleRate;
-  const bytes = Buffer.alloc(44 + samples * 2);
-  bytes.write('RIFF', 0, 'ascii');
-  bytes.writeUInt32LE(36 + samples * 2, 4);
-  bytes.write('WAVE', 8, 'ascii');
-  bytes.write('fmt ', 12, 'ascii');
-  bytes.writeUInt32LE(16, 16);
-  bytes.writeUInt16LE(1, 20);
-  bytes.writeUInt16LE(1, 22);
-  bytes.writeUInt32LE(sampleRate, 24);
-  bytes.writeUInt32LE(sampleRate * 2, 28);
-  bytes.writeUInt16LE(2, 32);
-  bytes.writeUInt16LE(16, 34);
-  bytes.write('data', 36, 'ascii');
-  bytes.writeUInt32LE(samples * 2, 40);
-  if (!fault('silent-output')) {
-    for (let i = 0; i < samples; i++) bytes.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / sampleRate) * 8_000), 44 + i * 2);
-  }
-  const output = path.join(staging, 'speech.wav');
-  fs.writeFileSync(`${output}.tmp`, bytes);
-  fs.renameSync(`${output}.tmp`, output);
-  finish({
-    outcome: 'completed',
-    output: { path: output, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.length },
-    audio: { sampleRate, channels: 1, durationSec: 1 },
-    stats: { referenceMs: input ? 1 : 0, synthesisMs: steps, encodeMs: 1 },
-    readingsDropped: control().readingsDropped ?? [],
   });
 }
 

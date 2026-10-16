@@ -42,13 +42,16 @@ test('公共组件按同一分类里声明它的模型数算：两只以上放�
   const asr = L.layout(M, C, 'asr');
   assert.deepEqual(asr.shared.map((c) => c.id), ['vad', 'aligner', 'whisper-tokenizer', 'wespeaker']);
   asr.rows.forEach((r) => assert.deepEqual(r.own, [], r.m.id));
+  // 语音合成每只都是一个 GGUF（audio.cpp 引擎随应用内置）：没有公共组件，也没有自带组件
   const tts = L.layout(M, C, 'tts');
-  assert.deepEqual(tts.shared.map((c) => c.id), ['tts-codec']);
-  assert.deepEqual(tts.rows.find((r) => r.m.id === 'qwen3-tts-1.7b-base').common, ['tts-codec']);
-  assert.deepEqual(tts.rows.find((r) => r.m.id === 'index-tts2.5').own.map((c) => c.id), ['indextts-aux']);
-  assert.deepEqual(tts.rows.find((r) => r.m.id === 'indextts2').own, []);
-  assert.deepEqual(tts.rows.find((r) => r.m.id === 'fish-s2-pro').own.map((c) => c.id), ['fish-s2-pro-codec']);
+  assert.deepEqual(tts.shared, []);
+  tts.rows.forEach((r) => assert.deepEqual([r.own, r.common], [[], []], r.m.id));
   assert.deepEqual(L.layout(M, C, 'sep').shared, []);
+  // 只有一只用的组件跟着那只模型的行走（演示数据里已经没有这种组件，用一组假数据守住规则）
+  const lay = L.layout([{id: 'a', cat: 'tts', uses: ['x']}, {id: 'b', cat: 'tts', uses: ['x', 'y']}], [{id: 'x'}, {id: 'y'}], 'tts');
+  assert.deepEqual(lay.shared.map((c) => c.id), ['x']);
+  assert.deepEqual(lay.rows.find((r) => r.m.id === 'b').own.map((c) => c.id), ['y']);
+  assert.deepEqual(lay.rows.find((r) => r.m.id === 'b').common, ['x']);
 });
 
 test('每个声明的组件都在目录里，分类不串：TTS 不会被问 aligner / VAD', () => {
@@ -79,10 +82,10 @@ test('盘上合计：共享组件只算一次，按分类可拆', () => {
   const on = L.initial(M, C);
   const asr = 1748 + 680 + 947 + 1.2 + 938 + 26.5;
   assert.equal(+L.disk(M, C, on, 'asr').toFixed(1), asr);
-  assert.equal(L.disk(M, C, on, 'tts'), 1732 + 1249 + 662);   // CustomVoice + Base（2026-09-24 演示装上，试听克隆可试）+ 共用编解码器
+  assert.equal(L.disk(M, C, on, 'tts'), 1899 + 2687);   // 0.6B Base（2026-09-24 演示装上，试听克隆可试）+ 1.7B CustomVoice，各自一个 GGUF
   assert.equal(L.disk(M, C, on, 'sep'), 0);
   assert.equal(L.disk(M, C, on, 'vision'), 6.4);   // 人物定位随应用附带（§15.9）
-  assert.equal(+L.disk(M, C, on).toFixed(1), +(asr + 1732 + 1249 + 662 + 6.4).toFixed(1));
+  assert.equal(+L.disk(M, C, on).toFixed(1), +(asr + 1899 + 2687 + 6.4).toFixed(1));
 });
 
 test('删除：共享组件还有别人在用就保留，最后一个使用者走时一起回收', () => {
@@ -98,23 +101,22 @@ test('删除：共享组件还有别人在用就保留，最后一个使用者�
   const r2 = L.removal(w, M, C, on);
   assert.deepEqual(r2.orphaned.map((c) => c.id), ['vad', 'aligner']);
   assert.equal(+r2.frees.toFixed(1), 947 + 1.2 + 938);
+  assert.match(L.removalBody(w, M, C, on), /VAD 语音活动检测、Forced aligner——没有别的已装模型还需要/);
   on = L.applyRemove(on, w, M, C);
   assert.equal(on.vad, false);
   assert.equal(on.aligner, false);
   assert.equal(on.wespeaker, true, 'MOSS 还在，声纹嵌入不动');
-  const tts = byId('qwen3-tts-0.6b-customvoice');
-  assert.match(L.removalBody(tts, M, C, on), /Qwen3-TTS 语音编解码器 还有 Qwen3-TTS 0.6B Base 在用，保留/);
-  on = L.applyRemove(on, byId('qwen3-tts-0.6b-base'), M, C);
-  assert.equal(on['tts-codec'], true, 'CustomVoice 还在，编解码器不动');
-  assert.match(L.removalBody(tts, M, C, on), /Qwen3-TTS 语音编解码器——没有别的已装模型还需要/);
+  // 语音合成没有共享组件：删一只只腾出它自己的 GGUF
+  assert.equal(L.removalBody(byId('qwen3-tts-0.6b-base'), M, C, on), '腾出 1.9 GB。');
 });
 
 test('组件副题与体积写法', () => {
   const on = L.initial(M, C);
   const vad = C.find((c) => c.id === 'vad');
   assert.equal(L.compUsage(vad, M, on), '2 个已装模型在用 · 共 4 个需要');
-  const aux = C.find((c) => c.id === 'indextts-aux');
-  assert.equal(L.compUsage(aux, M, on), '1 个模型会用到 · 暂无已装');
+  const tok = C.find((c) => c.id === 'whisper-tokenizer');
+  assert.equal(L.compUsage(tok, M, on), '1 个已装模型在用 · 共 2 个需要');
+  assert.equal(L.compUsage(tok, M, {}), '2 个模型会用到 · 暂无已装');
   assert.equal(L.mb(1.2), '1.2 MB');
   assert.equal(L.mb(1748), '1.7 GB');
   assert.equal(L.mb(662), '662 MB');
@@ -158,16 +160,20 @@ test('语音合成：引擎表里的每只模型都有设置行；OmniVoice 与 
     assert.ok(row, id);
     if (id !== 'htdemucs-ft') assert.equal(row.cat, 'tts', id);   // 分离模型也挂在 MODELS 里（配音用）
   });
-  assert.equal(byId('qwen3-tts-1.7b-voicedesign').size, 2287);
-  assert.deepEqual(byId('qwen3-tts-1.7b-voicedesign').uses, ['tts-codec']);
-  assert.equal(byId('voxcpm2').size, 2870);
-  assert.equal(byId('omnivoice').size, 1049);
+  // 体积按 audio.cpp Q8 GGUF 的字节数折成 MiB（packages/models repo-manifests.ts 的 estimatedBytes）
+  assert.equal(byId('qwen3-tts-1.7b-voicedesign').size, 2686);
+  assert.deepEqual(byId('qwen3-tts-1.7b-voicedesign').uses, []);
+  assert.equal(byId('voxcpm2').size, 2818);
+  assert.equal(byId('omnivoice').size, 1288);
+  assert.equal(byId('fish-s2-pro').size, 6025);
+  M.filter((m) => m.cat === 'tts').forEach((m) => assert.equal(m.repo, 'audio-cpp/audio.cpp-gguf', m.id));
+  ['qwen3-tts-0.6b-customvoice', 'gpt-sovits-v2'].forEach((id) => assert.equal(byId(id), undefined, `${id} 已删`));
   const nc = M.filter((m) => m.license && m.license.commercialUse === false).map((m) => m.id);
   assert.deepEqual(nc, ['omnivoice', 'fish-s2-pro', 'qwen-image-2.1-turbo', 'qwen-image-2.1', 'yue2-3b']);
   assert.equal(byId('omnivoice').license.name, 'CC-BY-NC-4.0');
-  // 新行各自一个仓库：公共组件照旧只有 12Hz 编解码器
+  // 每只一个 GGUF：没有公共组件
   const tts = L.layout(M, C, 'tts');
-  assert.deepEqual(tts.shared.map((c) => c.id), ['tts-codec']);
+  assert.deepEqual(tts.shared, []);
   assert.deepEqual(tts.rows.find((r) => r.m.id === 'omnivoice').own, []);
 });
 
@@ -238,20 +244,17 @@ test('下载来源的基础规则：基址认回 Hugging Face / ModelScope / 镜
   assert.match(L.endpointError('https://mirror.example/?token=1'), /查询参数/);
 });
 
-test('音乐生成：audio.cpp 引擎是 YuE2 的组件，跟着模型一起下载，缺了是半装', () => {
+test('音乐生成：audio.cpp 引擎随应用内置，不是 YuE2 的组件；只下载模型，权重在就不是半装', () => {
   const y = byId('yue2-3b');
-  const eng = C.find((c) => c.id === 'audiocpp-engine');
-  assert.deepEqual(y.uses, ['audiocpp-engine']);
-  assert.ok(eng.release && !eng.repo, '引擎来自 GitHub 发布页，不是 HF 仓库');
-  assert.equal(eng.license.commercialUse, true);
+  assert.deepEqual(y.uses, []);
+  assert.equal(C.find((c) => c.id === 'audiocpp-engine'), undefined, '引擎不在组件目录里');
+  assert.ok(C.every((c) => !c.release), '组件都来自模型仓库，没有要从 GitHub 发布页下载的');
   const lay = L.layout(M, C, 'music');
-  assert.deepEqual(lay.shared, [], '只有一只模型用，跟着它的行走');
-  assert.deepEqual(lay.rows[0].own.map((c) => c.id), ['audiocpp-engine']);
+  assert.deepEqual(lay.shared, []);
+  assert.deepEqual(lay.rows[0].own, []);
   const none = {};
-  assert.equal(L.needSize(y, C, none), y.size + eng.size, '下载按钮的体积含引擎');
-  assert.deepEqual(L.applyInstall(none, y), {'yue2-3b': true, 'audiocpp-engine': true});
-  const halfOn = {'yue2-3b': true};
-  assert.equal(L.half(y, C, halfOn), true);
-  assert.deepEqual(L.missing(y, C, halfOn).map((x) => x.id), ['audiocpp-engine']);
-  assert.ok(L.licenseLines(y, C).some((x) => x.comp && x.lic.name === 'Apache-2.0'));
+  assert.equal(L.needSize(y, C, none), y.size, '下载按钮的体积只有模型');
+  assert.deepEqual(L.applyInstall(none, y), {'yue2-3b': true});
+  assert.equal(L.half(y, C, {'yue2-3b': true}), false);
+  assert.deepEqual(L.licenseLines(y, C).map((x) => `${x.part}:${x.lic.name}`), ['模型权重:CC-BY-NC-4.0']);
 });

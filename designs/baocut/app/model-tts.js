@@ -15,25 +15,24 @@
   /* ---------- 模型目录（与 data.js `setModels` 的 id 一一对应） ---------- */
   const MODELS = {
     'qwen3-tts-0.6b-base':        {engine: 'qwen3', mode: 'clone',  name: 'Qwen3-TTS 0.6B Base'},
-    'qwen3-tts-0.6b-customvoice': {engine: 'qwen3', mode: 'preset', name: 'Qwen3-TTS 0.6B CustomVoice'},
     'qwen3-tts-1.7b-base':        {engine: 'qwen3-1.7b', mode: 'clone', name: 'Qwen3-TTS 1.7B Base'},
     'qwen3-tts-1.7b-customvoice': {engine: 'qwen3-1.7b', mode: 'preset', name: 'Qwen3-TTS 1.7B CustomVoice'},
     'qwen3-tts-1.7b-voicedesign': {engine: 'qwen3-1.7b', mode: 'describe', name: 'Qwen3-TTS 1.7B VoiceDesign'},
     'indextts2':                  {engine: 'indextts2', mode: 'clone', name: 'IndexTTS2'},
     'index-tts2.5':               {engine: 'indextts25', mode: 'clone', name: 'IndexTTS 2.5'},
-    'gpt-sovits-v2':              {engine: 'gptsovits', mode: 'clone', name: 'GPT-SoVITS v2'},
     'voxcpm2':                    {engine: 'voxcpm2', mode: 'clone', name: 'VoxCPM2'},
     'omnivoice':                  {engine: 'omnivoice', mode: 'clone', name: 'OmniVoice'},
     'fish-s2-pro':                {engine: 'fish-s2-pro', mode: 'clone', name: 'Fish Audio S2 Pro'},
     'htdemucs-ft':                {engine: 'sep', name: 'HTDemucs-FT'},
   };
   /* 引擎表。`models` = 音色方式 → 要装的模型 id，它同时决定这只引擎能给哪几种音色方式：
-     Qwen3-TTS 官方 12 Hz 系列在 BaoCut 每档保留 Base（克隆）/ CustomVoice（9 个预设 + 风格指令）两只。
+     Qwen3-TTS 官方 12 Hz 系列：0.6B 只保留 Base（克隆）；1.7B 有 Base、CustomVoice（9 个预设 + 风格指令）与 VoiceDesign。
+     九只本地模型都是 audio.cpp 的 Q8 GGUF，由随应用内置的 audio.cpp 引擎跑，各平台同一份权重。
      `builtin` = 内置音色在这只引擎上怎么落地（2026-09-21 起**每只引擎都有默认音色**）：
-     `'ref'` 拿随包录音当参考（克隆三只与 Qwen3-TTS Base），`'describe'` 拿随包的那句声音描述
+     `'ref'` 拿随包录音当参考（克隆几只与 Qwen3-TTS 0.6B Base），`'describe'` 拿随包的那句声音描述
      造声（目前没有引擎走这条）；CustomVoice 走 `models.preset`，用模型自己的 9 只说话人。
      `emotion` = 表单里有情绪控制。
-     `family` = 收据、任务 sub、配音组头里的引擎名：两只 Qwen3-TTS 都写 Qwen3-TTS（与 App 回执一致）。
+     `family` = 收据、任务 sub、配音组头里的引擎名：两档 Qwen3-TTS 都写 Qwen3-TTS（与 App 回执一致）。
      2026-09-26 起「有描述」不再等于「只能描述」：Qwen3-TTS 1.7B 恢复 VoiceDesign（`models.describe`，一句自由描述，
      不吃参考音频；没写描述时落到所选内置音色的那句描述），OmniVoice 既能克隆也能描述，但描述是**受限词表**
      （`vocab`：性别 / 年龄 / 音高 / 风格 / 口音 / 方言各挑至多一项，见 `OMNI_DESIGN`）。
@@ -41,13 +40,12 @@
      `duration` = 能按目标时长合成（秒上限）：配音时每句直接按原句槽位长度合成，语速旋钮失效。
      `nonCommercial` = 权重许可只许非商业用途（下载前要确认，见 data.js 该行的 `license`）。 */
   const ENGINES = [
-    {id: 'qwen3', name: 'Qwen3-TTS 0.6B', family: 'Qwen3-TTS', desc: '9 个预设音色，或 3 秒参考音频克隆；可用一句话指定风格',
-     models: {preset: 'qwen3-tts-0.6b-customvoice', clone: 'qwen3-tts-0.6b-base'}},
-    {id: 'qwen3-1.7b', name: 'Qwen3-TTS 1.7B', family: 'Qwen3-TTS', desc: '同样 9 个预设音色与 3 秒克隆，还能只凭一句描述造一个新声音；音质更好也更慢', slow: true,
+    {id: 'qwen3', name: 'Qwen3-TTS 0.6B', family: 'Qwen3-TTS', desc: '八只内置音色，或 3 秒参考音频克隆',
+     models: {clone: 'qwen3-tts-0.6b-base'}, builtin: 'ref'},
+    {id: 'qwen3-1.7b', name: 'Qwen3-TTS 1.7B', family: 'Qwen3-TTS', desc: '9 个预设音色（可用一句话指定风格）与 3 秒克隆，还能只凭一句描述造一个新声音；音质更好也更慢', slow: true,
      models: {preset: 'qwen3-tts-1.7b-customvoice', clone: 'qwen3-tts-1.7b-base', describe: 'qwen3-tts-1.7b-voicedesign'}},
     {id: 'indextts2', name: 'IndexTTS2', desc: '八只内置音色，或用自己的录音克隆；情绪可另拿一段音频或按预设调', models: {clone: 'indextts2'}, builtin: 'ref', emotion: true},
     {id: 'indextts25', name: 'IndexTTS 2.5', desc: '同样八只内置音色与克隆，情绪同 IndexTTS2；多会念日语、西班牙语、阿拉伯语', models: {clone: 'index-tts2.5'}, builtin: 'ref', emotion: true},
-    {id: 'gptsovits', name: 'GPT-SoVITS', desc: '八只内置音色，或用自己的录音克隆；再给参考音频的原文会更像，这时参考要 3–10 秒；没有情绪控制', models: {clone: 'gpt-sovits-v2'}, builtin: 'ref'},
     {id: 'voxcpm2', name: 'VoxCPM2', desc: '八只内置音色，或用自己的录音克隆；给了录音原文最像，也可用一句话指定说话风格；会念 30 种语言与粤语，出 48 kHz',
      models: {clone: 'voxcpm2'}, builtin: 'ref', style: true},
     {id: 'omnivoice', name: 'OmniVoice', desc: '八只内置音色、用自己的录音克隆，或挑性别、年龄、音高造一个新声音；能按目标时长念，会念的语言最多；仅限非商用',
@@ -59,7 +57,7 @@
   const VOICE_MODES = [
     {k: 'preset', label: '预设'}, {k: 'clone', label: '参考音频'}, {k: 'describe', label: '描述'},
   ];
-  /* CustomVoice 的 9 个预设音色（0.6B 与 1.7B 同一张表，spk_id 也一样）。
+  /* CustomVoice 的 9 个预设音色（只有 1.7B 有 CustomVoice）。
      名字是模型权重里的标识，不翻译；副题是听感。 */
   const PRESETS = [
     {id: 'Vivian',   sub: '女声 · 明亮'},
@@ -82,7 +80,7 @@
   const LANGS = [{code: 'auto', name: '自动'}]
     .concat(['zh', 'en', 'ja', 'ko'].map((c) => ({code: c, name: CATALOG.native(c)})));
   /* 配音能选的目标语言（§15.4）：已翻译的轨直接配，没翻的先跑一遍「翻译字幕」再配。
-     Qwen3-TTS 能念 10 种，IndexTTS2 与 GPT-SoVITS 只有中英——引擎不支持的语言在菜单里标出来。 */
+     Qwen3-TTS 能念 10 种，IndexTTS2 只有中英——引擎不支持的语言在菜单里标出来。 */
   const DUB_LANGS = CATALOG.dub.map((c) => ({code: c, name: CATALOG.native(c)}));
   /* 时间适配策略。默认「压到下一句前」：超长的句只加速、**不截断**——截掉的是译文的
      尾巴，听的人不知道少了什么；加速的句至少完整，快过 1.35× 的在轨上标橙，
@@ -99,7 +97,7 @@
   ];
   const STRATEGY = [
     {id: 'clone', name: '克隆每位说话人的原声', desc: '每人取连续几整句（5–10 秒）连同原文当参考，全程同一段参考、同一颗种子'},
-    {id: 'preset', name: '每位说话人指定一个预设音色', desc: '只有 Qwen3-TTS 有预设'},
+    {id: 'preset', name: '每位说话人指定一个预设音色', desc: '只有 Qwen3-TTS 1.7B 有预设'},
     {id: 'upload', name: '上传一段参考音频', desc: '所有人用同一个声音'},
     {id: 'describe', name: '按一句话描述造一个新声音', desc: '所有说话人共用；Qwen3-TTS 1.7B 与 OmniVoice 会'},
   ];
@@ -169,8 +167,8 @@
      OmniVoice 的「描述」不是自由文本：每一类至多挑一项，用逗号连起来交给 `--instruct`；一项都不挑不算描述。
      英语口音只在念英语时生效，汉语方言只在念中文时生效；描述造声官方只在中文、英语上训练过。
      参考音频与描述同时给时听参考的（所以描述只放在「描述」那一档，克隆那一档不画）。
-     词表的写法（`value`）照 core `bcut_tts::omnivoice::instruct` 的词表（即官方 `voice_design.py`），口音带 ` accent` 后缀；
-     `model-tts.test.js` 从 Rust 源码读词表对拍。内核收半角逗号，混写中英时按方言 / 口音统一成一种语言。 */
+     词表的写法（`value`）照 `packages/models` 的 `OMNIVOICE_VOCABULARY`（即官方 `voice_design.py`），口音带 ` accent` 后缀；
+     `model-tts.test.js` 从那份 TS 源码读词表对拍。内核收半角逗号，混写中英时按方言 / 口音统一成一种语言。 */
   const OMNI_DESIGN = {
     joiner: ', ',
     trained: ['zh', 'en'],
@@ -266,13 +264,13 @@
     return p ? C.engineFor(p) : null;
   };
   const engineOf = (engine) => ENGINES.find((x) => x.id === engine) || cloudEngineOf(engine) || ENGINES[0];
-  /** 本地六只 + 已连接的云端 API 提供方（`saved` 是已连密钥的提供方 id）：工具页与面板的引擎目录 */
+  /** 本地七只 + 已连接的云端 API 提供方（`saved` 是已连密钥的提供方 id）：工具页与面板的引擎目录 */
   const allEngines = (saved, extra) => { const C = CLOUD(); return ENGINES.concat(C ? C.engines(saved, extra) : []); };
   const engineName = (engine) => engineOf(engine).name;
-  /** 收据、任务 sub、配音组头里的引擎名：两只 Qwen3-TTS 都写 Qwen3-TTS */
+  /** 收据、任务 sub、配音组头里的引擎名：两档 Qwen3-TTS 都写 Qwen3-TTS */
   const engineFamily = (engine) => engineOf(engine).family || engineName(engine);
-  /** 引擎 + 音色方式 → 需要的模型 id。Qwen3-TTS 每档按方式分开装（Base / CustomVoice）；
-   *  旧版持久化下来的非法方式落到当前首选（CustomVoice）。 */
+  /** 引擎 + 音色方式 → 需要的模型 id。Qwen3-TTS 1.7B 按方式分开装（Base / CustomVoice / VoiceDesign）；
+   *  旧版持久化下来的非法方式（例如 0.6B 旧草稿里的「预设」）落到这只引擎的第一种方式。 */
   function modelFor(engine, mode) {
     const models = engineOf(engine).models;
     return models[mode] || models[voiceModes(engine)[0]] || models.clone;
@@ -403,26 +401,21 @@
     const secs = (w.end - w.start).toFixed(1);
     return w.cut ? `克隆 · 截 ${secs} 秒 · 仅声纹` : `克隆 · ${w.ids.length > 1 ? '连续 ' + w.ids.length + ' 句' : '1 句'} · ${secs} 秒`;
   }
-  /* GPT-SoVITS 带参考文本时，官方推理只收 3–10 秒的参考音频；不带参考文本只取音色，不查时长。 */
-  const GSV_REF = {min: 3, max: 10};
   /** 参考音频时长不合引擎要求时给一句话，否则 null。时长未知（刚选的本地文件）不拦，交给合成报错。 */
   function refProblem(f) {
     if (refTextRequired(f.engine) && f.mode !== 'describe' && f.ref && !String(f.refText || '').trim())
       return f.engine === 'fish-s2-pro' ? 'Fish Audio S2 Pro 克隆要填写参考录音的原文' : 'OmniVoice 克隆要写参考录音的原文：它把参考当作正文前面那一截来续，不写原文会吞掉正文开头';
     if (f.engine === 'fish-s2-pro' && f.ref && typeof f.ref.dur === 'number' && f.ref.dur > 30) return 'Fish Audio S2 Pro 参考录音最长 30 秒';
-    if (f.engine !== 'gptsovits' || !f.ref || typeof f.ref.dur !== 'number' || !String(f.refText || '').trim()) return null;
-    if (f.ref.dur >= GSV_REF.min && f.ref.dur <= GSV_REF.max) return null;
-    return `GPT-SoVITS 带参考文本时参考音频要 ${GSV_REF.min}–${GSV_REF.max} 秒（现在 ${f.ref.dur.toFixed(1)} 秒）；清空参考文本也能念`;
+    return null;
   }
   /** 参考录音的原文是不是必填：OmniVoice 不带原文会吞掉正文开头（内核 `ref-text-required` 同样拦），
    *  内置音色与带原文的「我的声音」自带原文，只有自己的录音要手写 */
   const refTextRequired = (engine) => ['omnivoice', 'fish-s2-pro'].includes(engineOf(engine).id);
   /* 内置音色（2026-09-13 两段示例 → 2026-09-21 八只）：每只引擎都有默认音色，不必自己先找录音。
      八只命名音色（zh / en / ja / es × 男女）各带一段随包录音、录音的原文和一句英文描述，
-     落地方式按引擎分（`builtinKind`）：只能克隆的三只与 Qwen3-TTS Base 拿录音当参考，
+     落地方式按引擎分（`builtinKind`）：只能克隆的几只与 Qwen3-TTS Base 拿录音当参考，
      Qwen3-TTS 1.7B VoiceDesign 接不了参考音频、拿那句描述造声，CustomVoice 有模型自己的 9 只说话人、不吃这张表。
-     录音取 FLEURS（CC BY 4.0）与 CMU ARCTIC，6–9 秒，落在 GPT-SoVITS 带参考文本的 3–10 秒与
-     克隆参考窗 5–10 秒之内。跨语言克隆这几只引擎都支持：中文参考念英语没问题，听的是音色不是口音。
+     录音取 FLEURS（CC BY 4.0）与 CMU ARCTIC，6–9 秒，落在克隆参考窗 5–10 秒之内。跨语言克隆这几只引擎都支持：中文参考念英语没问题，听的是音色不是口音。
      真相在 `bcut_tts::voices`，这张表照抄它。 */
   const BUILTIN_REFS = [
     {id: 'zh-female', label: '中文女声', name: '中文女声', dur: 6.72, lang: 'zh', female: true,
@@ -632,7 +625,7 @@
   ];
   /* 试听的语气（2026-09-21）。两条路各管一段引擎，别互换：
      `instruct` 是 Qwen3-TTS CustomVoice 的一句自然语言风格指令（`bcut tts --instruct`），
-     `emotion` 是 IndexTTS2 / 2.5 的八维情感向量里点亮的那一维。Base 与 GPT-SoVITS
+     `emotion` 是 IndexTTS2 / 2.5 的八维情感向量里点亮的那一维。Base 与其余克隆模型
      两样都不认，根本不画这一行；VoiceDesign 的语气就是它那句声音描述，也不重复画。
      热情洋溢排第一，也是试听的默认——设置页的试听是听「它念 BaoCut 的介绍好不好听」。 */
   const INSTRUCT_TONES = [
@@ -663,7 +656,6 @@
   function quickSlow(id) {
     const spec = MODELS[id] || {};
     if (spec.mode === 'describe') return '声音完全由这句描述决定：换一句描述就是另一个人，没有预设音色可选';
-    if (spec.engine === 'voxcpm2') return '大约一倍实时：一句念多长就要等多久，首次加载约 5 秒';
     if (engineOf(spec.engine).nonCommercial) return '仅限非商用（CC-BY-NC-4.0）：做要商用的内容请换别的模型';
     return null;
   }
@@ -838,12 +830,10 @@
   const unitName = (u) => (u === 'char' ? '字' : '词');
   const seed = (unit, p10, median, p90) => ({unit, perMin: {p10, median, p90}, samples: 0, source: 'seed', recent: []});
   const PACE_SEED = {
-    'qwen3-tts-0.6b-customvoice': {zh: seed('char', 230, 268, 310), ja: seed('char', 250, 290, 340), ko: seed('char', 200, 240, 280), en: seed('word', 130, 150, 172)},
     'qwen3-tts-0.6b-base':        {zh: seed('char', 225, 262, 305), ja: seed('char', 245, 285, 335), ko: seed('char', 195, 235, 275), en: seed('word', 128, 148, 170)},
     'indextts2':                  {zh: seed('char', 220, 255, 295), en: seed('word', 125, 145, 165)},
     'index-tts2.5':               {zh: seed('char', 252, 269, 306), en: seed('word', 138, 174, 206)},
-    'gpt-sovits-v2':              {zh: seed('char', 196, 228, 286), en: seed('word', 161, 189, 225)},
-    /* Qwen3-TTS 1.7B（三只）、VoxCPM2、OmniVoice 还没有实测种子：`paceFor` 落到按单位的 DEFAULT_PACE，
+    /* Qwen3-TTS 1.7B（三只）、VoxCPM2、OmniVoice、Fish Audio S2 Pro 还没有实测种子：`paceFor` 落到按单位的 DEFAULT_PACE，
        跑过几次配音后由 `paceUpdate` 按实测补上——不凭感觉先写一行。 */
   };
   const DEFAULT_PACE = {char: seed('char', 220, 260, 300), word: seed('word', 120, 145, 170)};
@@ -1196,7 +1186,7 @@
     MAX_RATE, RETRANS_RATE, MANUAL_RATE, GAP, SEP_WINDOW, BED_TRACK_ID,
     LOCAL_KNOBS, knobsOf, knobValue, setKnob, knobArgs, knobLine, DURATION_MAX, durationMax,
     OMNI_DESIGN, OMNI_PRESETS, omniCats, omniItemLabel, omniFit, omniToggle, omniCount, omniInstruct, omniLabel, omniProblem, omniLangNote, describeText,
-    engineOf, allEngines, LANG_SHORT, VOICE_MODES, modelFor, referenceWindows, voiceModes, cloneOnly, hasDescribe, describeByVocab, hasStyle, styleOn, refRequired, builtinKind, hasEmotion, engineName, engineFamily, formLangs, GSV_REF, refProblem, refTextRequired, BUILTIN_REFS, QUICK_BUILTINS, builtinRef, defaultBuiltin, moreBuiltins, REF_CREDIT, refSources, refDefault, refSourceOf, pickRef, modelBrief, SAMPLE_LINES, SAMPLE_KINDS, sampleLangs, sampleKinds, sampleLine, langLabel, quickTones, quickTone, QUICK_PRESETS, quickVoices, quickDefaults, quickForm, quickSummary, quickKey, quickSlow, DESCRIBE_VOICES, engineSpeaks, ttsLangs, dubLangMarks, fallbackLang, REF_WINDOW, referenceWindow, referenceLine, validate, validatePreview, segments, estimateDuration, GEN_STAGES, genStages, genPhase, genSub, asSource,
+    engineOf, allEngines, LANG_SHORT, VOICE_MODES, modelFor, referenceWindows, voiceModes, cloneOnly, hasDescribe, describeByVocab, hasStyle, styleOn, refRequired, builtinKind, hasEmotion, engineName, engineFamily, formLangs, refProblem, refTextRequired, BUILTIN_REFS, QUICK_BUILTINS, builtinRef, defaultBuiltin, moreBuiltins, REF_CREDIT, refSources, refDefault, refSourceOf, pickRef, modelBrief, SAMPLE_LINES, SAMPLE_KINDS, sampleLangs, sampleKinds, sampleLine, langLabel, quickTones, quickTone, QUICK_PRESETS, quickVoices, quickDefaults, quickForm, quickSummary, quickKey, quickSlow, DESCRIBE_VOICES, engineSpeaks, ttsLangs, dubLangMarks, fallbackLang, REF_WINDOW, referenceWindow, referenceLine, validate, validatePreview, segments, estimateDuration, GEN_STAGES, genStages, genPhase, genSub, asSource,
     PACE_FILE, PACE_PATH, PACE_SEED, paceUnit, unitName, latinUnits, countUnits, paceFor, paceUpdate, paceLine, predictRate, budgetUnits,
     limitOf, fitPlan, demoRewrite, replanRow,
     DUB_STAGES, dubStages, sepWindows, dubPhase, fitSentence, speakerHue, dubTrackId, dubBlocks, stretchBlock, rateLabel,

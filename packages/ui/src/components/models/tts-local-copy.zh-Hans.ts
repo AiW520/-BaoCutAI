@@ -69,7 +69,7 @@ export const zhHans: TtsLocalMessages = {
     handoffCancel: '不了，回去',
     auditionClone: '试听克隆',
     auditionCloneLabel: (name: string) => `试听克隆 · ${name}`,
-    noCloneModel: '还没有装好能克隆的本地模型：先在本地模型页下载一只（IndexTTS2、Qwen3-TTS Base、GPT-SoVITS……）。',
+    noCloneModel: '还没有装好能克隆的本地模型：先在本地模型页下载一只（IndexTTS2、Qwen3-TTS Base、VoxCPM2……）。',
     goLocal: '去本地模型',
   },
 };

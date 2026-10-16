@@ -15,16 +15,18 @@ import {
   type ModelCatalog,
 } from '@baocut/models';
 import { killProcessTree } from '@baocut/process-host';
+import { ModelsModelCatalog as MC } from '@baocut/protocol/messages/models/model-catalog.ts';
 import { JobsLocalProvider as L } from '@baocut/protocol/messages/jobs/local-provider.ts';
 import { jobWarning } from './job-text.ts';
 import { silentLog, type JobsLogger } from './jobs-logger.ts';
 
 /**
- * 本地音乐生成的 Provider（架构设计 §6.1、§6.3）：`generateMusic` 的 `local` 执行者。每个任务起一个 audio.cpp 引擎进程
- * （`audiocpp_cli`），读模型包目录里的 GGUF，把 WAV 写进这次尝试的 staging；没有 Model Worker 参与，也不常驻。
+ * 本地音乐生成的 Provider（架构设计 §6.1、§6.3）：`generateMusic` 的 `local` 执行者。每个任务起一个内置 audio.cpp 引擎进程
+ * （`audiocpp_cli`，与本地 TTS 的 `audiocpp_server` 同一份构建），读模型包目录里的 GGUF，把 WAV 写进这次尝试的 staging；
+ * 没有 Model Worker 参与，也不常驻。
  *
- * - 引擎找不到时 `unavailable`，原因 `not-installed`：引擎是模型包的必需组件（`audiocpp-engine`），没装时模型目录同样把模型包
- *   标成 `not-installed` / `incomplete`，下载或修复模型包即可。
+ * - 引擎找不到时 `unavailable`，原因 `unsupported`（`MC.engineMissing`）：引擎随应用内置，找不到说明这台主机没有它的构建，
+ *   或安装不完整；模型目录同样把 audio.cpp 的模型包标成 `unsupported`。
  * - 进度：引擎不报告步数，进入生成阶段后只有不定进度；完成时报 1/1。
  * - 取消：先 SIGTERM 整个进程组（Windows 上 taskkill 整棵树），宽限期后 SIGKILL；进程退出后以 `cancelled` 兑现。
  * - 输出撞上 `maxDurationSec` 换算的 token 上限（WAV 时长达到上限的 98%）时记 `output-truncated` 警告，任务照样完成。
@@ -33,8 +35,8 @@ import { silentLog, type JobsLogger } from './jobs-logger.ts';
 
 export interface LocalMusicProviderOptions {
   catalog: ModelCatalog;
-  /** 一个模型包的引擎可执行文件的路径；null 表示找不到。每次任务重新解析（模型包装好后无需重启）。 */
-  engine: (bundleId: string) => string | null;
+  /** 内置引擎 `audiocpp_cli` 的路径；null 表示找不到。每次任务重新解析。 */
+  engine: () => string | null;
   /** 启动引擎的环境（登录 shell 的 PATH，与 Model Worker 相同）。 */
   env: () => Promise<NodeJS.ProcessEnv>;
   /** 引擎后端（`metal` / `cuda` / `vulkan` / `cpu`）；null 时由引擎按构建自己选。 */
@@ -54,7 +56,7 @@ const STDERR_TAIL = 2000;
 export class LocalMusicProvider implements GenerationProvider {
   readonly id = 'local';
   readonly #catalog: ModelCatalog;
-  readonly #engine: (bundleId: string) => string | null;
+  readonly #engine: () => string | null;
   readonly #env: () => Promise<NodeJS.ProcessEnv>;
   readonly #backend: string | null;
   readonly #threads: number;
@@ -93,8 +95,8 @@ export class LocalMusicProvider implements GenerationProvider {
     const bundleId = run.modelId;
     const def = this.#catalog.definition(bundleId);
     if (!def?.music) throw new ProviderFailure('unavailable', L.musicNotMusicBundle({ bundleId }), { bundleId });
-    const engine = this.#engine(bundleId);
-    if (engine === null) throw new ProviderFailure('unavailable', L.musicEngineMissing(), { reason: 'not-installed', bundleId });
+    const engine = this.#engine();
+    if (engine === null) throw new ProviderFailure('unavailable', MC.engineMissing(), { reason: 'unsupported', bundleId });
     if (this.#catalog.blocked(bundleId)) {
       const status = await this.#catalog.status(bundleId);
       throw new ProviderFailure('unavailable', L.bundleDisabled(), { reason: status?.reason ?? 'resource', state: status?.state });
@@ -114,7 +116,7 @@ export class LocalMusicProvider implements GenerationProvider {
     const exit = await this.#runEngine(engine, plan.args, run, signal);
     if (exit.cancelled) return { outcome: 'cancelled' };
     if (exit.code !== 0) {
-      throw new ProviderFailure('crashed', L.musicEngineFailed({ code: exit.code === null ? String(exit.signal) : String(exit.code), tail: exit.tail }), {
+      throw new ProviderFailure('crashed', L.audioCppExited({ code: exit.code === null ? String(exit.signal) : String(exit.code), tail: exit.tail }), {
         exitCode: exit.code,
         signal: exit.signal,
       });
@@ -157,7 +159,7 @@ export class LocalMusicProvider implements GenerationProvider {
           windowsHide: true,
         });
       } catch (error) {
-        reject(new ProviderFailure('unavailable', L.musicEngineSpawnFailed({ reason: String(error) })));
+        reject(new ProviderFailure('unavailable', L.audioCppSpawnFailed({ reason: String(error) })));
         return;
       }
       this.#active.add(child);
@@ -183,7 +185,7 @@ export class LocalMusicProvider implements GenerationProvider {
       };
       child.once('error', (error) => {
         done();
-        reject(new ProviderFailure('unavailable', L.musicEngineSpawnFailed({ reason: error.message })));
+        reject(new ProviderFailure('unavailable', L.audioCppSpawnFailed({ reason: error.message })));
       });
       child.once('exit', (code, sig) => {
         done();

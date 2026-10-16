@@ -289,7 +289,7 @@ BaoCut 的部分代码与资源移植、改写或复制自下列开源项目。�
 - 来源：[speech-swift](https://github.com/soniqo/speech-swift)（soniqo；原始版权声明为 `Copyright 2025 Ivan Digital`）
 - 许可：Apache License, Version 2.0；[上游 LICENSE 的原文副本](crates/model-runtime/licenses/speech-swift.txt)保留完整条款、版权与免责声明。
 
-BaoCut 的 Qwen3-ASR、Whisper、强制对齐、Silero VAD、Qwen3-TTS、VoxCPM2、OmniVoice、IndexTTS2，以及 HTDemucs 人声分离的部分实现参考或改写自该项目（部分先移植到 BaoCut v2，再移入当前项目）。相关 Swift 实现已改写为 Rust，并适配 BaoCut 的 MLX / candle 张量后端、按清单读取的模型包、错误与任务接口；推理与前后处理另按模型官方实现校正。每个相关实现文件开头保留版权、来源文件与修改声明，原有模型上游的来源说明同时保留。ASR 文件注明参考关系：算法以 Rust 实现，MLX 与 candle 后端有本项目自己的适配；Whisper 仍保留其 BaoCut 早先 Swift 实现的来源说明。
+BaoCut 的 Qwen3-ASR、Whisper、强制对齐、Silero VAD，以及 HTDemucs 人声分离的部分实现参考或改写自该项目（部分先移植到 BaoCut v2，再移入当前项目）。相关 Swift 实现已改写为 Rust，并适配 BaoCut 的 MLX / candle 张量后端、按清单读取的模型包、错误与任务接口；推理与前后处理另按模型官方实现校正。每个相关实现文件开头保留版权、来源文件与修改声明，原有模型上游的来源说明同时保留。ASR 文件注明参考关系：算法以 Rust 实现，MLX 与 candle 后端有本项目自己的适配；Whisper 仍保留其 BaoCut 早先 Swift 实现的来源说明。
 
 下列文件包含参考或改写部分；表格区分两种关系，不表示整份文件均来自 speech-swift，也不包含仅使用相同模型或框架的代码。模型权重、词典和音色录音的许可独立于本项目的代码许可，仍按各自来源声明。
 
@@ -325,53 +325,34 @@ BaoCut 的 Qwen3-ASR、Whisper、强制对齐、Silero VAD、Qwen3-TTS、VoxCPM2
 | `crates/model-runtime/src/speech/timestamp.rs` | `Sources/Qwen3ASR/TimestampCorrection.swift` | 参考实现，Rust 重写 |
 | `crates/model-runtime/src/speech/tokenizer.rs` | `Sources/AudioCommon/Tokenizer.swift` | 参考实现，Rust 重写 |
 | `crates/model-runtime/src/speech/whisper_decoding.rs` | `Sources/WhisperASR/WhisperGenerationConfig.swift / Sources/WhisperASR/WhisperByteLevelTokenizer.swift` | 参考实现，Rust 重写 |
-| `crates/model-runtime/src/synthesize/index_tts2/config.rs` | `Sources/IndexTTS2TTS/IndexTTS2RuntimeConfig.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/dsp.rs` | `Sources/SpeechRestoration/SeamlessM4TFrontEnd.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/bigvgan.rs` | `Sources/IndexTTS2TTS/IndexTTS2BigVGAN.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/campplus.rs` | `Sources/ChatterboxTTS/CAMPPlus.swift / Sources/IndexTTS2TTS/IndexTTS2CAMPPlusAdapter.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/engine_impl.rs` | `Sources/IndexTTS2TTS/IndexTTS2NativeRuntime.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/gpt.rs` | `Sources/IndexTTS2TTS/IndexTTS2SemanticGPT.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/layers.rs` | `Sources/IndexTTS2TTS/IndexTTS2SemanticGPT.swift / Sources/IndexTTS2TTS/IndexTTS2BigVGAN.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/s2mel.rs` | `Sources/IndexTTS2TTS/IndexTTS2S2Mel.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/semantic_codec.rs` | `Sources/IndexTTS2TTS/IndexTTS2SemanticCodec.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/w2v_bert.rs` | `Sources/IndexTTS2TTS/IndexTTS2Wav2Vec2Bert.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/mlx/weights.rs` | `Sources/MLXCommon/WeightLoading.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/normalizer.rs` | `Sources/IndexTTS2TTS/IndexTTS2TextNormalizer.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/sampling.rs` | `Sources/IndexTTS2TTS/IndexTTS2SemanticGPT.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/segmenter.rs` | `Sources/IndexTTS2TTS/IndexTTS2TextSegmenter.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/sentencepiece.rs` | `Sources/AudioCommon/SentencePieceModel.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/index_tts2/tokenizer.rs` | `Sources/IndexTTS2TTS/IndexTTS2Tokenizer.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/fish_s2_pro/` | `Sources/FishAudioTTS/FishAudioConfig.swift / FishAudioDualAR.swift / FishAudioCodec.swift / FishAudioGeneration.swift / FishAudioInputBuilder.swift / FishAudioPrompt.swift / FishAudioWeightLoading.swift / FishAudioTTSModel.swift` | 移植改写（Rust、MLX / candle、校验过的模型包、种子与取消；DAC RoPE 对照 Fish 官方相邻维度配对修正、VQ 距离按上游 DAC 归一化） |
-| `crates/model-runtime/src/synthesize/omnivoice/backbone.rs` | `Sources/OmniVoiceTTS/OmniVoiceBackbone.swift / Sources/OmniVoiceTTS/OmniVoiceDiffusion.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/omnivoice/codec.rs` | `Sources/OmniVoiceTTS/OmniVoiceCodec.swift / Sources/OmniVoiceTTS/OmniVoiceCodecEncoder.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/omnivoice/config.rs` | `Sources/OmniVoiceTTS/Configuration.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/omnivoice/engine.rs` | `Sources/OmniVoiceTTS/OmniVoiceModel.swift / Sources/OmniVoiceTTS/OmniVoiceTTSModel.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/code_predictor.rs` | `Sources/Qwen3TTS/CodePredictor.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/codec_decoder.rs` | `Sources/Qwen3TTS/SpeechTokenizerDecoder.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/codec_encoder.rs` | `Sources/Qwen3TTS/SpeechTokenizerEncoder.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/config.rs` | `Sources/Qwen3TTS/Configuration.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/engine.rs` | `Sources/Qwen3TTS/Qwen3TTS.swift / Sources/Qwen3TTS/Qwen3TTS+ICL.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/layers.rs` | `Sources/Qwen3TTS/Talker.swift / Sources/Qwen3TTS/CodePredictor.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/mel.rs` | `Sources/Qwen3TTS/SpeakerEncoder.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/prompt.rs` | `Sources/Qwen3TTS/Qwen3TTS.swift / Sources/Qwen3TTS/Qwen3TTS+ICL.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/sampling.rs` | `Sources/Qwen3TTS/Sampling.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/speaker_encoder.rs` | `Sources/Qwen3TTS/SpeakerEncoder.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/talker.rs` | `Sources/Qwen3TTS/Talker.swift / Sources/Qwen3TTS/CodePredictor.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/tokens.rs` | `Sources/Qwen3TTS/Configuration.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/qwen3_tts/weights.rs` | `Sources/Qwen3TTS/TTSWeightLoading.swift / Sources/Qwen3TTS/TTSWeightLoading+Encoder.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/voxcpm2/audio_vae.rs` | `Sources/VoxCPM2TTS/AudioVAE.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/voxcpm2/config.rs` | `Sources/VoxCPM2TTS/Configuration.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/voxcpm2/engine.rs` | `Sources/VoxCPM2TTS/VoxCPM2TTS.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/voxcpm2/minicpm.rs` | `Sources/VoxCPM2TTS/MiniCPM4.swift / Sources/VoxCPM2TTS/VoxCPM2TTS.swift` | 移植改写 |
-| `crates/model-runtime/src/synthesize/voxcpm2/tokenizer.rs` | `Sources/VoxCPM2TTS/VoxCPM2TTS.swift` | 移植改写 |
 
-Fish Audio TTS 的来源按 speech-swift `cbcdfc6be5e723952d29ab6e32af5e22ad8e70fa` 核对。
-
-Built with Fish Audio. S2 Pro 的可选下载权重采用 [Fish Audio Research License](https://huggingface.co/fishaudio/s2-pro/blob/main/LICENSE.md)，安装清单包含上游完整 `LICENSE.md`。This model is licensed under the Fish Audio Research License, Copyright © 39 AI, INC. All Rights Reserved.
-
-TTS 与人声分离模块的 `mod.rs` 另汇总来源与修改范围。上游许可副本与来源路径按 speech-swift `1f54e56cf137078ed681a03e0955e777f7314610` 核对；该版本号用于定位声明来源，不表示当前实现与该版本完全相同。
+人声分离模块的 `mod.rs` 另汇总来源与修改范围。上游许可副本与来源路径按 speech-swift `1f54e56cf137078ed681a03e0955e777f7314610` 核对；该版本号用于定位声明来源，不表示当前实现与该版本完全相同。
 
 本声明和上游许可副本随桌面与 Web 构建分发；桌面安装包在 `resources/THIRD_PARTY_NOTICES.md` 与 `resources/crates/model-runtime/licenses/speech-swift.txt` 保留可直接读取的副本。
+
+## audio.cpp
+
+- 来源：[audio.cpp](https://github.com/0xShug0/audio.cpp)，版本 0.9.2（标签 `v0.9.2`）
+- 版权：Copyright 2026 ShugoAI LLC
+- 许可：Apache License, Version 2.0；[audio.cpp 与第三方组件的许可原文](packages/models/licenses/audio.cpp.txt)收录上游 `LICENSE` 与下列组件的完整许可条款。
+
+BaoCut 的本地语音合成与本地音乐生成都由 audio.cpp 引擎执行。应用原样分发上游发布页的可执行文件 `audiocpp_cli` 与 `audiocpp_server`（macOS 为 Metal 构建；Windows 标准版为 CPU 构建，CUDA 版与 Vulkan 版为 Vulkan 构建），放在 `resources/bin/audiocpp/`，旁边附上游 `LICENSE`；BaoCut 没有修改其源码，源码见上游仓库对应标签。BaoCut 以子进程调用它（命令行与本机 HTTP 接口），不链接它的代码。上游构建静态链接了下列第三方组件，许可原文均收在上面的副本里：
+
+| 组件（上游路径） | 许可 |
+| --- | --- |
+| ggml（`external/ggml`，The ggml authors） | MIT |
+| llama.cpp 的分词代码（`external/llama_tokenizer`，The ggml authors） | MIT |
+| cJSON（`external/cJSON`，Dave Gamble and cJSON contributors） | MIT |
+| cpp-httplib（`external/cpp-httplib`，yhirose） | MIT |
+| libyaml（`external/libyaml`，Ingy döt Net、Kirill Simonov） | MIT |
+| SentencePiece（`external/sentencepiece`，Google） | Apache-2.0 |
+| SentencePiece 内含的 Abseil、Darts-clone、esaxx、Protocol Buffers lite | Apache-2.0、BSD 3-Clause、MIT、BSD 3-Clause |
+
+Windows 的引擎包旁附 Microsoft Visual C++ 运行库（`msvcp140*.dll`、`vcruntime140*.dll`、`vcomp140.dll`），按 Microsoft Visual C++ Redistributable 的条款随附。`audiocpp_server` 内置的网页界面 BaoCut 不启用（`--no-ui`）。
+
+模型权重不属于 audio.cpp，也不随应用分发：用户按需下载的 GGUF 按各模型原始发布的许可，设置页在下载前列出许可名称、链接与摘要，不可商用的要先确认。Built with Fish Audio. Fish Audio S2 Pro 的可选下载权重采用 [Fish Audio Research License](https://huggingface.co/fishaudio/s2-pro/blob/main/LICENSE.md)。This model is licensed under the Fish Audio Research License, Copyright © 39 AI, INC. All Rights Reserved.
+
+桌面安装包在 `resources/packages/models/licenses/audio.cpp.txt` 保留这份许可原文的可直接读取的副本。
 
 ## lobe-icons
 

@@ -70,15 +70,6 @@ pub struct Components {
     /// 识别模型取自另一个仓库的分词器文件（Whisper 的 `tokenizer.json` 等取自 `openai/whisper-large-v3`）。
     #[serde(default)]
     pub tokenizer: Option<ModelFiles>,
-    /// 本地语音合成的主模型（§4.1）。带了它的模型包是合成的模型包，不需要 `asr` / `vad`。
-    #[serde(default)]
-    pub tts: Option<ModelFiles>,
-    /// 合成用的语音编解码器（Qwen3-TTS 的 12 Hz 分词器），几个模型包共用一份。
-    #[serde(default)]
-    pub codec: Option<ModelFiles>,
-    /// 合成的辅助权重（IndexTTS 2.5 取自 IndexTTS2 仓库的语义编码器等）。
-    #[serde(default)]
-    pub aux: Option<ModelFiles>,
     /// 人声与伴奏分离的模型（HTDemucs-FT）。带了它的模型包是分离的模型包，不带别的组件。
     #[serde(default)]
     pub separator: Option<ModelFiles>,
@@ -91,13 +82,6 @@ pub struct Components {
     /// LiteRT-LM C API 的动态库（GitHub release 的共享组件）：Worker 运行期 `dlopen`，不在构建时链接。
     #[serde(default, rename = "litertlm-runtime")]
     pub litertlm_runtime: Option<ModelFiles>,
-}
-
-impl Components {
-    /// 模型包带了合成的组件（`tts` / `codec` / `aux` 之一）。
-    pub fn has_speech(&self) -> bool {
-        self.tts.is_some() || self.codec.is_some() || self.aux.is_some()
-    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -137,30 +121,6 @@ pub const FAMILY_QWEN3_ALIGNER: &str = "qwen3-forced-aligner";
 pub const FAMILY_WESPEAKER: &str = "wespeaker";
 /// Pyannote 说话人分段（segmentation-3.0 的 PyanNet，`aufklarer/Pyannote-Segmentation-MLX` 的 safetensors）。
 pub const FAMILY_PYANNOTE_SEGMENTATION: &str = "pyannote-segmentation";
-/// Qwen3-TTS 12 Hz 主模型（Base / CustomVoice / VoiceDesign，0.6B / 1.7B）。
-pub const FAMILY_QWEN3_TTS: &str = "qwen3-tts";
-/// Qwen3-TTS 的 12 Hz 语音分词器（codec 编解码器），各尺寸与变体共用一份。
-pub const FAMILY_QWEN3_TTS_CODEC: &str = "qwen3-tts-tokenizer";
-/// VoxCPM2（`config.json` + `tokenizer.json` + `model.safetensors`，单组件）。
-pub const FAMILY_VOXCPM2: &str = "voxcpm2";
-/// OmniVoice（主模型 + 同一组件里 `audio_tokenizer/` 下的音频分词器）。
-pub const FAMILY_FISH_S2_PRO_CODEC: &str = "fish-s2-pro-codec";
-pub const FAMILY_FISH_S2_PRO: &str = "fish-s2-pro";
-pub const FAMILY_OMNIVOICE: &str = "omnivoice";
-/// IndexTTS2 主模型。
-pub const FAMILY_INDEXTTS2: &str = "indextts2";
-/// IndexTTS 2.5 主模型（辅助权重在 `aux` 组件，family 是 `indextts2-aux`）。
-pub const FAMILY_INDEXTTS25: &str = "indextts2.5";
-/// GPT-SoVITS v2（`PJMixers-Dev/lj1995_GPT-SoVITS-safetensors`）：chinese-hubert、chinese-roberta、
-/// T2S 与 SoVITS 同在一个组件里。
-pub const FAMILY_GPT_SOVITS: &str = "gpt-sovits";
-/// IndexTTS2（`aufklarer/IndexTTS2-MLX-fp16`）：GPT、S2Mel、MaskGCT 语义码本与 `aux/` 下的 w2v-BERT、
-/// CAM++、BigVGAN 同在一个组件里。
-pub const FAMILY_INDEX_TTS2: &str = "indextts2";
-/// IndexTTS 2.5 主模型（tiktoken 多语言 GPT、语义码本解码器、S2Mel）；辅助权重在 `aux` 组件里。
-pub const FAMILY_INDEX_TTS25: &str = "indextts2.5";
-/// IndexTTS 2.5 的 `aux` 组件：整个 IndexTTS2 仓库，只读其中 `aux/` 下的 w2v-BERT、CAM++、BigVGAN 与统计量。
-pub const FAMILY_INDEX_TTS2_AUX: &str = "indextts2-aux";
 /// HTDemucs-FT（`aufklarer/HTDemucs-FT-MLX`）：`htdemucs_ft_config.json` + `htdemucs_ft.safetensors`，四个子模型同在一个文件里。
 pub const FAMILY_HTDEMUCS_FT: &str = "htdemucs-ft";
 /// Qwen-Image-2.1（`mlx-community/Qwen-Image-2.1-MLX-4bit`，以及 Turbo 的 `ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit`）：
@@ -172,8 +132,8 @@ pub const FAMILY_EMBEDDINGGEMMA2_LITERT: &str = "embeddinggemma2-litert";
 pub const FAMILY_LITERTLM_RUNTIME: &str = "litertlm-runtime";
 
 impl ModelFiles {
-    /// 单独校验一个组件的文件（与 [`verify`] 对每个组件做的检查相同）。给 [`Components`] 还没有
-    /// 字段的能力（例如合成）和测试用：调用方自己决定组件名。
+    /// 单独校验一个组件的文件（与 [`verify`] 对每个组件做的检查相同）。给不经 [`Components`] 的文件集和测试用：
+    /// 调用方自己决定组件名。
     pub fn verify(&self, component: &'static str) -> Result<VerifiedFiles, ErrorBody> {
         verify_files(component, self)
     }
@@ -353,9 +313,6 @@ pub struct VerifiedBundle {
     pub speaker: Option<VerifiedFiles>,
     pub segmentation: Option<VerifiedFiles>,
     pub tokenizer: Option<VerifiedFiles>,
-    pub tts: Option<VerifiedFiles>,
-    pub codec: Option<VerifiedFiles>,
-    pub aux: Option<VerifiedFiles>,
     pub separator: Option<VerifiedFiles>,
     pub image: Option<VerifiedFiles>,
     pub embedding: Option<VerifiedFiles>,
@@ -363,7 +320,7 @@ pub struct VerifiedBundle {
 }
 
 impl VerifiedBundle {
-    /// 按组件名（`asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` / `tts` / `codec` / `aux` / `separator` / `image` / `embedding` / `litertlm-runtime`）取文件集；模型包没带这个组件是 `MODEL_UNSUPPORTED`，
+    /// 按组件名（`asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` / `separator` / `image` / `embedding` / `litertlm-runtime`）取文件集；模型包没带这个组件是 `MODEL_UNSUPPORTED`，
     /// 与 `backend::load` 对必需组件的检查同一个形状。认不出的组件名是调用方的错，同样报 `MODEL_UNSUPPORTED`。
     pub fn component(&self, name: &str) -> Result<&VerifiedFiles, ErrorBody> {
         let files = match name {
@@ -373,9 +330,6 @@ impl VerifiedBundle {
             "speaker" => self.speaker.as_ref(),
             "segmentation" => self.segmentation.as_ref(),
             "tokenizer" => self.tokenizer.as_ref(),
-            "tts" => self.tts.as_ref(),
-            "codec" => self.codec.as_ref(),
-            "aux" => self.aux.as_ref(),
             "separator" => self.separator.as_ref(),
             "image" => self.image.as_ref(),
             "embedding" => self.embedding.as_ref(),
@@ -396,9 +350,6 @@ impl VerifiedBundle {
             &self.speaker,
             &self.segmentation,
             &self.tokenizer,
-            &self.tts,
-            &self.codec,
-            &self.aux,
             &self.separator,
             &self.image,
             &self.embedding,
@@ -441,9 +392,6 @@ pub fn verify(bundle: &ModelBundle) -> Result<VerifiedBundle, ErrorBody> {
             .map(|files| verify_files("segmentation", files))
             .transpose()?,
         tokenizer: c.tokenizer.as_ref().map(|files| verify_files("tokenizer", files)).transpose()?,
-        tts: c.tts.as_ref().map(|files| verify_files("tts", files)).transpose()?,
-        codec: c.codec.as_ref().map(|files| verify_files("codec", files)).transpose()?,
-        aux: c.aux.as_ref().map(|files| verify_files("aux", files)).transpose()?,
         separator: c.separator.as_ref().map(|files| verify_files("separator", files)).transpose()?,
         image: c.image.as_ref().map(|files| verify_files("image", files)).transpose()?,
         embedding: c.embedding.as_ref().map(|files| verify_files("embedding", files)).transpose()?,
@@ -574,16 +522,16 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("model.safetensors"), b"12345").unwrap();
         let files = bundle(dir.path(), vec![("model.safetensors", 5)]).components.vad.unwrap();
-        let verified = files.verify("tts").unwrap();
-        assert_eq!(verified.component, "tts");
+        let verified = files.verify("separator").unwrap();
+        assert_eq!(verified.component, "separator");
         assert_eq!(verified.family, FAMILY_SILERO_VAD);
         assert_eq!(verified.require_extension_in("", "safetensors").unwrap().len(), 1);
         let error = verified.require("config.json").unwrap_err();
         assert_eq!(error.code, codes::MODEL_NOT_INSTALLED);
-        assert_eq!(error.details.unwrap()["component"], "tts");
+        assert_eq!(error.details.unwrap()["component"], "separator");
 
         let wrong_size = bundle(dir.path(), vec![("model.safetensors", 6)]).components.vad.unwrap();
-        let error = wrong_size.verify("codec").unwrap_err();
+        let error = wrong_size.verify("image").unwrap_err();
         assert_eq!(error.code, codes::MODEL_NOT_INSTALLED);
         assert_eq!(error.details.unwrap()["reason"], "size-mismatch");
     }
@@ -703,12 +651,12 @@ mod tests {
     }
 
     #[test]
-    fn speech_components_parse_verify_and_count() {
+    fn components_parse_verify_and_count() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(dir.path().join("tts")).unwrap();
-        std::fs::create_dir_all(dir.path().join("codec")).unwrap();
-        std::fs::write(dir.path().join("tts/model.safetensors"), b"1234").unwrap();
-        std::fs::write(dir.path().join("codec/model.safetensors"), b"12").unwrap();
+        std::fs::create_dir_all(dir.path().join("speaker")).unwrap();
+        std::fs::create_dir_all(dir.path().join("segmentation")).unwrap();
+        std::fs::write(dir.path().join("speaker/model.safetensors"), b"1234").unwrap();
+        std::fs::write(dir.path().join("segmentation/model.safetensors"), b"12").unwrap();
         let files = |sub: &str, family: &str, size: u64| {
             json!({
                 "family": family,
@@ -718,35 +666,37 @@ mod tests {
             })
         };
         let bundle: ModelBundle = serde_json::from_value(json!({
-            "bundleId": "qwen3-tts-0.6b-base@mlx-8bit",
+            "bundleId": "speaker-diarization@mlx",
             "backend": "mlx",
             "device": "metal",
-            "components": { "tts": files("tts", "qwen3-tts", 4), "codec": files("codec", "qwen3-tts-tokenizer", 2) },
+            "components": {
+                "speaker": files("speaker", FAMILY_WESPEAKER, 4),
+                "segmentation": files("segmentation", FAMILY_PYANNOTE_SEGMENTATION, 2),
+            },
             "threads": 1,
         }))
         .unwrap();
-        assert!(bundle.components.has_speech());
         assert!(bundle.components.asr.is_none());
         let verified = verify(&bundle).unwrap();
-        assert_eq!(verified.component("tts").unwrap().family, "qwen3-tts");
-        assert_eq!(verified.component("codec").unwrap().component, "codec");
+        assert_eq!(verified.component("speaker").unwrap().family, FAMILY_WESPEAKER);
+        assert_eq!(verified.component("segmentation").unwrap().component, "segmentation");
         assert_eq!(
-            verified.component("aux").unwrap_err().details.unwrap()["reason"],
+            verified.component("asr").unwrap_err().details.unwrap()["reason"],
             "missing-component"
         );
         assert_eq!(verified.total_bytes(), 6);
 
         // 序列化回去仍是同一个形状（Runtime 与 Worker 的合同逐字对应）。
         let round: ModelBundle = serde_json::from_value(serde_json::to_value(&bundle).unwrap()).unwrap();
-        assert_eq!(round.components.codec.unwrap().family, "qwen3-tts-tokenizer");
+        assert_eq!(round.components.segmentation.unwrap().family, FAMILY_PYANNOTE_SEGMENTATION);
         // 不认识的组件名仍然拒绝。
-        let unknown = json!({ "tts": files("tts", "qwen3-tts", 4), "vocoder": files("codec", "x", 2) });
+        let unknown = json!({ "speaker": files("speaker", FAMILY_WESPEAKER, 4), "vocoder": files("segmentation", "x", 2) });
         assert!(serde_json::from_value::<Components>(unknown).is_err());
-        // 文件大小不符：合成的组件与识别的组件同样报 MODEL_NOT_INSTALLED，点名组件。
+        // 文件大小不符：报 MODEL_NOT_INSTALLED，点名组件。
         let mut wrong = bundle.clone();
-        wrong.components.tts.as_mut().unwrap().files[0].byte_length = 5;
+        wrong.components.speaker.as_mut().unwrap().files[0].byte_length = 5;
         let error = verify(&wrong).unwrap_err();
         assert_eq!(error.code, codes::MODEL_NOT_INSTALLED);
-        assert_eq!(error.details.unwrap()["component"], "tts");
+        assert_eq!(error.details.unwrap()["component"], "speaker");
     }
 }

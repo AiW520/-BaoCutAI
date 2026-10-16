@@ -72,7 +72,7 @@ export const ja: TtsLocalMessages = {
     auditionClone: 'クローンを試聴',
     auditionCloneLabel: (name: string) => `クローンを試聴 · ${name}`,
     noCloneModel:
-      'クローンできるローカルモデルがまだインストールされていません。先にローカルモデルのページでダウンロードしてください（IndexTTS2、Qwen3-TTS Base、GPT-SoVITS など）。',
+      'クローンできるローカルモデルがまだインストールされていません。先にローカルモデルのページでダウンロードしてください（IndexTTS2、Qwen3-TTS Base、VoxCPM2 など）。',
     goLocal: 'ローカルモデルへ',
   },
 };

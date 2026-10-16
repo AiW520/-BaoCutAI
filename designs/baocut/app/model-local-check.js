@@ -19,9 +19,9 @@
   const CHECK_ICON = 'search';
 
   /*
-   * 音乐模型跑在 audio.cpp 引擎上（docs/spec/model-worker-protocol-spec.md §4.4）。引擎是 YuE2 模型包的一件组件
-   * （data.js setComponents 的 audiocpp-engine），和语音识别的分词器一样跟着模型一起下载；缺了它就是模型的「半装」，
-   * 行上给「补齐」，不在检查里另说，所以这里没有引擎专属的问题与动作。
+   * 本地语音合成与音乐模型跑在 audio.cpp 引擎上（docs/spec/model-worker-protocol-spec.md §4.4）。引擎随应用内置，
+   * 不是模型的组件、不下载；找不到内置引擎时这些模型报告为「不支持」（这台电脑没有内置的 audio.cpp 引擎），
+   * 不是「半装」，行上没有「补齐」。检查只管模型文件，所以这里没有引擎专属的问题与动作。
    */
 
   /* 有东西可试的能力：行上的主操作。其余能力没有试用。 */

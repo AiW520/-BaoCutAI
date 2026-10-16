@@ -249,7 +249,7 @@
                 <span className="t-detail-xs grow">{paceLangs.map((l) => TTS.paceLine(TTS.paceFor(app.ttsPace, m.id, l), l)).join(' · ')}</span>
               </div>
             ) : null}
-            {/* 下载地址：权重的仓库；只有这只模型用的组件来源不同时各加一行（audio.cpp 引擎来自 GitHub 发布页，按平台挑包） */}
+            {/* 下载地址：权重的仓库；只有这只模型用的组件来源不同时各加一行（来自 GitHub 发布页的组件写版本；audio.cpp 引擎随应用内置，不在这里） */}
             <div className="lmrow__dl">
               <span className="t-detail-xs lmrow__dt">下载地址</span>
               <div className="grow">

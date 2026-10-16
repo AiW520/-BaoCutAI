@@ -78,14 +78,14 @@ test('样本（2026-10-14）：目标 30 秒自动停；5 秒以下不给存，1
 test('音色档记什么认人：每只本机引擎一颗种子，云端各家一只 voice id；授权录音另存一段', () => {
   const me = V.DEMO.find((v) => v.id === 'v-me');
   assert.equal(me.seed, 48213);
-  assert.deepEqual(me.seeds, {indextts2: 48213, gptsovits: 90117});
-  assert.equal(V.seedFor(me, 'gptsovits'), 90117);
+  assert.deepEqual(me.seeds, {indextts2: 48213, voxcpm2: 90117});
+  assert.equal(V.seedFor(me, 'voxcpm2'), 90117);
   assert.equal(V.seedFor(me, 'qwen3'), 48213, '没单独给种子的引擎用底种子');
   assert.equal(me.consentClip.lang, 'en-US');
   assert.equal(me.cloud.google.voiceId, 'voice_demo7q2mx');
   const b = V.bindings(me, [{id: 'google', name: 'Google Gemini'}]);
-  assert.deepEqual(b.map((x) => x.kind + ':' + x.id), ['seed:indextts2', 'seed:gptsovits', 'seed:*', 'voice:google']);
-  assert.equal(V.idLine(me, [{id: 'google', name: 'Google Gemini'}]), '种子 48213（IndexTTS2 / 其余本机引擎） · 种子 90117（GPT-SoVITS） · Google Gemini voice_demo7q2mx · 授权声明 English（美国） 7.9 秒');
+  assert.deepEqual(b.map((x) => x.kind + ':' + x.id), ['seed:indextts2', 'seed:voxcpm2', 'seed:*', 'voice:google']);
+  assert.equal(V.idLine(me, [{id: 'google', name: 'Google Gemini'}]), '种子 48213（IndexTTS2 / 其余本机引擎） · 种子 90117（VoxCPM2） · Google Gemini voice_demo7q2mx · 授权声明 English（美国） 7.9 秒');
   const host = V.DEMO.find((v) => v.id === 'v-host');
   assert.equal(host.consentClip, null);
   assert.deepEqual(host.seeds, {});
@@ -93,7 +93,7 @@ test('音色档记什么认人：每只本机引擎一颗种子，云端各家�
   // 模型页那一行：云端只列建过 voice id 的，本机列每只音色与它在这只引擎上的种子
   assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'cloud', id: 'google'}).map((x) => x.v.id + ' ' + x.value), ['v-me voice_demo7q2mx']);
   assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'cloud', id: 'minimax'}), []);
-  assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'local', id: 'gptsovits'}).map((x) => x.value), ['种子 90117', `种子 ${host.seed}`]);
+  assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'local', id: 'voxcpm2'}).map((x) => x.value), ['种子 90117', `种子 ${host.seed}`]);
   const fresh = V.makeVoice({name: 'x', consentClip: {dur: 6.94}});
   assert.ok(fresh.seed >= 1 && Number.isInteger(fresh.seed));
   assert.equal(fresh.consentClip.dur, 6.9);
@@ -106,7 +106,7 @@ test('音色档记什么认人：每只本机引擎一颗种子，云端各家�
   assert.equal(V.metaLine(up), 'English · 样本 29.1 秒 · 上传 · reference_speaker.wav · 刚刚');
   const j = JSON.parse(V.exportBundle(me));
   assert.equal(j.seed, 48213);
-  assert.deepEqual(j.seeds, {indextts2: 48213, gptsovits: 90117});
+  assert.deepEqual(j.seeds, {indextts2: 48213, voxcpm2: 90117});
   assert.equal(JSON.parse(V.exportBundle(host)).seeds, null);
   assert.deepEqual(j.consentClip, {file: 'consent.wav', seconds: 7.9, language: 'en-US'});
   assert.equal(JSON.parse(V.exportBundle(host)).consentClip, null);
@@ -128,21 +128,24 @@ test('音色档：makeVoice 补默认值，元数据一行按来源分两种写�
 });
 
 test('按引擎落地：能吃参考音频的都走 clone', () => {
-  ['qwen3', 'qwen3-1.7b', 'indextts2', 'indextts25', 'gptsovits', 'voxcpm2', 'omnivoice'].forEach((e) => {
+  ['qwen3', 'qwen3-1.7b', 'indextts2', 'indextts25', 'voxcpm2', 'omnivoice', 'fish-s2-pro'].forEach((e) => {
     const p = V.profileFor(e);
     assert.equal(p.ok, true, e);
     assert.equal(p.mode, 'clone');
     assert.ok(p.line);
   });
   assert.match(V.profileFor('qwen3').line, /ICL/);
-  assert.match(V.profileFor('gptsovits').line, /原文/);
+  assert.match(V.profileFor('voxcpm2').line, /原文/);
   // 多句一致那句统一由 RUN_LINE 带，引擎落地句自己不再重复
   assert.match(V.RUN_LINE, /同一颗种子/);
-  ['qwen3', 'indextts2', 'gptsovits'].forEach((e) => assert.doesNotMatch(V.profileFor(e).line, /种子/));
+  ['qwen3', 'indextts2', 'voxcpm2'].forEach((e) => assert.doesNotMatch(V.profileFor(e).line, /种子/));
   const chips = V.engineChips();
-  assert.deepEqual(chips.map((c) => c.ok), [true, true, true, true, true, true, true, true]);
+  assert.deepEqual(chips.map((c) => c.ok), [true, true, true, true, true, true, true]);
   assert.match(V.profileFor('omnivoice').line, /非商用/);
-  assert.equal(V.auditionModel((id) => id === 'gpt-sovits-v2'), 'gpt-sovits-v2');
+  // 试听克隆的次序（OmniVoice 仅限非商用、Fish 同样不进）
+  assert.deepEqual(V.CLONE_MODELS, ['indextts2', 'qwen3-tts-0.6b-base', 'index-tts2.5', 'qwen3-tts-1.7b-base', 'voxcpm2']);
+  assert.equal(V.auditionModel((id) => id === 'voxcpm2'), 'voxcpm2');
+  assert.equal(V.auditionModel((id) => id === 'index-tts2.5' || id === 'qwen3-tts-0.6b-base'), 'qwen3-tts-0.6b-base');
   assert.equal(V.auditionModel(() => true), 'indextts2');
   assert.equal(V.auditionModel(() => false), null);
 });
@@ -197,15 +200,16 @@ test('分人页保存：勾了谁就造谁，名字空着用「说话人 X」，
 });
 
 test('共享选择器：四组按引擎增减', () => {
-  const g = V.pickerGroups('qwen3', V.DEMO);
+  const g = V.pickerGroups('qwen3-1.7b', V.DEMO);
   assert.deepEqual(g.map((x) => x.k), ['default', 'my', 'builtin', 'preset', 'file']);
   assert.equal(g[1].items.length, 3);
   assert.equal(g[1].items[2].kind, 'new');
   assert.deepEqual(V.pickerGroups('indextts2', []).map((x) => x.k), ['default', 'my', 'builtin', 'file']);
+  assert.deepEqual(V.pickerGroups('qwen3', []).map((x) => x.k), ['default', 'my', 'builtin', 'file'], '0.6B 只剩 Base：没有预设一组');
 });
 
 test('选择器值 ↔ 表单：选我的声音落成 clone + my: 参考，选预设落 preset，反推一致', () => {
-  const f = {engine: 'qwen3', mode: 'preset', preset: 'Vivian', refText: ''};
+  const f = {engine: 'qwen3-1.7b', mode: 'preset', preset: 'Vivian', refText: ''};
   const patch = V.applyToForm(f, {kind: 'my', id: 'v-host'}, V.DEMO);
   assert.equal(patch.mode, 'clone');
   assert.equal(patch.ref.my, 'v-host');

@@ -5,7 +5,7 @@ global.window = {};
 require('./model-app-update.js');
 const C = require('./model-local-check.js');
 
-const m = {id: 'qwen3-tts-0.6b-base', repo: 'aufklarer/Qwen3-TTS-12Hz-0.6B-Base-MLX-8bit', size: 1249};
+const m = {id: 'qwen3-tts-0.6b-base', repo: 'audio-cpp/audio.cpp-gguf', size: 1899};
 const NOW = 1_800_000_000_000;
 
 test('检查放哪：有试用的能力只在 ⋯ 里，没有试用的能力在行上另露一个按钮', () => {

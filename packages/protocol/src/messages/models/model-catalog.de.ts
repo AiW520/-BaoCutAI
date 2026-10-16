@@ -15,6 +15,5 @@ export const de: ModelsModelCatalogMessages = {
   moving: "Der Modellordner wird verschoben",
   notInstalled: (p: { repo: string }) => `Modell ${p.repo} ist nicht installiert`,
   noFilesInSubdir: (p: { subdir: string }) => `Das Modell hat keine Dateien unter ${p.subdir}/`,
-  engineNoBuild: (p: { platform: string }) => `Für diesen Rechner (${p.platform}) gibt es keinen Build der audio.cpp-Engine; einen selbst gebauten in BAOCUT_AUDIOCPP_CLI angeben`,
-  engineNotInstalled: (p: { version: string }) => `Die audio.cpp-Engine ${p.version} ist nicht installiert`,
+  engineMissing: "Die integrierte audio.cpp-Engine wurde nicht gefunden: Für diesen Rechner gibt es keinen Build, oder die App-Installation ist unvollständig",
 };

@@ -16,6 +16,5 @@ export const ja: ModelsModelCatalogMessages = {
   moving: 'モデルフォルダを移動中です',
   notInstalled: (p: { repo: string }) => `モデル ${p.repo} はインストールされていません`,
   noFilesInSubdir: (p: { subdir: string }) => `モデルの ${p.subdir}/ にファイルがありません`,
-  engineNoBuild: (p: { platform: string }) => `audio.cpp エンジンにはこのマシン（${p.platform}）向けのビルドがありません。自分でビルドしたエンジンを BAOCUT_AUDIOCPP_CLI で指定できます`,
-  engineNotInstalled: (p: { version: string }) => `audio.cpp エンジン ${p.version} がインストールされていません`,
+  engineMissing: '内蔵の audio.cpp エンジンが見つかりません。このコンピューター向けのビルドがないか、アプリのインストールが不完全です',
 };

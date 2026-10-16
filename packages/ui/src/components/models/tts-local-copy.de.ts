@@ -72,7 +72,7 @@ export const de: TtsLocalMessages = {
     auditionClone: "Klon-Vorschau",
     auditionCloneLabel: (name: string) => `Klon-Vorschau · ${name}`,
     noCloneModel:
-      "Noch kein lokales klonfähiges Modell installiert. Zuerst auf der Seite für lokale Modelle herunterladen (IndexTTS2, Qwen3-TTS Base, GPT-SoVITS…).",
+      "Noch kein lokales klonfähiges Modell installiert. Zuerst auf der Seite für lokale Modelle herunterladen (IndexTTS2, Qwen3-TTS Base, VoxCPM2…).",
     goLocal: "Zu lokalen Modellen",
   },
 };

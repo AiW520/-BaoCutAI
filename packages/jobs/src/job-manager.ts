@@ -1211,7 +1211,7 @@ export class JobManager {
 
     const jobId = newId('job');
     const grantUse = this.#admit(jobId, capability, selection, videoId, submitter, grant, typeof quantity === 'function' ? quantity(parameters) : quantity);
-    // 本地合成按常驻量估计 Model Worker（candle 或登记了有界常驻量的 MLX）；没有估计时用固定需求。
+    // 本地合成按常驻量估计 audio.cpp 的合成服务（`ModelCatalog.workerFootprint`）；没有估计时用固定需求。
     const workerFootprint = capability === 'synthesizeSpeech' ? await this.#workerFootprint(selection.providerId, selection.modelId) : null;
     const now = nowIso();
     const record: JobRecord = {

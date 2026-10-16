@@ -41,7 +41,7 @@ function view(): ModelCapabilitiesView {
         models: [
           ...p.models,
           speechModel('qwen3-tts-0.6b-base', [], { label: 'Qwen3-TTS 0.6B Base', voiceModes: ['clone'], acceptsSeed: true }),
-          speechModel('gpt-sovits-v2', [], { label: 'GPT-SoVITS', voiceModes: ['clone'] }),
+          speechModel('indextts2', [], { label: 'IndexTTS2', voiceModes: ['clone'] }),
           speechModel('voxcpm2', [], { label: 'VoxCPM2', voiceModes: ['clone'], available: false }),
         ],
       };
@@ -123,7 +123,7 @@ describe('克隆去哪些模型', () => {
     const targets = cloneTargets(view());
     expect(targets.map((t) => `${t.kind}:${t.id}`)).toEqual([
       'local:qwen3-tts-0.6b-base',
-      'local:gpt-sovits-v2',
+      'local:indextts2',
       'cloud:elevenlabs',
       'cloud:consent-co',
     ]);
@@ -157,7 +157,7 @@ describe('克隆去哪些模型', () => {
 
   it('默认选上本机全部与连着的云端；从模型页过来时加上那一只', () => {
     const targets = cloneTargets(view());
-    expect(defaultPicked(targets, null)).toEqual(['qwen3-tts-0.6b-base', 'gpt-sovits-v2', 'consent-co']);
+    expect(defaultPicked(targets, null)).toEqual(['qwen3-tts-0.6b-base', 'indextts2', 'consent-co']);
     expect(defaultPicked(targets, 'elevenlabs')).toContain('elevenlabs');
   });
 
@@ -165,7 +165,7 @@ describe('克隆去哪些模型', () => {
     const targets = cloneTargets(view());
     const late = [...targets, { ...targets[0]!, id: 'qwen3-tts-1.7b-base', name: 'Qwen3-TTS 1.7B Base' }];
     expect(defaultPicked(late, 'qwen3-tts-1.7b-base')).toContain('qwen3-tts-1.7b-base');
-    const toggled = { 'gpt-sovits-v2': false, elevenlabs: true };
+    const toggled = { 'indextts2': false, elevenlabs: true };
     expect(defaultPicked(late, null, toggled)).toEqual(['qwen3-tts-0.6b-base', 'elevenlabs', 'consent-co', 'qwen3-tts-1.7b-base']);
     expect(defaultPicked(late, 'qwen3-tts-1.7b-base', { 'qwen3-tts-1.7b-base': false })).not.toContain('qwen3-tts-1.7b-base');
   });

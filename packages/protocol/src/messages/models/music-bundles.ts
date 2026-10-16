@@ -17,7 +17,6 @@ import { vi } from './music-bundles.vi.ts';
 /** `packages/models/src/music-bundles.ts` 给人看的文字：音乐生成模型包的许可摘要（模型名、许可证名、厂商名不翻译）。 */
 const en = {
   yue2License: 'CC BY-NC 4.0: non-commercial use only, with attribution to the YuE authors; the GGUF conversion keeps the same license',
-  audioCppLicense: 'Apache-2.0: free to use, including commercially; keep the copyright and license notices when redistributing',
 };
 
 export type ModelsMusicBundlesMessages = typeof en;

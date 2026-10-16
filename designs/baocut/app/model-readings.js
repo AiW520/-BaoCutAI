@@ -108,22 +108,10 @@
     给: [['ji3', '供', '予养']],
   };
   /* ---------- 各引擎怎么吃读音（设计稿 §3） ----------
-     IndexTTS2：拼音片内联替换，**词表里没这个片的音节**没法念（本机 bpe.model 实查缺 LU4 / LV4）。
-     Qwen3：同音字替换——只替「与词典默认不同」的读音（模型校对 / 用户改的），词组表与词典默认的注记按原字送、
-     不算没念；读音没有可替换的代表字（多数轻声、几个冷僻音）就算没按注音念。
-     GPT-SoVITS 的接缝注入是 R3，在那之前全部退回原文 */
-  const NO_PIECE = {lu4: 1, lv4: 1};
-  const HOMOPHONE = {
-    hang2: '杭', chong2: '虫', zhong4: '众', zhang3: '掌', chang2: '常', huan2: '环', hai2: '孩', gan1: '甘',
-    xiang4: '向', xiang1: '香', du1: '督', dou1: '兜', hao4: '号', chai1: '钗', cha1: '叉', jian4: '见', wei2: '围',
-    wei4: '位', zhi1: '知', huo4: '货', shu3: '属', shu4: '树', zhong3: '肿', mo4: '墨', qiang3: '抢', ying4: '硬',
-    ying1: '英', tiao2: '条', diao4: '掉', liang2: '梁', liang4: '亮', zhuan4: '赚', kuai4: '快', yao1: '腰',
-    jiao4: '叫', jue2: '绝', yue4: '月', kong4: '控', dao3: '岛', dao4: '到', shao4: '哨', ji1: '机', ji3: '挤',
-    shuai4: '帅', xie3: '写', zeng1: '增', ceng2: '层', chu3: '楚', chu4: '触', xing1: '星', xing4: '杏', xing2: '形',
-    zhao1: '招', chao2: '潮', zang4: '葬', lou4: '漏', lu4: '路', lv4: '律', bei1: '杯', bei4: '被', jiao1: '交',
-    xing3: '醒', pian2: '骈',
-  };
-  const DROPS_ALL = {gptsovits: 1, voxcpm2: 1, omnivoice: 1};   // 注音支持 none（core `readings_support`）
+     本地语音合成都跑在随应用内置的 audio.cpp 引擎上：只有 IndexTTS 2.5 直接认 `<字|拼音>`；
+     其余（Qwen3-TTS 两档、IndexTTS2、VoxCPM2、OmniVoice、Fish Audio S2 Pro）按表面文字合成，
+     每一处注记都报告为没按注音念（core `readings_support` = unsupported）。云端与认不出的引擎回空。 */
+  const DROPS_ALL = {'qwen3': 1, 'qwen3-1.7b': 1, 'indextts2': 1, 'voxcpm2': 1, 'omnivoice': 1, 'fish-s2-pro': 1};
 
   const HAN = /[㐀-鿿]/;
   /** 这门语言要不要注音：v1 只有中文（zh / zh-Hans / zh-Hant 及别名） */
@@ -308,24 +296,14 @@
     const list = readings || [];
     const e = String(engine || '');
     if (DROPS_ALL[e]) return list.slice();
-    if (e === 'indextts2') return list.filter((r) => r.reading.split(' ').some((s) => NO_PIECE[s]));
-    if (e === 'qwen3' || e === 'qwen3-1.7b') {
-      return list.filter((r) => {
-        const src = r.src || classify(r, 'user');
-        if (src === 'phrase' || src === 'dict') return false;
-        const cs = Array.from(r.surface);
-        const syl = r.reading.split(' ');
-        return cs.some((c, i) => syl[i] !== dictDefault(c) && DICT[c] && !HOMOPHONE[syl[i]]);
-      });
-    }
     return [];
   }
   /** 引擎为什么没按注音念（chip 的 tip） */
   function dropReason(engine) {
     const e = String(engine || '');
-    if (e === 'indextts2') return 'IndexTTS2 的词表里没有这个音节';
-    if (e === 'qwen3' || e === 'qwen3-1.7b') return 'Qwen3 不支持这一读音 · 合成时保留原字';
-    if (e === 'gptsovits') return 'GPT-SoVITS 还不认注音 · 按原字念';
+    if (e === 'indextts2') return 'IndexTTS2 还不认注音 · 按原字念';
+    if (e === 'qwen3' || e === 'qwen3-1.7b') return 'Qwen3-TTS 还不认注音 · 按原字念';
+    if (e === 'fish-s2-pro') return 'Fish Audio S2 Pro 不认注音 · 按原字念';
     if (e === 'voxcpm2') return 'VoxCPM2 不认注音 · 按原字念';
     if (e === 'omnivoice') return 'OmniVoice 不认注音 · 按原字念';
     return '';
@@ -376,7 +354,7 @@
   function reviewSub(llm) { return llm ? `词典先标、${typeof llm === 'string' ? llm : '模型'} 按上下文校对过 · 点字能改` : '只按词典标了，没有模型校对 · 点字能改'; }
 
   const BC_READINGS = {
-    DICT, PHRASES, NO_PIECE, HOMOPHONE,
+    DICT, PHRASES,
     needsReadings, hasHan, parseReadings, stripReadings, render, toneMark, annotate, setReading, optionsOf, classify,
     dropped, dropReason, forEngine, isDropped, receiptLine, tally, remember, llmReady, reviewSub, formStale, formText,
   };

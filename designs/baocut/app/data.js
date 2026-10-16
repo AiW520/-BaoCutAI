@@ -2701,10 +2701,10 @@
          meta 的任务那一截由 `BC_SERVICES.nodeTaskMeta` 算；没报的旧节点（n2）meta 保留旧写法。 */
       {id: 'n1', name: 'mac-studio.local', addr: '192.168.1.10:24350',
        meta: 'Apple Silicon · MLX · bcut 1.12', state: 'online',
-       ttsModels: ['index-tts2.5', 'gpt-sovits-v2'],
+       ttsModels: ['index-tts2.5', 'indextts2'],
        tasks: ['asr', 'tts', 'image', 'separate', 'download', 'export'],
        taskModels: {asr: ['moss-transcribe', 'whisper-large-v3', 'qwen3-asr-0.6b'],
-         tts: ['index-tts2.5', 'gpt-sovits-v2'], image: ['qwen-image-2.1-turbo', 'qwen-image-2.1'], separate: ['htdemucs-ft']},
+         tts: ['index-tts2.5', 'indextts2'], image: ['qwen-image-2.1-turbo', 'qwen-image-2.1'], separate: ['htdemucs-ft']},
        exportSpeed: 2.4},  // 导出编码速度是这台 Mac 的几倍（节点 healthz 报；原型给一个演示值）
       {id: 'n2', name: 'older-imac.local', addr: '192.168.1.18:24350',
        meta: 'Intel · bcut 1.09 · 1 个模型', state: 'offline'},
@@ -2717,10 +2717,10 @@
       models: ['moss-transcribe', 'whisper-large-v3'],
       /* 2026-09-17：共享的不只是转录了，配音也在这台节点上跑（§17.3），
          所以两类模型分两行列——对方的「在哪儿跑」候选就取自这一份。 */
-      ttsModels: ['index-tts2.5', 'gpt-sovits-v2'],
+      ttsModels: ['index-tts2.5', 'indextts2'],
       /* 2026-09-27：任务目录扩到出图 / 分离 / 下载 / 导出（bcut-remote-compute-jobs-design.md）。
          按任务的就绪模型；图像模型故意留空，演示「没装就不许开」那一行。 */
-      taskModels: {asr: ['moss-transcribe', 'whisper-large-v3'], tts: ['index-tts2.5', 'gpt-sovits-v2'],
+      taskModels: {asr: ['moss-transcribe', 'whisper-large-v3'], tts: ['index-tts2.5', 'indextts2'],
         image: [], separate: ['htdemucs-ft']},
       /* 配对码缺省开（`worker.pairMode=required`），可以关 */
       requireCode: true,
@@ -2853,7 +2853,7 @@
   const QWEN3_ASR_LICENSE = {name: 'Apache-2.0', url: 'https://huggingface.co/Qwen/Qwen3-ASR-1.7B', commercialUse: true,
     summary: '上游 Qwen3-ASR 模型卡标 Apache-2.0，可商用；MLX 量化包沿用同一许可'};
   const QWEN3_TTS_LICENSE = {name: 'Apache-2.0', url: 'https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base', commercialUse: true,
-    summary: '上游 Qwen3-TTS 模型卡标 Apache-2.0，可商用；MLX 转换包沿用同一许可'};
+    summary: '上游 Qwen3-TTS 模型卡标 Apache-2.0，可商用；GGUF 转换包沿用同一许可'};
   const INDEX_TTS_LICENSE = {name: 'bilibili Model Use License Agreement', commercialUse: true,
     summary: '可商用，但上月月活超 1 亿或上年营收超 10 亿元人民币的主体须另向 bilibili 申请；分发须附协议原文'};
   const setModels = [
@@ -2879,47 +2879,40 @@
      note: '给不自带区分的模型用 · MOSS 不需要', repo: 'aufklarer/Pyannote-Segmentation-MLX', uses: ['wespeaker'],
      license: {name: 'MIT', url: 'https://huggingface.co/pyannote/segmentation-3.0', commercialUse: true,
        summary: '上游 pyannote/segmentation-3.0 标 MIT，可商用；声纹模型 WeSpeaker 另标 CC-BY-4.0（须署名 WeSpeaker 与 pyannote.audio）'}},
-    /* 语音合成：五只 Qwen3-TTS（0.6B 有 CustomVoice 与 Base；1.7B 再加 VoiceDesign，2026-09-26 恢复）共用 12Hz 语音编解码器；
-       IndexTTS 2.5 从 IndexTTS2 仓库补一层辅助件，只有它用，所以跟着它的行走；IndexTTS2 的辅助件本来就在自己的仓库里。
-       VoxCPM2 / OmniVoice（2026-09-26）各自一个仓库、没有共享组件。不能商用的（`license.commercialUse: false`，目前只有
-       OmniVoice）设置行标「仅限非商用」，第一次下载前弹确认。 */
-    {id: 'qwen3-tts-0.6b-customvoice', name: 'Qwen3-TTS 0.6B CustomVoice', cat: 'tts', size: 1732, installed: true,
-     note: '9 个预设音色 · 可用一句话指定风格', repo: 'aufklarer/Qwen3-TTS-12Hz-0.6B-CustomVoice-MLX-bf16', uses: ['tts-codec'],
+    /* 语音合成：九只都是 audio.cpp 的 Q8 GGUF（上游 audio-cpp/audio.cpp-gguf 一个大仓库，每只模型只下载自己子目录里的
+       那个 GGUF：主模型、编解码器或声码器、分词器都在里面），由随应用内置的 audio.cpp 引擎跑，不再共享编解码器或辅助件。
+       Qwen3-TTS 四只：0.6B 只有 Base（克隆）；1.7B 有 CustomVoice（预设音色）、Base、VoiceDesign。不能商用的
+       （`license.commercialUse: false`：OmniVoice、Fish Audio S2 Pro）设置行标「仅限非商用」，第一次下载前弹确认。 */
+    {id: 'qwen3-tts-0.6b-base', name: 'Qwen3-TTS 0.6B Base', cat: 'tts', size: 1899, installed: true,
+     note: '3 秒参考音频克隆声音 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: QWEN3_TTS_LICENSE},
-    {id: 'qwen3-tts-0.6b-base', name: 'Qwen3-TTS 0.6B Base', cat: 'tts', size: 1249, installed: true,
-     note: '3 秒参考音频克隆声音 · 8 bit', repo: 'aufklarer/Qwen3-TTS-12Hz-0.6B-Base-MLX-8bit', uses: ['tts-codec'],
+    {id: 'qwen3-tts-1.7b-customvoice', name: 'Qwen3-TTS 1.7B CustomVoice', cat: 'tts', size: 2687, installed: true,
+     note: '9 个预设音色 · 可用一句话指定风格 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: QWEN3_TTS_LICENSE},
-    {id: 'qwen3-tts-1.7b-customvoice', name: 'Qwen3-TTS 1.7B CustomVoice', cat: 'tts', size: 2287, installed: false,
-     note: '9 个预设音色 · 可用一句话指定风格 · 更大更慢 · 8 bit', repo: 'mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit', uses: ['tts-codec'],
+    {id: 'qwen3-tts-1.7b-base', name: 'Qwen3-TTS 1.7B Base', cat: 'tts', size: 2570, installed: false,
+     note: '3 秒参考音频克隆声音 · 更大更慢 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: QWEN3_TTS_LICENSE},
-    {id: 'qwen3-tts-1.7b-base', name: 'Qwen3-TTS 1.7B Base', cat: 'tts', size: 2310, installed: false,
-     note: '3 秒参考音频克隆声音 · 更大更慢 · 8 bit', repo: 'aufklarer/Qwen3-TTS-12Hz-1.7B-Base-MLX-8bit', uses: ['tts-codec'],
-     license: QWEN3_TTS_LICENSE},
-    {id: 'qwen3-tts-1.7b-voicedesign', name: 'Qwen3-TTS 1.7B VoiceDesign', cat: 'tts', size: 2287, installed: false,
-     note: '一句话描述造一个新声音 · 不用参考音频 · 8 bit', repo: 'mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit', uses: ['tts-codec'],
+    {id: 'qwen3-tts-1.7b-voicedesign', name: 'Qwen3-TTS 1.7B VoiceDesign', cat: 'tts', size: 2686, installed: false,
+     note: '一句话描述造一个新声音 · 不用参考音频 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: Object.assign({}, QWEN3_TTS_LICENSE, {url: 'https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign'})},
-    {id: 'indextts2', name: 'IndexTTS2', cat: 'tts', size: 3660, installed: false,
-     note: '参考音频克隆 · 情绪可控 · 中 / 英', repo: 'aufklarer/IndexTTS2-MLX-fp16', uses: [],
+    {id: 'indextts2', name: 'IndexTTS2', cat: 'tts', size: 3466, installed: false,
+     note: '参考音频克隆 · 情绪可控 · 中 / 英 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: Object.assign({}, INDEX_TTS_LICENSE, {url: 'https://huggingface.co/IndexTeam/IndexTTS-2/blob/main/LICENSE.txt',
        summary: INDEX_TTS_LICENSE.summary + '；不得用它改进 IndexTTS 以外的商用模型'})},
-    {id: 'index-tts2.5', name: 'IndexTTS 2.5', cat: 'tts', size: 1934, installed: false,
-     note: '参考音频克隆 · 情绪可控 · 中 / 英 / 日 / 西 / 阿', repo: 'mlx-community/IndexTTS-2.5-fp16', uses: ['indextts-aux'],
+    {id: 'index-tts2.5', name: 'IndexTTS 2.5', cat: 'tts', size: 3341, installed: false,
+     note: '参考音频克隆 · 情绪可控 · 中 / 英 / 日 / 西 / 阿 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: Object.assign({}, INDEX_TTS_LICENSE, {url: 'https://huggingface.co/IndexTeam/IndexTTS-2.5/blob/main/LICENSE',
        summary: INDEX_TTS_LICENSE.summary + '；辅助权重来自 IndexTTS2，同一协议'})},
-    {id: 'gpt-sovits-v2', name: 'GPT-SoVITS v2', cat: 'tts', size: 1101, installed: false,
-     note: '参考音频克隆 · 参考文本可选 · 中 / 英', repo: 'PJMixers-Dev/lj1995_GPT-SoVITS-safetensors', uses: [],
-     license: {name: 'MIT', url: 'https://huggingface.co/lj1995/GPT-SoVITS', commercialUse: true,
-       summary: '上游 lj1995/GPT-SoVITS 模型卡标 MIT，可商用；safetensors 转换包沿用同一许可'}},
-    {id: 'voxcpm2', name: 'VoxCPM2', cat: 'tts', size: 2870, installed: false,
-     note: '参考音频克隆 · 可写风格 · 30 种语言与粤语 · 48 kHz · int8', repo: 'aufklarer/VoxCPM2-MLX-int8', uses: [],
+    {id: 'voxcpm2', name: 'VoxCPM2', cat: 'tts', size: 2818, installed: false,
+     note: '参考音频克隆 · 可写风格 · 30 种语言与粤语 · 48 kHz · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: {name: 'Apache-2.0', url: 'https://huggingface.co/openbmb/VoxCPM2', commercialUse: true,
-       summary: '上游 openbmb/VoxCPM2 模型卡标 Apache-2.0，可商用；MLX int8 转换包沿用同一许可'}},
-    {id: 'omnivoice', name: 'OmniVoice', cat: 'tts', size: 1049, installed: false,
-     note: '参考音频克隆或挑选项造声 · 能按目标时长念 · 会念的语言最多 · int8', repo: 'aufklarer/OmniVoice-MLX-int8', uses: [],
+       summary: '上游 openbmb/VoxCPM2 模型卡标 Apache-2.0，可商用；GGUF 转换包沿用同一许可'}},
+    {id: 'omnivoice', name: 'OmniVoice', cat: 'tts', size: 1288, installed: false,
+     note: '参考音频克隆或挑选项造声 · 能按目标时长念 · 会念的语言最多 · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: {name: 'CC-BY-NC-4.0', commercialUse: false, url: 'https://huggingface.co/k2-fsa/OmniVoice',
-       summary: '代码 Apache-2.0，但预训练权重因训练数据（Emilia 等）以 CC-BY-NC 发布，只许非商业用途；MLX int8 转换包是它的派生物，受同一许可'}},
-    {id: 'fish-s2-pro', name: 'Fish Audio S2 Pro', cat: 'tts', size: 4634, installed: false,
-     note: '参考录音与原文克隆 · 正文支持语气标签 · 44.1 kHz · 8 bit', repo: 'mlx-community/fish-audio-s2-pro-8bit', uses: ['fish-s2-pro-codec'],
+       summary: '代码 Apache-2.0，但预训练权重因训练数据（Emilia 等）以 CC-BY-NC 发布，只许非商业用途；GGUF 转换包是它的派生物，受同一许可'}},
+    {id: 'fish-s2-pro', name: 'Fish Audio S2 Pro', cat: 'tts', size: 6025, installed: false,
+     note: '参考录音与原文克隆 · 正文支持语气标签 · 44.1 kHz · Q8', repo: 'audio-cpp/audio.cpp-gguf', uses: [],
      license: {name: 'Fish Audio Research License', commercialUse: false, url: 'https://huggingface.co/fishaudio/s2-pro/blob/main/LICENSE.md',
        summary: 'Built with Fish Audio · 权重可用于研究和非商业用途，商用需另获 Fish Audio 许可'}},
     /* 音源分离：翻译配音把人声和背景拆开，配音铺在背景声上 */
@@ -2945,19 +2938,17 @@
      note: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢', repo: 'mlx-community/Qwen-Image-2.1-MLX-4bit', uses: [],
      license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE', commercialUse: false,
        summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
-    /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由 audio.cpp 引擎跑。引擎是这只模型的组件
-       （audiocpp-engine，按平台从 audio.cpp 的 GitHub 发布页下载），和语音识别的分词器一样装模型时一起下，不另装；
-       只有它用，所以跟着它的行走，下载按钮的体积含引擎 */
+    /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由 audio.cpp 引擎跑。引擎随应用内置（与本地语音
+       合成共用），不是下载组件；找不到内置引擎时这只模型报告为不支持，不是半装 */
     {id: 'yue2-3b', name: 'YuE2 3B', cat: 'music', size: 4608, installed: false, platform: 'macos-arm64,windows-x64,linux-x64',
-     note: '按风格或歌词生成音乐 · Q8 · audio.cpp 引擎 · 30 秒约几分钟 · CPU 更慢', repo: 'audio-cpp/Yue2-3B-GGUF', uses: ['audiocpp-engine'],
+     note: '按风格或歌词生成音乐 · Q8 · audio.cpp 引擎 · 30 秒约几分钟 · CPU 更慢', repo: 'audio-cpp/Yue2-3B-GGUF', uses: [],
      license: {name: 'CC-BY-NC-4.0', url: 'https://huggingface.co/audio-cpp/Yue2-3B-GGUF/blob/main/model_licenses.md', commercialUse: false,
        summary: '只许非商业用途，须署名；商用要向 M-A-P 另行申请；GGUF 包是它的转换，受同一许可'}},
   ];
   /* 组件（catalog.rs 的 SharedDependency 与覆盖层）。`installed` 是初始盘上状态：
      Whisper 分词器缺着，让 Whisper large-v3 演示「权重在、组件缺」的半装态。
-     `license` 只有登记里带了自己许可的组件写（对齐器、声纹嵌入、audio.cpp 引擎）；声纹嵌入是 CC-BY-4.0，署名照登记逐字抄。
-     来源一般是 Hugging Face 仓库（`repo`）；audio.cpp 引擎是可执行文件，来自 GitHub 发布页（`release`，按平台挑包，
-     macOS 是 Metal 包约 30–32 MB，Windows / Linux x64 是带 Vulkan 运行库的包约 62–72 MB；演示按 macOS 写体积）。 */
+     `license` 只有登记里带了自己许可的组件写（对齐器、声纹嵌入）；声纹嵌入是 CC-BY-4.0，署名照登记逐字抄。
+     来源都是 Hugging Face 仓库（`repo`）。audio.cpp 引擎随应用内置，不在这张表里。 */
   const setComponents = [
     {id: 'vad', name: 'VAD 语音活动检测', size: 1.2, installed: true, repo: 'aufklarer/Silero-VAD-v6.2.1-MLX',
      desc: '切出有人说话的段落'},
@@ -2972,16 +2963,6 @@
      license: {name: 'CC-BY-4.0', url: 'https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM', commercialUse: true,
        summary: '可商用但须署名。署名：说话人嵌入模型 wespeaker-voxceleb-resnet34-LM 出自 WeSpeaker（wenet-e2e/wespeaker；Wang 等，ICASSP 2023），' +
          '在 VoxCeleb 上训练，由 pyannote.audio（Bredin，Interspeech 2023）封装发布，许可 CC-BY-4.0；这里用的是它的 MLX 格式转换（aufklarer/WeSpeaker-ResNet34-LM-MLX）'}},
-    {id: 'tts-codec', name: 'Qwen3-TTS 语音编解码器', size: 662, installed: true, repo: 'Qwen/Qwen3-TTS-Tokenizer-12Hz',
-     desc: '把声学 token 还原成波形'},
-    {id: 'fish-s2-pro-codec', name: 'Fish Audio S2 Pro 语音编解码器', size: 1038, installed: false, repo: 'aufklarer/Fish-Audio-S2-Pro-MLX-fp16',
-     desc: '只下载 codec 与许可 · 将参考录音编码，将声学 token 还原为 44.1 kHz 波形'},
-    {id: 'indextts-aux', name: 'IndexTTS2 辅助件', size: 1400, installed: false, repo: 'aufklarer/IndexTTS2-MLX-fp16',
-     desc: 'w2v-BERT · CAM++ · BigVGAN · 情绪特征表'},
-    {id: 'audiocpp-engine', name: 'audio.cpp 引擎', size: 30.5, installed: false, release: '0xShug0/audio.cpp v0.9.1',
-     desc: '跑 YuE2 的引擎 · 按平台下载 · Windows / Linux 要 Vulkan 显卡驱动',
-     license: {name: 'Apache-2.0', url: 'https://github.com/0xShug0/audio.cpp/blob/main/LICENSE', commercialUse: true,
-       summary: '上游 audio.cpp 标 Apache-2.0，可商用；BaoCut 下载的是它的官方预编译包，装前核对 sha256'}},
   ];
   const setShortcuts = [
     {grp: '全局', rows: [['新建视频', '⌘N'], ['设置…', '⌘,'], ['显示/隐藏侧边栏', '⌃⌘S']]},

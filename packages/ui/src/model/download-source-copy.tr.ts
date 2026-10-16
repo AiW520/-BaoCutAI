@@ -17,7 +17,7 @@ export const tr: DownloadSourceMessages = {
   ghDesc: "Her projenin GitHub’daki resmî sürüm sayfasından indir.",
   modelsMirrorDesc: (base: string) => `${base} adresindeki yansıdan indir.`,
   toolsMirrorDesc: (base: string) => `${base} adresindeki yansıdan indir.`,
-  msNote: "ModelScope’ta olmayan birkaç dosya (whisper.cpp, GPT-SoVITS) yine Hugging Face’ten gelir. Her dosya yerleşik sağlama toplamıyla denetlenir.",
+  msNote: "ModelScope’ta olmayan birkaç dosya (whisper.cpp) yine Hugging Face’ten gelir. Her dosya yerleşik sağlama toplamıyla denetlenir.",
   envNote: (name: string) => `${name} ortam değişkeni ayarlıysa o kullanılır.`,
   webNote: "Tarayıcı indirme kaynaklarını değiştiremez. Bunları BaoCut masaüstü uygulamasında ayarlayın.",
   lead:

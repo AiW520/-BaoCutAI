@@ -276,17 +276,15 @@ describe('ModelCatalog', () => {
         'speaker-diarization@candle',
         'whisper-large-v3@ggml',
         'whisper-large-v3-turbo@ggml',
-        'qwen3-tts-0.6b-base@candle',
-        'qwen3-tts-0.6b-customvoice@candle',
-        'qwen3-tts-1.7b-base@candle',
-        'qwen3-tts-1.7b-customvoice@candle',
-        'qwen3-tts-1.7b-voicedesign@candle',
-        'indextts2@candle',
-        'index-tts2.5@candle',
-        'gpt-sovits-v2@candle',
-        'voxcpm2@candle',
-        'omnivoice@candle',
-        'fish-s2-pro@candle',
+        'qwen3-tts-0.6b-base@audio-cpp-q8',
+        'qwen3-tts-1.7b-base@audio-cpp-q8',
+        'qwen3-tts-1.7b-customvoice@audio-cpp-q8',
+        'qwen3-tts-1.7b-voicedesign@audio-cpp-q8',
+        'indextts2@audio-cpp-q8',
+        'index-tts2.5@audio-cpp-q8',
+        'voxcpm2@audio-cpp-q8',
+        'omnivoice@audio-cpp-q8',
+        'fish-s2-pro@audio-cpp-q8',
         'qwen-image-2.1-turbo@candle',
         'qwen-image-2.1@candle',
         'yue2-3b@audio-cpp-q8',
@@ -312,13 +310,11 @@ describe('ModelCatalog', () => {
       'Whisper large-v3',
       'Whisper large-v3 turbo',
       'Qwen3-TTS 0.6B Base',
-      'Qwen3-TTS 0.6B CustomVoice',
       'Qwen3-TTS 1.7B Base',
       'Qwen3-TTS 1.7B CustomVoice',
       'Qwen3-TTS 1.7B VoiceDesign',
       'IndexTTS2',
       'IndexTTS 2.5',
-      'GPT-SoVITS v2',
       'VoxCPM2',
       'OmniVoice',
       'Fish Audio S2 Pro',
@@ -373,17 +369,6 @@ describe('ModelCatalog', () => {
         'qwen-image-2.1-turbo@candle',
         'qwen3-asr-0.6b@candle',
         'qwen3-asr-1.7b@candle',
-        'qwen3-tts-0.6b-base@candle',
-        'qwen3-tts-0.6b-customvoice@candle',
-        'qwen3-tts-1.7b-base@candle',
-        'qwen3-tts-1.7b-customvoice@candle',
-        'qwen3-tts-1.7b-voicedesign@candle',
-        'indextts2@candle',
-        'index-tts2.5@candle',
-        'gpt-sovits-v2@candle',
-        'voxcpm2@candle',
-        'omnivoice@candle',
-        'fish-s2-pro@candle',
         'speaker-diarization@candle',
       ].sort(),
     );
@@ -546,8 +531,8 @@ describe('ModelCatalog', () => {
   });
 });
 
-/** 音乐模型包的第二个组件 audio.cpp 引擎（架构设计 §6.3）：按主机平台选压缩包，放在工具目录里，可以用 `engineOverride` 顶替。 */
-describe('ModelCatalog audio.cpp 引擎组件', () => {
+/** audio.cpp 模型包（本地合成与音乐）由随应用内置的引擎执行（架构设计 §6.3）：引擎不是模型包的组件，找不到时模型包是 `error` / `unsupported`。 */
+describe('ModelCatalog 内置 audio.cpp 引擎', () => {
   const YUE = 'yue2-3b@audio-cpp-q8';
   let root: string;
   beforeEach(async () => {
@@ -559,63 +544,48 @@ describe('ModelCatalog audio.cpp 引擎组件', () => {
     await fs.rm(root, { recursive: true, force: true });
   });
 
-  it('没有引擎包的平台：仍然列出，状态是 error / unsupported，说明带平台；平台键可以由测试指定', async () => {
-    const arm = new ModelCatalog({ root, platform: 'linux', arch: 'arm64' });
-    expect(arm.platformKey).toBe('linux-arm64');
-    expect(arm.definitions().map((d) => d.bundleId)).toContain(YUE);
-    const status = await arm.status(YUE);
-    expect(status).toMatchObject({ state: 'error', reason: 'unsupported' });
-    expect(status!.detail).toContain('linux-arm64');
-    expect(status!.estimatedBytes).toBeNull();
-    expect(arm.engineExecutable(YUE)).toBeNull();
-    // 同一台主机按指定的平台键看：有引擎包，引擎没装是 not-installed / incomplete。
-    const pinned = new ModelCatalog({ root, platform: 'linux', arch: 'arm64', platformKey: 'linux-x64' });
-    expect(await pinned.status(YUE)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
-    expect((await pinned.status(YUE))!.estimatedBytes).toBeGreaterThan(0);
+  it('模型包只有权重一个组件：权重装好就是 installed，校验通过，全平台列出', async () => {
+    for (const [platform, arch] of [
+      ['darwin', 'arm64'],
+      ['win32', 'x64'],
+      ['linux', 'arm64'],
+    ] as const) {
+      const catalog = new ModelCatalog({ root, platform, arch });
+      expect(catalog.definitions().map((d) => d.bundleId), platform).toContain(YUE);
+      const status = await catalog.status(YUE);
+      expect(status, platform).toMatchObject({ state: 'installed' });
+      expect(status!.components!.map((c) => c.component)).toEqual(['music']);
+      expect((await catalog.verify(YUE)).ok).toBe(true);
+    }
   });
 
-  it('engineOverride：文件在时组件算装好（bytes 为 null），也不报平台不支持；文件不在时不算', async () => {
-    const exe = path.join(root, 'my-audiocpp_cli');
-    await fs.writeFile(exe, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-    const catalog = new ModelCatalog({ root, platform: 'linux', arch: 'arm64', engineOverride: exe });
+  it('找不到内置引擎：已装的模型包是 error / unsupported，说明是引擎缺失；没装的照常是 not-installed', async () => {
+    let available = false;
+    const catalog = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64', engineAvailable: () => available });
     const status = await catalog.status(YUE);
-    expect(status).toMatchObject({ state: 'installed' });
-    expect(status!.components!.find((c) => c.component === 'audiocpp-engine')).toMatchObject({
-      origin: 'github-release',
-      state: 'installed',
-      bytes: null,
-    });
-    expect(catalog.engineExecutable(YUE)).toBe(exe);
-    expect((await catalog.verify(YUE)).ok).toBe(true);
-
-    const gone = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64', engineOverride: path.join(root, 'nope') });
-    expect(await gone.status(YUE)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
-    expect(gone.engineExecutable(YUE)).toBeNull();
-  });
-
-  it('旧版装下的引擎（有可执行文件、没有清单）算装好，校验通过；工具目录默认在模型目录的 .bcut-tools 里', async () => {
-    const catalog = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64' });
-    expect(catalog.toolsDir).toBe(path.join(root, '.bcut-tools'));
-    const dir = path.join(catalog.toolsDir, 'audiocpp', '0.9.1');
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, 'audiocpp_cli'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    expect(status).toMatchObject({ state: 'error', reason: 'unsupported' });
+    expect(status!.detailRef).toEqual({ key: 'modelsModelCatalog.engineMissing' });
+    expect(status!.detail).toContain('audio.cpp');
+    const speech = BUNDLES.find((b) => b.capability === 'synthesize')!;
+    expect(await catalog.status(speech.bundleId)).toMatchObject({ state: 'not-installed' });
+    // 每次读状态时重新看引擎（开发时下载好引擎后不用重启）。
+    available = true;
+    catalog.changed(YUE);
     expect(await catalog.status(YUE)).toMatchObject({ state: 'installed' });
-    expect(catalog.engineExecutable(YUE)).toBe(path.join(dir, 'audiocpp_cli'));
-    expect((await catalog.verify(YUE)).ok).toBe(true);
-    // 指定的工具目录。
-    const elsewhere = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64', toolsDir: path.join(root, 'tools') });
-    expect(elsewhere.toolsDir).toBe(path.join(root, 'tools'));
-    expect(await elsewhere.status(YUE)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
   });
 });
 
 
-describe('Fish S2 Pro resource admission', () => {
-  it('uses bounded packed weights on MLX and Candle rather than expanding all parameters', async () => {
-    const root = path.join(os.tmpdir(), 'unused-fish-footprint');
-    const mlx = new ModelCatalog({root,platform:'darwin',arch:'arm64'});
-    const candle = new ModelCatalog({root,platform:'win32',arch:'x64'});
-    expect(await mlx.workerFootprint('fish-s2-pro@mlx-8bit')).toEqual({bytes:5*1024**3,pool:'gpuMemory'});
-    expect(await candle.workerFootprint('fish-s2-pro@candle')).toEqual({bytes:5*1024**3,pool:'memory'});
+describe('合成模型包的资源', () => {
+  it('audio.cpp 服务按 GGUF 的存储字节乘系数估计；Apple Silicon 计在 GPU 内存，别的平台计在内存', async () => {
+    const root = path.join(os.tmpdir(), 'unused-speech-footprint');
+    const mac = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64' });
+    const win = new ModelCatalog({ root, platform: 'win32', arch: 'x64' });
+    for (const def of mac.definitions().filter((d) => d.capability === 'synthesize')) {
+      const weights = (await mac.status(def.bundleId))!.estimatedBytes!;
+      expect(weights, def.bundleId).toBeGreaterThan(0);
+      expect(await mac.workerFootprint(def.bundleId), def.bundleId).toEqual({ bytes: Math.ceil(weights * 1.5), pool: 'gpuMemory' });
+      expect((await win.workerFootprint(def.bundleId))?.pool, def.bundleId).toBe('memory');
+    }
   });
 });

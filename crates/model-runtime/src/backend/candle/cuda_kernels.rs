@@ -11,8 +11,6 @@
 //!   前后还要各转一次布局。
 //! - 末维 LayerNorm：一行一个块，先求均值、再求离均差的平方和（两遍，与按元素拼的写法同样稳），归一化、乘权重、加偏置
 //!   都在 f32 里，最后舍入一次。按元素拼要十来个核，逐 token 的自回归里每层两次，启动开销比算的还多。
-//! - [B, T, C] 布局的逐通道（depthwise）一维卷积：一个线程算一个输出，相邻线程是相邻通道，读写都合并，在 f32 里累加。
-//!   candle 的分组卷积按组拆开逐组算再拼，一千多个通道就是一千多次卷积。
 
 use std::sync::OnceLock;
 
@@ -116,33 +114,6 @@ LAYER_NORM(layer_norm_f16_f16, unsigned short, f16_to_f32, f32_to_f16, unsigned 
 LAYER_NORM(layer_norm_f16_f32, unsigned short, f16_to_f32, f32_to_f16, float, id_f32)
 LAYER_NORM(layer_norm_bf16_bf16, unsigned short, bf16_to_f32, bf16_store, unsigned short, bf16_to_f32)
 LAYER_NORM(layer_norm_bf16_f32, unsigned short, bf16_to_f32, bf16_store, float, id_f32)
-
-#define DEPTHWISE_CONV1D(NAME, T, LOAD, STORE) \
-extern "C" __global__ void NAME( \
-    const T* __restrict__ x, const float* __restrict__ w, T* __restrict__ y, \
-    const unsigned int t_in, const unsigned int t_out, const unsigned int channels, const unsigned int kernel, \
-    const unsigned int stride, const unsigned int dilation, const unsigned int padding, const unsigned long long total) \
-{ \
-    const unsigned long long index = (unsigned long long)blockIdx.x * blockDim.x + threadIdx.x; \
-    if (index >= total) return; \
-    const unsigned int c = (unsigned int)(index % channels); \
-    const unsigned long long bt = index / channels; \
-    const unsigned int t = (unsigned int)(bt % t_out); \
-    const unsigned long long b = bt / t_out; \
-    const T* row = x + b * t_in * channels + c; \
-    const float* taps = w + (unsigned long long)c * kernel; \
-    const long long start = (long long)t * stride - (long long)padding; \
-    float acc = 0.f; \
-    for (unsigned int k = 0; k < kernel; ++k) { \
-        const long long ti = start + (long long)k * dilation; \
-        if (ti >= 0 && ti < (long long)t_in) acc += LOAD(row[ti * channels]) * taps[k]; \
-    } \
-    y[index] = STORE(acc); \
-}
-
-DEPTHWISE_CONV1D(depthwise_conv1d_f32, float, id_f32, id_f32)
-DEPTHWISE_CONV1D(depthwise_conv1d_f16, unsigned short, f16_to_f32, f32_to_f16)
-DEPTHWISE_CONV1D(depthwise_conv1d_bf16, unsigned short, bf16_to_f32, bf16_store)
 
 extern "C" __global__ void im2col_nhwc_16b(
     const uint4* __restrict__ src,
@@ -460,100 +431,6 @@ pub fn layer_norm(x: &Tensor, weight: Option<&Tensor>, bias: Option<&Tensor>, ep
     Ok(x.contiguous()?.apply_op3_no_bwd(&weight, &bias, &LayerNormOp { eps, has_bias })?)
 }
 
-struct DepthwiseConv1d {
-    stride: usize,
-    padding: usize,
-    dilation: usize,
-}
-
-impl candle_core::CustomOp2 for DepthwiseConv1d {
-    fn name(&self) -> &'static str {
-        "depthwise-conv1d-nlc"
-    }
-
-    fn cpu_fwd(&self, _: &CpuStorage, _: &Layout, _: &CpuStorage, _: &Layout) -> candle_core::Result<(CpuStorage, Shape)> {
-        candle_core::bail!("{} 只在 CUDA 上实现", self.name())
-    }
-
-    fn cuda_fwd(
-        &self,
-        x: &CudaStorage,
-        x_layout: &Layout,
-        w: &CudaStorage,
-        w_layout: &Layout,
-    ) -> candle_core::Result<(CudaStorage, Shape)> {
-        let device = x.device().clone();
-        let (x0, x1) = contiguous(x_layout, "逐通道卷积的输入")?;
-        let (w0, w1) = contiguous(w_layout, "逐通道卷积的核")?;
-        let (batch, t_in, channels) = x_layout.shape().dims3()?;
-        let (_, kernel) = w_layout.shape().dims2()?;
-        let t_out = conv_output_length(t_in, kernel, self.stride, self.padding, self.dilation);
-        let total = batch * t_out * channels;
-        let CudaStorageSlice::F32(w) = &w.slice else {
-            candle_core::bail!("逐通道卷积的核要 f32");
-        };
-        let w = w.slice(w0..w1);
-        let config = LaunchConfig {
-            grid_dim: (total.div_ceil(THREADS as usize) as u32, 1, 1),
-            block_dim: (THREADS, 1, 1),
-            shared_mem_bytes: 0,
-        };
-        macro_rules! launch {
-            ($name:literal, $variant:ident, $x:expr) => {{
-                let func = device.get_or_load_custom_func($name, MODULE, ptx()?)?;
-                let x = $x.slice(x0..x1);
-                // SAFETY: 每个线程写自己那一个输出。
-                let out = unsafe { device.alloc(total)? };
-                let mut builder = func.builder();
-                builder.arg(&x);
-                builder.arg(&w);
-                builder.arg(&out);
-                candle_core::builder_arg!(
-                    builder,
-                    t_in as u32,
-                    t_out as u32,
-                    channels as u32,
-                    kernel as u32,
-                    self.stride as u32,
-                    self.dilation as u32,
-                    self.padding as u32,
-                    total as u64
-                );
-                // SAFETY: 参数与核的签名一一对应，越界由 `index >= total` 挡住。
-                unsafe { builder.launch(config) }.w()?;
-                CudaStorageSlice::$variant(out)
-            }};
-        }
-        let slice = match &x.slice {
-            CudaStorageSlice::F32(x) => launch!("depthwise_conv1d_f32", F32, x),
-            CudaStorageSlice::F16(x) => launch!("depthwise_conv1d_f16", F16, x),
-            CudaStorageSlice::BF16(x) => launch!("depthwise_conv1d_bf16", BF16, x),
-            _ => candle_core::bail!("逐通道卷积只收 f32/f16/bf16"),
-        };
-        Ok((CudaStorage { slice, device }, Shape::from((batch, t_out, channels))))
-    }
-}
-
-fn conv_output_length(length: usize, kernel: usize, stride: usize, padding: usize, dilation: usize) -> usize {
-    (length + 2 * padding).saturating_sub(dilation * (kernel - 1) + 1) / stride + 1
-}
-
-/// CUDA 上 [B, T, C] 布局的逐通道一维卷积（每个通道一个核、不混通道），`weight` 是 [C, K] 或 MLX 布局的 [C, K, 1]，
-/// 两端各补 `padding` 个零；不含偏置。输出 [B, T_out, C]，精度同 `x`，在 f32 里累加。
-pub fn depthwise_conv1d_nlc(x: &Tensor, weight: &Tensor, stride: usize, padding: usize, dilation: usize) -> Result<Tensor> {
-    let (_, t_in, channels) = x.dims3()?;
-    let kernel = weight.dim(1)?;
-    if weight.dim(0)? != channels || weight.elem_count() != channels * kernel || kernel == 0 || stride == 0 || dilation == 0 {
-        bail!("逐通道卷积的核 {:?} 与输入 {:?} 不符", weight.dims(), x.dims());
-    }
-    if t_in + 2 * padding < dilation * (kernel - 1) + 1 {
-        bail!("逐通道卷积的输入比核短：{:?}", x.dims());
-    }
-    let weight = weight.to_dtype(DType::F32)?.reshape((channels, kernel))?.contiguous()?;
-    Ok(x.contiguous()?
-        .apply_op2_no_bwd(&weight, &DepthwiseConv1d { stride, padding, dilation })?)
-}
-
 struct Im2ColNhwc {
     kernel: (usize, usize),
     stride: usize,
@@ -747,76 +624,6 @@ mod tests {
         }
     }
 
-    /// 与 candle 的 softmax 比较（宽行、窄行、带 -inf 掩码的行）。
-    /// 逐通道卷积与 candle 的分组卷积（NCL）一致：三种精度、步长、膨胀与补零。
-    #[test]
-    #[ignore = "requires an NVIDIA CUDA device"]
-    fn cuda_depthwise_conv1d_matches_grouped_conv() {
-        let device = Device::new_cuda(0).expect("CUDA device 0 is required");
-        let (batch, length, channels, kernel) = (2, 37, 48, 7);
-        let x = Tensor::from_vec(
-            (0..batch * length * channels)
-                .map(|i| ((i * 7919 % 1013) as f32 / 1013.0) - 0.5)
-                .collect(),
-            (batch, length, channels),
-            &Device::Cpu,
-        )
-        .unwrap();
-        let w = Tensor::from_vec(
-            (0..channels * kernel).map(|i| ((i * 104_729 % 997) as f32 / 997.0) - 0.5).collect(),
-            (channels, kernel, 1),
-            &Device::Cpu,
-        )
-        .unwrap();
-        let grouped = |input: &Tensor, stride: usize, padding: usize, dilation: usize| {
-            input
-                .transpose(1, 2)
-                .unwrap()
-                .contiguous()
-                .unwrap()
-                .conv1d(
-                    &w.permute((0, 2, 1)).unwrap().contiguous().unwrap(),
-                    padding,
-                    stride,
-                    dilation,
-                    channels,
-                )
-                .unwrap()
-                .transpose(1, 2)
-                .unwrap()
-        };
-        for (stride, padding, dilation) in [(1, 0, 1), (2, 0, 1), (1, 3, 1), (1, 9, 3), (2, 5, 2)] {
-            for (dtype, tolerance) in [(DType::F32, 1e-5_f32), (DType::F16, 4e-3), (DType::BF16, 3e-2)] {
-                let input = x.to_dtype(dtype).unwrap();
-                let reference = grouped(&input.to_dtype(DType::F32).unwrap(), stride, padding, dilation);
-                let actual = super::depthwise_conv1d_nlc(
-                    &input.to_device(&device).unwrap(),
-                    &w.to_device(&device).unwrap(),
-                    stride,
-                    padding,
-                    dilation,
-                )
-                .unwrap();
-                assert_eq!(actual.dtype(), dtype);
-                assert_eq!(actual.dims(), reference.dims());
-                let worst = (actual.to_dtype(DType::F32).unwrap().to_device(&Device::Cpu).unwrap() - reference)
-                    .unwrap()
-                    .abs()
-                    .unwrap()
-                    .flatten_all()
-                    .unwrap()
-                    .max(0)
-                    .unwrap()
-                    .to_scalar::<f32>()
-                    .unwrap();
-                assert!(
-                    worst < tolerance,
-                    "{dtype:?} stride={stride} padding={padding} dilation={dilation}: {worst}"
-                );
-            }
-        }
-    }
-
     /// 融合的 LayerNorm 与按元素拼的写法（f32 里两遍求均值与方差）一致：三种输入精度、权重与输入同精度或是 f32、
     /// 有没有偏置；输入的均值远大于标准差时也稳。
     #[test]
@@ -868,6 +675,7 @@ mod tests {
         }
     }
 
+    /// 与 candle 的 softmax 比较（宽行、窄行、带 -inf 掩码的行）。
     #[test]
     #[ignore = "requires an NVIDIA CUDA device"]
     fn cuda_softmax_matches_candle() {

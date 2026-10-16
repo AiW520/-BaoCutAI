@@ -448,8 +448,8 @@ describe('ModelInstaller', () => {
 });
 
 /**
- * 发布页组件（audio.cpp 引擎，架构设计 §6.3）：按主机平台下载压缩包，核对大小与 sha256，解开、写清单、原子地发布到工具目录；
- * 坏包不留半个目录；最后一个持有者删除时回收；旧版装下（没有清单）的不重新下载。压缩包由本机回环地址上的小服务器给出。
+ * 发布页组件（LiteRT-LM 的 C 库这类交给 Worker 的动态库，架构设计 §6.3）：按主机平台下载压缩包，核对大小与 sha256，解开、写清单、
+ * 原子地发布到工具目录；坏包不留半个目录；最后一个持有者删除时回收。压缩包由本机回环地址上的小服务器给出。
  */
 describe('ModelInstaller 发布页组件', () => {
   let root: string;
@@ -494,13 +494,13 @@ describe('ModelInstaller 发布页组件', () => {
     await fs.rm(work, { recursive: true, force: true });
   });
 
-  /** 打一个像上游发布包的 tar.gz：引擎、同包的其他工具、库、许可与一个子目录。 */
-  function packRelease(script: string): Buffer {
+  /** 打一个像上游发布包的 tar.gz：动态库、同包的其他工具、依赖的库、许可与一个子目录。 */
+  function packRelease(content: string): Buffer {
     const dir = path.join(work, `pack-${crypto.randomUUID()}`);
     fsSync.mkdirSync(path.join(dir, 'tools'), { recursive: true });
-    fsSync.writeFileSync(path.join(dir, 'audiocpp_cli'), script, { mode: 0o755 });
-    fsSync.writeFileSync(path.join(dir, 'audiocpp_server'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-    fsSync.writeFileSync(path.join(dir, 'libggml.so'), 'lib');
+    fsSync.writeFileSync(path.join(dir, 'libtest.dylib'), content);
+    fsSync.writeFileSync(path.join(dir, 'other-tool'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    fsSync.writeFileSync(path.join(dir, 'libdep.so'), 'lib');
     fsSync.writeFileSync(path.join(dir, 'LICENSE'), 'Apache-2.0');
     fsSync.writeFileSync(path.join(dir, 'tools', 'notes.txt'), 'notes');
     const archive = path.join(work, `${crypto.randomUUID()}.tar.gz`);
@@ -508,10 +508,10 @@ describe('ModelInstaller 发布页组件', () => {
     return fsSync.readFileSync(archive);
   }
 
-  function release(body: Buffer, fileName = 'audio-test-bin.tar.gz'): ComponentRelease {
+  function release(body: Buffer, fileName = 'test-lib.tar.gz'): ComponentRelease {
     assets.set(`/download/v0.9.1/${fileName}`, body);
     return {
-      name: 'audiocpp',
+      name: 'testlib',
       version: '0.9.1',
       urlTemplate: `${base}/download/v{version}/{file}`,
       assets: {
@@ -519,24 +519,25 @@ describe('ModelInstaller 发布页组件', () => {
           fileName,
           size: body.length,
           sha256: crypto.createHash('sha256').update(body).digest('hex'),
-          archive: { format: 'tar.gz', skip: ['audiocpp_server'] },
-          executable: 'audiocpp_cli',
+          archive: { format: 'tar.gz', skip: ['other-tool'] },
+          executable: 'libtest.dylib',
         },
       },
+      workerLibrary: true,
     };
   }
 
-  function setup(rel: ComponentRelease, options: { probe?: (exe: string) => Promise<void>; toolsEndpoint?: string } = {}) {
-    const engine = { family: 'audio-cpp-engine' as const, repo: '0xShug0/audio.cpp', revision: 'v0.9.1', release: rel };
+  function setup(rel: ComponentRelease, options: { toolsEndpoint?: string } = {}) {
+    const runtime = { family: 'litertlm-runtime' as const, repo: 'google-ai-edge/LiteRT-LM', revision: 'v0.9.1', release: rel };
     const bundle = (bundleId: string, repo: SyntheticRepo): BundleDefinition => ({
       bundleId,
-      capability: 'music',
-      backend: 'audio-cpp',
-      device: 'auto',
+      capability: 'embed',
+      backend: 'litert-lm',
+      device: 'cpu',
       label: bundleId,
-      components: { music: { family: 'yue2', repo: repo.repo, revision: repo.revision }, 'audiocpp-engine': engine },
+      components: { embedding: { family: 'embeddinggemma2-litert', repo: repo.repo, revision: repo.revision }, 'litertlm-runtime': runtime },
     });
-    const bundles = [bundle('music-a@audio-cpp', asrA), bundle('music-b@audio-cpp', asrB)];
+    const bundles = [bundle('embed-a@litert-lm', asrA), bundle('embed-b@litert-lm', asrB)];
     const manifests = [asrA, asrB].map((r) => syntheticManifest(r, { sizes: true, estimatedBytes: 1_000_000 }));
     const catalog = new ModelCatalog({ root, ...mac, bundles, manifests });
     const installer = new ModelInstaller({
@@ -546,27 +547,21 @@ describe('ModelInstaller 发布页组件', () => {
       freeBytes: async () => 10 * 1024 * 1024 * 1024,
       backoffMs: () => 5,
       retries: 0,
-      ...(options.probe ? { probeExecutable: options.probe } : {}),
       ...(options.toolsEndpoint ? { toolsEndpoint: options.toolsEndpoint } : {}),
     });
-    return { catalog, installer, engineDir: path.join(root, '.bcut-tools', 'audiocpp', '0.9.1') };
+    return { catalog, installer, libDir: path.join(root, '.bcut-tools', 'testlib', '0.9.1') };
   }
 
   const run = (installer: ModelInstaller, bundleId: string, repair = false) =>
     installer.plan(bundleId, { repair }).then((detail) => installer.install(detail, { signal: new AbortController().signal }));
 
-  it('随模型一起下载：计划按登记的大小（不发 HEAD），解开根目录的文件、略过同包工具，写清单，探测可执行文件', async () => {
-    const body = packRelease('#!/bin/sh\necho "audio.cpp 0.9.1"\n');
-    const { catalog, installer, engineDir } = setup(release(body), {
-      probe: async (exe) => {
-        probed.push(exe);
-      },
-    });
-    const probed: string[] = [];
-    const detail = await installer.plan('music-a@audio-cpp');
+  it('随模型一起下载：计划按登记的大小（不发 HEAD），解开根目录的文件、略过同包工具，写清单', async () => {
+    const body = packRelease('dylib');
+    const { catalog, installer, libDir } = setup(release(body));
+    const detail = await installer.plan('embed-a@litert-lm');
     expect(detail.plan.components.map((c) => [c.component, c.action, c.origin ?? null, c.files])).toEqual([
-      ['music', 'download', null, ['config.json', 'model.safetensors']],
-      ['audiocpp-engine', 'download', 'github-release', ['audio-test-bin.tar.gz']],
+      ['embedding', 'download', null, ['config.json', 'model.safetensors']],
+      ['litertlm-runtime', 'download', 'github-release', ['test-lib.tar.gz']],
     ]);
     expect(detail.plan.downloadBytes).toBe(bytesOf(asrA) + body.length);
     expect(detail.plan.confirmBytes).toBe(bytesOf(asrA) + body.length);
@@ -577,99 +572,96 @@ describe('ModelInstaller 发布页组件', () => {
     expect(requests).toEqual([]);
     const outcome = await installer.install(detail, { signal: new AbortController().signal });
     expect(outcome.downloadedBytes).toBe(bytesOf(asrA) + body.length);
-    expect(requests).toEqual(['/download/v0.9.1/audio-test-bin.tar.gz']);
-    expect((await fs.readdir(engineDir)).sort()).toEqual(['.bcut-manifest.json', 'LICENSE', 'audiocpp_cli', 'libggml.so']);
-    const manifest = JSON.parse(await fs.readFile(path.join(engineDir, '.bcut-manifest.json'), 'utf8'));
-    expect(manifest).toMatchObject({ format_version: 1, repo: '0xShug0/audio.cpp', revision: 'v0.9.1', source: `${base}/download/v0.9.1/audio-test-bin.tar.gz` });
-    expect(manifest.files.map((f: { path: string }) => f.path)).toEqual(['LICENSE', 'audiocpp_cli', 'libggml.so']);
-    expect((await fs.stat(path.join(engineDir, 'audiocpp_cli'))).mode & 0o111).not.toBe(0);
-    expect(probed).toEqual([path.join(engineDir, 'audiocpp_cli')]);
-    expect(await catalog.status('music-a@audio-cpp')).toMatchObject({ state: 'installed' });
-    expect(catalog.engineExecutable('music-a@audio-cpp')).toBe(path.join(engineDir, 'audiocpp_cli'));
-    expect((await catalog.verify('music-a@audio-cpp')).ok).toBe(true);
+    expect(requests).toEqual(['/download/v0.9.1/test-lib.tar.gz']);
+    expect((await fs.readdir(libDir)).sort()).toEqual(['.bcut-manifest.json', 'LICENSE', 'libdep.so', 'libtest.dylib']);
+    const manifest = JSON.parse(await fs.readFile(path.join(libDir, '.bcut-manifest.json'), 'utf8'));
+    expect(manifest).toMatchObject({ format_version: 1, repo: 'google-ai-edge/LiteRT-LM', revision: 'v0.9.1', source: `${base}/download/v0.9.1/test-lib.tar.gz` });
+    expect(manifest.files.map((f: { path: string }) => f.path)).toEqual(['LICENSE', 'libdep.so', 'libtest.dylib']);
+    expect(await catalog.status('embed-a@litert-lm')).toMatchObject({ state: 'installed' });
+    expect((await catalog.verify('embed-a@litert-lm')).ok).toBe(true);
     // 暂存区收拾干净。
-    expect(await fs.readdir(path.join(root, '.bcut-tools'))).toEqual(['audiocpp']);
-    // 第二个模型包共用这份引擎：只下载自己的权重。
-    const second = await installer.plan('music-b@audio-cpp');
+    expect(await fs.readdir(path.join(root, '.bcut-tools'))).toEqual(['testlib']);
+    // 第二个模型包共用这份库：只下载自己的权重。
+    const second = await installer.plan('embed-b@litert-lm');
     expect(second.plan.components.map((c) => [c.component, c.action])).toEqual([
-      ['music', 'download'],
-      ['audiocpp-engine', 'keep'],
+      ['embedding', 'download'],
+      ['litertlm-runtime', 'keep'],
     ]);
   });
 
   it('工具下载镜像：地址是 <基址>/<名字>/<版本>/<文件名>，计划的来源是镜像', async () => {
-    const body = packRelease('#!/bin/sh\nexit 0\n');
+    const body = packRelease('dylib');
     const rel = release(body);
-    assets.set('/mirror/audiocpp/0.9.1/audio-test-bin.tar.gz', body);
-    const { installer, engineDir } = setup(rel, { toolsEndpoint: `${base}/mirror/` });
-    const detail = await installer.plan('music-a@audio-cpp');
+    assets.set('/mirror/testlib/0.9.1/test-lib.tar.gz', body);
+    const { installer, libDir } = setup(rel, { toolsEndpoint: `${base}/mirror/` });
+    const detail = await installer.plan('embed-a@litert-lm');
     expect(detail.plan.source).toBe(`${source.endpoint} + ${base}/mirror`);
     await installer.install(detail, { signal: new AbortController().signal });
-    expect(requests).toEqual(['/mirror/audiocpp/0.9.1/audio-test-bin.tar.gz']);
-    expect(await fs.stat(path.join(engineDir, 'audiocpp_cli'))).toBeTruthy();
+    expect(requests).toEqual(['/mirror/testlib/0.9.1/test-lib.tar.gz']);
+    expect(await fs.stat(path.join(libDir, 'libtest.dylib'))).toBeTruthy();
   });
 
   it('发布页组件本次选源优先于默认，null 明确使用官方且不改变默认', async () => {
-    const body = packRelease('#!/bin/sh\nexit 0\n');
+    const body = packRelease('dylib');
     const rel = release(body);
-    assets.set('/selected/audiocpp/0.9.1/audio-test-bin.tar.gz', body);
+    assets.set('/selected/testlib/0.9.1/test-lib.tar.gz', body);
     const { installer } = setup(rel, { toolsEndpoint: `${base}/default` });
-    const key = '0xShug0/audio.cpp@v0.9.1';
-    const official = await installer.plan('music-a@audio-cpp', { endpoints: { [key]: null } });
+    const key = 'google-ai-edge/LiteRT-LM@v0.9.1';
+    const official = await installer.plan('embed-a@litert-lm', { endpoints: { [key]: null } });
     expect(official.plan.components.find((c) => c.origin)?.source).not.toContain('/default');
-    const chosen = await installer.plan('music-a@audio-cpp', { endpoints: { [key]: `${base}/selected` } });
+    const chosen = await installer.plan('embed-a@litert-lm', { endpoints: { [key]: `${base}/selected` } });
     expect(chosen.plan.components.find((c) => c.origin)?.source).toBe(`${base}/selected`);
-    const defaultPlan = await installer.plan('music-a@audio-cpp');
+    const defaultPlan = await installer.plan('embed-a@litert-lm');
     expect(defaultPlan.plan.components.find((c) => c.origin)?.source).toBe(`${base}/default`);
     await installer.install(chosen, { signal: new AbortController().signal });
-    expect(requests).toEqual(['/selected/audiocpp/0.9.1/audio-test-bin.tar.gz']);
+    expect(requests).toEqual(['/selected/testlib/0.9.1/test-lib.tar.gz']);
   });
 
   it('一部分没下成：失败带上那一部分与它连的基址；下好的权重留着，再计划只下缺的那一部分', async () => {
-    const body = packRelease('#!/bin/sh\nexit 0\n');
+    const body = packRelease('dylib');
     const rel = release(body);
     // 镜像上没有这个包：404。
     const { catalog, installer } = setup(rel, { toolsEndpoint: `${base}/mirror` });
-    const error = await run(installer, 'music-a@audio-cpp').catch((e: unknown) => e);
+    const error = await run(installer, 'embed-a@litert-lm').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(DownloadError);
     expect((error as DownloadError).code).toBe('MODEL_DOWNLOAD_SOURCE');
     expect((error as DownloadError).details).toMatchObject({
-      component: 'audiocpp-engine',
-      repo: '0xShug0/audio.cpp',
+      component: 'litertlm-runtime',
+      repo: 'google-ai-edge/LiteRT-LM',
       origin: 'github-release',
       source: `${base}/mirror`,
       status: 404,
     });
-    const status = await catalog.status('music-a@audio-cpp');
+    const status = await catalog.status('embed-a@litert-lm');
     expect(status?.components?.map((c) => [c.component, c.state])).toEqual([
-      ['music', 'installed'],
-      ['audiocpp-engine', 'missing'],
+      ['embedding', 'installed'],
+      ['litertlm-runtime', 'missing'],
     ]);
-    const again = await installer.plan('music-a@audio-cpp');
+    const again = await installer.plan('embed-a@litert-lm');
     expect(again.plan.components.map((c) => [c.component, c.action])).toEqual([
-      ['music', 'keep'],
-      ['audiocpp-engine', 'download'],
+      ['embedding', 'keep'],
+      ['litertlm-runtime', 'download'],
     ]);
     expect(again.plan.downloadBytes).toBe(body.length);
   });
 
   it('摘要不符：MODEL_DOWNLOAD_INTEGRITY，删掉下载的文件，不留组件目录', async () => {
-    const body = packRelease('#!/bin/sh\nexit 0\n');
+    const body = packRelease('dylib');
     const rel = release(body);
-    assets.set('/download/v0.9.1/audio-test-bin.tar.gz', Buffer.concat([body.subarray(0, body.length - 1), Buffer.from([body.at(-1)! ^ 1])]));
-    const { installer, engineDir } = setup(rel);
-    await expect(run(installer, 'music-a@audio-cpp')).rejects.toMatchObject({ code: 'MODEL_DOWNLOAD_INTEGRITY' });
-    expect(await fs.stat(engineDir).catch(() => null)).toBeNull();
-    const stage = path.join(root, '.bcut-tools', '.bcut-staging', 'audiocpp@0.9.1');
+    assets.set('/download/v0.9.1/test-lib.tar.gz', Buffer.concat([body.subarray(0, body.length - 1), Buffer.from([body.at(-1)! ^ 1])]));
+    const { installer, libDir } = setup(rel);
+    await expect(run(installer, 'embed-a@litert-lm')).rejects.toMatchObject({ code: 'MODEL_DOWNLOAD_INTEGRITY' });
+    expect(await fs.stat(libDir).catch(() => null)).toBeNull();
+    const stage = path.join(root, '.bcut-tools', '.bcut-staging', 'testlib@0.9.1');
     const left = await fs.readdir(stage).catch(() => [] as string[]);
-    expect(left.filter((f) => f.startsWith('audio-test-bin'))).toEqual([]);
+    expect(left.filter((f) => f.startsWith('test-lib'))).toEqual([]);
   });
 
-  it('坏包与缺可执行文件：MODEL_DOWNLOAD_INTEGRITY，删掉暂存区，不留半个目录', async () => {
+  it('坏包与缺登记的文件：MODEL_DOWNLOAD_INTEGRITY，删掉暂存区，不留半个目录', async () => {
     const garbage = Buffer.from('this is not a gzip archive at all');
-    const { installer, engineDir } = setup(release(garbage));
-    await expect(run(installer, 'music-a@audio-cpp')).rejects.toMatchObject({ code: 'MODEL_DOWNLOAD_INTEGRITY' });
-    expect(await fs.stat(engineDir).catch(() => null)).toBeNull();
+    const { installer, libDir } = setup(release(garbage));
+    await expect(run(installer, 'embed-a@litert-lm')).rejects.toMatchObject({ code: 'MODEL_DOWNLOAD_INTEGRITY' });
+    expect(await fs.stat(libDir).catch(() => null)).toBeNull();
     expect(await fs.stat(path.join(root, '.bcut-tools', '.bcut-staging')).catch(() => null)).toBeNull();
 
     const dir = path.join(work, 'no-exe');
@@ -678,97 +670,26 @@ describe('ModelInstaller 发布页组件', () => {
     const archive = path.join(work, 'no-exe.tar.gz');
     execFileSync('tar', ['-czf', archive, '-C', dir, '.']);
     const noExe = setup(release(fsSync.readFileSync(archive), 'no-exe.tar.gz'));
-    const error = await run(noExe.installer, 'music-a@audio-cpp').catch((e: unknown) => e);
+    const error = await run(noExe.installer, 'embed-a@litert-lm').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(DownloadError);
     expect(error).toMatchObject({ code: 'MODEL_DOWNLOAD_INTEGRITY' });
-    expect((error as Error).message).toContain('audiocpp_cli');
-    expect(await fs.stat(engineDir).catch(() => null)).toBeNull();
+    expect((error as Error).message).toContain('libtest.dylib');
+    expect(await fs.stat(libDir).catch(() => null)).toBeNull();
     expect(await fs.stat(path.join(root, '.bcut-tools', '.bcut-staging')).catch(() => null)).toBeNull();
   });
 
-  it('探测失败：删掉刚发布的组件目录，MODEL_DOWNLOAD_INTEGRITY', async () => {
-    const { installer, engineDir } = setup(release(packRelease('#!/bin/sh\nexit 1\n')), {
-      probe: async () => {
-        throw new Error('exit code 1');
-      },
-    });
-    await expect(run(installer, 'music-a@audio-cpp')).rejects.toMatchObject({ code: 'MODEL_DOWNLOAD_INTEGRITY' });
-    expect(await fs.stat(engineDir).catch(() => null)).toBeNull();
-  });
-
-  it('引用计数：删除一个模型包保留共用的引擎；最后一个删掉时回收工具目录里的引擎', async () => {
-    const { catalog, installer, engineDir } = setup(release(packRelease('#!/bin/sh\nexit 0\n')));
-    await run(installer, 'music-a@audio-cpp');
-    await run(installer, 'music-b@audio-cpp');
-    const first = await installer.remove('music-a@audio-cpp');
+  it('引用计数：删除一个模型包保留共用的库；最后一个删掉时回收工具目录里的库', async () => {
+    const { catalog, installer, libDir } = setup(release(packRelease('dylib')));
+    await run(installer, 'embed-a@litert-lm');
+    await run(installer, 'embed-b@litert-lm');
+    const first = await installer.remove('embed-a@litert-lm');
     expect(first.removed).toEqual([asrA.repo]);
-    expect(first.kept).toEqual([{ repo: '0xShug0/audio.cpp', usedBy: ['music-b@audio-cpp'] }]);
-    expect(await fs.stat(path.join(engineDir, 'audiocpp_cli'))).toBeTruthy();
-    const last = await installer.remove('music-b@audio-cpp');
-    expect(last.removed).toEqual([asrB.repo, '0xShug0/audio.cpp']);
-    expect(await fs.stat(engineDir).catch(() => null)).toBeNull();
-    expect(await fs.stat(path.join(root, '.bcut-tools', 'audiocpp')).catch(() => null)).toBeNull();
-    expect(await catalog.status('music-b@audio-cpp')).toMatchObject({ state: 'not-installed' });
-  });
-
-  it('旧版装下的引擎（只有可执行文件、没有清单）：计划不下载它，校验通过；修复时重新下载并写清单', async () => {
-    const body = packRelease('#!/bin/sh\nexit 0\n');
-    const { catalog, installer, engineDir } = setup(release(body));
-    await fs.mkdir(engineDir, { recursive: true });
-    await fs.writeFile(path.join(engineDir, 'audiocpp_cli'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-    await run(installer, 'music-a@audio-cpp');
-    expect(requests).toEqual([]);
-    expect(await catalog.status('music-a@audio-cpp')).toMatchObject({ state: 'installed' });
-    expect((await catalog.verify('music-a@audio-cpp')).ok).toBe(true);
-    const plan = await installer.plan('music-a@audio-cpp');
-    expect(plan.plan.upToDate).toBe(true);
-    expect(plan.plan.downloadBytes).toBe(0);
-
-    const repair = await installer.plan('music-a@audio-cpp', { repair: true });
-    expect(repair.plan.components.map((c) => [c.component, c.action])).toEqual([
-      ['music', 'keep'],
-      ['audiocpp-engine', 'download'],
-    ]);
-    await installer.install(repair, { signal: new AbortController().signal });
-    expect(requests).toEqual(['/download/v0.9.1/audio-test-bin.tar.gz']);
-    expect(await fs.stat(path.join(engineDir, '.bcut-manifest.json'))).toBeTruthy();
-    // 有清单之后修复按清单核对，完好的不再下载。
-    const again = await installer.plan('music-a@audio-cpp', { repair: true });
-    expect(again.plan.components.map((c) => c.action)).toEqual(['keep', 'keep']);
-  });
-
-  it('engineOverride 满足的引擎：计划是 keep，不下载；没有引擎包的平台也能装', async () => {
-    const exe = path.join(work, 'my-audiocpp_cli');
-    await fs.writeFile(exe, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-    const rel = release(packRelease('#!/bin/sh\nexit 0\n'));
-    const bundles: BundleDefinition[] = [
-      {
-        bundleId: 'music-a@audio-cpp',
-        capability: 'music',
-        backend: 'audio-cpp',
-        device: 'auto',
-        label: 'a',
-        components: {
-          music: { family: 'yue2', repo: asrA.repo, revision: asrA.revision },
-          'audiocpp-engine': { family: 'audio-cpp-engine', repo: '0xShug0/audio.cpp', revision: 'v0.9.1', release: rel },
-        },
-      },
-    ];
-    const manifests = [syntheticManifest(asrA, { sizes: true, estimatedBytes: 1_000_000 })];
-    const catalog = new ModelCatalog({ root, platform: 'linux', arch: 'arm64', bundles, manifests, engineOverride: exe });
-    const installer = new ModelInstaller({ catalog, endpoint: () => source.endpoint, manifests, freeBytes: async () => null });
-    const detail = await installer.plan('music-a@audio-cpp');
-    expect(detail.plan.components.map((c) => [c.component, c.action])).toEqual([
-      ['music', 'download'],
-      ['audiocpp-engine', 'keep'],
-    ]);
-    await installer.install(detail, { signal: new AbortController().signal });
-    expect(requests).toEqual([]);
-    expect(await catalog.status('music-a@audio-cpp')).toMatchObject({ state: 'installed' });
-    // 没有 override 时这个平台没有引擎包：拒绝计划。
-    const plain = new ModelCatalog({ root, platform: 'linux', arch: 'arm64', bundles, manifests });
-    await expect(new ModelInstaller({ catalog: plain, endpoint: () => source.endpoint, manifests }).plan('music-a@audio-cpp', { repair: true })).rejects.toMatchObject({
-      code: 'MODEL_DOWNLOAD_SOURCE',
-    });
+    expect(first.kept).toEqual([{ repo: 'google-ai-edge/LiteRT-LM', usedBy: ['embed-b@litert-lm'] }]);
+    expect(await fs.stat(path.join(libDir, 'libtest.dylib'))).toBeTruthy();
+    const last = await installer.remove('embed-b@litert-lm');
+    expect(last.removed).toEqual([asrB.repo, 'google-ai-edge/LiteRT-LM']);
+    expect(await fs.stat(libDir).catch(() => null)).toBeNull();
+    expect(await fs.stat(path.join(root, '.bcut-tools', 'testlib')).catch(() => null)).toBeNull();
+    expect(await catalog.status('embed-b@litert-lm')).toMatchObject({ state: 'not-installed' });
   });
 });

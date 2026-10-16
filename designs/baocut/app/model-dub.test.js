@@ -14,49 +14,55 @@ const cues = [
 ];
 const pace = TTS.paceFor({}, 'qwen3-tts', 'en');
 
-test('引擎能力卡：Qwen3 有预设与风格，克隆型引擎没有预设', () => {
-  const q = DUB.capabilities('qwen3');
+test('引擎能力卡：Qwen3-TTS 1.7B 有预设与风格，克隆型引擎（含 0.6B）没有预设', () => {
+  const q = DUB.capabilities('qwen3-1.7b');
   assert.equal(q.presets.length, 9);
   assert.equal(q.style, true);
   assert.equal(q.emotion, false);
   const i = DUB.capabilities('indextts2');
   assert.equal(i.presets.length, 0);
   assert.equal(i.emotion, true);
-  assert.match(DUB.capabilityLine('qwen3'), /9 个预设音色/);
-  assert.match(DUB.capabilityLine('gptsovits'), /没有预设音色/);
+  assert.match(DUB.capabilityLine('qwen3-1.7b'), /9 个预设音色/);
+  // 0.6B 只剩 Base：没有预设，也就没有风格指令
+  assert.match(DUB.capabilityLine('qwen3'), /没有预设音色/);
+  assert.equal(DUB.capabilities('qwen3').style, false);
 });
 
 test('预设按目标语言分母语 / 非母语', () => {
-  const ja = DUB.presetsFor('qwen3', 'ja');
+  const ja = DUB.presetsFor('qwen3-1.7b', 'ja');
   assert.deepEqual(ja.native.map((p) => p.id), ['Ono_Anna']);
   assert.equal(ja.others.length, 8);
-  const zh = DUB.presetsFor('qwen3', 'zh-CN');
+  const zh = DUB.presetsFor('qwen3-1.7b', 'zh-CN');
   assert.equal(zh.native.length, 7);
   assert.equal(DUB.presetsFor('indextts2', 'zh').native.length, 0);
+  assert.equal(DUB.presetsFor('qwen3', 'ja').native.length, 0);
 });
 
 test('发音标准优先的实现来源随引擎 × 语言变化', () => {
-  assert.equal(DUB.accentSource('qwen3', 'ko').kind, 'preset');
+  assert.equal(DUB.accentSource('qwen3-1.7b', 'ko').kind, 'preset');
+  // 0.6B 没有预设：日语有内置母语参考，韩语没有就要自己传
+  assert.equal(DUB.accentSource('qwen3', 'ja').kind, 'ref');
+  assert.equal(DUB.accentSource('qwen3', 'ko').kind, 'upload');
   assert.equal(DUB.accentSource('indextts2', 'en').kind, 'ref');
   // 2026-09-21：内置音色从中英两段扩到 zh / en / ja / es 八只，中文不用再自己传录音
   assert.equal(DUB.accentSource('indextts2', 'zh').kind, 'ref');
   assert.equal(DUB.accentSource('indextts25', 'ar').kind, 'upload');
-  assert.equal(DUB.accentSource('qwen3', 'de').kind, 'preset-any');
+  assert.equal(DUB.accentSource('qwen3-1.7b', 'de').kind, 'preset-any');
   const opts = DUB.priorityOptions('indextts2', 'zh');
   assert.equal(opts.length, 2);
   assert.equal(opts[0].id, 'voice');
   assert.equal(opts[1].needsUpload, false, '有中文内置音色，不必上传');
   assert.equal(DUB.priorityOptions('indextts25', 'ar')[1].needsUpload, true);
-  assert.equal(DUB.priorityOptions('gptsovits', 'ja')[0].available, false);
+  assert.equal(DUB.priorityOptions('indextts2', 'ja')[0].available, false);
 });
 
 test('取向映射回 strategy，并给说话人分配母语预设', () => {
-  assert.equal(DUB.strategyOf('voice', 'qwen3', 'ja'), 'clone');
-  assert.equal(DUB.strategyOf('accent', 'qwen3', 'ja'), 'preset');
+  assert.equal(DUB.strategyOf('voice', 'qwen3-1.7b', 'ja'), 'clone');
+  assert.equal(DUB.strategyOf('accent', 'qwen3-1.7b', 'ja'), 'preset');
   assert.equal(DUB.strategyOf('accent', 'indextts2', 'zh'), 'upload', '内置母语参考仍按「同一段参考」记账');
-  const a = DUB.assignPresets('qwen3', 'ko', ['s1', 's2']);
+  const a = DUB.assignPresets('qwen3-1.7b', 'ko', ['s1', 's2']);
   assert.deepEqual(a, {s1: 'Sohee', s2: 'Sohee'});
-  const b = DUB.assignPresets('qwen3', 'en', ['s1', 's2', 's3']);
+  const b = DUB.assignPresets('qwen3-1.7b', 'en', ['s1', 's2', 's3']);
   assert.equal(Object.keys(b).length, 3);
   assert.ok(b.s1 !== b.s2);
   assert.equal(DUB.voiceReady({priority: 'accent', engine: 'indextts2', lang: 'zh', ref: null}), true, '有中文内置音色');
@@ -67,13 +73,14 @@ test('取向映射回 strategy，并给说话人分配母语预设', () => {
   assert.equal(DUB.voiceReady({priority: 'accent', engine: 'omnivoice', lang: 'uk', ref: {name: 'x'}, refText: 'Привіт'}), true);
   assert.match(DUB.startProblem({priority: 'accent', engine: 'omnivoice', lang: 'uk', ref: {name: 'x'}, refText: ' '}, {count: 3}), /原文/);
   assert.match(DUB.voiceSummary({priority: 'voice'}, 3), /克隆 3 位/);
-  assert.match(DUB.voiceSummary({priority: 'accent', engine: 'qwen3', lang: 'ja', presets: {s1: 'Ono_Anna'}}, 1), /Ono_Anna/);
+  assert.match(DUB.voiceSummary({priority: 'accent', engine: 'qwen3-1.7b', lang: 'ja', presets: {s1: 'Ono_Anna'}}, 1), /Ono_Anna/);
 });
 
 test('引擎专属的其他设置', () => {
-  assert.deepEqual(DUB.extraSettings('qwen3').map((s) => s.key), ['style']);
+  assert.deepEqual(DUB.extraSettings('qwen3-1.7b').map((s) => s.key), ['style']);
+  assert.deepEqual(DUB.extraSettings('qwen3').map((s) => s.key), []);
   assert.deepEqual(DUB.extraSettings('indextts2').map((s) => s.key), ['emotion']);
-  assert.deepEqual(DUB.extraSettings('gptsovits').map((s) => s.key), ['refText']);
+  assert.deepEqual(DUB.extraSettings('omnivoice').map((s) => s.key), ['refText']);
 });
 
 test('时长对比：每句原声 vs 预测，汇总与条宽', () => {
@@ -165,11 +172,11 @@ test('导出声道：默认模式、清单与汇总文案', () => {
 });
 
 test('引擎列表：能力、取向与就绪判定', () => {
-  assert.equal(DUB.accentSource('qwen3', 'ja').kind, 'preset');
+  assert.equal(DUB.accentSource('qwen3-1.7b', 'ja').kind, 'preset');
   assert.equal(DUB.strategyOf('voice', 'qwen3', 'en'), 'clone');
-  assert.equal(DUB.strategyOf('accent', 'qwen3', 'ja'), 'preset');
+  assert.equal(DUB.strategyOf('accent', 'qwen3-1.7b', 'ja'), 'preset');
   assert.equal(DUB.voiceReady({priority: 'voice', engine: 'qwen3', lang: 'en'}), true);
-  assert.equal(DUB.extraSettings('qwen3')[0].default, '');
+  assert.equal(DUB.extraSettings('qwen3-1.7b')[0].default, '');
   // Qwen3-TTS 1.7B 进配音引擎菜单：CustomVoice / Base，2026-09-26 起再加 VoiceDesign（可描述新声音）。
   assert.equal(DUB.capabilityLine('qwen3-1.7b'), '会念 10 种语言 · 9 个预设音色 · 可克隆 · 一句话指定风格 · 可描述新声音');
   assert.equal(DUB.capabilities('qwen3-1.7b').presets.length, 9);
@@ -178,7 +185,8 @@ test('引擎列表：能力、取向与就绪判定', () => {
   assert.equal(DUB.accentSource('qwen3-1.7b', 'ja').kind, 'preset');
   assert.equal(DUB.accentSource('qwen3-1.7b', 'de').kind, 'preset-any');
   assert.equal(DUB.modelNeeded({priority: 'accent', engine: 'qwen3-1.7b', lang: 'de'}), 'qwen3-tts-1.7b-customvoice');
-  assert.equal(DUB.accentSource('qwen3', 'de').kind, 'preset-any');
+  // 0.6B 没有预设也没有德语内置参考：发音标准优先要自己传一段
+  assert.equal(DUB.accentSource('qwen3', 'de').kind, 'upload');
 });
 
 test('音频 Tab 分组：一条配音轨折成 background.wav + 逐句 s-N.wav，散装文件另列', () => {
@@ -229,10 +237,14 @@ test('设置页（2026-09-16）：按语言与取向自动选引擎，已装的�
   const has = (id) => id === 'indextts2';
   assert.equal(DUB.pickEngine({lang: 'en', priority: 'voice', installed: has}).engine, 'indextts2');
   assert.equal(DUB.pickEngine({lang: 'en', priority: 'voice', installed: has}).installed, true);
-  // 日语 IndexTTS2 不会念：仍是 Qwen3；发音标准优先要的是 CustomVoice
+  // 日语 IndexTTS2 不会念；发音标准优先时有母语预设的排前面：0.6B 没有预设了，落到 1.7B CustomVoice
   const ja = DUB.pickEngine({lang: 'ja', priority: 'accent', installed: has});
-  assert.equal(ja.engine, 'qwen3');
-  assert.equal(ja.model, 'qwen3-tts-0.6b-customvoice');
+  assert.equal(ja.engine, 'qwen3-1.7b');
+  assert.equal(ja.model, 'qwen3-tts-1.7b-customvoice');
+  // 韩语没有内置母语参考：仍是 CustomVoice 的 Sohee，不落到要自己传录音的 0.6B
+  assert.equal(DUB.pickEngine({lang: 'ko', priority: 'accent', installed: none}).model, 'qwen3-tts-1.7b-customvoice');
+  // 已装优先在同一排序里照旧：只装了 0.6B Base 时日语发音标准优先用它的内置日语参考
+  assert.deepEqual(DUB.pickEngine({lang: 'ja', priority: 'accent', installed: q3}), {engine: 'qwen3', installed: true, model: 'qwen3-tts-0.6b-base', speaks: true});
   assert.equal(DUB.pickEngine({lang: 'xx', installed: none}).speaks, false);
 });
 
@@ -245,7 +257,7 @@ test('模型门：缺的模型合成一张卡；已装的替代引擎；主按�
   assert.deepEqual(DUB.missingModels(r, {installed: () => false, catalog: cat, locked: true}).ids, ['qwen3-tts-0.6b-base']);
   assert.deepEqual(DUB.missingModels({...r, separate: false}, {installed: (id) => id === 'qwen3-tts-0.6b-base', catalog: cat}).ids, []);
   assert.equal(DUB.installedAlternative(r, () => false), null);
-  assert.deepEqual(DUB.installedAlternative(r, (id) => id === 'gpt-sovits-v2'), {engine: 'gptsovits', name: 'GPT-SoVITS'});
+  assert.deepEqual(DUB.installedAlternative(r, (id) => id === 'voxcpm2'), {engine: 'voxcpm2', name: 'VoxCPM2'});
   assert.equal(DUB.ctaLabel({count: 62, ln: ' English'}), '配成 English · 62 句');
   assert.equal(DUB.ctaLabel({count: 62, ln: '日本語', needTranslate: true, download: true}), '下载模型并翻译并配成日本語 · 62 句');
   assert.equal(DUB.ctaLabel({count: 62, ln: ' English', review: true}), '对比时长再配成 English');
@@ -267,15 +279,15 @@ test('设置页摘要句、语言行与开始前的阻碍', () => {
 
 test('在哪儿跑：只有报得出这只模型的在线节点进候选', () => {
   const nodes = [
-    {id: 'n1', name: 'mac-studio.local', state: 'online', ttsModels: ['index-tts2.5', 'gpt-sovits-v2']},
-    {id: 'n2', name: 'mini.local', state: 'online', ttsModels: ['gpt-sovits-v2']},
+    {id: 'n1', name: 'mac-studio.local', state: 'online', ttsModels: ['index-tts2.5', 'indextts2']},
+    {id: 'n2', name: 'mini.local', state: 'online', ttsModels: ['indextts2']},
     {id: 'n3', name: 'older.local', state: 'online'},                       // 还没扫过配音模型
     {id: 'n4', name: 'away.local', state: 'offline', ttsModels: ['index-tts2.5']},
   ];
   assert.deepEqual(DUB.dubNodes(nodes, 'index-tts2.5').map((n) => n.id), ['n1']);
-  assert.deepEqual(DUB.dubNodes(nodes, 'gpt-sovits-v2').map((n) => n.id), ['n1', 'n2']);
-  assert.equal(DUB.nodeRunsModel(nodes, 'n2', 'gpt-sovits-v2'), true);
-  assert.equal(DUB.nodeRunsModel(nodes, 'n3', 'gpt-sovits-v2'), false, '没报过 ttsModels 的不给选');
+  assert.deepEqual(DUB.dubNodes(nodes, 'indextts2').map((n) => n.id), ['n1', 'n2']);
+  assert.equal(DUB.nodeRunsModel(nodes, 'n2', 'indextts2'), true);
+  assert.equal(DUB.nodeRunsModel(nodes, 'n3', 'indextts2'), false, '没报过 ttsModels 的不给选');
   assert.equal(DUB.nodeRunsModel(nodes, 'n4', 'index-tts2.5'), false, '掉线的不给选');
   // 选机器只包一层前缀，模型 id 本身不变
   assert.equal(DUB.runtimeModel('index-tts2.5', null), 'index-tts2.5');
@@ -426,7 +438,7 @@ test('归档组：按语言分段、每行一版从新到旧，空归档不出�
 });
 
 test('旁白组（2026-09-23 补充）：生成语音按句落成一条轨，组键 vo<n>（与 App 同形，无冒号）、语言另记；重排顺延，不进音源切换', () => {
-  const f = {text: '第一句话。第二句稍微长一点点。第三句。', engine: 'qwen3', mode: 'preset', lang: 'auto'};
+  const f = {text: '第一句话。第二句稍微长一点点。第三句。', engine: 'qwen3-1.7b', mode: 'preset', lang: 'auto'};
   const g = DUB.narrationGroup(f, 7, {at: 12});
   assert.equal(g.role, 'narration');
   assert.equal(g.lang, 'vo7');
@@ -451,7 +463,7 @@ test('旁白组（2026-09-23 补充）：生成语音按句落成一条轨，组
   assert.equal(TTS.activeDubLang([g, {lang: 'en'}], {}), 'en');
   assert.equal(TTS.activeDubLang([g], {}), null);
   // 「自动」语言：汉字个数对英文词数（同 App），英文单词的音节不算进汉字
-  const auto = (text) => DUB.narrationGroup({text, engine: 'qwen3', mode: 'preset', lang: 'auto'}, 1, {}).langCode;
+  const auto = (text) => DUB.narrationGroup({text, engine: 'qwen3-1.7b', mode: 'preset', lang: 'auto'}, 1, {}).langCode;
   assert.equal(auto('Transformers changed everything about language models.'), 'en');
   assert.equal(auto('Transformer 换了一个思路。'), 'zh');
 });

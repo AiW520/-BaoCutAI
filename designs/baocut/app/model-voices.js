@@ -14,7 +14,7 @@
 
   /* ---------- 采集门槛（设计稿 §2.1 / §3.1） ---------- */
 
-  /** 参考段规整到 5–10 秒：同时落在克隆引擎建议窗 [3, 15] 与 GPT-SoVITS 带原文的硬窗 [3, 10] 里，
+  /** 参考段规整到 5–10 秒：落在克隆引擎建议窗 [3, 15] 里，也在 Fish Audio S2 Pro 的 30 秒上限之内，
    *  所以一段参考对每只引擎都合规。麦克风：目标 8 秒，12 秒自动停，短于 5 秒不给存。 */
   const REC = {min: 5, target: 8, max: 12};
   const WINDOW = {min: 5, max: 10};
@@ -172,7 +172,7 @@
     makeVoice({id: 'v-me', name: '我自己', lang: 'zh', dur: 7.8,
       text: '欢迎使用 BaoCut！转录、翻译、配音，全都在你自己的电脑上完成。', textSource: 'script',
       source: {kind: 'mic', at: '2026-09-22'}, file: 'tts-voice-zh-male.wav', consent: 'self', createdAt: '2 天前',
-      sourceDur: 29.1, referenceSha256: '9f2a7c10', seed: 48213, seeds: {indextts2: 48213, gptsovits: 90117},
+      sourceDur: 29.1, referenceSha256: '9f2a7c10', seed: 48213, seeds: {indextts2: 48213, voxcpm2: 90117},
       consentClip: {lang: 'en-US', dur: 7.9, file: 'tts-voice-en-male.wav', at: '2026-10-07'},
       cloud: {google: {voiceId: 'voice_demo7q2mx', referenceSha256: '9f2a7c10', at: '2026-10-07'}}}),
     makeVoice({id: 'v-host', name: '主持人', lang: 'zh', dur: 7.4,
@@ -223,7 +223,7 @@
     });
     return out;
   }
-  /** 行上第三行：`种子 48213（IndexTTS2 / 其余本机引擎）· 种子 90117（GPT-SoVITS）· Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒` */
+  /** 行上第三行：`种子 48213（IndexTTS2 / 其余本机引擎）· 种子 90117（VoxCPM2）· Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒` */
   function idLine(v, providers) {
     const all = bindings(v, providers);
     const byValue = [];
@@ -255,7 +255,7 @@
 
   /* ---------- 按引擎落地（设计稿 §5）：判据是引擎能不能吃参考音频，不装通用 ---------- */
 
-  /** 这只引擎（原型里是「引擎族」：qwen3 同时有 CustomVoice 与 Base）怎么用音色档。
+  /** 这只引擎（原型里是「引擎族」：qwen3-1.7b 同时有 CustomVoice 与 Base）怎么用音色档。
    *  回 {ok, mode, line, why, alt}：ok 时 `mode` 是要落到的音色方式（永远是 clone），`line` 是选中后
    *  控件下写的那一句；不 ok 时 `why` 说原因、`alt` 给最近的可用做法。 */
   function profileFor(engine, voice, opt) {
@@ -278,7 +278,6 @@
       'qwen3-1.7b': '用参考录音克隆 · 有原文就走 ICL',
       'indextts2': '用参考录音克隆 · 情绪可另给一段',
       'indextts25': '用参考录音克隆 · 情绪可另给一段',
-      'gptsovits': '用参考录音克隆 · 带原文提示（参考 5–10 秒，合规）',
       'voxcpm2': '用参考录音克隆 · 有原文就高保真续写，写了风格走可控克隆',
       'omnivoice': '用参考录音克隆 · 有原文更像 · 仅限非商用',
     };
@@ -298,7 +297,7 @@
   }
   /** 试听克隆用哪只模型：已装的、能克隆的模型里按次序取第一只；一只都没装回 null */
   /* OmniVoice 仅限非商用，不拿它替用户的音色档试听 */
-  const CLONE_MODELS = ['indextts2', 'qwen3-tts-0.6b-base', 'gpt-sovits-v2', 'index-tts2.5', 'qwen3-tts-1.7b-base', 'voxcpm2'];
+  const CLONE_MODELS = ['indextts2', 'qwen3-tts-0.6b-base', 'index-tts2.5', 'qwen3-tts-1.7b-base', 'voxcpm2'];
   function auditionModel(installed) {
     return CLONE_MODELS.find((id) => installed(id)) || null;
   }

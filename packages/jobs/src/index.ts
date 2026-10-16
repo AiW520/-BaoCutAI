@@ -23,6 +23,12 @@ export {
 export { LocalEmbeddingProvider, type LocalEmbeddingProviderOptions } from './local-embedding-provider.ts';
 export { LocalMusicProvider, type LocalMusicProviderOptions } from './local-music-provider.ts';
 export {
+  LocalSpeechProvider,
+  type LocalSpeechProviderOptions,
+  type SpeechFfmpeg,
+  type SpeechResources,
+} from './local-speech-provider.ts';
+export {
   LocalTranscribeProvider,
   type LocalDiarizeOutcome,
   type LocalDiarizeRun,
@@ -241,6 +247,15 @@ export { checkLink, isPrivateAddress, redactUrl, redactUrlsInText, type HostLook
 
 /** 测试用的假 Model Worker 脚本的绝对路径（`node <path>` 运行）。 */
 export const FAKE_MODEL_WORKER = fileURLToPath(new URL('./testing/fake-model-worker.ts', import.meta.url));
-export { FAKE_YT_DLP, writeFakeYtDlp, type FakeYtDlp } from './testing/fake-tools.ts';
+export {
+  FAKE_AUDIOCPP_SERVER,
+  FAKE_YT_DLP,
+  writeFakeAudioCpp,
+  writeFakeYtDlp,
+  type FakeAudioCpp,
+  type FakeAudioCppControl,
+  type FakeAudioCppRecord,
+  type FakeYtDlp,
+} from './testing/fake-tools.ts';
 /** 测试用：Speech Worker 发给文本模型的请求的假答案（翻译与翻译配音的测试共用）。 */
 export { fakeSpeechAnswer, requestedSentences, speechRequestKind } from './testing/fake-speech-model.ts';

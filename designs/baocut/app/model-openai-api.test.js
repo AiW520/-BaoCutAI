@@ -8,13 +8,13 @@ const MODELS = [
   {id: 'moss-transcribe', name: 'MOSS Transcribe'},
   {id: 'whisper-large-v3', name: 'Whisper large-v3'},
   {id: 'speaker-diarization', name: '说话人区分', pack: true},
-  {id: 'qwen3-tts-0.6b-customvoice', name: 'Qwen3-TTS CustomVoice', cat: 'tts'},
+  {id: 'qwen3-tts-1.7b-customvoice', name: 'Qwen3-TTS 1.7B CustomVoice', cat: 'tts'},
   {id: 'qwen3-tts-0.6b-base', name: 'Qwen3-TTS Base', cat: 'tts'},
   {id: 'htdemucs-ft', name: 'HTDemucs-FT', cat: 'sep'},
   {id: 'qwen-image-2.1', name: 'Qwen-Image-2.1', cat: 'image'},
 ];
 const on = (ids) => (id) => ids.indexOf(id) >= 0;
-const ALL = ['moss-transcribe', 'whisper-large-v3', 'speaker-diarization', 'qwen3-tts-0.6b-customvoice', 'qwen3-tts-0.6b-base', 'htdemucs-ft'];
+const ALL = ['moss-transcribe', 'whisper-large-v3', 'speaker-diarization', 'qwen3-tts-1.7b-customvoice', 'qwen3-tts-0.6b-base', 'htdemucs-ft'];
 const ctxWith = (ids, api, defaults) => A.ctxOf(MODELS, on(ids), defaults || {asr: 'whisper-large-v3'}, api || {});
 
 test('三类能力，路径与 OpenAI 相同，只有主机和端口不同', () => {
@@ -40,19 +40,19 @@ test('模型现场：只取三类、已下载、不是依赖包的；默认按�
   const ctx = ctxWith(ALL);
   assert.deepEqual(ctx.ready.asr.map((m) => m.id), ['moss-transcribe', 'whisper-large-v3']);
   assert.equal(ctx.dflt.asr.id, 'whisper-large-v3');
-  assert.equal(ctx.dflt.tts.id, 'qwen3-tts-0.6b-customvoice');
+  assert.equal(ctx.dflt.tts.id, 'qwen3-tts-1.7b-customvoice');
   assert.equal(ctx.dflt.image, null);
   assert.ok(!ctx.byId['htdemucs-ft'], '分离不在 API 里');
   assert.ok(!ctx.byId['speaker-diarization']);
 });
 
 test('解析：本机 id 直接用，可带 local/；未下载、认不出、另一类都是 404；这一类一只都没有是 503；缺 model 是 400，出图可省', () => {
-  const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-0.6b-customvoice']);
+  const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-1.7b-customvoice']);
   assert.equal(A.resolveModel('moss-transcribe', 'asr', ctx).via, 'exact');
   assert.equal(A.resolveModel('whisper-large-v3', 'asr', ctx).error, 'MODEL_NOT_FOUND'); // 目录里有、没下载
   assert.equal(A.resolveModel('whisper-2', 'asr', ctx).error, 'MODEL_NOT_FOUND');
   assert.equal(A.resolveModel('Whisper-1', 'asr', ctx).error, 'MODEL_NOT_FOUND', '大小写敏感');
-  const wrong = A.resolveModel('qwen3-tts-0.6b-customvoice', 'asr', ctx);
+  const wrong = A.resolveModel('qwen3-tts-1.7b-customvoice', 'asr', ctx);
   assert.equal(wrong.error, 'MODEL_NOT_FOUND');
   assert.deepEqual(A.ERRORS[wrong.error].slice(0, 2), [404, 'not_found_error']);
   assert.equal(A.resolveModel('local/moss-transcribe', 'asr', ctx).model.id, 'moss-transcribe', '列表里的 local/<id> 也认');
@@ -77,7 +77,7 @@ test('映射：预置名落到默认；多对多；按顺序取第一只已下�
   const api = {modelMap: [{name: 'local', to: ['qwen-image-2.1', 'moss-transcribe', 'default:tts']}, {name: 'x-tts', to: ['qwen3-tts-0.6b-base']}]};
   const c2 = ctxWith(ALL, api);
   assert.equal(A.resolveModel('local', 'asr', c2).model.id, 'moss-transcribe');
-  assert.equal(A.resolveModel('local', 'tts', c2).model.id, 'qwen3-tts-0.6b-customvoice');
+  assert.equal(A.resolveModel('local', 'tts', c2).model.id, 'qwen3-tts-1.7b-customvoice');
   assert.equal(A.resolveModel('local', 'image', c2).error, 'CAPABILITY_NOT_CONFIGURED', '图像一只都没下载');
   assert.equal(A.resolveModel('x-tts', 'asr', c2).error, 'MODEL_NOT_FOUND', '没指向这一类');
   // 一只模型挂两个名字
@@ -114,10 +114,10 @@ test('映射摘要与目标：每一类落到哪只；默认目标跟着本地�
 });
 
 test('/models：先映射名再 local/<id>；只列能落地的；独立端口只列那一类', () => {
-  const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-0.6b-customvoice']);
+  const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-1.7b-customvoice']);
   const ids = A.listModels(ctx).map((m) => m.id);
   assert.deepEqual(ids, ['whisper-1', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'tts-1', 'tts-1-hd', 'gpt-4o-mini-tts',
-    'local/moss-transcribe', 'local/qwen3-tts-0.6b-customvoice']);
+    'local/moss-transcribe', 'local/qwen3-tts-1.7b-customvoice']);
   assert.ok(ids.indexOf('gpt-image-1') < 0, '图像没下载，映射名不列');
   // 形状同内核：owned_by 是 Provider；baocut 写能力、Provider、落到的模型与是不是映射名
   assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'whisper-1'),
@@ -165,15 +165,15 @@ test('试用区：挡板顺序；没下载模型不挡（演示 404）；model �
   assert.equal(A.initialValues(A.epBy('image.generations'), ctx).model, '', '出图不写 model');
   assert.equal(A.suggestModel('asr', ctxWith(ALL, {modelMap: []})), 'whisper-large-v3');
   const ch = A.modelChoices('tts', ctx);
-  assert.deepEqual(ch.local.map((m) => m.id), ['qwen3-tts-0.6b-customvoice', 'qwen3-tts-0.6b-base']);
+  assert.deepEqual(ch.local.map((m) => m.id), ['qwen3-tts-1.7b-customvoice', 'qwen3-tts-0.6b-base']);
   assert.deepEqual(ch.named.map((m) => m.id), ['tts-1', 'tts-1-hd', 'gpt-4o-mini-tts']);
 });
 
 test('按模型收哪些字段：CustomVoice 看 voice 与指令，Base 收参考音频', () => {
   const p = (n) => A.epBy('tts.speech').params.find((x) => x.name === n);
-  assert.equal(A.ttsSupport('qwen3-tts-0.6b-customvoice').voice, 'preset');
+  assert.equal(A.ttsSupport('qwen3-tts-1.7b-customvoice').voice, 'preset');
   assert.ok(A.supports(p('instructions'), 'qwen3-tts-1.7b-voicedesign'));
-  assert.ok(!A.supports(p('reference_audio'), 'qwen3-tts-0.6b-customvoice'));
+  assert.ok(!A.supports(p('reference_audio'), 'qwen3-tts-1.7b-customvoice'));
   assert.ok(A.supports(p('reference_audio'), 'index-tts2.5'));
   assert.ok(!A.supports(p('reference_text'), 'indextts2'));
   assert.ok(A.supports(p('reference_text'), 'omnivoice'));
@@ -209,7 +209,7 @@ test('代码片段：model 照写；扩展字段 Python 走 extra_body；GET 带
 });
 
 test('演示响应：状态码与错误体照 OpenAI 的形状', () => {
-  const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-0.6b-customvoice', 'qwen-image-2.1']);
+  const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-1.7b-customvoice', 'qwen-image-2.1']);
   const asr = A.epBy('asr.transcriptions');
   const ok = A.demoResponse(asr, {...A.initialValues(asr, ctx), response_format: 'srt'}, ctx);
   assert.equal(ok.status, 200);

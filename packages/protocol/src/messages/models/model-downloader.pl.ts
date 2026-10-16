@@ -12,5 +12,4 @@ export const pl: ModelsModelDownloaderMessages = {
   diskFull: "Podczas zapisu plików modelu zabrakło miejsca na dysku",
   archiveUnpackable: (p: { file: string; reason: string }) => `Nie udało się rozpakować ${p.file}: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} nie zawiera ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} został rozpakowany, ale się nie uruchamia: ${p.reason}`,
 };

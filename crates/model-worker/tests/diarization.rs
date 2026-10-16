@@ -90,7 +90,7 @@ fn diarizes_two_speakers_on(backend: &str, device: &str) {
         return;
     };
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     assert!(
         result(&hello)["capabilities"].as_array().unwrap().contains(&json!("diarize")),
         "{hello}"

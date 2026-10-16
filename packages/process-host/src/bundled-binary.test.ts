@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { executableName, findBundledBinary } from './bundled-binary.ts';
+import { executableName, findBundledBinary, findBundledTool } from './bundled-binary.ts';
 
 const roots: string[] = [];
 function tmp(): string {
@@ -60,5 +60,25 @@ describe('findBundledBinary', () => {
     fs.utimesSync(release, 1000, 1000);
     fs.utimesSync(debug, 2000, 2000);
     expect(findBundledBinary('model-worker', repo, {}, platform)).toBe(debug);
+  });
+});
+
+describe('findBundledTool', () => {
+  it('looks in the tool subdirectory of BAOCUT_BIN_DIR only, with the platform suffix', () => {
+    const bin = tmp();
+    const repo = tmp();
+    touch(path.join(bin, 'audiocpp/audiocpp_cli.exe'));
+    touch(path.join(repo, 'target/audiocpp/audiocpp_cli.exe'));
+    expect(findBundledTool('audiocpp', 'audiocpp_cli', repo, { BAOCUT_BIN_DIR: bin }, 'win32')).toBe(path.join(bin, 'audiocpp/audiocpp_cli.exe'));
+    expect(findBundledTool('audiocpp', 'audiocpp_server', repo, { BAOCUT_BIN_DIR: bin }, 'win32')).toBeNull();
+  });
+
+  it('falls back to the tool subdirectory of the cargo target directory in development', () => {
+    const repo = tmp();
+    touch(path.join(repo, 'target/audiocpp/audiocpp_cli'));
+    expect(findBundledTool('audiocpp', 'audiocpp_cli', path.join(repo, 'packages/x/src'), {}, 'darwin')).toBe(
+      path.join(repo, 'target/audiocpp/audiocpp_cli'),
+    );
+    expect(findBundledTool('audiocpp', 'audiocpp_cli', tmp(), {}, 'darwin')).toBeNull();
   });
 });

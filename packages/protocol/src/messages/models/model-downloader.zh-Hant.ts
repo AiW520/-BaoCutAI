@@ -12,5 +12,4 @@ export const zhHant: ModelsModelDownloaderMessages = {
   diskFull: '寫入模型檔案時磁碟已滿',
   archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} 無法解開：${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} 裡沒有 ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} 解開了，但無法執行：${p.reason}`,
 };

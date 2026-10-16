@@ -16,7 +16,7 @@ export const zhHans: DownloadSourceMessages = {
   ghDesc: '从各项目在 GitHub 上的官方发布页下载。',
   modelsMirrorDesc: (base: string) => `从镜像 ${base} 下载。`,
   toolsMirrorDesc: (base: string) => `从镜像 ${base} 下载。`,
-  msNote: 'ModelScope 上没有的少数文件（whisper.cpp、GPT-SoVITS）仍从 Hugging Face 下载；每个文件都按内置的校验值核对。',
+  msNote: 'ModelScope 上没有的少数文件（whisper.cpp）仍从 Hugging Face 下载；每个文件都按内置的校验值核对。',
   envNote: (name: string) => `设了环境变量 ${name} 时以它为准。`,
   webNote: '浏览器里不能更改下载来源，请在 BaoCut 桌面版里设置。',
   lead: '可以存多个来源，每种选一个在用。下载时也能在确认框里直接换，换的就是这里。每个文件都按内置的校验值核对，不论从哪里下。',

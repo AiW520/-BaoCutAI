@@ -6,12 +6,15 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FrozenSpeechReference, ModelBundleStatus, SynthesizeSpeechRequest } from '@baocut/protocol';
 import { speechParameters } from './generation-options.ts';
 import {
+  audioCppSpeechRequestOf,
   builtinReferenceFile,
+  engineLanguage,
   freezeReferenceFile,
   frozenVoiceOf,
+  limitSpeechPeak,
   localSpeechModelInfo,
   planLocalVoice,
-  synthesizeRunOf,
+  SPEECH_PEAK_CEILING,
   type LocalVoicePlan,
 } from './local-speech.ts';
 import type { ModelChoice } from './model-selection.ts';
@@ -38,12 +41,14 @@ const local = (id: string): ModelChoice<'synthesizeSpeech'> => ({
   source: 'explicit',
   model: localSpeechModelInfo(def(id), status, true),
 });
-const BASE = local('qwen3-tts-0.6b-base@mlx-8bit');
-const CUSTOM = local('qwen3-tts-1.7b-customvoice@mlx-8bit');
-const DESIGN = local('qwen3-tts-1.7b-voicedesign@mlx-8bit');
-const INDEX = local('indextts2@mlx-fp16');
-const VOX = local('voxcpm2@mlx-int8');
-const OMNI = local('omnivoice@mlx-int8');
+const BASE = local('qwen3-tts-0.6b-base@audio-cpp-q8');
+const CUSTOM = local('qwen3-tts-1.7b-customvoice@audio-cpp-q8');
+const DESIGN = local('qwen3-tts-1.7b-voicedesign@audio-cpp-q8');
+const INDEX = local('indextts2@audio-cpp-q8');
+const INDEX25 = local('index-tts2.5@audio-cpp-q8');
+const VOX = local('voxcpm2@audio-cpp-q8');
+const OMNI = local('omnivoice@audio-cpp-q8');
+const FISH = local('fish-s2-pro@audio-cpp-q8');
 
 const invalid = (details?: Record<string, unknown>) =>
   expect.objectContaining({ code: 'invalid-request', ...(details ? { details: expect.objectContaining(details) } : {}) });
@@ -183,30 +188,137 @@ describe('speechParameters（本地模型）', () => {
   });
 });
 
-describe('synthesizeRunOf', () => {
-  const common = { text: 't', language: 'en', instructions: null, speed: null, seed: 3 };
-  it('参考录音是 clone（内置音色也是），描述是 describe，其余是 preset', () => {
-    expect(synthesizeRunOf({ ...common, voice: 'en-female', reference: { ...REFERENCE, source: 'builtin', transcript: '原文' } })).toEqual({
-      input: { file: '/r.wav', contentHash: REFERENCE.sha256, track: 0 },
-      options: {
-        text: 't',
-        language: 'en',
-        voice: { mode: 'clone', transcript: '原文' },
-        instructions: null,
-        speed: null,
-        cfg: null,
-        steps: null,
-        seed: 3,
+describe('audioCppSpeechRequestOf', () => {
+  const freeze = (choice: ModelChoice<'synthesizeSpeech'>, request: SynthesizeSpeechRequest, reference: FrozenSpeechReference | null) =>
+    speechParameters(choice, request, { plan: planLocalVoice(choice, request), reference });
+  const request = (choice: ModelChoice<'synthesizeSpeech'>, parameters: ReturnType<typeof freeze>, wav: string | null = '/tmp/ref.wav') =>
+    audioCppSpeechRequestOf(parameters, def(choice.modelId).speech!, wav);
+  const chunk = (choice: ModelChoice<'synthesizeSpeech'>) => def(choice.modelId).speech!.engine.chunkSize;
+  const BUILTIN: FrozenSpeechReference = { ...REFERENCE, source: 'builtin', transcript: '原文' };
+
+  it('Qwen3-TTS Base 克隆：有原文给 reference_text，没有原文只用说话人向量；语言取引擎认得的写法', () => {
+    const withText = request(BASE, freeze(BASE, { text: '你好', language: 'zh-CN', reference: { file: '/r.wav', transcript: '原文' } }, BUILTIN));
+    expect(withText).toEqual({
+      body: {
+        model: 'speech',
+        input: '你好',
+        voice_ref: '/tmp/ref.wav',
+        reference_text: '原文',
+        options: { language: 'zh', text_chunk_size: chunk(BASE) },
       },
+      dropped: [],
     });
-    expect(synthesizeRunOf({ ...common, voice: 'description', voiceDescription: 'calm', cfg: 2, steps: 8 })).toMatchObject({
-      input: null,
-      options: { voice: { mode: 'describe', description: 'calm' }, cfg: 2, steps: 8 },
+    const bare = request(BASE, freeze(BASE, { text: '你好', reference: { file: '/r.wav' } }, REFERENCE));
+    expect(bare.body).not.toHaveProperty('reference_text');
+    expect(bare.body.options).toEqual({ x_vector_only_mode: true, text_chunk_size: chunk(BASE) });
+  });
+
+  it('IndexTTS2：不读原文；读音标注按表面文字合成并报告；引擎不认的语言不给', () => {
+    const parameters = freeze(INDEX, { text: '他在<银行|yin2 hang2>上班', language: 'ja', voice: 'zh-female' }, BUILTIN);
+    const { body, dropped } = request(INDEX, parameters);
+    expect(body).toEqual({ model: 'speech', input: '他在银行上班', voice_ref: '/tmp/ref.wav', options: { text_chunk_size: chunk(INDEX) } });
+    expect(dropped).toEqual([{ start: 2, end: 4, reading: 'yin2 hang2', origin: 'user' }]);
+  });
+
+  it('IndexTTS 2.5：读音标注原样交给引擎；语速换成目标时长的倍率', () => {
+    const parameters = freeze(INDEX25, { text: '银<行|háng>', language: 'ja-JP', speed: 1.25, seed: 7, reference: { file: '/r.wav' } }, REFERENCE);
+    expect(request(INDEX25, parameters)).toEqual({
+      body: {
+        model: 'speech',
+        input: '银<行|hang2>',
+        voice_ref: '/tmp/ref.wav',
+        seed: 7,
+        options: { language: 'ja', text_chunk_size: chunk(INDEX25), duration_scale: 0.8 },
+      },
+      dropped: [],
     });
-    expect(synthesizeRunOf({ ...common, voice: 'Vivian' })).toMatchObject({
-      input: null,
-      options: { voice: { mode: 'preset', id: 'Vivian' } },
+  });
+
+  it('CustomVoice 给说话人与语气说明；VoiceDesign 的描述（内置音色也是描述）是 instruct', () => {
+    const custom = request(CUSTOM, freeze(CUSTOM, { text: 'x', voice: 'Eric', instructions: ' 慢一点 ' }, null), null);
+    expect(custom.body).toEqual({
+      model: 'speech',
+      input: 'x',
+      options: { instruct: '慢一点', text_chunk_size: chunk(CUSTOM), voice_id: 'Eric' },
     });
+    const design = request(DESIGN, freeze(DESIGN, { text: 'x', voiceDescription: 'a calm narrator' }, null), null);
+    expect(design.body.options).toEqual({ instruct: 'a calm narrator', text_chunk_size: chunk(DESIGN) });
+    const builtin = request(DESIGN, freeze(DESIGN, { text: 'x', voice: 'en-male' }, null), null);
+    expect(builtin.body.options.instruct).toBe(builtinVoice('en-male')!.description);
+    expect(builtin.body).not.toHaveProperty('voice_ref');
+  });
+
+  it('VoxCPM2：风格说明接在正文前；引导强度与步数', () => {
+    const parameters = freeze(VOX, { text: '正文', voice: 'en-female', instructions: '轻快', cfg: 2.5, steps: 20 }, BUILTIN);
+    expect(request(VOX, parameters).body).toEqual({
+      model: 'speech',
+      input: '(轻快)正文',
+      voice_ref: '/tmp/ref.wav',
+      reference_text: '原文',
+      options: { text_chunk_size: chunk(VOX), guidance_scale: 2.5, num_inference_steps: 20 },
+    });
+  });
+
+  it('OmniVoice：描述、语速、引导强度、步数与种子；不认得的语言由模型自己判断', () => {
+    const parameters = freeze(OMNI, { text: 'x', language: 'zh-CN', voiceDescription: 'male', speed: 1.2, cfg: 3, steps: 16, seed: 9 }, null);
+    expect(request(OMNI, parameters, null).body).toEqual({
+      model: 'speech',
+      input: 'x',
+      seed: 9,
+      options: { language: 'zh', instruct: 'male', speed: 1.2, guidance_scale: 3, num_inference_steps: 16 },
+    });
+    const unknown = freeze(OMNI, { text: 'x', language: 'tlh', voiceDescription: 'male' }, null);
+    expect(request(OMNI, unknown, null).body.options).toEqual({ instruct: 'male' });
+  });
+
+  it('Fish 克隆带原文；克隆却没有转好的参考 WAV 是编程错误', () => {
+    const fish = freeze(FISH, { text: 'x', reference: { file: '/r.wav', transcript: 'Hello' } }, { ...REFERENCE, transcript: 'Hello' });
+    expect(request(FISH, fish).body).toEqual({ model: 'speech', input: 'x', voice_ref: '/tmp/ref.wav', reference_text: 'Hello', options: {} });
+    expect(() => request(FISH, fish, null)).toThrow(/without a converted reference/);
+  });
+});
+
+describe('engineLanguage', () => {
+  it('整个标签或主语言子标签，不分大小写；不在表里或没有表时 null', () => {
+    expect(engineLanguage('yue', ['zh', 'yue'])).toBe('yue');
+    expect(engineLanguage('zh-Hant-TW', ['zh', 'en'])).toBe('zh');
+    expect(engineLanguage('EN-us', ['zh', 'en'])).toBe('en');
+    expect(engineLanguage('sw', ['zh', 'en'])).toBeNull();
+    expect(engineLanguage(null, ['zh'])).toBeNull();
+    expect(engineLanguage('zh', undefined)).toBeNull();
+  });
+});
+
+describe('limitSpeechPeak', () => {
+  const samples16 = (bytes: Buffer) => Array.from({ length: (bytes.length - 44) / 2 }, (_, i) => bytes.readInt16LE(44 + i * 2) / 32_768);
+
+  it('16 位满幅等比缩到 −1 dBFS，返回增益', () => {
+    const bytes = wav({ seconds: 0.01, sample: (i) => (i % 2 ? 1 : -0.5) });
+    const gain = limitSpeechPeak(bytes);
+    expect(gain).toBeCloseTo(SPEECH_PEAK_CEILING, 3);
+    const peak = Math.max(...samples16(bytes).map(Math.abs));
+    expect(peak).toBeLessThanOrEqual(SPEECH_PEAK_CEILING + 1e-4);
+    expect(peak).toBeGreaterThan(SPEECH_PEAK_CEILING - 1e-3);
+    expect(samples16(bytes)[0]).toBeCloseTo(-0.5 * SPEECH_PEAK_CEILING, 3);
+  });
+
+  it('峰值没到上限时不动；浮点 WAV 里的 NaN 清零', () => {
+    const quiet = wav({ seconds: 0.01 });
+    const copy = Buffer.from(quiet);
+    expect(limitSpeechPeak(quiet)).toBeNull();
+    expect(quiet.equals(copy)).toBe(true);
+    const float = wav({ seconds: 0.01, float: true, bits: 32, sample: (i) => (i === 0 ? Number.NaN : 0.5) });
+    expect(limitSpeechPeak(float)).toBeNull();
+    expect(float.readFloatLE(44)).toBe(0);
+    expect(float.readFloatLE(48)).toBe(0.5);
+  });
+
+  it('不是 WAV、其他位深原样返回', () => {
+    expect(limitSpeechPeak(Buffer.from('ID3 not a wav'))).toBeNull();
+    const deep = wav({ seconds: 0.01, bits: 24, sample: () => 1 });
+    const copy = Buffer.from(deep);
+    expect(limitSpeechPeak(deep)).toBeNull();
+    expect(deep.equals(copy)).toBe(true);
   });
 });
 
@@ -370,18 +482,17 @@ describe('自检的判定', () => {
   });
 
   it('自检的句子：模型列出的第一种有句子的语言；接受任意语言时用英文', () => {
-    expect(speechSelfTestRequest(def('qwen3-tts-0.6b-base@mlx-8bit'))).toEqual({ text: SPEECH_SELF_TEST_SENTENCES.zh, language: 'zh' });
-    expect(speechSelfTestRequest(def('omnivoice@mlx-int8'))).toEqual({ text: SPEECH_SELF_TEST_SENTENCES.en, language: 'en' });
-    const swahili = { ...def('gpt-sovits-v2@mlx-fp16'), speech: { ...def('gpt-sovits-v2@mlx-fp16').speech!, languages: ['sw', 'ar'] } };
+    expect(speechSelfTestRequest(def(BASE.modelId))).toEqual({ text: SPEECH_SELF_TEST_SENTENCES.zh, language: 'zh' });
+    expect(speechSelfTestRequest(def(OMNI.modelId))).toEqual({ text: SPEECH_SELF_TEST_SENTENCES.en, language: 'en' });
+    const swahili = { ...def(VOX.modelId), speech: { ...def(VOX.modelId).speech!, languages: ['sw', 'ar'] } };
     expect(speechSelfTestRequest(swahili)).toEqual({ text: SPEECH_SELF_TEST_SENTENCES.ar, language: 'ar' });
     const none = { ...swahili, speech: { ...swahili.speech, languages: ['sw'] } };
     expect(speechSelfTestRequest(none)).toEqual({ text: SPEECH_SELF_TEST_SENTENCES.en, language: 'en' });
   });
 });
 
-
 describe('Fish reference transcript', () => {
-  const fish = local('fish-s2-pro@mlx-8bit');
+  const fish = FISH;
   it('rejects absent or blank transcripts before starting a generation job', () => {
     for (const transcript of [undefined, '', '  ']) {
       expect(() => plan(fish, {reference: {file: '/r.wav', transcript}})).toThrow();

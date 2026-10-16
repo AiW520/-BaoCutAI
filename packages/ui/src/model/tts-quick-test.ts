@@ -493,7 +493,6 @@ export function quickSummary(
 export const CLONE_ORDER: readonly string[] = [
   'indextts2',
   'qwen3-tts-0.6b-base',
-  'gpt-sovits-v2',
   'index-tts2.5',
   'qwen3-tts-1.7b-base',
   'voxcpm2',

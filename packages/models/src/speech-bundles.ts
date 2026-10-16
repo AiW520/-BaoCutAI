@@ -1,41 +1,34 @@
 import type { ModelLicense, SpeechVoiceDescription } from '@baocut/protocol';
 import { ModelsSpeechBundles as M } from '@baocut/protocol/messages/models/speech-bundles.ts';
 import type { BundleComponentSource, BundleDefinition, SpeechBundleProfile } from './bundle-registry.ts';
+import { OMNIVOICE_LANGUAGES } from './omnivoice-languages.ts';
+import type { ModelFamily } from './worker-contract.ts';
 
 /**
  * 本地语音合成的模型包（架构设计 §6.3）。`bundleId` 是 `<模型>@<backend>-<量化>`，模型名与原型的合成模型表一致。
- * 仓库、版本与文件清单（`repo-manifests.ts`）取自旧版 BaoCut 为同一版本固定的清单。
  *
- * 组件：`tts` 是主模型；`codec` 是 Qwen3-TTS 共用的语音编解码器（一份，按引用保留）；`aux` 是 IndexTTS 2.5 用到的
- * IndexTTS2 辅助权重（w2v-BERT、CAM++、BigVGAN 与统计量），直接共用整个 IndexTTS2 仓库：与 `indextts2@mlx-fp16`
- * 同一仓库与版本，装一份、按引用保留（代价是只装 2.5 时多下 IndexTTS2 的主权重，见架构设计 §14）。
+ * 权重是 audio.cpp 发布的 Q8 GGUF（上游一个大仓库 `audio-cpp/audio.cpp-gguf` 的子目录，每个模型一个 GGUF：主模型、编解码器或
+ * 声码器、分词器与模型规格都在里面）。各模型包在模型目录里登记成兄弟目录（`audio-cpp/audio.cpp-gguf-<模型>`），只下载自己那个
+ * GGUF（`repo-manifests.ts`），各装各删。执行它们的是内置 audio.cpp 引擎的常驻服务（`audiocpp_server`，与本地音乐共用一个引擎，
+ * 见 `audio-cpp-engine.ts`），不经 Model Worker；请求的换算在 `local-speech.ts`。
  *
- * 引擎在 Model Worker 里逐个接入；Worker 在 `worker.hello` 的 `synthesizeFamilies` 里声明接上了的模型族，Runtime 在加载前
- * 按它拒绝没接上的，不停用模型包（Model Worker 协议规范 §2.1）。
- *
- * 每个 MLX 模型包都有一个 candle 变体（`<模型>@candle`，架构设计 §6.5）：同一仓库与版本，加载时把量化权重反量化、把权重换成
- * 计算精度（CPU 上 f32，CUDA 上保持半精度），只在 Apple Silicon 以外的平台列出。组件上的 `weightBits` / `parameters` 只给
- * candle 估计常驻量用（`candleResidentBytes`）；参数个数按 safetensors 头数出（量化张量按位宽展开，不计 `scales` / `biases`）。
+ * 引擎按构建选设备（macOS 上 Metal，Windows 与 Linux 是 Vulkan 或 CPU），所以登记的 `device` 是 `auto`；全平台列出，主机没有内置
+ * 引擎时模型包报告为 `unsupported`。
  */
 
-const QWEN3_TTS_CODEC: BundleComponentSource = {
-  family: 'qwen3-tts-tokenizer',
-  repo: 'Qwen/Qwen3-TTS-Tokenizer-12Hz',
-  revision: '7dd38ad4e9bad454aae9cd937d0cd577604fe229',
-  weightBits: 32,
-  parameters: 170_557_441,
-};
+/** GGUF 仓库的固定版本（`audio-cpp/audio.cpp-gguf`）。 */
+const GGUF_REVISION = 'f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5';
 
-const INDEX_TTS2_REPO = { repo: 'aufklarer/IndexTTS2-MLX-fp16', revision: '208b3d6ea53a119f3501b3bfd8e666b9b5e8c705' };
-
-/** 主模型组件的存储位宽与参数个数（candle 估计常驻量用）。 */
-type WeightSize = Required<Pick<BundleComponentSource, 'weightBits' | 'parameters'>>;
+/** 一个模型包的 `tts` 组件：模型目录里的兄弟目录（`repo-manifests.ts` 登记了它的上游仓库与文件）。 */
+function gguf(family: ModelFamily, name: string): BundleComponentSource {
+  return { family, repo: `audio-cpp/audio.cpp-gguf-${name}`, revision: GGUF_REVISION };
+}
 
 const QWEN3_TTS_LANGUAGES = ['zh', 'en', 'ja', 'ko', 'de', 'fr', 'es', 'it', 'pt', 'ru'];
 /** Qwen3-TTS CustomVoice 的九个说话人（0.6B 与 1.7B 同一张表）；名字是权重里的标识，不翻译。 */
 export const QWEN3_TTS_SPEAKERS = ['Vivian', 'Serena', 'Uncle_Fu', 'Dylan', 'Eric', 'Ryan', 'Aiden', 'Ono_Anna', 'Sohee'];
 
-/** 克隆的参考录音建议 3–15 秒（五个能克隆的引擎共用）。 */
+/** 克隆的参考录音建议 3–15 秒（Fish 以外能克隆的引擎共用）。 */
 const REFERENCE_SECONDS: [number, number] = [3, 15];
 
 /** OmniVoice 按描述造声的封闭词表：每类至多一项；同一类各语言的词条按下标对应。 */
@@ -109,26 +102,37 @@ const INDEX_TTS25_LICENSE: ModelLicense = {
   },
 };
 
-const MLX = { backend: 'mlx', device: 'metal', capability: 'synthesize' } as const;
+/** audio.cpp 执行，设备由引擎按构建选。 */
+const AUDIO_CPP = { backend: 'audio-cpp', device: 'auto', capability: 'synthesize' } as const;
+
+/**
+ * 长文按句切块的上限（字符，引擎的 `text_chunk_size`）。Qwen3-TTS（上游默认 8192）与 IndexTTS2（上游默认不切）几乎一次吃下整段，
+ * 自回归的 token 上限会截掉长段的结尾，所以取几句话的长度；VoxCPM2 取上游默认（2048）的一小段，理由相同。Fish 用上游默认
+ * （200），OmniVoice 由引擎按时长自动切，都不给。
+ */
+const QWEN3_TTS_CHUNK = 150;
+const INDEX_TTS2_CHUNK = 120;
+const VOXCPM2_CHUNK = 300;
 
 function qwen3(
   bundleId: string,
   label: string,
-  repo: string,
-  revision: string,
-  size: WeightSize,
+  name: string,
+  file: string,
   variant: 'base' | 'customvoice' | 'voicedesign',
   slow: boolean,
   license: ModelLicense = QWEN3_TTS_LICENSE,
 ): BundleDefinition {
   const common = {
     family: 'qwen3-tts',
+    engine: { family: 'qwen3_tts', file, chunkSize: QWEN3_TTS_CHUNK, languages: QWEN3_TTS_LANGUAGES },
     languages: QWEN3_TTS_LANGUAGES,
     emotion: false,
     knobs: {},
     maxDurationSec: null,
     acceptsSeed: true,
-    readings: 'homophone',
+    // 引擎不认读音标注：按表面文字合成，报告没念的标注。
+    readings: 'unsupported',
     sampleRate: 24_000,
     slow,
   } as const;
@@ -160,72 +164,52 @@ function qwen3(
             voiceDescription: null,
             instructions: null,
           };
-  return {
-    bundleId,
-    label,
-    ...MLX,
-    components: { tts: { family: 'qwen3-tts', repo, revision, ...size }, codec: QWEN3_TTS_CODEC },
-    license,
-    speech,
-  };
+  return { bundleId, label, ...AUDIO_CPP, components: { tts: gguf('qwen3-tts', name) }, license, speech };
 }
 
-const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
+export const SPEECH_BUNDLES: readonly BundleDefinition[] = [
   qwen3(
-    'qwen3-tts-0.6b-base@mlx-8bit',
+    'qwen3-tts-0.6b-base@audio-cpp-q8',
     'Qwen3-TTS 0.6B Base',
-    'aufklarer/Qwen3-TTS-12Hz-0.6B-Base-MLX-8bit',
-    '2a20f4adf0436810367cea5a51aa7eb1bc50b6d8',
-    { weightBits: 8, parameters: 914_643_008 },
+    'qwen3-tts-0.6b-base',
+    'Qwen3-TTS-12Hz-0.6B-Base-GGUF/qwen3-tts-12hz-0.6b-base-q8_0.gguf',
     'base',
     false,
   ),
   qwen3(
-    'qwen3-tts-0.6b-customvoice@mlx-bf16',
-    'Qwen3-TTS 0.6B CustomVoice',
-    'aufklarer/Qwen3-TTS-12Hz-0.6B-CustomVoice-MLX-bf16',
-    '3affbf656d9d6aa9255ec0b31cc90055605170bc',
-    { weightBits: 16, parameters: 905_788_672 },
-    'customvoice',
-    false,
-  ),
-  qwen3(
-    'qwen3-tts-1.7b-base@mlx-8bit',
+    'qwen3-tts-1.7b-base@audio-cpp-q8',
     'Qwen3-TTS 1.7B Base',
-    'aufklarer/Qwen3-TTS-12Hz-1.7B-Base-MLX-8bit',
-    '87d008f1e1a20d265bee01c7ccb0a78f5b8d1132',
-    { weightBits: 8, parameters: 1_928_677_440 },
+    'qwen3-tts-1.7b-base',
+    'Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf',
     'base',
     true,
   ),
   qwen3(
-    'qwen3-tts-1.7b-customvoice@mlx-8bit',
+    'qwen3-tts-1.7b-customvoice@audio-cpp-q8',
     'Qwen3-TTS 1.7B CustomVoice',
-    'mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit',
-    '41d3337e8b7f2843a75841595fc14e4b9a7a4b96',
-    { weightBits: 8, parameters: 1_916_676_352 },
+    'qwen3-tts-1.7b-customvoice',
+    'Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf',
     'customvoice',
     true,
   ),
   qwen3(
-    'qwen3-tts-1.7b-voicedesign@mlx-8bit',
+    'qwen3-tts-1.7b-voicedesign@audio-cpp-q8',
     'Qwen3-TTS 1.7B VoiceDesign',
-    'mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit',
-    'f90d617701d9f7f4ca499291e0b57f2b3c2fd2ee',
-    { weightBits: 8, parameters: 1_916_676_352 },
+    'qwen3-tts-1.7b-voicedesign',
+    'Qwen3-TTS-12Hz-1.7B-VoiceDesign-GGUF/qwen3-tts-12hz-1.7b-voicedesign-q8_0.gguf',
     'voicedesign',
     true,
     { ...QWEN3_TTS_LICENSE, url: 'https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign' },
   ),
   {
-    bundleId: 'indextts2@mlx-fp16',
+    bundleId: 'indextts2@audio-cpp-q8',
     label: 'IndexTTS2',
-    ...MLX,
-    // 整个仓库（含 `aux/`）都按这个模型包计。
-    components: { tts: { family: 'indextts2', ...INDEX_TTS2_REPO, weightBits: 16, parameters: 1_915_602_132 } },
+    ...AUDIO_CPP,
+    components: { tts: gguf('indextts2', 'indextts2') },
     license: INDEX_TTS2_LICENSE,
     speech: {
       family: 'indextts2',
+      engine: { family: 'index_tts2', file: 'IndexTTS2-GGUF/index-tts2-q8_0.gguf', chunkSize: INDEX_TTS2_CHUNK, languages: ['zh', 'en'] },
       languages: 'any',
       voiceModes: ['preset', 'clone'],
       presets: 'builtin-reference',
@@ -237,29 +221,26 @@ const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
       knobs: {},
       maxDurationSec: null,
       acceptsSeed: true,
-      readings: 'inline-pinyin',
+      readings: 'unsupported',
       sampleRate: 22_050,
       slow: false,
     },
   },
   {
-    bundleId: 'index-tts2.5@mlx-fp16',
+    bundleId: 'index-tts2.5@audio-cpp-q8',
     label: 'IndexTTS 2.5',
-    ...MLX,
-    components: {
-      tts: {
-        family: 'indextts2.5',
-        repo: 'mlx-community/IndexTTS-2.5-fp16',
-        revision: '65644cd70da15309ffeb74aa03f3686bb04e3eb1',
-        weightBits: 16,
-        parameters: 966_515_596,
-      },
-      // 只读 `aux/` 下的 w2v-BERT、CAM++、BigVGAN 与统计量，参数个数只数这些。
-      aux: { family: 'indextts2-aux', ...INDEX_TTS2_REPO, weightBits: 16, parameters: 699_767_331 },
-    },
+    ...AUDIO_CPP,
+    // GGUF 里同时有 2.5 的主模型与它用到的 IndexTTS2 辅助权重（w2v-BERT、CAM++、BigVGAN）。
+    components: { tts: gguf('indextts2.5', 'indextts2.5') },
     license: INDEX_TTS25_LICENSE,
     speech: {
       family: 'indextts2',
+      engine: {
+        family: 'index_tts2',
+        file: 'IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf',
+        chunkSize: INDEX_TTS2_CHUNK,
+        languages: ['zh', 'en', 'ja', 'es', 'ar'],
+      },
       languages: ['zh', 'en', 'ja', 'es', 'ar'],
       voiceModes: ['preset', 'clone'],
       presets: 'builtin-reference',
@@ -267,67 +248,21 @@ const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
       voiceDescription: null,
       instructions: null,
       emotion: true,
-      // 语速按倍率缩放目标语义 token 数。
+      // 语速按倍率缩放目标时长（引擎的 `duration_scale` 是它的倒数）。
       knobs: { speed: { min: 0.5, max: 1.5, step: 0.05, default: 1 } },
       maxDurationSec: null,
       acceptsSeed: true,
+      // 引擎直接认 `<字|拼音>`。
       readings: 'annotated',
       sampleRate: 22_050,
       slow: false,
     },
   },
   {
-    bundleId: 'gpt-sovits-v2@mlx-fp16',
-    label: 'GPT-SoVITS v2',
-    ...MLX,
-    components: {
-      tts: {
-        family: 'gpt-sovits',
-        repo: 'PJMixers-Dev/lj1995_GPT-SoVITS-safetensors',
-        revision: 'cea8b8279588e63c2fdc10e02610c11f02af5450',
-        weightBits: 16,
-        parameters: 550_408_203,
-      },
-    },
-    license: {
-      name: 'MIT',
-      url: 'https://huggingface.co/lj1995/GPT-SoVITS',
-      commercialUse: true,
-      get summary() {
-        return M.gptSovitsLicense().text;
-      },
-    },
-    speech: {
-      family: 'gpt-sovits',
-      languages: ['zh', 'en'],
-      voiceModes: ['preset', 'clone'],
-      presets: 'builtin-reference',
-      // 给了原文时参考录音要 3–10 秒。
-      reference: { recommendedSeconds: REFERENCE_SECONDS, withTranscriptSeconds: [3, 10], acceptsTranscript: true },
-      voiceDescription: null,
-      instructions: null,
-      emotion: false,
-      knobs: {},
-      maxDurationSec: null,
-      acceptsSeed: true,
-      readings: 'unsupported',
-      sampleRate: 32_000,
-      slow: false,
-    },
-  },
-  {
-    bundleId: 'voxcpm2@mlx-int8',
+    bundleId: 'voxcpm2@audio-cpp-q8',
     label: 'VoxCPM2',
-    ...MLX,
-    components: {
-      tts: {
-        family: 'voxcpm2',
-        repo: 'aufklarer/VoxCPM2-MLX-int8',
-        revision: '471a37b830ccf5e23fdb4c822649ec7c3b7320b4',
-        weightBits: 8,
-        parameters: 2_383_791_364,
-      },
-    },
+    ...AUDIO_CPP,
+    components: { tts: gguf('voxcpm2', 'voxcpm2') },
     license: {
       name: 'Apache-2.0',
       url: 'https://huggingface.co/openbmb/VoxCPM2',
@@ -338,12 +273,13 @@ const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
     },
     speech: {
       family: 'voxcpm2',
+      engine: { family: 'voxcpm2', file: 'VoxCPM2-GGUF/voxcpm2-q8_0.gguf', chunkSize: VOXCPM2_CHUNK },
       languages: 'any',
       voiceModes: ['preset', 'clone'],
       presets: 'builtin-reference',
       reference: { recommendedSeconds: REFERENCE_SECONDS, withTranscriptSeconds: null, acceptsTranscript: true },
       voiceDescription: null,
-      // 风格说明接在正文前；给了它就不走续写式的高保真克隆。
+      // 风格说明接在正文前（`(说明)正文`）。
       instructions: 'style',
       emotion: false,
       knobs: { cfg: { min: 1, max: 3, step: 0.1, default: 2 }, steps: { min: 1, max: 50, step: 1, default: 10 } },
@@ -355,18 +291,10 @@ const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
     },
   },
   {
-    bundleId: 'omnivoice@mlx-int8',
+    bundleId: 'omnivoice@audio-cpp-q8',
     label: 'OmniVoice',
-    ...MLX,
-    components: {
-      tts: {
-        family: 'omnivoice',
-        repo: 'aufklarer/OmniVoice-MLX-int8',
-        revision: 'e815dfafaf9c90f995ddc9fcfe52fd0d80babe4e',
-        weightBits: 8,
-        parameters: 813_977_833,
-      },
-    },
+    ...AUDIO_CPP,
+    components: { tts: gguf('omnivoice', 'omnivoice') },
     license: {
       name: 'CC-BY-NC-4.0',
       url: 'https://huggingface.co/k2-fsa/OmniVoice',
@@ -377,6 +305,7 @@ const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
     },
     speech: {
       family: 'omnivoice',
+      engine: { family: 'omnivoice', file: 'OmniVoice-GGUF/omnivoice-q8_0.gguf', languages: OMNIVOICE_LANGUAGES },
       languages: 'any',
       voiceModes: ['preset', 'clone', 'describe'],
       presets: 'builtin-reference',
@@ -397,34 +326,35 @@ const MLX_SPEECH_BUNDLES: readonly BundleDefinition[] = [
     },
   },
   {
-    ...MLX,
-    bundleId: 'fish-s2-pro@mlx-8bit',
+    bundleId: 'fish-s2-pro@audio-cpp-q8',
     label: 'Fish Audio S2 Pro',
-    components: {
-      tts: { family: 'fish-s2-pro', repo: 'mlx-community/fish-audio-s2-pro-8bit',
-        revision: 'c8d4481b3f7cbfe64d855c8b7cda7739502fc3ff', weightBits: 8, parameters: 4_561_852_416 },
-      codec: { family: 'fish-s2-pro-codec', repo: 'aufklarer/Fish-Audio-S2-Pro-MLX-codec',
-        revision: '254339851f9f39b68d06cc9284addab5fb32be13', weightBits: 32, parameters: 391_430_530 },
-    },
+    ...AUDIO_CPP,
+    components: { tts: gguf('fish-s2-pro', 'fish-s2-pro') },
     license: {
       name: 'Fish Audio Research License',
       url: 'https://huggingface.co/fishaudio/s2-pro/blob/main/LICENSE.md',
       commercialUse: false,
-      get summary() { return M.fishS2ProLicense().text; },
+      get summary() {
+        return M.fishS2ProLicense().text;
+      },
     },
     speech: {
-      family: 'fish-s2-pro', residentBytes: 5 * 1024 ** 3, languages: 'any', voiceModes: ['preset', 'clone'],
+      family: 'fish-s2-pro',
+      engine: { family: 'fish_audio', task: 'clon', file: 'Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf' },
+      languages: 'any',
+      voiceModes: ['preset', 'clone'],
       presets: 'builtin-reference',
+      // 带参考录音时必须给原文；参考至多 30 秒。
       reference: { recommendedSeconds: [10, 30], withTranscriptSeconds: [0, 30], acceptsTranscript: true, requiresTranscript: true },
-      voiceDescription: null, instructions: null, emotion: false, knobs: {},
-      maxDurationSec: null, acceptsSeed: true, readings: 'unsupported', sampleRate: 44_100, slow: true,
+      voiceDescription: null,
+      instructions: null,
+      emotion: false,
+      knobs: {},
+      maxDurationSec: null,
+      acceptsSeed: true,
+      readings: 'unsupported',
+      sampleRate: 44_100,
+      slow: true,
     },
   },
 ];
-
-/** MLX 模型包的 candle 变体：同一仓库与特性，ID 是 `<模型>@candle`，登记的设备是 `cpu`（Worker 报告 CUDA 时 Runtime 改用 `cuda`）。 */
-function onCandle(def: BundleDefinition): BundleDefinition {
-  return { ...def, bundleId: `${def.bundleId.split('@')[0]}@candle`, backend: 'candle', device: 'cpu' };
-}
-
-export const SPEECH_BUNDLES: readonly BundleDefinition[] = [...MLX_SPEECH_BUNDLES, ...MLX_SPEECH_BUNDLES.map(onCandle)];

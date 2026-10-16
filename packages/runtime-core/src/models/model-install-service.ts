@@ -12,6 +12,7 @@ import {
   sha256Hex,
   type JobManager,
   type LocalMusicProvider,
+  type LocalSpeechProvider,
   type LocalTranscribeProvider,
   type TaskRun,
 } from '@baocut/jobs';
@@ -101,6 +102,8 @@ const PROGRESS_INTERVAL_MS = 250;
 export interface ModelInstallServiceOptions {
   catalog: ModelCatalog;
   provider: LocalTranscribeProvider;
+  /** 本地语音合成的 Provider（audio.cpp 引擎的常驻服务）；合成模型包的检查经它，删除与重装前卸载它的服务。 */
+  speech: LocalSpeechProvider;
   /** 本地音乐生成的 Provider（audio.cpp 引擎）；音乐模型包的检查经它。 */
   music: LocalMusicProvider;
   jobs: JobManager;
@@ -109,10 +112,8 @@ export interface ModelInstallServiceOptions {
   settings: () => { downloadEndpoint: string | null; offlineStrict: boolean };
   /** 读 `BAOCUT_MODELS_ENDPOINT` 的环境，默认 `process.env`。 */
   env?: NodeJS.ProcessEnv;
-  /** 发布页组件（音乐引擎）的下载镜像（`BAOCUT_TOOLS_ENDPOINT` / 设置 `tools.downloadEndpoint`）；null 时用官方地址。 */
+  /** 发布页组件（LiteRT-LM 的 C 库）的下载镜像（`BAOCUT_TOOLS_ENDPOINT` / 设置 `tools.downloadEndpoint`）；null 时用官方地址。 */
   toolsEndpoint?: () => string | null;
-  /** 发布页组件发布之后确认可执行文件能运行（`--version` 探测）；抛错时安装失败。 */
-  probeExecutable?: (executable: string) => Promise<void>;
   /** 下载器的调节项（测试注入本机的假服务、可用空间与内置清单）；给了的项优先于上面两项。 */
   installer?: Omit<ModelInstallerOptions, 'catalog' | 'endpoint'>;
   /** 检查样本（测试可换）。 */
@@ -139,7 +140,6 @@ export class ModelInstallService {
     this.#sample = options.selfTestSample ?? TRANSCRIBE_SELF_TEST;
     this.installer = new ModelInstaller({
       ...(options.toolsEndpoint ? { toolsEndpoint: options.toolsEndpoint } : {}),
-      ...(options.probeExecutable ? { probeExecutable: options.probeExecutable } : {}),
       ...options.installer,
       catalog: options.catalog,
       endpoint: () => this.#endpoint(),
@@ -291,7 +291,7 @@ export class ModelInstallService {
     const holders = [bundleId, ...this.#catalog.diarizationUsers(bundleId)];
     const inUse = () => this.#jobs.list().filter((j) => holders.includes(j.bundleId ?? '') && !isTerminal(j.state));
     if (inUse().length > 0) refuse(inUse().map((j) => j.jobId));
-    for (const holder of holders) if (!(await this.#options.provider.unload(holder))) refuse([]);
+    for (const holder of holders) if (!(await this.#unload(holder))) refuse([]);
     if (inUse().length > 0) refuse(inUse().map((j) => j.jobId));
     const { removed, kept } = await this.installer.remove(bundleId);
     this.#log.info('Model package deleted', { bundleId, removed, kept: kept.map((k) => k.repo) });
@@ -587,7 +587,7 @@ export class ModelInstallService {
     run.phase('loading');
     let attempt;
     try {
-      attempt = await this.#options.provider.synthesize(
+      attempt = await this.#options.speech.synthesize(
         { jobId: run.jobId, attempt: 1, providerId: 'local', modelId: bundleId, parameters, staging },
         {
           generating: () => run.phase('generating'),
@@ -867,16 +867,22 @@ export class ModelInstallService {
   }
 
   /**
-   * 装好、补齐或修好之后，已经加载的 Worker 还是旧的组件：这个模型包自己的（补上的可选组件、换掉的坏文件都没读到），以及用这个「说话人区分」
-   * 模型包的识别模型包（没有它的组件）。空闲的先卸载，下一个任务重新加载时带上。正在跑任务的不打断（按原来的组件跑完，缺「说话人区分」的
-   * 报 `diarization-unavailable`），空闲后照常按超时卸载。
+   * 装好、补齐或修好之后，已经加载的 Worker（或 audio.cpp 的合成服务）还是旧的组件：这个模型包自己的（补上的可选组件、换掉的坏文件
+   * 都没读到），以及用这个「说话人区分」模型包的识别模型包（没有它的组件）。空闲的先卸载，下一个任务重新加载时带上。正在跑任务的不打断
+   * （按原来的组件跑完，缺「说话人区分」的报 `diarization-unavailable`），空闲后照常按超时卸载。
    */
   #reloadAfterInstall(bundleId: string): void {
     for (const id of [bundleId, ...this.#catalog.diarizationUsers(bundleId)]) {
-      void this.#options.provider
-        .unload(id)
-        .catch((error: unknown) => this.#log.warn('Unloading the model package failed', { bundleId: id, error: String(error) }));
+      void this.#unload(id).catch((error: unknown) =>
+        this.#log.warn('Unloading the model package failed', { bundleId: id, error: String(error) }),
+      );
     }
+  }
+
+  /** 卸载一个模型包的 Model Worker 与合成服务；有任务在用时 false。 */
+  async #unload(bundleId: string): Promise<boolean> {
+    const [worker, speech] = await Promise.all([this.#options.provider.unload(bundleId), this.#options.speech.unload(bundleId)]);
+    return worker && speech;
   }
 
   #definition(bundleId: string): BundleDefinition {

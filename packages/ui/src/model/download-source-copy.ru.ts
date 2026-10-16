@@ -17,7 +17,7 @@ export const ru: DownloadSourceMessages = {
   ghDesc: "Скачивать с официальной страницы релизов каждого проекта на GitHub.",
   modelsMirrorDesc: (base: string) => `Скачивать с зеркала ${base}.`,
   toolsMirrorDesc: (base: string) => `Скачивать с зеркала ${base}.`,
-  msNote: "Немногие файлы, которых нет на ModelScope (whisper.cpp, GPT-SoVITS), по-прежнему скачиваются с Hugging Face. Каждый файл сверяется со встроенной контрольной суммой.",
+  msNote: "Немногие файлы, которых нет на ModelScope (whisper.cpp), по-прежнему скачиваются с Hugging Face. Каждый файл сверяется со встроенной контрольной суммой.",
   envNote: (name: string) => `Если задана переменная окружения ${name}, используется она.`,
   webNote: "В браузере нельзя изменить источники скачивания. Настройте их в настольном приложении BaoCut.",
   lead:

@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BaoCutClient, applyJobsEvent, applyModelsEvent } from '@baocut/client';
-import { FAKE_MODEL_WORKER } from '@baocut/jobs';
+import { FAKE_MODEL_WORKER, writeFakeAudioCpp, type FakeAudioCpp } from '@baocut/jobs';
 import {
   BUNDLES,
   MODELS_ENDPOINT_ENV,
@@ -35,15 +35,16 @@ import { ToolDriver, mcp, tool, until } from '../agent-tools/testing/fake-agent.
 
 /**
  * 模型安装端到端（架构设计 §6.3）：网关的 `models.install / cancelInstall / repair / remove / test` → JobManager → 下载器 →
- * 本机回环地址上的假模型来源（合成的仓库与清单）；自检走假的 Model Worker。模型目录是临时目录，不访问真实网络、不下载
- * 真实的模型。转写用这台机器上的 Qwen3-ASR 0.6B（Apple Silicon 是 MLX 的，别的平台是 candle 的）；语音合成的模型包是 MLX 的，
- * 只在 Apple Silicon 的 macOS 上测。
+ * 本机回环地址上的假模型来源（合成的仓库与清单）；自检走假的 Model Worker，语音合成的自检走假的 audio.cpp 服务。模型目录是
+ * 临时目录，不访问真实网络、不下载真实的模型。转写用这台机器上的 Qwen3-ASR 0.6B（Apple Silicon 是 MLX 的，别的平台是 candle 的）；
+ * 文生图与人声分离的模型包是 MLX 的，只在 Apple Silicon 的 macOS 上测；假 audio.cpp 服务是 sh 包装，Windows 上不测语音合成。
  */
 
 const appleSilicon = process.platform === 'darwin' && process.arch === 'arm64';
 /** 这台机器上的 Qwen3-ASR 0.6B 模型包：Apple Silicon 是 MLX 的，别的平台是 candle 的（同样的仓库）。 */
 const TRANSCRIBE_BUNDLE = appleSilicon ? QWEN3_ASR_0_6B_BUNDLE : 'qwen3-asr-0.6b@candle';
-if (!appleSilicon) console.warn('跳过语音合成模型包的安装测试：它们是 MLX 的，只在 Apple Silicon 的 macOS 上可用');
+const posix = process.platform !== 'win32';
+if (!posix) console.warn('跳过语音合成模型包的自检测试：假的 audio.cpp 服务是 sh 包装，Windows 上不能直接启动');
 
 const def = BUNDLES.find((b) => b.bundleId === TRANSCRIBE_BUNDLE)!;
 const repos: SyntheticRepo[] = [
@@ -64,13 +65,13 @@ const repos: SyntheticRepo[] = [
     files: { 'config.json': Buffer.from('{"synthetic":"aligner"}'), 'model.safetensors': syntheticBytes(30_000, 14) },
   },
 ];
-/** 本地语音合成：只有一个组件的模型包，自检用默认声音合成一句（假 Worker 写 1 秒的正弦 WAV，`silent-output` 时是静音）。 */
-const SPEECH_BUNDLE = 'voxcpm2@mlx-int8';
+/** 本地语音合成：只有一个 GGUF 的模型包，自检用默认声音合成一句（假 audio.cpp 服务回 1 秒的正弦 WAV，`silent` 时是静音）。 */
+const SPEECH_BUNDLE = 'voxcpm2@audio-cpp-q8';
 const speechDef = BUNDLES.find((b) => b.bundleId === SPEECH_BUNDLE)!;
 const speechRepo: SyntheticRepo = {
   repo: speechDef.components.tts!.repo,
   revision: speechDef.components.tts!.revision,
-  files: { 'config.json': Buffer.from('{"synthetic":"tts"}'), 'model.safetensors': syntheticBytes(80_000, 13) },
+  files: { [speechDef.speech!.engine.file]: syntheticBytes(80_000, 13) },
 };
 /** 本地文生图：整个仓库是一个 `image` 组件，自检用固定的提示词与 seed 少步数生成一张 256² 的图（假 Worker 写渐变 PNG）。 */
 const IMAGE_BUNDLE = 'qwen-image-2.1@mlx-4bit';
@@ -134,6 +135,8 @@ interface Side {
   client: BaoCutClient;
   driver: ToolDriver;
   control: string;
+  /** 内置 audio.cpp 引擎的替身（`BAOCUT_AUDIOCPP_CLI` 指向它）。 */
+  audioCpp: FakeAudioCpp;
   jobs: () => JobsSnapshot | null;
   models: () => ModelsSnapshot | null;
   modelEvents: ModelsEvent[];
@@ -144,6 +147,7 @@ async function startSide(source: FakeModelSource, free: { bytes: number | null }
   const home = resolveRuntimeHome({ BAOCUT_HOME: dir });
   const control = path.join(dir, 'fake-worker-control.json');
   await fs.writeFile(control, '{}');
+  const audioCpp = await writeFakeAudioCpp(path.join(dir, 'audiocpp'));
   const driver = new ToolDriver();
   const runtime = await startRuntime({
     home,
@@ -151,6 +155,8 @@ async function startSide(source: FakeModelSource, free: { bytes: number | null }
     watchSpace: false,
     engineHost: null,
     modelWorker: { command: process.execPath, args: [FAKE_MODEL_WORKER, '--control', control] },
+    // 外部工具的覆盖只给假的 audio.cpp：不读这台机器真实的环境变量。
+    externalTools: { env: async () => process.env, overrides: { BAOCUT_AUDIOCPP_CLI: audioCpp.cli } },
     jobIdleMs: 60_000,
     modelInstall: {
       env,
@@ -183,7 +189,7 @@ async function startSide(source: FakeModelSource, free: { bytes: number | null }
     },
   });
   await until(() => jobs && models);
-  return { dir, home, runtime, client, driver, control, jobs: () => jobs, models: () => models, modelEvents };
+  return { dir, home, runtime, client, driver, control, audioCpp, jobs: () => jobs, models: () => models, modelEvents };
 }
 
 async function stopSide(side: Side | undefined): Promise<void> {
@@ -563,11 +569,10 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
     expect(await speakers()).toBe('none');
   });
 
-  it.skipIf(!appleSilicon)(
+  it.skipIf(!posix)(
     '语音合成模型包：装好后自检合成一句，WAV 能解码、时长合理、有声音才通过；静音判为不通过；删掉默认的那只时清掉默认值',
     async () => {
       side = await startSide(source, free);
-      await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'synthesize'] }));
       const plan = (await side.client.request('models.install', { bundleId: SPEECH_BUNDLE })).plan;
       const { jobId } = await side.client.request('models.install', { bundleId: SPEECH_BUNDLE, confirmBytes: plan.confirmBytes });
       expect((await until(() => terminal(jobOf(side!, jobId!)), 15_000)).state).toBe('completed');
@@ -581,8 +586,12 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
       expect(tested.result).toMatchObject({ artifactId: expect.stringMatching(/^sha256:/) });
       expect(await until(() => speechOf()?.selfTest)).toMatchObject({ state: 'passed', jobId: testJob, detail: '1.00 秒 · 24000 Hz' });
 
+      // 自检的请求：默认声音是内置音色的录音，交给引擎时已转成单声道 WAV。
+      const [request] = await side.audioCpp.recorded('request');
+      expect(request!.body).toMatchObject({ model: 'speech', voice_ref: expect.stringMatching(/\.wav$/) });
+
       // 合成出静音：自检失败，原因写在模型包上。
-      await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'synthesize'], faults: ['silent-output'] }));
+      await side.audioCpp.control({ silent: true });
       const { jobId: silentJob } = await side.client.request('models.test', { bundleId: SPEECH_BUNDLE });
       const silent = await until(() => terminal(jobOf(side!, silentJob)), 15_000);
       expect(silent).toMatchObject({
@@ -724,23 +733,22 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
     '检查没通过的原因：加载时文件缺失或损坏是模型文件的问题，资源不足是内存不够；记在模型包上，技术细节里有 Worker 的错误码',
     async () => {
       side = await startSide(source, free);
-      await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'synthesize'] }));
-      const plan = (await side.client.request('models.install', { bundleId: SPEECH_BUNDLE })).plan;
-      const { jobId } = await side.client.request('models.install', { bundleId: SPEECH_BUNDLE, confirmBytes: plan.confirmBytes });
+      const plan = (await side.client.request('models.install', { bundleId: SEPARATE_BUNDLE })).plan;
+      const { jobId } = await side.client.request('models.install', { bundleId: SEPARATE_BUNDLE, confirmBytes: plan.confirmBytes });
       expect((await until(() => terminal(jobOf(side!, jobId!)), 15_000)).state).toBe('completed');
-      const speechOf = () => side!.models()?.bundles.find((b) => b.bundleId === SPEECH_BUNDLE);
+      const separatorOf = () => side!.models()?.bundles.find((b) => b.bundleId === SEPARATE_BUNDLE);
       for (const [fault, code] of [
         ['load-fail:MODEL_NOT_INSTALLED', 'MODEL_FILES_DAMAGED'],
         ['load-fail:MODEL_RESOURCE', 'MODEL_OUT_OF_MEMORY'],
       ] as const) {
         // 上一次加载失败把模型包挡下了：重新启用之后才能再检查。
-        await side.client.request('models.enable', { bundleId: SPEECH_BUNDLE });
-        await until(() => speechOf()?.state === 'installed');
-        await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'synthesize'], faults: [fault] }));
-        const { jobId: loadJob } = await side.client.request('models.test', { bundleId: SPEECH_BUNDLE });
+        await side.client.request('models.enable', { bundleId: SEPARATE_BUNDLE });
+        await until(() => separatorOf()?.state === 'installed');
+        await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'separate'], faults: [fault] }));
+        const { jobId: loadJob } = await side.client.request('models.test', { bundleId: SEPARATE_BUNDLE });
         const failed = await until(() => terminal(jobOf(side!, loadJob)), 15_000);
         expect(failed, fault).toMatchObject({ state: 'failed', error: { code: 'MODEL_SELF_TEST_FAILED', details: { check: code } } });
-        const recorded = await until(() => speechOf()?.selfTest?.jobId === loadJob && speechOf()!.selfTest);
+        const recorded = await until(() => separatorOf()?.selfTest?.jobId === loadJob && separatorOf()!.selfTest);
         expect(recorded, fault).toMatchObject({ state: 'failed', code });
         expect(recorded.facts, fault).toEqual(expect.arrayContaining([`workerCode: ${fault.slice('load-fail:'.length)}`]));
         expect(recorded.facts!.join('\n'), fault).not.toContain(side.dir);
@@ -748,7 +756,24 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
     },
   );
 
-  it.skipIf(!appleSilicon)(
+  it.skipIf(!posix)('语音合成的引擎起不来：自检判为执行模型的进程出了问题，技术细节里有退出码、没有本机路径', async () => {
+    side = await startSide(source, free);
+    const plan = (await side.client.request('models.install', { bundleId: SPEECH_BUNDLE })).plan;
+    const { jobId } = await side.client.request('models.install', { bundleId: SPEECH_BUNDLE, confirmBytes: plan.confirmBytes });
+    expect((await until(() => terminal(jobOf(side!, jobId!)), 15_000)).state).toBe('completed');
+    const speechOf = () => side!.models()?.bundles.find((b) => b.bundleId === SPEECH_BUNDLE);
+    await until(() => speechOf()?.state === 'installed');
+    await side.audioCpp.control({ startExit: `cannot open ${side.dir}/model.gguf` });
+    const { jobId: loadJob } = await side.client.request('models.test', { bundleId: SPEECH_BUNDLE });
+    const failed = await until(() => terminal(jobOf(side!, loadJob)), 15_000);
+    expect(failed).toMatchObject({ state: 'failed', error: { code: 'MODEL_SELF_TEST_FAILED', details: { check: 'MODEL_WORKER_FAILED' } } });
+    const recorded = await until(() => speechOf()?.selfTest?.jobId === loadJob && speechOf()!.selfTest);
+    expect(recorded).toMatchObject({ state: 'failed', code: 'MODEL_WORKER_FAILED' });
+    expect(recorded.facts).toEqual(expect.arrayContaining(['kind: load-failed', 'exitCode: 2']));
+    expect(recorded.facts!.join('\n')).not.toContain(side.dir);
+  });
+
+  it.skipIf(!posix)(
     '随应用分发的文件不在：自检在提交时以 APP_FILE_MISSING 拒绝（转写的样本、合成的内置音色录音）；执行前才不见的，任务以 APP_FILE_MISSING 失败、不记成自测没通过',
     async () => {
       const assets = path.join(os.tmpdir(), `baocut-model-assets-${newId('t')}`);
@@ -756,7 +781,6 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
       const saved = process.env[MODEL_ASSETS_ENV];
       try {
         side = await startSide(source, free);
-        await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'synthesize'] }));
         for (const bundleId of [TRANSCRIBE_BUNDLE, SPEECH_BUNDLE]) {
           const plan = (await side.client.request('models.install', { bundleId })).plan;
           const { jobId } = await side.client.request('models.install', { bundleId, confirmBytes: plan.confirmBytes });
@@ -779,11 +803,11 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
         }
         expect(side.jobs()!.jobs.length).toBe(jobsBefore);
 
-        // 执行前：第一个自检占着这个模型包的队列（假 Worker 放慢），第二个排着；这时删掉内置音色的录音。
+        // 执行前：第一个自检占着这个模型包的队列（假 audio.cpp 服务晚回），第二个排着；这时删掉内置音色的录音。
         process.env[MODEL_ASSETS_ENV] = assets;
-        await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'synthesize'], faults: ['slow'] }));
+        await side.audioCpp.control({ slowMs: 1_500 });
         const { jobId: first } = await side.client.request('models.test', { bundleId: SPEECH_BUNDLE });
-        await until(() => (jobOf(side!, first)?.progress?.done ?? 0) > 0, 15_000);
+        await until(async () => (await side!.audioCpp.recorded('request')).length > 0, 15_000);
         const { jobId: second } = await side.client.request('models.test', { bundleId: SPEECH_BUNDLE });
         await fs.rm(path.join(assets, 'tts-voices'), { recursive: true });
         expect(await until(() => terminal(jobOf(side!, first)), 15_000)).toMatchObject({ state: 'completed' });

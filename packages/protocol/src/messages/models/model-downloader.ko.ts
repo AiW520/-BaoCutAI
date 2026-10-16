@@ -18,5 +18,4 @@ export const ko: ModelsModelDownloaderMessages = {
   diskFull: '모델 파일을 쓰는 중에 디스크가 가득 찼습니다',
   archiveUnpackable: (p: { file: string; reason: string }) => `${p.file}의 압축을 풀 수 없습니다: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file}에 ${p.executable}이(가) 없습니다`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable}의 압축은 풀렸지만 실행되지 않습니다: ${p.reason}`,
 };

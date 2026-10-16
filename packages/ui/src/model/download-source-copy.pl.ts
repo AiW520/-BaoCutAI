@@ -17,7 +17,7 @@ export const pl: DownloadSourceMessages = {
   ghDesc: "Pobieraj z oficjalnej strony wydań każdego projektu w GitHub.",
   modelsMirrorDesc: (base: string) => `Pobieraj z serwera lustrzanego ${base}.`,
   toolsMirrorDesc: (base: string) => `Pobieraj z serwera lustrzanego ${base}.`,
-  msNote: "Nieliczne pliki, których nie ma w ModelScope (whisper.cpp, GPT-SoVITS), nadal pochodzą z Hugging Face. Każdy plik jest sprawdzany wbudowaną sumą kontrolną.",
+  msNote: "Nieliczne pliki, których nie ma w ModelScope (whisper.cpp), nadal pochodzą z Hugging Face. Każdy plik jest sprawdzany wbudowaną sumą kontrolną.",
   envNote: (name: string) => `Jeśli ustawiono zmienną środowiskową ${name}, używana jest ona.`,
   webNote: "W przeglądarce nie można zmienić źródeł pobierania. Ustaw je w aplikacji BaoCut na komputer.",
   lead:

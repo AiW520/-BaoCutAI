@@ -17,7 +17,7 @@ export const it: DownloadSourceMessages = {
   ghDesc: "Scarica dalla pagina ufficiale delle release su GitHub di ciascun progetto.",
   modelsMirrorDesc: (base: string) => `Scarica dal mirror all’indirizzo ${base}.`,
   toolsMirrorDesc: (base: string) => `Scarica dal mirror all’indirizzo ${base}.`,
-  msNote: "I pochi file che ModelScope non ha (whisper.cpp, GPT-SoVITS) vengono ancora scaricati da Hugging Face. Ogni file viene verificato con il checksum integrato.",
+  msNote: "I pochi file che ModelScope non ha (whisper.cpp) vengono ancora scaricati da Hugging Face. Ogni file viene verificato con il checksum integrato.",
   envNote: (name: string) => `Se è impostata la variabile d’ambiente ${name}, viene usata quella.`,
   webNote: "Un browser non può cambiare le origini del download. Impostale nell’app desktop di BaoCut.",
   lead:

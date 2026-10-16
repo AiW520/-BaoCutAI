@@ -4,8 +4,10 @@
 //! 主路径是 ffmpeg 管道，解封装器只许白名单里的（与 Runtime 的素材分析 `media-analysis.ts` 一致），
 //! 只许读本地文件。16 kHz 的 PCM WAV 另有纯 Rust 路径（hound），不需要 ffmpeg。
 //!
-//! 合成的参考音频很短，[`decode_mono`] 把它整个解进内存，采样率由调用方定。人声分离要立体声，
+//! 一段短音频可以由 [`decode_mono`] 整个解进内存，采样率由调用方定。人声分离要立体声，
 //! [`decode_stereo`] 同样整段解进内存。
+
+mod resample;
 
 use std::fs::File;
 use std::io::{BufWriter, Read, Write};
@@ -268,9 +270,9 @@ fn ffmpeg_args_with(request: &DecodeRequest<'_>, sample_rate: u32, channels: u16
     args
 }
 
-/// 把一段短音频（合成的参考音频）整个解进内存：单声道 f32、`sample_rate`。
+/// 把一段短音频整个解进内存：单声道 f32、`sample_rate`。
 ///
-/// PCM / float WAV 走 hound（不需要 ffmpeg），采样率不同时用 [`crate::synthesize::resample`] 的带限插值换算；
+/// PCM / float WAV 走 hound（不需要 ffmpeg），采样率不同时用 [`resample`] 的带限插值换算；
 /// 其他格式走与 [`decode_to_file`] 同一套受限的 ffmpeg 参数，只是输出采样率换成 `sample_rate`。
 /// 只取第一条音轨、整段，不汇报进度。
 pub fn decode_mono(path: &Path, sample_rate: u32) -> Result<Vec<f32>, DecodeError> {
@@ -285,7 +287,7 @@ pub fn decode_mono(path: &Path, sample_rate: u32) -> Result<Vec<f32>, DecodeErro
         Some(reader) => {
             let native_rate = reader.spec().sample_rate;
             let samples = read_wav_mono(reader)?;
-            crate::synthesize::resample::resample(&samples, native_rate, sample_rate)
+            resample::resample(&samples, native_rate, sample_rate)
         }
         None => decode_ffmpeg_to_memory(path, sample_rate)?,
     };

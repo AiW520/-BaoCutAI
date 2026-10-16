@@ -72,7 +72,7 @@ export const ptBR: TtsLocalMessages = {
     auditionClone: "Prévia do clone",
     auditionCloneLabel: (name: string) => `Prévia do clone · ${name}`,
     noCloneModel:
-      "Sem modelo local que clona. Baixe na página local primeiro (IndexTTS2, Qwen3-TTS Base, GPT-SoVITS…).",
+      "Sem modelo local que clona. Baixe na página local primeiro (IndexTTS2, Qwen3-TTS Base, VoxCPM2…).",
     goLocal: "Ir aos modelos locais",
   },
 };

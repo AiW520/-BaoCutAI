@@ -17,7 +17,7 @@ export const vi: DownloadSourceMessages = {
   ghDesc: "Tải xuống từ trang phát hành chính thức trên GitHub của từng dự án.",
   modelsMirrorDesc: (base: string) => `Tải xuống từ mirror tại ${base}.`,
   toolsMirrorDesc: (base: string) => `Tải xuống từ mirror tại ${base}.`,
-  msNote: "Một vài tệp ModelScope không có (whisper.cpp, GPT-SoVITS) vẫn được tải từ Hugging Face. Mỗi tệp đều được đối chiếu với tổng kiểm tra tích hợp.",
+  msNote: "Một vài tệp ModelScope không có (whisper.cpp) vẫn được tải từ Hugging Face. Mỗi tệp đều được đối chiếu với tổng kiểm tra tích hợp.",
   envNote: (name: string) => `Nếu đặt biến môi trường ${name}, giá trị đó được dùng thay thế.`,
   webNote: "Trình duyệt không thể đổi nguồn tải xuống. Hãy đặt các nguồn này trong ứng dụng BaoCut trên máy tính.",
   lead:

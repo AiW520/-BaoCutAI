@@ -4,13 +4,13 @@
 //!   `worker.status`、`job.cancel` 与各种状态错误），其余交给推理线程。
 //! - **推理线程**独占加载好的模型（MLX 的数组不是 `Send`），依次执行 `model.load`、`model.unload`、
 //!   `job.run`，事件与响应都直接写 stdout。stdin 线程从不碰 MLX：`worker.status` 的内存快照是推理线程
-//!   每段（合成是每个任务）之后缓存下来的。
+//!   每段（不分段的能力是每个任务）之后缓存下来的。
 //!
-//! 识别、合成、分离与文生图共用这套线程模型：模型包带 `tts` 组件时加载出来的是一只 TTS 引擎（[`Loaded::Synthesis`]），
-//! 带 `separator` 组件时是分离模型（[`Loaded::Separation`]），带 `image` 组件时是一只图像引擎（[`Loaded::Image`]），
-//! 只带 `segmentation` 与 `speaker` 时是说话人区分（[`Loaded::Diarization`]），带 `embedding` 组件时是一只文本嵌入引擎
-//! （[`Loaded::Embedding`]）；`job.run` 按 `capability` 分到 [`transcribe::run`]、[`synthesize::job::run`]、
-//! [`separate::job::run`]、[`image::job::run`] 或 [`diarize::run`]，`embed.run` 交给 [`embed::run`]。
+//! 识别、分离与文生图共用这套线程模型：模型包带 `separator` 组件时加载出来的是分离模型（[`Loaded::Separation`]），
+//! 带 `image` 组件时是一只图像引擎（[`Loaded::Image`]），只带 `segmentation` 与 `speaker` 时是说话人区分
+//! （[`Loaded::Diarization`]），带 `embedding` 组件时是一只文本嵌入引擎（[`Loaded::Embedding`]）；`job.run` 按
+//! `capability` 分到 [`transcribe::run`]、[`separate::job::run`]、[`image::job::run`] 或 [`diarize::run`]，`embed.run`
+//! 交给 [`embed::run`]。
 
 use std::io::{BufWriter, Stdout, Write};
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -28,10 +28,9 @@ use model_runtime::image;
 use model_runtime::priority;
 use model_runtime::protocol::{
     self, CancelParams, DiarizeRunParams, EmptyParams, ErrorBody, HelloParams, ImageRunParams, JobRunParams, LoadParams, MemorySnapshot,
-    SeparateRunParams, SynthesizeRunParams, codes, parse_params, run_capability,
+    SeparateRunParams, codes, parse_params, run_capability,
 };
 use model_runtime::separate;
-use model_runtime::synthesize;
 use model_runtime::transcribe::{self, JobSink};
 use model_runtime::{CONTRACT_VERSION, WORKER_VERSION};
 use serde_json::{Value, json};
@@ -147,7 +146,6 @@ enum Work {
     Load { id: Value, bundle: Box<VerifiedBundle> },
     Unload { id: Value },
     Run { id: Value, params: Box<JobRunParams> },
-    Synthesize { id: Value, params: Box<SynthesizeRunParams> },
     Separate { id: Value, params: Box<SeparateRunParams> },
     Image { id: Value, params: Box<ImageRunParams> },
     Diarize { id: Value, params: Box<DiarizeRunParams> },
@@ -167,11 +165,9 @@ impl Inference {
             let (id, method) = match &item {
                 Work::Load { id, .. } => (id.clone(), "model.load"),
                 Work::Unload { id } => (id.clone(), "model.unload"),
-                Work::Run { id, .. }
-                | Work::Synthesize { id, .. }
-                | Work::Separate { id, .. }
-                | Work::Image { id, .. }
-                | Work::Diarize { id, .. } => (id.clone(), "job.run"),
+                Work::Run { id, .. } | Work::Separate { id, .. } | Work::Image { id, .. } | Work::Diarize { id, .. } => {
+                    (id.clone(), "job.run")
+                }
                 Work::Embed { id, .. } => (id.clone(), "embed.run"),
             };
             if catch_unwind(AssertUnwindSafe(|| self.handle(item))).is_err() {
@@ -235,33 +231,10 @@ impl Inference {
                         transcribe::run(model.as_mut(), bundle, &params, &self.shared.cancel, &mut sink)
                             .and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    (
-                        Some(
-                            Loaded::Synthesis(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_),
-                        ),
-                        _,
-                    ) => Err(capability_not_loaded("transcribe")),
-                    _ => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
-                };
-                self.finish_job(&id, response);
-            }
-            Work::Synthesize { id, params } => {
-                let mut sink = Sink {
-                    output: &self.output,
-                    shared: &self.shared,
-                };
-                let response = match self.model.as_mut() {
-                    Some(Loaded::Synthesis(synthesis)) => {
-                        let result = synthesize::job::run(synthesis.engine.as_mut(), &params, &self.shared.cancel, &mut sink);
-                        if let Some(snapshot) = (synthesis.memory)() {
-                            sink.memory(snapshot);
-                        }
-                        result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
+                    (Some(Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_)), _) => {
+                        Err(capability_not_loaded("transcribe"))
                     }
-                    Some(
-                        Loaded::Transcription(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_),
-                    ) => Err(capability_not_loaded("synthesize")),
-                    None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
+                    _ => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
             }
@@ -278,9 +251,9 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    Some(
-                        Loaded::Transcription(_) | Loaded::Synthesis(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_),
-                    ) => Err(capability_not_loaded("separate")),
+                    Some(Loaded::Transcription(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_)) => {
+                        Err(capability_not_loaded("separate"))
+                    }
                     None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -298,13 +271,9 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    Some(
-                        Loaded::Transcription(_)
-                        | Loaded::Synthesis(_)
-                        | Loaded::Separation(_)
-                        | Loaded::Diarization(_)
-                        | Loaded::Embedding(_),
-                    ) => Err(capability_not_loaded("image")),
+                    Some(Loaded::Transcription(_) | Loaded::Separation(_) | Loaded::Diarization(_) | Loaded::Embedding(_)) => {
+                        Err(capability_not_loaded("image"))
+                    }
                     None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -322,16 +291,9 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    (
-                        Some(
-                            Loaded::Transcription(_)
-                            | Loaded::Synthesis(_)
-                            | Loaded::Separation(_)
-                            | Loaded::Image(_)
-                            | Loaded::Embedding(_),
-                        ),
-                        _,
-                    ) => Err(capability_not_loaded("diarize")),
+                    (Some(Loaded::Transcription(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Embedding(_)), _) => {
+                        Err(capability_not_loaded("diarize"))
+                    }
                     _ => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -369,7 +331,7 @@ fn serialize_failed(error: serde_json::Error) -> ErrorBody {
     ErrorBody::new(codes::INFERENCE_FAILED, error.to_string())
 }
 
-/// 加载的模型包做不了这种任务（识别的模型包上跑合成、合成的模型包上生图之类）：与模型做不到的其余情况同为
+/// 加载的模型包做不了这种任务（识别的模型包上跑分离、分离的模型包上生图之类）：与模型做不到的其余情况同为
 /// `MODEL_UNSUPPORTED`。
 fn capability_not_loaded(capability: &str) -> ErrorBody {
     ErrorBody::new(codes::MODEL_UNSUPPORTED, format!("the loaded model bundle cannot {capability}"))
@@ -496,11 +458,10 @@ impl Worker {
             return Err(ErrorBody::new(codes::CONTRACT_MISMATCH, "contract version mismatch")
                 .with_details(json!({ "expected": CONTRACT_VERSION, "actual": hello.contract_version })));
         }
-        // 识别、合成与文生图都按模型族声明：`transcribeFamilies` / `synthesizeFamilies` / `imageFamilies` 是这个构建接上了
-        // 加载器的 `asr` / `tts` / `image` family，非空时才声明 `transcribe` / `synthesize` / `image`（协议规范 §2.1）。
+        // 识别与文生图都按模型族声明：`transcribeFamilies` / `imageFamilies` 是这个构建接上了加载器的 `asr` / `image`
+        // family，非空时才声明 `transcribe` / `image`（协议规范 §2.1）。
         // 还没接上的 family 由 Runtime 判为 `capability-missing`，不当成模型包坏了。
         let transcribe_families = backend::transcribe_families();
-        let synthesize_families = synthesize::available_families();
         let image_families = image::available_families();
         let mut capabilities = Vec::new();
         if !transcribe_families.is_empty() {
@@ -513,9 +474,6 @@ impl Worker {
         // `diarize` 同样要模型包带上说话人区分的组件（`segmentation` + `speaker`）；这里只声明这个构建接上了它（§2.5.1）。
         if backend::diarizer_available() {
             capabilities.push("diarize");
-        }
-        if !synthesize_families.is_empty() {
-            capabilities.push("synthesize");
         }
         // 分离同样按模型族声明：`separateFamilies` 是这个构建能加载的 `separator` family（§2.5.4）。
         let separate_families = separate::available_families();
@@ -537,7 +495,6 @@ impl Worker {
             "backends": backend::statuses(),
             "capabilities": capabilities,
             "transcribeFamilies": transcribe_families,
-            "synthesizeFamilies": synthesize_families,
             "separateFamilies": separate_families,
             "imageFamilies": image_families,
         });
@@ -606,22 +563,11 @@ impl Worker {
     }
 
     /// `job.run`：参数先按形状检查（`INVALID_PARAMS`），再检查状态（`WORKER_BUSY`），然后交给推理线程。
-    /// `capability: "synthesize"` 的参数是 [`SynthesizeRunParams`]（协议规范 §2.5.2），`"image"` 的是
-    /// [`ImageRunParams`]（§2.5.3），`"separate"` 的是 [`SeparateRunParams`]（§2.5.4），`"diarize"` 的是
-    /// [`DiarizeRunParams`]（§2.5.5）。
+    /// `capability: "image"` 的参数是 [`ImageRunParams`]（协议规范 §2.5.3），`"separate"` 的是 [`SeparateRunParams`]
+    /// （§2.5.4），`"diarize"` 的是 [`DiarizeRunParams`]（§2.5.5），其余按 [`JobRunParams`] 解析。
     fn run(&self, id: &Value, params: Value) -> Result<(), ErrorBody> {
         let capability = run_capability(&params);
-        let (job_id, work) = if capability == Some("synthesize") {
-            let run: SynthesizeRunParams = parse_params(params)?;
-            run.validate()?;
-            (
-                run.job_id.clone(),
-                Work::Synthesize {
-                    id: id.clone(),
-                    params: Box::new(run),
-                },
-            )
-        } else if capability == Some("separate") {
+        let (job_id, work) = if capability == Some("separate") {
             let run: SeparateRunParams = parse_params(params)?;
             run.validate()?;
             (

@@ -9,5 +9,4 @@ remedyManifestIncomplete: 'Bu model paketinin yerleşik bildiriminde güvenilir 
 downloadFailed: (p) => `${p.file} indirilemedi: ${p.reason}`, integrityMismatch: (p) => `${p.file} dosyasının boyutu veya sha256 değeri bildirimle eşleşmiyor`, sourceHttp: (p) => `İndirme kaynağı ${p.file} için HTTP ${p.status} döndürdü`, diskFull: 'Model dosyaları yazılırken disk doldu',
   archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} açılamadı: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} içinde ${p.executable} yok`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} açıldı ama çalışmıyor: ${p.reason}`,
 };

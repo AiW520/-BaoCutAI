@@ -21,7 +21,7 @@
   ];
   /* 默认位置 <BAOCUT_HOME>/models：现在装着的就是演示数据里 installed 的那几只（不含随包附带的） */
   const HOME = {path: DEFAULT_DIR, note: '默认位置 · 本机硬盘', exists: true, writable: true, freeMB: 412 * GB,
-    models: ['moss-transcribe', 'qwen3-asr-0.6b', 'whisper-large-v3', 'qwen3-tts-0.6b-customvoice', 'qwen3-tts-0.6b-base']};
+    models: ['moss-transcribe', 'qwen3-asr-0.6b', 'whisper-large-v3', 'qwen3-tts-1.7b-customvoice', 'qwen3-tts-0.6b-base']};
   /** 某个路径所在磁盘的可用空间；不认识的路径按默认位置那块盘算 */
   const freeOf = (path) => (path === DEFAULT_DIR ? HOME : (FOLDERS.find((f) => f.path === path) || HOME)).freeMB;
 

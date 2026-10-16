@@ -99,11 +99,11 @@ describe('本地音乐生成', () => {
     engine = path.join(dir, 'audiocpp_cli');
     await fs.writeFile(engine, `#!/bin/sh\nexec "${process.execPath}" "${path.join(dir, 'fake-engine.cjs')}" "$@"\n`, { mode: 0o755 });
     await installYue(path.join(dir, 'models'));
-    // 引擎组件由开发者覆盖（`BAOCUT_AUDIOCPP_CLI`）满足：模型包算装好，不看工具目录。
+    // 引擎随应用内置：模型包装好、找得到引擎就可用。
     catalog = new ModelCatalog({
       root: path.join(dir, 'models'),
       toolsDir: path.join(dir, 'tools'),
-      engineOverride: engine,
+      engineAvailable: () => true,
       platform: 'darwin',
       arch: 'arm64',
       workerAvailable: () => false,
@@ -206,7 +206,8 @@ describe('本地音乐生成', () => {
       const missing = new LocalMusicProvider({ catalog, engine: () => null, env: async () => env });
       await expect(missing.generate(run(), sink().s, new AbortController().signal)).rejects.toMatchObject({
         kind: 'unavailable',
-        details: { reason: 'not-installed' },
+        message: expect.stringContaining('audio.cpp'),
+        details: { reason: 'unsupported', bundleId: YUE.bundleId },
       });
       await expect(provider.generate(run({ modelId: 'qwen3-asr-0.6b@mlx-4bit' }), sink().s, new AbortController().signal)).rejects.toMatchObject({
         kind: 'unavailable',

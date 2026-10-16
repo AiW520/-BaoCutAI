@@ -4,8 +4,8 @@ import type { CookieBrowsersSetting, LinkCookieBrowser } from './pipelines.ts';
 
 /**
  * 受管外部工具（架构设计 §12.9）：BaoCut 用到、但不随应用发布的程序。能由 BaoCut 下载的只有下载工具 `yt-dlp`；ffmpeg 照旧从
- * `BAOCUT_FFMPEG` 或 PATH 找，只是它的探测结果也在同一个状态视图里。音乐生成的 audio.cpp 引擎不是受管外部工具，而是音乐模型包的
- * 组件 `audiocpp-engine`，随模型包下载（`models.ts`，架构设计 §6.3）。
+ * `BAOCUT_FFMPEG` 或 PATH 找，只是它的探测结果也在同一个状态视图里。本地语音合成与音乐生成共用的 audio.cpp 引擎不是受管外部工具，
+ * 而是随应用内置（架构设计 §6.3）。
  *
  * 规则：
  * - 下载工具不随应用打包，只在用户明确同意之后才安装或使用：同意按工具记录（何时、以何种方式），可以撤回；撤回后用它的

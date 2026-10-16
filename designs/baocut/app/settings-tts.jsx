@@ -227,7 +227,7 @@
         {refOn ? <RefPreview r={refOn} /> : null}
         {spec.mode === 'preset' && app.voices.length ? (
           <p className="t-detail-xs ttst__note">这只模型只有自带的说话人 · 「我的声音」要在能克隆的模型上试：
-            {(() => { const on = window.BC_VOICES.CLONE_MODELS.filter((id) => app.modelInstalled(id)).map((id) => (window.BC_DATA.setModels.find((x) => x.id === id) || {}).name).filter(Boolean); return on.length ? on.join(' / ') + '（各自那一行的试听）' : 'IndexTTS2 / Qwen3-TTS Base / GPT-SoVITS，先下载一只'; })()}
+            {(() => { const on = window.BC_VOICES.CLONE_MODELS.filter((id) => app.modelInstalled(id)).map((id) => (window.BC_DATA.setModels.find((x) => x.id === id) || {}).name).filter(Boolean); return on.length ? on.join(' / ') + '（各自那一行的试听）' : 'IndexTTS2 / Qwen3-TTS Base，先下载一只'; })()}
           </p>
         ) : null}
         {myOn ? (

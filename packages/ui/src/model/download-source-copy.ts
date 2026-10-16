@@ -38,7 +38,7 @@ const en = {
   modelsMirrorDesc: (base: string) => `Download from the mirror at ${base}.`,
   toolsMirrorDesc: (base: string) => `Download from the mirror at ${base}.`,
   msNote:
-    'The few files ModelScope doesn’t have (whisper.cpp, GPT-SoVITS) still come from Hugging Face. Every file is checked against its built-in checksum.',
+    'The few files ModelScope doesn’t have (whisper.cpp) still come from Hugging Face. Every file is checked against its built-in checksum.',
   envNote: (name: string) => `If the ${name} environment variable is set, it’s used instead.`,
   webNote: 'A browser can’t change download sources. Set them in the BaoCut desktop app.',
   lead:

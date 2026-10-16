@@ -1,7 +1,7 @@
 //! 推理后端：设备上下文与模型加载器。
 //!
 //! 每个后端是一个 [`Backend`]：报告自己在本机是否可用，并把校验过的模型包加载成 [`Loaded`]（识别的
-//! [`LoadedModel`]、合成的 [`LoadedSynthesis`]，或文生图的 [`LoadedImage`]）。加载出来的模型持有设备句柄（MLX 的数组不是 `Send`），
+//! [`LoadedModel`]、文生图的 [`LoadedImage`] 等）。加载出来的模型持有设备句柄（MLX 的数组不是 `Send`），
 //! 只能在创建它的那个线程上使用。
 //!
 //! - `mlx`：Apple Silicon + Metal。`backend-mlx` feature 且目标是 macOS aarch64 时编译进来，否则报告
@@ -23,18 +23,16 @@
 use serde_json::json;
 
 use crate::bundle::{
-    FAMILY_HTDEMUCS_FT, FAMILY_INDEX_TTS2_AUX, FAMILY_MOSS_TRANSCRIBE_DIARIZE, FAMILY_PYANNOTE_SEGMENTATION, FAMILY_QWEN3_ALIGNER,
-    FAMILY_QWEN3_ASR, FAMILY_QWEN3_TTS_CODEC, FAMILY_SILERO_VAD, FAMILY_WESPEAKER, FAMILY_WHISPER_COREML, FAMILY_WHISPER_GGML,
-    FAMILY_WHISPER_MLX, FAMILY_WHISPER_TOKENIZER, VerifiedBundle, VerifiedFiles,
+    FAMILY_HTDEMUCS_FT, FAMILY_MOSS_TRANSCRIBE_DIARIZE, FAMILY_PYANNOTE_SEGMENTATION, FAMILY_QWEN3_ALIGNER, FAMILY_QWEN3_ASR,
+    FAMILY_SILERO_VAD, FAMILY_WESPEAKER, FAMILY_WHISPER_COREML, FAMILY_WHISPER_GGML, FAMILY_WHISPER_MLX, FAMILY_WHISPER_TOKENIZER,
+    VerifiedBundle, VerifiedFiles,
 };
 use crate::image::{self, ImageEngine};
 use crate::protocol::{
-    BackendStatus, ErrorBody, MemorySnapshot, codes, diarization_not_wired, image_not_wired, separation_not_wired, synthesis_not_wired,
-    transcription_not_wired,
+    BackendStatus, ErrorBody, MemorySnapshot, codes, diarization_not_wired, image_not_wired, separation_not_wired, transcription_not_wired,
 };
 use crate::separate::{self, Separator};
 use crate::speech::{ForcedAlignment, SegmentingRecognizer, SpeakerDiarization, SpeakerEmbedding, SpeechRecognizer, StreamingVad};
-use crate::synthesize::{self, TtsEngine, TtsEngineKind};
 
 #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
 pub mod mlx;
@@ -130,18 +128,6 @@ pub trait LoadedModel {
     fn finish_job(&mut self) {}
 }
 
-/// 加载好的合成模型：一只 TTS 引擎。与 [`LoadedModel`] 一样只能在加载它的线程上使用。
-pub struct LoadedSynthesis {
-    pub kind: TtsEngineKind,
-    pub engine: Box<dyn TtsEngine>,
-    /// 加载耗时（毫秒）：合成没有单独的预热，`model.load` 的 `warmupMs` 报这个。
-    pub load_ms: u64,
-    /// 加载后的常驻字节数；后端报告不了时 `None`。
-    pub resident_bytes: Option<u64>,
-    /// 后端的内存快照（任务之后刷新 `worker.status`）。
-    pub memory: fn() -> Option<MemorySnapshot>,
-}
-
 /// 加载好的分离模型（HTDemucs-FT）。与 [`LoadedModel`] 一样只能在加载它的线程上使用。
 pub struct LoadedSeparation {
     pub separator: Box<dyn Separator>,
@@ -190,10 +176,9 @@ pub struct LoadedEmbedding {
     pub memory: fn() -> Option<MemorySnapshot>,
 }
 
-/// 一个模型包加载出来的东西：识别（VAD + ASR）、合成（TTS 引擎）、分离、文生图（图像引擎）、说话人区分或文本嵌入。
+/// 一个模型包加载出来的东西：识别（VAD + ASR）、分离、文生图（图像引擎）、说话人区分或文本嵌入。
 pub enum Loaded {
     Transcription(Box<dyn LoadedModel>),
-    Synthesis(LoadedSynthesis),
     Separation(LoadedSeparation),
     Image(LoadedImage),
     Diarization(LoadedDiarization),
@@ -204,7 +189,6 @@ impl Loaded {
     pub fn memory(&self) -> Option<MemorySnapshot> {
         match self {
             Self::Transcription(model) => model.memory(),
-            Self::Synthesis(synthesis) => (synthesis.memory)(),
             Self::Separation(separation) => (separation.memory)(),
             Self::Image(image) => (image.memory)(),
             Self::Diarization(diarization) => (diarization.memory)(),
@@ -215,7 +199,6 @@ impl Loaded {
     pub fn resident_bytes(&self) -> Option<u64> {
         match self {
             Self::Transcription(model) => model.resident_bytes(),
-            Self::Synthesis(synthesis) => synthesis.resident_bytes,
             Self::Separation(separation) => separation.resident_bytes,
             Self::Image(image) => image.resident_bytes,
             Self::Diarization(diarization) => diarization.resident_bytes,
@@ -226,7 +209,6 @@ impl Loaded {
     pub fn warmup_ms(&self) -> u64 {
         match self {
             Self::Transcription(model) => model.warmup_ms(),
-            Self::Synthesis(synthesis) => synthesis.load_ms,
             Self::Separation(separation) => separation.load_ms,
             Self::Image(image) => image.load_ms,
             Self::Diarization(diarization) => diarization.load_ms,
@@ -244,16 +226,6 @@ pub trait Backend: Sync {
 
     /// 加载模型包。组件的 family 与内存预算已由 [`load`] 检查过。
     fn load(&self, bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Box<dyn LoadedModel>, ErrorBody>;
-
-    /// 加载合成的模型包（`kind` 由 `tts` 组件的 family 决定）。组件、family 与预算已由 [`load`] 检查过。
-    fn load_synthesis(
-        &self,
-        _bundle: &VerifiedBundle,
-        _kind: TtsEngineKind,
-        _phase: &mut PhaseCallback<'_>,
-    ) -> Result<LoadedSynthesis, ErrorBody> {
-        Err(not_compiled(self.id()))
-    }
 
     /// 加载分离的模型包（`separator` 组件）。组件、family 与预算已由 [`load`] 检查过。
     fn load_separation(&self, _bundle: &VerifiedBundle, _phase: &mut PhaseCallback<'_>) -> Result<LoadedSeparation, ErrorBody> {
@@ -384,8 +356,8 @@ pub fn statuses() -> Vec<BackendStatus> {
     all().iter().map(|backend| backend.status()).collect()
 }
 
-/// 检查组件与预算，再交给对应后端加载。带 `embedding` 的（或后端是 `litert-lm` 的）是文本嵌入的模型包；带 `separator` 的是分离的模型包；带 `image` 的是文生图的模型包；带 `tts` 的
-/// 是合成的模型包，按它的 family 加载引擎；带 `segmentation` 而没有 `asr` 的是说话人区分的模型包；其余是识别。
+/// 检查组件与预算，再交给对应后端加载。带 `embedding` 的（或后端是 `litert-lm` 的）是文本嵌入的模型包；带 `separator` 的是分离的模型包；带 `image` 的是文生图的模型包；
+/// 带 `segmentation` 而没有 `asr` 的是说话人区分的模型包；其余是识别。
 ///
 /// 文生图不按权重总量查 `memoryBudgetBytes`：三段权重逐层流式读入、从不同时驻留，权重总量（约 10 GB）不是峰值；
 /// 峰值由 Runtime 按模型包的实测值做准入。
@@ -407,19 +379,10 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         check_image(bundle, files)?;
         return backend.load_image(bundle, phase).map(Loaded::Image);
     }
-    if let Some(tts) = bundle.tts.as_ref() {
-        let kind = synthesis_kind(bundle, tts)?;
-        check_budget(bundle)?;
-        return backend.load_synthesis(bundle, kind, phase).map(Loaded::Synthesis);
-    }
     if bundle.asr.is_none() && bundle.segmentation.is_some() {
         check_diarization(bundle)?;
         check_budget(bundle)?;
         return backend.load_diarization(bundle, phase).map(Loaded::Diarization);
-    }
-    if bundle.codec.is_some() || bundle.aux.is_some() {
-        return Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "the bundle has no tts component")
-            .with_details(json!({ "component": "tts", "reason": "missing-component" })));
     }
     let family = transcription_family(bundle)?;
     if !transcribe_family_available(family) {
@@ -454,48 +417,6 @@ fn transcription_family(bundle: &VerifiedBundle) -> Result<&str, ErrorBody> {
     Ok(&asr.family)
 }
 
-/// 合成模型包的组件检查：`tts` 的 family 认得出、这个构建接上了它的引擎（没接上的是 `not-wired`，Runtime 按
-/// `worker.hello` 的 `synthesizeFamilies` 本不会发来）；识别的组件不混进来；`codec` 只给 Qwen3-TTS，
-/// `aux` 只给 IndexTTS 2.5（缺 `aux` 由引擎报 `MODEL_UNSUPPORTED`）。
-fn synthesis_kind(bundle: &VerifiedBundle, tts: &VerifiedFiles) -> Result<TtsEngineKind, ErrorBody> {
-    let Some(kind) = TtsEngineKind::from_family(&tts.family) else {
-        return Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "unsupported tts model family")
-            .with_details(json!({ "component": "tts", "family": tts.family, "reason": "unknown-family" })));
-    };
-    if !synthesize::engine_available(kind) {
-        return Err(synthesis_not_wired(Some(&tts.family)));
-    }
-    for (component, files) in [
-        ("asr", &bundle.asr),
-        ("vad", &bundle.vad),
-        ("aligner", &bundle.aligner),
-        ("speaker", &bundle.speaker),
-        ("segmentation", &bundle.segmentation),
-        ("tokenizer", &bundle.tokenizer),
-    ] {
-        if files.is_some() {
-            return Err(
-                ErrorBody::new(codes::MODEL_UNSUPPORTED, "a synthesis bundle cannot carry recognition components")
-                    .with_details(json!({ "component": component, "reason": "unexpected-component" })),
-            );
-        }
-    }
-    if let Some(codec) = bundle.codec.as_ref()
-        && (!((kind == TtsEngineKind::Qwen3Tts && codec.family == FAMILY_QWEN3_TTS_CODEC)
-            || (kind == TtsEngineKind::FishS2Pro && codec.family == crate::bundle::FAMILY_FISH_S2_PRO_CODEC)))
-    {
-        return Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "unsupported codec model family")
-            .with_details(json!({ "component": "codec", "family": codec.family, "reason": "unknown-family" })));
-    }
-    if let Some(aux) = bundle.aux.as_ref()
-        && (kind != TtsEngineKind::IndexTts25 || aux.family != FAMILY_INDEX_TTS2_AUX)
-    {
-        return Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "unsupported aux model family")
-            .with_details(json!({ "component": "aux", "family": aux.family, "reason": "unknown-family" })));
-    }
-    Ok(kind)
-}
-
 /// 分离模型包的组件检查：`separator` 的 family 认得出、这个构建有分离的后端（没有的是 `not-wired`，Runtime 按
 /// `worker.hello` 的 `separateFamilies` 本不会发来）；不带别的组件。
 fn check_separation(bundle: &VerifiedBundle, separator: &VerifiedFiles) -> Result<(), ErrorBody> {
@@ -513,9 +434,6 @@ fn check_separation(bundle: &VerifiedBundle, separator: &VerifiedFiles) -> Resul
         ("speaker", &bundle.speaker),
         ("segmentation", &bundle.segmentation),
         ("tokenizer", &bundle.tokenizer),
-        ("tts", &bundle.tts),
-        ("codec", &bundle.codec),
-        ("aux", &bundle.aux),
         ("image", &bundle.image),
     ] {
         if files.is_some() {
@@ -544,9 +462,6 @@ fn check_diarization(bundle: &VerifiedBundle) -> Result<(), ErrorBody> {
         ("vad", &bundle.vad),
         ("aligner", &bundle.aligner),
         ("tokenizer", &bundle.tokenizer),
-        ("tts", &bundle.tts),
-        ("codec", &bundle.codec),
-        ("aux", &bundle.aux),
         ("separator", &bundle.separator),
         ("image", &bundle.image),
     ] {
@@ -578,9 +493,6 @@ fn check_image(bundle: &VerifiedBundle, files: &VerifiedFiles) -> Result<(), Err
         ("speaker", &bundle.speaker),
         ("segmentation", &bundle.segmentation),
         ("tokenizer", &bundle.tokenizer),
-        ("tts", &bundle.tts),
-        ("codec", &bundle.codec),
-        ("aux", &bundle.aux),
         ("separator", &bundle.separator),
     ] {
         if files.is_some() {
@@ -631,7 +543,7 @@ fn check_component(component: &str, files: Option<&VerifiedFiles>, need: Need) -
 
 /// `BCUT_SPEECH_TIMING=1` 时向 stderr 输出分阶段计时（benchmark/诊断用）。与推理后端无关，进程内只读一次。
 ///
-/// 移植自 v2；MOSS、本地语音合成等批次的引擎用它决定是否打印分阶段耗时，接入前没有调用方。
+/// 移植自 v2；MOSS 等批次的引擎用它决定是否打印分阶段耗时，接入前没有调用方。
 pub fn speech_timing_enabled() -> bool {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ENABLED.get_or_init(|| std::env::var_os("BCUT_SPEECH_TIMING").as_deref() == Some(std::ffi::OsStr::new("1")))
@@ -923,12 +835,7 @@ mod tests {
             reason(load_error(&[("separator", "demucs-v3")])),
             (json!("separator"), json!("unknown-family"))
         );
-        for other in [
-            ("asr", FAMILY_QWEN3_ASR),
-            ("vad", FAMILY_SILERO_VAD),
-            ("tts", crate::bundle::FAMILY_QWEN3_TTS),
-            ("codec", FAMILY_QWEN3_TTS_CODEC),
-        ] {
+        for other in [("asr", FAMILY_QWEN3_ASR), ("vad", FAMILY_SILERO_VAD)] {
             if separate::local_separation_available() {
                 assert_eq!(
                     reason(load_error(&[separator, other])),

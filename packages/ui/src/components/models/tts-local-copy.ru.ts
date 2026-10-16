@@ -67,7 +67,7 @@ export const ru: TtsLocalMessages = {
     handoffCancel: "Нет, вернуться",
     auditionClone: "Предпросмотр клона",
     auditionCloneLabel: (name: string) => `Предпросмотр клона · ${name}`,
-    noCloneModel: "Локальная модель клонирования ещё не установлена. Сначала скачайте на странице локальных моделей (IndexTTS2, Qwen3-TTS Base, GPT-SoVITS…).",
+    noCloneModel: "Локальная модель клонирования ещё не установлена. Сначала скачайте на странице локальных моделей (IndexTTS2, Qwen3-TTS Base, VoxCPM2…).",
     goLocal: "Перейти к локальным моделям",
   },
 };

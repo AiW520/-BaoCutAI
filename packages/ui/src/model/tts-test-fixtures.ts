@@ -39,7 +39,7 @@ function traits(patch: Partial<LocalSpeechTraits>): LocalSpeechTraits {
     emotion: false,
     knobs: {},
     maxDurationSec: null,
-    readings: 'homophone',
+    readings: 'unsupported',
     license: APACHE,
     ...patch,
   };
@@ -67,21 +67,21 @@ function model(modelId: string, label: string, patch: Partial<SpeechModelInfo>, 
   };
 }
 
-export const QWEN_BASE = model('qwen3-tts-0.6b-base@mlx-8bit', 'Qwen3-TTS 0.6B Base', {}, {});
+export const QWEN_BASE = model('qwen3-tts-0.6b-base@audio-cpp-q8', 'Qwen3-TTS 0.6B Base', {}, {});
 export const QWEN_CUSTOM = model(
-  'qwen3-tts-0.6b-customvoice@mlx-bf16',
-  'Qwen3-TTS 0.6B CustomVoice',
+  'qwen3-tts-1.7b-customvoice@audio-cpp-q8',
+  'Qwen3-TTS 1.7B CustomVoice',
   { voices: SPEAKERS.map((id) => ({ voiceId: id, label: id, source: 'model' as const })), voiceModes: ['preset'], acceptsInstructions: true },
   { builtinVoices: null, reference: null, instructions: 'style' },
 );
 export const QWEN_DESIGN = model(
-  'qwen3-tts-1.7b-voicedesign@mlx-8bit',
+  'qwen3-tts-1.7b-voicedesign@audio-cpp-q8',
   'Qwen3-TTS 1.7B VoiceDesign',
   { voiceModes: ['preset', 'describe'] },
   { builtinVoices: 'description', reference: null, voiceDescription: { kind: 'free' }, slow: true },
 );
 export const INDEX_TTS2 = model(
-  'indextts2@mlx-fp16',
+  'indextts2@audio-cpp-q8',
   'IndexTTS2',
   { languages: 'any' },
   {
@@ -91,15 +91,14 @@ export const INDEX_TTS2 = model(
     reference: { recommendedSeconds: [3, 15], withTranscriptSeconds: null, acceptsTranscript: false },
   },
 );
-export const GPT_SOVITS = model('gpt-sovits-v2@mlx-fp16', 'GPT-SoVITS v2', { languages: ['zh', 'en'] }, { family: 'gpt-sovits', sampleRate: 32_000 });
 export const VOXCPM2 = model(
-  'voxcpm2@mlx-int8',
+  'voxcpm2@audio-cpp-q8',
   'VoxCPM2',
   { languages: 'any', acceptsInstructions: true },
   { family: 'voxcpm2', sampleRate: 48_000, instructions: 'style' },
 );
 export const OMNIVOICE = model(
-  'omnivoice@mlx-int8',
+  'omnivoice@audio-cpp-q8',
   'OmniVoice',
   { languages: 'any', voiceModes: ['preset', 'clone', 'describe'] },
   { family: 'omnivoice', license: CC_BY_NC, maxDurationSec: 60, voiceDescription: { kind: 'vocabulary', categories: [] } },

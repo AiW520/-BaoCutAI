@@ -82,8 +82,8 @@ export interface ComponentRelease {
   /** 平台键（`darwin-arm64`、`darwin-x64`、`linux-x64`、`win32-x64`……）→ 压缩包；没有的平台不支持。 */
   assets: Readonly<Partial<Record<string, ComponentReleaseAsset>>>;
   /**
-   * 交给 Model Worker 的动态库（LiteRT-LM 的 C 库），不是 Runtime 直接执行的引擎：安装后不跑 `--version`，引擎覆盖
-   * （`BAOCUT_AUDIOCPP_CLI`）与 `engineExecutable` 不认它，交给 Worker 时与模型仓库的组件一样带上文件清单。
+   * 交给 Model Worker 的动态库（LiteRT-LM 的 C 库），不是 Runtime 直接执行的程序：安装后不执行，交给 Worker 时与模型仓库的组件
+   * 一样带上文件清单。audio.cpp 引擎随应用内置（`audio-cpp-engine.ts`），不是发布页组件。
    */
   workerLibrary?: true;
 }
@@ -187,7 +187,7 @@ export interface EmbeddingVisionProfile {
 }
 
 /**
- * 一个本地音乐生成模型包能做什么（架构设计 §6.1、§6.3）。权重由 audio.cpp 引擎（`engine`，模型包的 `audiocpp-engine` 组件，或由
+ * 一个本地音乐生成模型包能做什么（架构设计 §6.1、§6.3）。权重由随应用内置的 audio.cpp 引擎（`engine`，或由
  * `BAOCUT_AUDIOCPP_CLI` 指定）直接读取，不经 Model Worker；一次一段、只出 WAV、接受 seed。
  */
 export interface MusicBundleProfile {
@@ -230,11 +230,14 @@ export interface MusicBundleProfile {
  * - `presets`：预设音色从哪来。`model` 是模型自带的说话人（`speakers`）；`builtin-reference` 是内置音色（随应用分发的
  *   参考录音，选它即用那段录音克隆）；`builtin-description` 是内置音色的英文声音描述（按描述造声的模型）。
  * - `voiceModes` 只列 `preset` / `clone` / `describe`：本地模型没有供应商账号里的音色（`custom`）。
+ * - `engine`：交给内置 audio.cpp 服务的模型（`local-speech.ts` 按它换算请求）。
  */
 export interface SpeechBundleProfile {
-  /** Quantized execution residency; mutually exclusive model stages use their maximum. */
+  /** 服务加载后约常驻的字节数；不给时按 GGUF 的存储字节估计（`ModelCatalog.workerFootprint`）。 */
   residentBytes?: number;
+  /** 界面分组用的模型族（`qwen3-tts`、`indextts2`……）。 */
   family: string;
+  engine: SpeechEngineModel;
   languages: 'any' | string[];
   voiceModes: Exclude<VoiceMode, 'custom'>[];
   presets: 'model' | 'builtin-reference' | 'builtin-description' | 'none';
@@ -250,6 +253,31 @@ export interface SpeechBundleProfile {
   readings: SpeechReadings;
   sampleRate: number;
   slow: boolean;
+}
+
+/** audio.cpp 的模型族（服务配置的 `family`），请求按它换算（`audioCppSpeechRequestOf`）。 */
+export type AudioCppSpeechFamily = 'qwen3_tts' | 'index_tts2' | 'omnivoice' | 'voxcpm2' | 'fish_audio';
+
+/** 一个合成模型包交给 audio.cpp 服务的模型。 */
+export interface SpeechEngineModel {
+  family: AudioCppSpeechFamily;
+  /**
+   * 服务配置里这个模型的路由（`task`）：上游按模型族定，同一族的克隆、按描述造声与预设说话人多数都走 `tts`；Fish 带参考录音
+   * 克隆要走 `clon`。不给时是 `tts`。
+   */
+  task?: 'tts' | 'clon';
+  /** GGUF 文件（相对 `tts` 组件的目录）：权重、分词器与模型规格都在里面。 */
+  file: string;
+  /**
+   * 长文按句切块时每块的字符上限（引擎的 `text_chunk_size`）；不给时用引擎自己的默认（OmniVoice 按时长自动切）。IndexTTS2
+   * 的引擎默认整段一次合成，必须给。
+   */
+  chunkSize?: number;
+  /**
+   * 引擎的 `language` 认得的语言 ID：请求的语言（BCP 47）整个或主语言子标签在这里时交给引擎，否则不给、由模型自己判断（引擎遇到
+   * 不认得的语言会报错）。不给时模型没有语言参数，一律不给。
+   */
+  languages?: readonly string[];
 }
 
 /** Apple Silicon 上的默认转写模型包（MOSS Transcribe）。按平台取默认用 `defaultTranscribeBundle`。 */
@@ -681,7 +709,7 @@ export const BUNDLES: readonly BundleDefinition[] = [
 
 /**
  * backend 能不能在这台机器上用：`mlx` 与 `coreml` 只有 Apple Silicon 的 macOS；`candle` 与 `ggml` 全平台（CPU）；`audio-cpp` 全平台
- * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU；引擎是模型包的 `audiocpp-engine` 组件，主机平台没有它的压缩包时模型目录另报 `unsupported`）；
+ * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU；引擎随应用内置，找不到时模型目录另报 `unsupported`）；
  * `litert-lm` 同理全平台登记，C 库是 `litertlm-runtime` 组件，目前只有 macOS 的库包，别的平台另报 `unsupported`。
  */
 export function backendSupported(backend: ModelBackend, platform: NodeJS.Platform, arch: string): boolean {

@@ -60,8 +60,8 @@
       phase: r.provider ? `连接 ${r.provider}` : '加载模型', cancellable: true, ...window.BC_TOOL_RUNS.outputsPatch([], r.saveDir)});
     patchRec(r.id, {status: 'running', pct: 0, taskId: tid});
     // 云端没有「加载模型」那一段，按段发请求，比本机快
-    // VoxCPM2 大约一倍实时、OmniVoice 32 步扩散：与 1.7B 同一档慢
-    const step = r.provider ? 6 : ['qwen3-1.7b', 'voxcpm2'].includes(r.engine) ? 2 : r.engine === 'omnivoice' ? 3 : 4;
+    // 1.7B 标了较慢、OmniVoice 32 步扩散：演示进度走慢些（演示值，不是实测）
+    const step = r.provider ? 6 : r.engine === 'qwen3-1.7b' ? 2 : r.engine === 'omnivoice' ? 3 : 4;
     const t0 = Date.now();
     let p = 0;
     clearInterval(jobs.timer);

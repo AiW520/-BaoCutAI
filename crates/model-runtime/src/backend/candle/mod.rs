@@ -29,7 +29,7 @@ use anyhow::bail;
 use candle_core::{Device, IndexOp, Tensor};
 use serde_json::{Value, json};
 
-use super::{Backend, LoadedDiarization, LoadedImage, LoadedModel, LoadedSeparation, LoadedSynthesis, ModelPhase, PhaseCallback, RunMode};
+use super::{Backend, LoadedDiarization, LoadedImage, LoadedModel, LoadedSeparation, ModelPhase, PhaseCallback, RunMode};
 use crate::bundle::{FAMILY_MOSS_TRANSCRIBE_DIARIZE, FAMILY_QWEN3_ASR, VerifiedBundle, VerifiedFiles};
 use crate::pressure::{self, MemoryPressure};
 use crate::protocol::{BackendStatus, ErrorBody, MemorySnapshot, codes, transcription_not_wired};
@@ -37,7 +37,6 @@ use crate::speech::qwen3_asr::{Qwen3Config, TokenizerFiles};
 use crate::speech::{
     ForcedAlignment, SegmentedTranscription, SegmentingCallbacks, SegmentingRecognizer, SpeakerDiarization, SpeakerEmbedding,
 };
-use crate::synthesize::TtsEngineKind;
 pub use aligner::ForcedAligner;
 pub use moss::MossTranscribeDiarize;
 pub use pyannote::{DiarizerSlot, PyannoteDiarizer};
@@ -214,56 +213,6 @@ impl Backend for CandleBackend {
             resident_bytes: process_resident_bytes(),
             memory,
         })
-    }
-
-    /// 本地语音合成：引擎经 `synthesize::tensor` 门面跑在 candle 上（v2 同一份适配层），张量固定落在本进程的默认设备，
-    /// 所以模型包的设备必须就是默认设备（Runtime 按 `worker.hello` 报告的首选设备下发，正常不会不同）。
-    /// Apple Silicon 上同时编进 MLX 时门面是 MLX，candle 的合成模型包在这里拒绝。
-    fn load_synthesis(
-        &self,
-        bundle: &VerifiedBundle,
-        kind: TtsEngineKind,
-        phase: &mut PhaseCallback<'_>,
-    ) -> Result<LoadedSynthesis, ErrorBody> {
-        #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
-        {
-            let _ = (bundle, kind, phase);
-            Err(
-                ErrorBody::new(codes::MODEL_UNSUPPORTED, "local synthesis runs on the mlx backend in this build")
-                    .with_details(json!({ "backend": "candle", "reason": "engine-unavailable" })),
-            )
-        }
-        #[cfg(not(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64")))]
-        {
-            let device = check_device(bundle)?;
-            let default = default_device();
-            if device_label(&device) != device_label(&default) {
-                return Err(ErrorBody::new(
-                    codes::MODEL_UNSUPPORTED,
-                    format!("local synthesis runs on this worker's {} device", device_label(&default)),
-                )
-                .with_details(json!({ "backend": "candle", "device": bundle.device, "reason": "unsupported-device" })));
-            }
-            let Some(model) = &bundle.tts else {
-                // backend::load 已经检查过；这里只为类型。
-                return Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "the bundle needs a tts component"));
-            };
-            let files = crate::synthesize::EngineFiles {
-                model,
-                codec: bundle.codec.as_ref(),
-                aux: bundle.aux.as_ref(),
-            };
-            phase(ModelPhase::LoadingWeights, Some(kind.family()));
-            let started = Instant::now();
-            let engine = crate::synthesize::load(kind, files).map_err(|error| load_failed("tts", &annotate_out_of_memory(error)))?;
-            Ok(LoadedSynthesis {
-                kind,
-                engine,
-                load_ms: started.elapsed().as_millis() as u64,
-                resident_bytes: process_resident_bytes(),
-                memory,
-            })
-        }
     }
 
     /// 说话人区分单独加载（协议规范 §2.5.5）：与 MLX 读同一批 Pyannote 分段与 WeSpeaker 权重，常驻到卸载。

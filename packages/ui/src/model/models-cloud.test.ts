@@ -244,15 +244,15 @@ describe('默认模型菜单', () => {
       kind: 'local',
       label: '本机',
       config: null,
-      models: [speechModel('qwen3-tts-0.6b-base@mlx-8bit', [], { label: 'Qwen3-TTS 0.6B Base' })],
+      models: [speechModel('qwen3-tts-0.6b-base@audio-cpp-q8', [], { label: 'Qwen3-TTS 0.6B Base' })],
       available: true,
     });
-    view.synthesizeSpeech.default = { providerId: 'local', modelId: 'qwen3-tts-0.6b-base@mlx-8bit' };
+    view.synthesizeSpeech.default = { providerId: 'local', modelId: 'qwen3-tts-0.6b-base@audio-cpp-q8' };
     const picker = cloudDefaultPicker(view, 'synthesizeSpeech', null, { ...COPY, localDesc: '在本地模型页设的' });
-    expect(picker.selectedKey).toBe('local/qwen3-tts-0.6b-base@mlx-8bit');
+    expect(picker.selectedKey).toBe('local/qwen3-tts-0.6b-base@audio-cpp-q8');
     expect(picker.sections[1]).toEqual({
       key: 'local-default',
-      items: [{ key: 'local/qwen3-tts-0.6b-base@mlx-8bit', label: '本机 · Qwen3-TTS 0.6B Base', description: '在本地模型页设的' }],
+      items: [{ key: 'local/qwen3-tts-0.6b-base@audio-cpp-q8', label: '本机 · Qwen3-TTS 0.6B Base', description: '在本地模型页设的' }],
     });
     expect(picker.sections.some((s) => s.key === 'current')).toBe(false);
   });

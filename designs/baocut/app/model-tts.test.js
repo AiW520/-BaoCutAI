@@ -5,29 +5,35 @@ global.window = {};
 require('./model-tts.js');
 const TTS = global.window.BC_TTS;
 
-test('引擎 + 音色方式 → 模型 id；只有 Qwen3-TTS 分预设 / 克隆', () => {
-  assert.equal(TTS.modelFor('qwen3', 'preset'), 'qwen3-tts-0.6b-customvoice');
+test('引擎 + 音色方式 → 模型 id；只有 Qwen3-TTS 1.7B 分预设 / 克隆 / 描述', () => {
+  assert.equal(TTS.modelFor('qwen3-1.7b', 'preset'), 'qwen3-tts-1.7b-customvoice');
+  // 0.6B 只剩 Base（0.6B CustomVoice 已删）：旧草稿里的「预设」落到 Base
+  assert.equal(TTS.modelFor('qwen3', 'preset'), 'qwen3-tts-0.6b-base');
   assert.equal(TTS.modelFor('qwen3', 'clone'), 'qwen3-tts-0.6b-base');
   assert.equal(TTS.modelFor('indextts2', 'preset'), 'indextts2');
   assert.equal(TTS.modelFor('indextts25', 'preset'), 'index-tts2.5');
-  assert.equal(TTS.modelFor('gptsovits', 'clone'), 'gpt-sovits-v2');
+  assert.equal(TTS.modelFor('voxcpm2', 'clone'), 'voxcpm2');
   assert.deepEqual(TTS.voiceModes('indextts2'), ['clone']);
-  assert.deepEqual(TTS.voiceModes('gptsovits'), ['clone']);
-  assert.equal(TTS.cloneOnly('qwen3'), false);
+  assert.deepEqual(TTS.voiceModes('voxcpm2'), ['clone']);
+  assert.equal(TTS.cloneOnly('qwen3'), true);
+  assert.equal(TTS.cloneOnly('qwen3-1.7b'), false);
   assert.equal(TTS.cloneOnly('indextts25'), true);
   assert.equal(TTS.hasEmotion('indextts25'), true);
-  assert.equal(TTS.hasEmotion('gptsovits'), false);
+  assert.equal(TTS.hasEmotion('voxcpm2'), false);
   assert.equal(TTS.hasEmotion('qwen3'), false);
-  assert.equal(TTS.engineName('gptsovits'), 'GPT-SoVITS');
+  assert.equal(TTS.engineName('voxcpm2'), 'VoxCPM2');
+  assert.equal(TTS.engineOf('gptsovits').id, 'qwen3', 'GPT-SoVITS 已删：旧 id 落到表头');
+  assert.equal(TTS.MODELS['gpt-sovits-v2'], undefined);
+  assert.equal(TTS.MODELS['qwen3-tts-0.6b-customvoice'], undefined);
   TTS.ENGINES.filter((e) => e.model).forEach((e) => assert.equal(TTS.MODELS[e.model].engine, e.id, e.id));
-  assert.deepEqual(TTS.voiceModes('qwen3'), ['preset', 'clone']);
+  assert.deepEqual(TTS.voiceModes('qwen3'), ['clone']);
   assert.equal(TTS.PRESETS.length, 9);
   assert.equal(TTS.EMOTIONS.length, 10);
 });
 
 test('校验：空文字、克隆缺参考、情绪另给一段音频却没选', () => {
-  assert.deepEqual(TTS.validate({text: '', engine: 'qwen3', mode: 'preset'}), ['先写要合成的文字']);
-  assert.deepEqual(TTS.validate({text: '你好', engine: 'qwen3', mode: 'preset', preset: 'Vivian'}), []);
+  assert.deepEqual(TTS.validate({text: '', engine: 'qwen3-1.7b', mode: 'preset'}), ['先写要合成的文字']);
+  assert.deepEqual(TTS.validate({text: '你好', engine: 'qwen3-1.7b', mode: 'preset', preset: 'Vivian'}), []);
   assert.equal(TTS.validate({text: '你好', engine: 'qwen3', mode: 'clone'})[0], '克隆声音要先给参考音频');
   // 2026-09-21：只能克隆的引擎也有默认音色了，不给参考不再是错
   assert.deepEqual(TTS.validate({text: '你好', engine: 'indextts2'}), []);
@@ -35,18 +41,16 @@ test('校验：空文字、克隆缺参考、情绪另给一段音频却没选',
   const errs = TTS.validate({text: '你好', engine: 'indextts2', ref: {name: 'a.wav'}, emotion: 'ref2'});
   assert.deepEqual(errs, ['情绪选了另给一段音频，先把那段音频选上']);
   assert.deepEqual(TTS.validate({text: '你好', engine: 'indextts25'}), []);
-  assert.deepEqual(TTS.validate({text: '你好', engine: 'gptsovits', ref: {name: 'a.wav'}, emotion: 'ref2'}), [], 'GPT-SoVITS 没有情绪');
-  assert.equal(TTS.validate({text: 'x'.repeat(2001), engine: 'qwen3', mode: 'preset'})[0], '一次最多 2000 字，超出的分两次');
+  assert.deepEqual(TTS.validate({text: '你好', engine: 'voxcpm2', ref: {name: 'a.wav'}, emotion: 'ref2'}), [], 'VoxCPM2 没有情绪');
+  assert.equal(TTS.validate({text: 'x'.repeat(2001), engine: 'qwen3-1.7b', mode: 'preset'})[0], '一次最多 2000 字，超出的分两次');
 });
 
-test('GPT-SoVITS 参考音频：带参考文本才限 3–10 秒，时长未知不拦', () => {
-  const f = {text: '你好', engine: 'gptsovits', refText: '参考原文'};
-  assert.deepEqual(TTS.validate({...f, ref: {name: 'a.wav', dur: 6.2}}), []);
-  assert.deepEqual(TTS.validate({...f, ref: {name: 'a.wav', dur: 12}}),
-    ['GPT-SoVITS 带参考文本时参考音频要 3–10 秒（现在 12.0 秒）；清空参考文本也能念']);
-  assert.deepEqual(TTS.validate({...f, refText: ' ', ref: {name: 'a.wav', dur: 12}}), [], '不带参考文本只取音色');
-  assert.deepEqual(TTS.validate({...f, ref: {name: 'a.wav'}}), []);
-  assert.equal(TTS.validatePreview({...f, ref: {name: 'a.wav', dur: 2}}).length, 1);
+test('参考音频时长：只有 Fish Audio S2 Pro 有上限（30 秒），其余引擎带不带原文都不按时长拦；时长未知不拦', () => {
+  const f = {text: '你好', engine: 'voxcpm2', refText: '参考原文'};
+  assert.deepEqual(TTS.validate({...f, ref: {name: 'a.wav', dur: 12}}), []);
+  assert.deepEqual(TTS.validate({...f, ref: {name: 'a.wav', dur: 2}}), []);
+  assert.deepEqual(TTS.validate({...f, engine: 'fish-s2-pro', ref: {name: 'a.wav'}}), []);
+  assert.deepEqual(TTS.validate({...f, engine: 'fish-s2-pro', ref: {name: 'a.wav', dur: 31}}), ['Fish Audio S2 Pro 参考录音最长 30 秒']);
   assert.equal(TTS.refProblem({engine: 'indextts25', refText: 'x', ref: {name: 'a.wav', dur: 20}}), null);
 });
 
@@ -55,7 +59,6 @@ test('生成表单的语言 Picker 跟着引擎收窄', () => {
   assert.deepEqual(codes('qwen3'), ['auto', 'zh', 'en', 'ja', 'ko']);
   assert.deepEqual(codes('indextts2'), ['auto', 'zh', 'en']);
   assert.deepEqual(codes('indextts25'), ['auto', 'zh', 'en', 'ja']);
-  assert.deepEqual(codes('gptsovits'), ['auto', 'zh', 'en']);
 });
 
 test('分段：按句末标点与换行切，小数点不切', () => {
@@ -86,15 +89,15 @@ test('生成阶段：加载 → 第 n/N 段 → 完成', () => {
 });
 
 test('素材卡记录：tts-N.wav、来源章 TTS、meta 带引擎与耗时', () => {
-  const s = TTS.asSource({text: '你好，世界。', engine: 'qwen3', mode: 'preset', preset: 'Serena'}, 7, '3.2 秒');
+  const s = TTS.asSource({text: '你好，世界。', engine: 'qwen3-1.7b', mode: 'preset', preset: 'Serena'}, 7, '3.2 秒');
   assert.equal(s.id, 'tts7');
   assert.equal(s.name, 'tts-7.wav');
   assert.equal(s.badge, 'TTS');
   assert.match(s.meta, /^00:0\d · 48 kHz · Qwen3-TTS · 3\.2 秒$/);
   assert.equal(s.tts.preset, 'Serena');
-  assert.equal(TTS.genSub({text: '你好。再见。', engine: 'qwen3', mode: 'preset', preset: 'Serena'}), 'Qwen3-TTS · 预设 · Serena · 2 段');
+  assert.equal(TTS.genSub({text: '你好。再见。', engine: 'qwen3-1.7b', mode: 'preset', preset: 'Serena'}), 'Qwen3-TTS · 预设 · Serena · 2 段');
   assert.equal(TTS.genSub({text: '你好。', engine: 'indextts2', ref: {name: 'me.wav'}}), 'IndexTTS2 · 克隆 · me.wav · 1 段');
-  assert.equal(TTS.genSub({text: '你好。', engine: 'gptsovits', mode: 'preset', ref: {name: 'me.wav'}}), 'GPT-SoVITS · 克隆 · me.wav · 1 段');
+  assert.equal(TTS.genSub({text: '你好。', engine: 'voxcpm2', mode: 'preset', ref: {name: 'me.wav'}}), 'VoxCPM2 · 克隆 · me.wav · 1 段');
 });
 
 test('分离窗数：206 秒 → 27 窗', () => {
@@ -195,7 +198,6 @@ test('配音语言表：按引擎筛通用目录、原声语言不配、换引�
   assert.deepEqual(TTS.ttsLangs('indextts2', codes, 'en'), ['zh', 'zh-Hant']);
   assert.deepEqual(TTS.ttsLangs('indextts2', codes, 'zh'), ['en'], '原声简体中文时繁體中文也不配（同一口普通话）');
   assert.deepEqual(TTS.ttsLangs('indextts25', codes, 'zh'), ['en', 'es', 'ja', 'ar']);
-  assert.deepEqual(TTS.ttsLangs('gptsovits', codes, 'en'), ['zh', 'zh-Hant']);
   assert.deepEqual(TTS.dubLangMarks(['ja', 'zh'], ['zh']), {ja: '先翻译', zh: '已有译文'});
   assert.equal(TTS.fallbackLang('ja', ['zh', 'zh-Hant'], ['zh-Hant']), 'zh-Hant', '优先落到已有译文');
   assert.equal(TTS.fallbackLang('ja', ['zh', 'zh-Hant'], []), 'zh');
@@ -265,22 +267,22 @@ test('语速库：种子 → 逐次更新 → 分位收敛；按字 / 按词；�
   assert.equal(TTS.paceUnit('zh'), 'char'); assert.equal(TTS.paceUnit('en-US'), 'word'); assert.equal(TTS.paceUnit('ja'), 'char');
   assert.equal(TTS.countUnits('欢迎回到科浪，这一期聊本地优先。', 'zh'), 14);
   assert.equal(TTS.countUnits("Let's start with speech recognition.", 'en'), 5);
-  const seed = TTS.paceFor({}, 'qwen3-tts-0.6b-customvoice', 'zh');
-  assert.deepEqual(seed.perMin, {p10: 230, median: 268, p90: 310});
+  const seed = TTS.paceFor({}, 'qwen3-tts-0.6b-base', 'zh');
+  assert.deepEqual(seed.perMin, {p10: 225, median: 262, p90: 305});
   assert.equal(seed.source, 'seed');
   assert.equal(TTS.paceFor({}, 'indextts2', 'ja').unit, 'char', '没有种子的语言按单位给默认');
   assert.deepEqual(TTS.paceFor({}, 'index-tts2.5', 'en').perMin, {p10: 138, median: 174, p90: 206});
-  assert.deepEqual(TTS.paceFor({}, 'gpt-sovits-v2', 'zh').perMin, {p10: 196, median: 228, p90: 286});
-  assert.equal(TTS.paceFor({}, 'gpt-sovits-v2', 'en').perMin.median, 189);
-  assert.equal(TTS.paceLine(seed, 'zh'), '简体中文 ≈ 268 字/分（230–310 · 种子值）');
+  assert.deepEqual(TTS.paceFor({}, 'indextts2', 'zh').perMin, {p10: 220, median: 255, p90: 295});
+  assert.equal(TTS.paceFor({}, 'indextts2', 'en').perMin.median, 145);
+  assert.equal(TTS.paceLine(seed, 'zh'), '简体中文 ≈ 262 字/分（225–305 · 种子值）');
   let lib = {};
   // 12 句都念得偏快（300 字/分），中位向 300 靠，但头几次仍被种子拉着
-  for (let i = 0; i < 12; i++) lib = TTS.paceUpdate(lib, 'qwen3-tts-0.6b-customvoice', 'zh', {units: 50, seconds: 10}, '2026-09-11T10:00:00Z');
-  const p = lib['qwen3-tts-0.6b-customvoice'].zh;
+  for (let i = 0; i < 12; i++) lib = TTS.paceUpdate(lib, 'qwen3-tts-0.6b-base', 'zh', {units: 50, seconds: 10}, '2026-09-11T10:00:00Z');
+  const p = lib['qwen3-tts-0.6b-base'].zh;
   assert.equal(p.samples, 12); assert.equal(p.source, 'measured'); assert.equal(p.perMin.median, 300);
   assert.equal(TTS.paceLine(p, 'zh'), '简体中文 ≈ 300 字/分（300–300 · 12 次生成）');
-  const one = TTS.paceUpdate({}, 'qwen3-tts-0.6b-customvoice', 'zh', {units: 50, seconds: 10})['qwen3-tts-0.6b-customvoice'].zh;
-  assert.ok(one.perMin.median > 268 && one.perMin.median < 300, '第一次只按 1/5 权重靠向测量值：' + one.perMin.median);
+  const one = TTS.paceUpdate({}, 'qwen3-tts-0.6b-base', 'zh', {units: 50, seconds: 10})['qwen3-tts-0.6b-base'].zh;
+  assert.ok(one.perMin.median > 262 && one.perMin.median < 300, '第一次只按 1/5 权重靠向测量值：' + one.perMin.median);
   assert.deepEqual(TTS.paceUpdate(lib, 'indextts2', 'en', {units: 0, seconds: 3}), lib, '空样本不更新');
   assert.equal(TTS.PACE_PATH, '~/Library/Application Support/BaoCut/tts-pace.json');
 });
@@ -292,11 +294,11 @@ test('按时长整理计划：预测语速分四档、预算按到下一句前�
     {id: 'g3', start: 8, end: 9.5, sp: 's3', text: '好。', trans: 'Right, and that is exactly why.'},
     {id: 'g4', start: 9.5, end: 14, sp: 's1', text: '继续。', trans: 'Let us continue with the next part of the plan.'},
   ];
-  const plan = TTS.fitPlan(cues, {model: 'qwen3-tts-0.6b-customvoice', lang: 'en'});
+  const plan = TTS.fitPlan(cues, {model: 'qwen3-tts-0.6b-base', lang: 'en'});
   assert.equal(plan.unit, 'word');
   assert.equal(plan.total, 4);
   assert.deepEqual(plan.rows.map((r) => r.level), ['ok', 'retranslate', 'over', 'ok']);
-  assert.equal(plan.rows[0].budget, 12, '5 秒 × 150 词/分 = 12 词');
+  assert.equal(plan.rows[0].budget, 12, '5 秒 × 148 词/分 ≈ 12 词');
   assert.equal(plan.rows[1].units, 22);
   assert.equal(plan.over, 1); assert.equal(plan.retranslate, 1); assert.equal(plan.ok, 2);
   const rw = TTS.demoRewrite(plan.rows[1], 'en', plan.pace);
@@ -307,7 +309,7 @@ test('按时长整理计划：预测语速分四档、预算按到下一句前�
   const edited = TTS.replanRow(plan.rows[2], 'Right.', plan.pace, 'en');
   assert.equal(edited.level, 'ok'); assert.equal(edited.units, 1);
   // 配音稿覆盖层：改过的句按新文字算，没改的照旧
-  const plan2 = TTS.fitPlan(cues, {model: 'qwen3-tts-0.6b-customvoice', lang: 'en', script: {g2: rw.text, g3: 'Right.'}});
+  const plan2 = TTS.fitPlan(cues, {model: 'qwen3-tts-0.6b-base', lang: 'en', script: {g2: rw.text, g3: 'Right.'}});
   assert.equal(plan2.over + plan2.retranslate, 0);
   const blocks = TTS.dubBlocks(cues, {speakerOrder: ['s1', 's2', 's3'], script: {g3: 'Right.'}});
   assert.equal(blocks[2].text, 'Right.');
@@ -358,10 +360,10 @@ test('收据与任务 sub', () => {
 
 test('设置预览允许多段长文本，每只引擎不给参考都能念（各有默认音色）', () => {
   const text = '欢迎使用 BaoCut。\n'.repeat(250);
-  ['qwen3', 'qwen3-1.7b', 'indextts2', 'indextts25', 'gptsovits'].forEach((engine) => {
+  ['qwen3', 'qwen3-1.7b', 'indextts2', 'indextts25', 'voxcpm2', 'omnivoice', 'fish-s2-pro'].forEach((engine) => {
     assert.deepEqual(TTS.validatePreview({text, engine}), [], engine);
   });
-  assert.deepEqual(TTS.validatePreview({text, engine: 'qwen3', mode: 'preset'}), []);
+  assert.deepEqual(TTS.validatePreview({text, engine: 'qwen3-1.7b', mode: 'preset'}), []);
   assert.deepEqual(TTS.validatePreview({text, engine: 'indextts2', ref: {name: 'sample.wav'}}), []);
   // 选了「我的音频」还没给文件：这半步要拦下，不能悄悄当默认音色
   assert.deepEqual(
@@ -370,7 +372,7 @@ test('设置预览允许多段长文本，每只引擎不给参考都能念（�
   assert.ok(TTS.validatePreview({text: ' \n ', engine: 'qwen3'}).length);
 });
 
-test('内置音色：八只（中 / 英 / 日 / 西 × 男女），时长过得了 GPT-SoVITS 带原文的 3–10 秒与参考窗 5–10 秒', () => {
+test('内置音色：八只（中 / 英 / 日 / 西 × 男女），时长落在参考窗 5–10 秒内、带原文（Fish 要原文也过得了）', () => {
   assert.equal(TTS.BUILTIN_REFS.length, 8);
   assert.deepEqual(TTS.BUILTIN_REFS.map((r) => r.id),
     ['zh-female', 'zh-male', 'en-female', 'en-male', 'ja-female', 'ja-male', 'es-female', 'es-male']);
@@ -380,7 +382,7 @@ test('内置音色：八只（中 / 英 / 日 / 西 × 男女），时长过得�
     // VoiceDesign 接不了参考音频：同一只音色在它身上是这句英文描述
     assert.ok(/female|male/.test(r.describe), r.id);
     assert.ok(r.file.startsWith('tts-voice-'), r.id);
-    const f = Object.assign({text: '你好', engine: 'gptsovits'}, TTS.pickRef({refText: ''}, r.id));
+    const f = Object.assign({text: '你好', engine: 'fish-s2-pro'}, TTS.pickRef({refText: ''}, r.id));
     assert.equal(TTS.refProblem(f), null, r.id);
     assert.deepEqual(TTS.validatePreview(f), [], r.id);
   });
@@ -396,7 +398,7 @@ test('内置音色：八只（中 / 英 / 日 / 西 × 男女），时长过得�
 });
 
 test('参考来源：每只引擎都从「默认音色」开局，快捷四只 + 我的音频', () => {
-  ['indextts2', 'indextts25', 'gptsovits', 'qwen3', 'qwen3-1.7b'].forEach((e) => {
+  ['indextts2', 'indextts25', 'voxcpm2', 'qwen3', 'qwen3-1.7b'].forEach((e) => {
     assert.deepEqual(TTS.refDefault(e), {ref: null, refText: ''}, e);
     assert.deepEqual(TTS.refSources(e).map((x) => x.k),
       ['none', 'zh-female', 'zh-male', 'en-female', 'en-male', 'file'], e);
@@ -411,7 +413,8 @@ test('参考来源：每只引擎都从「默认音色」开局，快捷四只 +
   // 内置音色怎么落地：克隆那几只拿录音，VoiceDesign 拿描述，CustomVoice 用模型自己的说话人
   assert.equal(TTS.builtinKind('indextts2', 'clone'), 'ref');
   assert.equal(TTS.builtinKind('qwen3', 'clone'), 'ref');
-  assert.equal(TTS.builtinKind('qwen3', 'preset'), 'presets');
+  assert.equal(TTS.builtinKind('qwen3', 'preset'), 'ref', '0.6B 只有 Base：没有预设那一档');
+  assert.equal(TTS.builtinKind('qwen3-1.7b', 'preset'), 'presets');
   assert.equal(TTS.builtinKind('qwen3-1.7b', 'describe'), 'describe');
 });
 
@@ -425,24 +428,24 @@ test('切参考来源：内置音色的原文跟着走，用户自己写的参�
 });
 
 test('TTS 行简介：只写出声方式、要不要录音、情绪与语言', () => {
-  const cv = TTS.modelBrief('qwen3-tts-0.6b-customvoice');
+  const cv = TTS.modelBrief('qwen3-tts-1.7b-customvoice');
   assert.equal(cv.summary, '9 个预设音色，选一个就能念');
   assert.deepEqual(cv.facts, ['预设音色', '中 / 英 / 日 / 韩 等 10 种语言']);
   const base = TTS.modelBrief('qwen3-tts-0.6b-base');
   assert.equal(base.needsRef, false);
   assert.equal(base.facts[0], '内置音色 / 克隆');
   assert.deepEqual(TTS.modelBrief('index-tts2.5').facts, ['内置音色 / 克隆', '情绪可调', '中 / 英 / 日 / 西 / 阿']);
-  assert.equal(TTS.modelBrief('gpt-sovits-v2').summary, '八只内置音色，或用一段录音克隆声音');
+  assert.equal(base.summary, '八只内置音色，或用一段录音克隆声音');
   assert.equal(TTS.modelBrief('htdemucs-ft'), null);
 });
 
-test('Qwen3-TTS 1.7B：CustomVoice / Base / VoiceDesign 三种音色方式（0.6B 不变）；收据仍写 Qwen3-TTS', () => {
+test('Qwen3-TTS 1.7B：CustomVoice / Base / VoiceDesign 三种音色方式（0.6B 只有 Base）；收据仍写 Qwen3-TTS', () => {
   assert.deepEqual(TTS.voiceModes('qwen3-1.7b'), ['preset', 'clone', 'describe']);
-  assert.deepEqual(TTS.voiceModes('qwen3'), ['preset', 'clone']);
+  assert.deepEqual(TTS.voiceModes('qwen3'), ['clone']);
   assert.equal(TTS.modelFor('qwen3-1.7b', 'preset'), 'qwen3-tts-1.7b-customvoice');
   assert.equal(TTS.modelFor('qwen3-1.7b', 'clone'), 'qwen3-tts-1.7b-base');
   assert.equal(TTS.modelFor('qwen3-1.7b', 'describe'), 'qwen3-tts-1.7b-voicedesign');
-  assert.equal(TTS.modelFor('qwen3', 'describe'), 'qwen3-tts-0.6b-customvoice');
+  assert.equal(TTS.modelFor('qwen3', 'describe'), 'qwen3-tts-0.6b-base', '没有的方式落到唯一那只');
   assert.ok(!TTS.cloneOnly('qwen3-1.7b'));
   assert.ok(TTS.hasDescribe('qwen3-1.7b'));
   assert.ok(!TTS.hasDescribe('qwen3'));
@@ -452,7 +455,7 @@ test('Qwen3-TTS 1.7B：CustomVoice / Base / VoiceDesign 三种音色方式（0.6
   assert.equal(TTS.builtinKind('qwen3-1.7b', 'clone'), 'ref');
   assert.deepEqual(TTS.validate({text: '你好。', engine: 'qwen3-1.7b', mode: 'describe', instruct: '  '}), ['先用一句话描述想要的声音']);
   assert.deepEqual(TTS.validate({text: '你好。', engine: 'qwen3-1.7b', mode: 'describe', instruct: '温暖的女声'}), []);
-  assert.ok(TTS.hasStyle('qwen3-1.7b') && TTS.hasStyle('qwen3'));
+  assert.ok(TTS.hasStyle('qwen3-1.7b') && !TTS.hasStyle('qwen3'));
   // 2026-09-21：一只都不再「必须给参考」
   assert.ok(!TTS.refRequired('qwen3-1.7b'));
   assert.ok(!TTS.refRequired('indextts2'));
@@ -491,8 +494,8 @@ test('一键试听：默认选择直接能合成，换音色 / 语言 / 自定�
       assert.deepEqual(TTS.validatePreview(TTS.quickForm(id, {voice: v.k})), [], id + v.k);
     });
   });
-  assert.deepEqual(TTS.sampleLangs('gpt-sovits-v2').map((l) => l.code), ['zh', 'en']);
-  assert.deepEqual(TTS.quickVoices('qwen3-tts-0.6b-customvoice').map((v) => v.k), TTS.QUICK_PRESETS);
+  assert.deepEqual(TTS.sampleLangs('indextts2').map((l) => l.code), ['zh', 'en']);
+  assert.deepEqual(TTS.quickVoices('qwen3-tts-1.7b-customvoice').map((v) => v.k), TTS.QUICK_PRESETS);
   const en = TTS.quickForm('indextts2', {lang: 'en', voice: 'en-female'});
   assert.equal(en.ref.builtin, 'en-female');
   assert.match(en.text, /^Welcome to BaoCut/);
@@ -505,7 +508,7 @@ test('一键试听：默认选择直接能合成，换音色 / 语言 / 自定�
   assert.match(TTS.quickSummary(TTS.quickForm('indextts2', {lang: 'en', voice: 'en-female'}), {lang: 'en', kind: 'numbers'}), /^英语女声 · 热情洋溢 · English · 数字/);
   // 试听默认音色跟着示例语言走
   assert.equal(TTS.quickForm('index-tts2.5', {lang: 'ja'}).ref.builtin, 'ja-female');
-  assert.equal(TTS.quickSummary(TTS.quickForm('qwen3-tts-0.6b-customvoice'), {lang: 'zh', kind: 'intro'}, 1.6),
+  assert.equal(TTS.quickSummary(TTS.quickForm('qwen3-tts-1.7b-customvoice'), {lang: 'zh', kind: 'intro'}, 1.6),
     'Vivian · 热情洋溢 · 简体中文 · 用时 1.6 秒 · 音频约 12.3 秒'.replace('12.3', TTS.estimateDuration(TTS.SAMPLE_LINES[0].text).toFixed(1)));
   // 十一门语言 × 三句，每只引擎会念的语言都选得到（Qwen3-TTS 十门）
   assert.equal(TTS.SAMPLE_LINES.length, 33);
@@ -538,14 +541,14 @@ test('VoiceDesign 试听：内置音色是一句描述，也能自己描述；�
   assert.match(TTS.quickSummary(own, {lang: 'zh'}), /^自己描述 · 简体中文 · 音频约/);
   assert.match(TTS.quickSummary(TTS.quickForm('qwen3-tts-1.7b-voicedesign', {voice: 'anchor', lang: 'en'}), {lang: 'en'}), /^沉稳男声 · English/);
   assert.ok(TTS.quickSlow('qwen3-tts-1.7b-voicedesign'));
-  assert.equal(TTS.quickSlow('qwen3-tts-0.6b-customvoice'), null);
+  assert.equal(TTS.quickSlow('qwen3-tts-1.7b-customvoice'), null);
 });
 
 test('试听结果身份：选择一变身份就变，同一组选择身份相同（芯片只改选择，旧结果据此标成上一次）', () => {
   const k = (id, pick, file) => TTS.quickKey(TTS.quickForm(id, pick, file));
-  assert.equal(k('qwen3-tts-0.6b-customvoice'), k('qwen3-tts-0.6b-customvoice', {lang: 'zh', voice: 'Vivian'}));
-  assert.notEqual(k('qwen3-tts-0.6b-customvoice'), k('qwen3-tts-0.6b-customvoice', {lang: 'en'}));
-  assert.notEqual(k('qwen3-tts-0.6b-customvoice'), k('qwen3-tts-0.6b-customvoice', {voice: 'Eric'}));
+  assert.equal(k('qwen3-tts-1.7b-customvoice'), k('qwen3-tts-1.7b-customvoice', {lang: 'zh', voice: 'Vivian'}));
+  assert.notEqual(k('qwen3-tts-1.7b-customvoice'), k('qwen3-tts-1.7b-customvoice', {lang: 'en'}));
+  assert.notEqual(k('qwen3-tts-1.7b-customvoice'), k('qwen3-tts-1.7b-customvoice', {voice: 'Eric'}));
   assert.notEqual(k('indextts2'), k('indextts2', {voice: 'en-female'}));
   assert.notEqual(k('indextts2', {voice: 'file'}, {name: 'a.wav'}), k('indextts2', {voice: 'file'}, {name: 'b.wav'}));
   assert.notEqual(k('indextts2'), k('indextts2', {custom: '随便念一句'}));
@@ -553,28 +556,28 @@ test('试听结果身份：选择一变身份就变，同一组选择身份相�
   // 换台词、换语气都是另一组选择
   assert.notEqual(k('indextts2'), k('indextts2', {kind: 'numbers'}));
   assert.notEqual(k('indextts2'), k('indextts2', {tone: 'natural'}));
-  assert.notEqual(k('qwen3-tts-0.6b-customvoice'), k('qwen3-tts-0.6b-customvoice', {tone: 'anchor'}));
+  assert.notEqual(k('qwen3-tts-1.7b-customvoice'), k('qwen3-tts-1.7b-customvoice', {tone: 'anchor'}));
 });
 
 test('试听语气：CustomVoice 走风格指令，IndexTTS 走情感向量，其余引擎没有这一行', () => {
-  assert.deepEqual(TTS.quickTones('qwen3-tts-0.6b-customvoice').map((t) => t.k), ['upbeat', 'natural', 'anchor', 'soft']);
-  assert.ok(TTS.quickTones('qwen3-tts-0.6b-customvoice').every((t) => !t.emotion));
+  assert.deepEqual(TTS.quickTones('qwen3-tts-1.7b-customvoice').map((t) => t.k), ['upbeat', 'natural', 'anchor', 'soft']);
+  assert.ok(TTS.quickTones('qwen3-tts-1.7b-customvoice').every((t) => !t.emotion));
   assert.deepEqual(TTS.quickTones('indextts2').map((t) => t.k), ['upbeat', 'natural', 'anchor', 'surprised']);
   assert.ok(TTS.quickTones('indextts2').every((t) => !t.instruct));
-  // 不认语气的引擎：Base（只会克隆）、GPT-SoVITS（没有情绪控制）、VoiceDesign（语气就是那句描述）
-  ['qwen3-tts-0.6b-base', 'gpt-sovits-v2', 'qwen3-tts-1.7b-voicedesign'].forEach((id) => assert.deepEqual(TTS.quickTones(id), []));
+  // 不认语气的引擎：Base（只会克隆）、VoxCPM2（没有情绪控制，风格指令不进试听）、VoiceDesign（语气就是那句描述）
+  ['qwen3-tts-0.6b-base', 'voxcpm2', 'qwen3-tts-1.7b-voicedesign'].forEach((id) => assert.deepEqual(TTS.quickTones(id), []));
   // 默认就是热情洋溢：设置页的试听是听「它念 BaoCut 的介绍好不好听」
-  assert.equal(TTS.quickDefaults('qwen3-tts-0.6b-customvoice').tone, 'upbeat');
-  assert.equal(TTS.quickDefaults('gpt-sovits-v2').tone, 'natural');
-  const up = TTS.quickForm('qwen3-tts-0.6b-customvoice');
-  assert.equal(up.instruct, TTS.quickTone('qwen3-tts-0.6b-customvoice', 'upbeat').instruct);
-  assert.equal(TTS.quickForm('qwen3-tts-0.6b-customvoice', {tone: 'natural'}).instruct, undefined);
+  assert.equal(TTS.quickDefaults('qwen3-tts-1.7b-customvoice').tone, 'upbeat');
+  assert.equal(TTS.quickDefaults('voxcpm2').tone, 'natural');
+  const up = TTS.quickForm('qwen3-tts-1.7b-customvoice');
+  assert.equal(up.instruct, TTS.quickTone('qwen3-tts-1.7b-customvoice', 'upbeat').instruct);
+  assert.equal(TTS.quickForm('qwen3-tts-1.7b-customvoice', {tone: 'natural'}).instruct, undefined);
   const emo = TTS.quickForm('indextts2');
   assert.equal(emo.emotion, 'happy');
   assert.equal(emo.instruct, undefined);
   // 换了模型带过来的旧 id 落回中立档，不是落空
   assert.equal(TTS.quickTone('indextts2', 'soft').k, 'natural');
-  assert.equal(TTS.quickTone('gpt-sovits-v2', 'upbeat'), null);
+  assert.equal(TTS.quickTone('voxcpm2', 'upbeat'), null);
   // 语气不改表单校验：哪一档都能直接合成
   TTS.quickTones('indextts2').forEach((t) => assert.deepEqual(TTS.validatePreview(TTS.quickForm('indextts2', {tone: t.k})), [], t.k));
 });
@@ -594,8 +597,9 @@ test('VoxCPM2 / OmniVoice：模型 id、音色方式、风格行在哪一档、�
   // 风格：CustomVoice 在预设档；VoxCPM2 在克隆档（风格 → 可控克隆）；OmniVoice 没有自由风格
   assert.ok(TTS.hasStyle('voxcpm2'));
   assert.ok(!TTS.hasStyle('omnivoice'));
-  assert.ok(TTS.styleOn('qwen3', 'preset'));
-  assert.ok(!TTS.styleOn('qwen3', 'clone'));
+  assert.ok(TTS.styleOn('qwen3-1.7b', 'preset'));
+  assert.ok(!TTS.styleOn('qwen3-1.7b', 'clone'));
+  assert.ok(!TTS.styleOn('qwen3', 'clone'), '0.6B 只有 Base：没有风格行');
   assert.ok(TTS.styleOn('voxcpm2', 'clone'));
   assert.ok(!TTS.styleOn('omnivoice', 'clone'));
   assert.ok(!TTS.styleOn('indextts2', 'clone'));
@@ -610,20 +614,28 @@ test('VoxCPM2 / OmniVoice：模型 id、音色方式、风格行在哪一档、�
   assert.match(TTS.STRATEGY.find((s) => s.id === 'describe').desc, /Qwen3-TTS 1\.7B 与 OmniVoice/);
 });
 
-test('OmniVoice 描述词表与 model-runtime::synthesize::omnivoice::instruct 对拍', () => {
-  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../../crates/model-runtime/src/synthesize/omnivoice/instruct.rs'), 'utf8');
-  const arr = (name) => {
-    const m = src.match(new RegExp('pub const ' + name + ': \\[&str; \\d+\\] = \\[([^\\]]*)\\]'));
-    assert.ok(m, name);
-    return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+test('OmniVoice 描述词表与 packages/models 的 OMNIVOICE_VOCABULARY 对拍', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../../packages/models/src/speech-bundles.ts'), 'utf8');
+  const start = src.indexOf('export const OMNIVOICE_VOCABULARY');
+  assert.ok(start >= 0, 'OMNIVOICE_VOCABULARY');
+  const block = src.slice(start, src.indexOf('\n};', start));
+  // 按 `category: '<k>'` 切段，每段里取 `<lang>: [...]` 那一串
+  const terms = (k, lang) => {
+    const at = block.indexOf(`category: '${k}'`);
+    assert.ok(at >= 0, k);
+    const next = block.indexOf('category:', at + 1);
+    const seg = block.slice(at, next < 0 ? undefined : next);
+    const m = seg.match(new RegExp(lang + ':\\s*\\[([^\\]]*)\\]'));
+    assert.ok(m, k + '.' + lang);
+    return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
   };
   const cat = (k) => TTS.OMNI_DESIGN.cats.find((c) => c.k === k).items;
-  assert.deepEqual(cat('gender'), arr('GENDER_ZH'));
-  assert.deepEqual(cat('age'), arr('AGE_ZH'));
-  assert.deepEqual(cat('pitch'), arr('PITCH_ZH'));
-  assert.deepEqual(cat('style'), arr('STYLE_ZH'));
-  assert.deepEqual([...cat('accent')].sort(), [...arr('ACCENT_EN')].sort());
-  assert.deepEqual(cat('dialect'), arr('DIALECT_ZH'));
+  assert.deepEqual(cat('gender'), terms('gender', 'zh'));
+  assert.deepEqual(cat('age'), terms('age', 'zh'));
+  assert.deepEqual(cat('pitch'), terms('pitch', 'zh'));
+  assert.deepEqual(cat('style'), terms('style', 'zh'));
+  assert.deepEqual([...cat('accent')].sort(), [...terms('accent', 'en')].sort());
+  assert.deepEqual(cat('dialect'), terms('dialect', 'zh'));
 });
 
 test('OmniVoice 描述词表：每类至多一项、口音 / 方言跟语言、拼成 --instruct', () => {
@@ -718,7 +730,7 @@ test('新模型的速览、语速回落、快速试听键', () => {
   const omni = TTS.modelBrief('omnivoice');
   assert.equal(omni.nonCommercial, true);
   assert.deepEqual(omni.facts.slice(0, 1), ['内置音色 / 克隆 / 描述']);
-  assert.match(TTS.quickSlow('voxcpm2'), /一倍实时/);
+  assert.equal(TTS.quickSlow('voxcpm2'), null, '可商用、不慢：试听前不必多说一句');
   assert.match(TTS.quickSlow('omnivoice'), /CC-BY-NC-4\.0/);
   // 没有种子：按单位落到默认语速
   ['voxcpm2', 'omnivoice', 'qwen3-tts-1.7b-voicedesign'].forEach((m) => {

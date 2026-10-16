@@ -2,15 +2,6 @@ import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const ru: ModelsLocalSpeechMessages = {
   referenceTranscriptRequired: "Введите расшифровку эталонной записи",
-  paceQwen06: "в 5–6 раз медленнее реального времени: фраза на 10 секунд занимает около минуты",
-  paceQwen17: "в 7–8 раз медленнее реального времени: фраза на 10 секунд занимает чуть больше минуты",
-  paceIndexTts2: "примерно в 25 раз медленнее реального времени: фраза на 10 секунд занимает около четырёх минут",
-  paceIndexTts25: "примерно в 19 раз медленнее реального времени: фраза на 10 секунд занимает чуть больше трёх минут",
-  paceGptSovits: "примерно в 1,7 раза медленнее реального времени: фраза на 10 секунд занимает меньше 20 секунд",
-  paceVoxcpm2: "примерно в 9 раз медленнее реального времени: фраза на 10 секунд занимает около полутора минут",
-  paceOmnivoice: "примерно в 8 раз медленнее реального времени: фраза на 10 секунд занимает почти полторы минуты",
-  paceDefault: "эта модель не измерена",
-  cpuNote: (p: { pace: string }) => `Синтез на CPU этого компьютера: ${p.pace}. С NVIDIA GPU (CUDA) гораздо быстрее: на RTX 3060 Qwen3-TTS 0.6B и IndexTTS2 работают примерно в реальном времени`,
   oneVoiceSource: "Укажите только одно из voice, reference и voiceDescription",
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `Модель ${p.modelId} не поддерживает ${p.what} (${p.mode})`,
   modeClone: "клонирование по эталонной записи",

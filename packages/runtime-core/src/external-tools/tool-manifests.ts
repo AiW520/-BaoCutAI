@@ -5,8 +5,8 @@ import { RcExternalTools } from '@baocut/protocol/messages/runtime-core';
 
 /**
  * 受管外部工具的登记表（架构设计 §12.9）。每个工具一份清单：用途、最低版本、探测方式，能由 BaoCut 下载的再带固定的发布版本、
- * 各平台的文件、大小、sha256 与许可。音乐生成的 audio.cpp 引擎不在这里：它是音乐模型包的组件，随模型包安装（`@baocut/models` 的
- * `music-engine.ts`，架构设计 §6.3）。
+ * 各平台的文件、大小、sha256 与许可。本地语音合成与音乐生成用的 audio.cpp 引擎不在这里：它随应用内置，不另外下载（`@baocut/models`
+ * 的 `audio-cpp-engine.ts`，Model Worker 协议规范 §4.4）。
  *
  * 不编造摘要：离线无法核实的 sha256 与大小留空（null），这时安装以 `TOOL_MANIFEST_INCOMPLETE` 拒绝（与模型包的内置清单
  * `MODEL_MANIFEST_INCOMPLETE` 同一条规则）。补上摘要是待评审事项（§14）。

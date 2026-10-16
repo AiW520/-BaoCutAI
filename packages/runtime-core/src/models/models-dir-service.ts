@@ -6,6 +6,7 @@ import {
   isTerminal,
   sha256Hex,
   type JobManager,
+  type LocalSpeechProvider,
   type LocalTranscribeProvider,
   type TaskRun,
 } from '@baocut/jobs';
@@ -65,6 +66,8 @@ export interface ModelsDirServiceOptions {
   setting: { get(): string | null; set(value: string | null): Promise<void> };
   catalog: ModelCatalog;
   provider: LocalTranscribeProvider;
+  /** 本地语音合成的 Provider：换目录前卸载它的服务（服务开着模型目录里的 GGUF）。 */
+  speech: LocalSpeechProvider;
   jobs: JobManager;
   log: Logger;
   /** 所在磁盘的可用空间（测试注入）；默认按 statfs。 */
@@ -263,6 +266,7 @@ export class ModelsDirService {
     if (this.inUse().length > 0) refuse(this.inUse());
     for (const def of this.#options.catalog.definitions()) {
       if (!(await this.#options.provider.unload(def.bundleId))) refuse(this.inUse());
+      if (!(await this.#options.speech.unload(def.bundleId))) refuse(this.inUse());
     }
     if (this.inUse().length > 0) refuse(this.inUse());
   }

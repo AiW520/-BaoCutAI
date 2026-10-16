@@ -112,12 +112,15 @@ test('注音：各引擎没按注音念的', () => {
   const rs = RD.annotate('绿林好汉重做一遍，模样没变', {llm: true}).readings;
   const pick = (e) => RD.dropped(rs, e).map((r) => r.surface + r.reading);
   assert.deepEqual(pick('indextts25'), []);
-  assert.deepEqual(pick('indextts2'), ['绿lu4'], 'IndexTTS2 词表没有 LU4 这个片');
-  // Qwen3：词组表 / 词典默认不渲染也不算丢；与默认不同的读音靠同音字，没有代表字（mu2）才算丢
-  assert.deepEqual(pick('qwen3'), ['模mu2']);
-  assert.deepEqual(pick('qwen3-1.7b'), ['模mu2']);
-  assert.equal(RD.dropped(rs, 'gptsovits').length, rs.length);
-  assert.match(RD.dropReason('qwen3'), /Qwen3 不支持这一读音/);
+  // audio.cpp 上只有 IndexTTS 2.5 认 `<字|拼音>`；其余按表面文字合成，每一处注记都算没按注音念
+  assert.ok(rs.length > 0);
+  ['indextts2', 'qwen3', 'qwen3-1.7b', 'voxcpm2', 'omnivoice', 'fish-s2-pro'].forEach((e) => assert.equal(RD.dropped(rs, e).length, rs.length, e));
+  assert.deepEqual(RD.dropped(rs, 'cloud:openai'), [], '云端与认不出的引擎回空');
+  assert.equal(RD.dropReason('qwen3'), 'Qwen3-TTS 还不认注音 · 按原字念');
+  assert.equal(RD.dropReason('qwen3-1.7b'), 'Qwen3-TTS 还不认注音 · 按原字念');
+  assert.equal(RD.dropReason('indextts2'), 'IndexTTS2 还不认注音 · 按原字念');
+  assert.equal(RD.dropReason('fish-s2-pro'), 'Fish Audio S2 Pro 不认注音 · 按原字念');
+  assert.equal(RD.dropReason('indextts25'), '');
 });
 
 test('注音：收据一行、计数、只有多字词进项目读音', () => {
@@ -143,9 +146,10 @@ test('注音进配音：块上存表面文字，注记与没念的单列；重�
   const blocks = TTS.dubBlocks(cues, {script, engine: 'indextts2'});
   assert.equal(blocks[0].text, '我们重渲染。');
   assert.deepEqual(blocks[0].readings.map((r) => r.reading), ['chong2']);
-  assert.deepEqual(blocks[0].readingsDropped, []);
+  // IndexTTS2 还不认注音：两处都按原字念
+  assert.deepEqual(blocks[0].readingsDropped.map((r) => r.surface), ['重']);
   assert.deepEqual(blocks[1].readingsDropped.map((r) => r.surface), ['绿']);
-  assert.deepEqual(RD.tally(blocks), {n: 2, m: 1});
+  assert.deepEqual(RD.tally(blocks), {n: 2, m: 2});
   assert.equal(TTS.dubBlocks(cues, {}).some((b) => b.readings), false, '没注音的块不带这两个字段');
   // 没有配音稿也不丢读音；换一只引擎重算没念的
   const g = {lang: 'zh', engine: 'indextts2', blocks};
@@ -177,7 +181,7 @@ test('注音进生成语音：表单的 chip 行渲进文字，文字改过就�
 test('「交给 Agent」提示词：折出模型 / 音色 / 风格 / 语言，含中文才要它标读音，空文字留占位', () => {
   const f = Object.assign(TOOLS.blank(), {text: '这一行<行|hang2>字很重要。', style: '像深夜电台一样慢一点', lang: 'zh'});
   const p = TOOLS.agentPrompt(f);
-  assert.match(p, /^用 BaoCut 生成语音：模型 Qwen3-TTS 0\.6B CustomVoice，音色 Serena，风格「像深夜电台一样慢一点」，语言 简体中文。先按上下文标好多音字读音（<字\|读音> 语法），再合成成 WAV 给我试听；不要改我的文字。要念的文字：\n\n这一行行字很重要。$/);
+  assert.match(p, /^用 BaoCut 生成语音：模型 Qwen3-TTS 1\.7B CustomVoice，音色 Serena，风格「像深夜电台一样慢一点」，语言 简体中文。先按上下文标好多音字读音（<字\|读音> 语法），再合成成 WAV 给我试听；不要改我的文字。要念的文字：\n\n这一行行字很重要。$/);
   const en = TOOLS.agentPrompt(Object.assign(TOOLS.blank(), {text: 'Hello there.', preset: 'Eric'}));
   assert.match(en, /音色 Eric。合成成 WAV/);
   assert.doesNotMatch(en, /多音字|风格|语言/);

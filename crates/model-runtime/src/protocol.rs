@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::bundle::ModelBundle;
-use crate::synthesize::readings::Reading;
 
 /// 一行超过这么多字节视为协议错误，Worker 退出（§1）。
 pub const MAX_LINE_BYTES: usize = 16 * 1024 * 1024;
@@ -125,8 +124,6 @@ pub struct CancelParams {
 pub enum Capability {
     Transcribe,
     Align,
-    /// 本地语音合成（§2.5.2）：参数是 [`SynthesizeRunParams`]，不经 [`JobRunParams`]。
-    Synthesize,
     /// 人声与伴奏分离（§2.5.4）：参数是 [`SeparateRunParams`]，不经 [`JobRunParams`]。
     Separate,
     /// 本地文生图（§2.5.3）：参数是 [`ImageRunParams`]，不经 [`JobRunParams`]。
@@ -259,132 +256,10 @@ pub struct JobRunResult {
     pub stats: JobStats,
 }
 
-// ---- 本地语音合成（§2.5.2）-------------------------------------------------------------------
-
-/// 合成的输出合同：staging 里的一个 PCM WAV（单声道或立体声，采样率是模型的原生采样率）。
-pub const SPEECH_OUTPUT_CONTRACT: &str = "baocut.speech-wav/v1";
-/// 合成结果在 staging 里的文件名。
-pub const SPEECH_OUTPUT_FILE: &str = "speech.wav";
-
-/// `job.run` 的 `capability` 字段：决定参数按 [`JobRunParams`] 还是 [`SynthesizeRunParams`] 解析。
+/// `job.run` 的 `capability` 字段：决定参数按 [`JobRunParams`]、[`SeparateRunParams`]、[`DiarizeRunParams`] 还是
+/// [`ImageRunParams`] 解析。
 pub fn run_capability(params: &Value) -> Option<&str> {
     params.get("capability").and_then(Value::as_str)
-}
-
-/// `job.run`（`capability: "synthesize"`）的参数。`input` 只在 `clone` 时给出（参考录音，整段、轨 0）。
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct SynthesizeRunParams {
-    pub job_id: String,
-    pub run_generation: u64,
-    pub capability: Capability,
-    #[serde(default)]
-    pub input: Option<SpeechReference>,
-    pub options: SynthesizeOptions,
-    pub staging: String,
-    pub output_contract: String,
-}
-
-/// 克隆的参考录音：与 [`JobInput`] 同名的字段，不接受 `range`（参考录音整段使用）。
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct SpeechReference {
-    pub file: String,
-    pub content_hash: String,
-    #[serde(default)]
-    pub track: u32,
-}
-
-/// 冻结的合成参数。文本原样交来，读音标注由引擎换成自己的写法；`null` 的旋钮用模型的默认值。
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct SynthesizeOptions {
-    pub text: String,
-    /// BCP 47；`null` 时由引擎按文本判断。
-    #[serde(default)]
-    pub language: Option<String>,
-    pub voice: SynthesizeVoice,
-    #[serde(default)]
-    pub instructions: Option<String>,
-    #[serde(default)]
-    pub speed: Option<f64>,
-    #[serde(default)]
-    pub cfg: Option<f64>,
-    #[serde(default)]
-    pub steps: Option<u32>,
-    #[serde(default)]
-    pub seed: Option<u64>,
-}
-
-/// 声音：`preset` 是模型的说话人；`clone` 用 `input` 的参考录音（`transcript` 是它的原文）；`describe` 是一句描述。
-/// 模型做不到时报错，不换成别的声音。
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(tag = "mode", rename_all = "lowercase", deny_unknown_fields)]
-pub enum SynthesizeVoice {
-    Preset { id: String },
-    Clone { transcript: Option<String> },
-    Describe { description: String },
-}
-
-impl SynthesizeRunParams {
-    /// 形状之外的检查（都是 `INVALID_PARAMS`）：能力与合同、绝对路径、非空文本、参考录音只跟 `clone` 一起出现。
-    pub fn validate(&self) -> Result<(), ErrorBody> {
-        if self.capability != Capability::Synthesize {
-            return Err(ErrorBody::invalid_params("capability must be synthesize"));
-        }
-        if self.output_contract != SPEECH_OUTPUT_CONTRACT {
-            return Err(ErrorBody::invalid_params(format!(
-                "outputContract must be {SPEECH_OUTPUT_CONTRACT}"
-            )));
-        }
-        if !std::path::Path::new(&self.staging).is_absolute() {
-            return Err(ErrorBody::invalid_params("staging must be an absolute path"));
-        }
-        if self.options.text.trim().is_empty() {
-            return Err(ErrorBody::invalid_params("options.text must not be empty"));
-        }
-        match (&self.options.voice, &self.input) {
-            (SynthesizeVoice::Clone { .. }, None) => Err(ErrorBody::invalid_params("voice mode clone needs input (the reference audio)")),
-            (SynthesizeVoice::Clone { .. }, Some(input)) if !std::path::Path::new(&input.file).is_absolute() => {
-                Err(ErrorBody::invalid_params("input.file must be an absolute path"))
-            }
-            (SynthesizeVoice::Preset { .. } | SynthesizeVoice::Describe { .. }, Some(_)) => {
-                Err(ErrorBody::invalid_params("input is only for voice mode clone"))
-            }
-            _ => Ok(()),
-        }
-    }
-}
-
-/// 合成出的音频的事实。
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SynthesizedAudio {
-    pub sample_rate: u32,
-    pub channels: u16,
-    pub duration_sec: f64,
-}
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SynthesizeStats {
-    pub reference_ms: u64,
-    pub synthesis_ms: u64,
-    pub encode_ms: u64,
-}
-
-/// `job.run`（`synthesize`）的结果：`output` 是 staging 里的 [`SPEECH_OUTPUT_FILE`]。
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SynthesizeRunResult {
-    pub outcome: JobOutcome,
-    pub output: Option<OutputFile>,
-    pub audio: Option<SynthesizedAudio>,
-    pub stats: SynthesizeStats,
-    /// 文字里没能按注记念出来的读音（引擎不认读音、注记畸形等），偏移落在去注记后的文字上；
-    /// 是警告不是失败——音频照常产出，Runtime 把它如实转给调用方，不静默丢弃。取消时为空。
-    #[serde(default)]
-    pub readings_dropped: Vec<Reading>,
 }
 
 // ---- 人声与伴奏分离（§2.5.4）-----------------------------------------------------------------
@@ -602,19 +477,6 @@ pub struct DiarizeRunResult {
     pub stats: DiarizeStats,
 }
 
-/// 这个构建没有某个合成模型族的引擎时 `model.load` 的回答：`MODEL_UNSUPPORTED`，`details.reason` 为 `not-wired`。
-pub fn synthesis_not_wired(family: Option<&str>) -> ErrorBody {
-    let mut details = json!({ "capability": "synthesize", "reason": "not-wired" });
-    if let Some(family) = family {
-        details["family"] = json!(family);
-    }
-    ErrorBody::new(
-        codes::MODEL_UNSUPPORTED,
-        "local speech synthesis is not available in this worker yet",
-    )
-    .with_details(details)
-}
-
 /// 这个构建没有分离的后端时 `model.load` 的回答：`MODEL_UNSUPPORTED`，`details.reason` 为 `not-wired`。Runtime 按
 /// `worker.hello` 的 `separateFamilies` 本不会发来。
 pub fn separation_not_wired(family: Option<&str>) -> ErrorBody {
@@ -797,128 +659,11 @@ pub fn image_not_wired(family: Option<&str>) -> ErrorBody {
 mod tests {
     use super::*;
 
-    /// 与 TS 侧 `SynthesizeRunParams`（packages/models/src/worker-contract.ts）逐字相同的一次请求。
-    fn synthesize_params(voice: Value, input: Value) -> Value {
-        json!({
-            "jobId": "job_1",
-            "runGeneration": 2,
-            "capability": "synthesize",
-            "input": input,
-            "options": {
-                "text": "你好，世界。",
-                "language": "zh-CN",
-                "voice": voice,
-                "instructions": null,
-                "speed": 1.1,
-                "cfg": null,
-                "steps": 10,
-                "seed": 7,
-            },
-            "staging": "/tmp/staging",
-            "outputContract": SPEECH_OUTPUT_CONTRACT,
-        })
-    }
-
-    #[test]
-    fn synthesize_params_round_trip_every_voice_mode() {
-        let reference = json!({ "file": "/tmp/ref.wav", "contentHash": "sha256:ab", "track": 0 });
-        for (voice, input) in [
-            (json!({ "mode": "preset", "id": "Vivian" }), Value::Null),
-            (json!({ "mode": "clone", "transcript": "参考录音的原文" }), reference.clone()),
-            (json!({ "mode": "clone", "transcript": null }), reference.clone()),
-            (json!({ "mode": "describe", "description": "female, low pitch" }), Value::Null),
-        ] {
-            let value = synthesize_params(voice, input);
-            assert_eq!(run_capability(&value), Some("synthesize"));
-            let parsed: SynthesizeRunParams = serde_json::from_value(value.clone()).unwrap();
-            parsed.validate().unwrap();
-            assert_eq!(serde_json::to_value(&parsed).unwrap(), value, "serializes back to the same JSON");
-        }
-        // 可选字段（input 与旋钮）缺省为 null。
-        let minimal: SynthesizeRunParams = serde_json::from_value(json!({
-            "jobId": "j", "runGeneration": 1, "capability": "synthesize",
-            "options": { "text": "hi", "voice": { "mode": "preset", "id": "a" } },
-            "staging": "/s", "outputContract": SPEECH_OUTPUT_CONTRACT,
-        }))
-        .unwrap();
-        assert_eq!(minimal.input, None);
-        assert_eq!(minimal.options.steps, None);
-    }
-
-    #[test]
-    fn synthesize_params_reject_bad_shapes() {
-        let preset = json!({ "mode": "preset", "id": "a" });
-        let clone = json!({ "mode": "clone", "transcript": null });
-        let mut extra = synthesize_params(preset.clone(), Value::Null);
-        extra["options"]["emotion"] = json!("happy");
-        assert!(serde_json::from_value::<SynthesizeRunParams>(extra).is_err(), "unknown option");
-        let custom = synthesize_params(json!({ "mode": "custom", "id": "a" }), Value::Null);
-        assert!(serde_json::from_value::<SynthesizeRunParams>(custom).is_err(), "unknown voice mode");
-        let ranged = json!({ "file": "/r.wav", "contentHash": "sha256:ab", "track": 0, "range": { "start": 0, "end": 1, "timescale": 1 } });
-        assert!(
-            serde_json::from_value::<SynthesizeRunParams>(synthesize_params(clone.clone(), ranged)).is_err(),
-            "no range"
-        );
-
-        let invalid = |value: Value| {
-            serde_json::from_value::<SynthesizeRunParams>(value)
-                .unwrap()
-                .validate()
-                .unwrap_err()
-                .code
-        };
-        assert_eq!(invalid(synthesize_params(clone.clone(), Value::Null)), codes::INVALID_PARAMS);
-        let reference = json!({ "file": "/r.wav", "contentHash": "sha256:ab", "track": 0 });
-        assert_eq!(invalid(synthesize_params(preset.clone(), reference)), codes::INVALID_PARAMS);
-        let relative = json!({ "file": "r.wav", "contentHash": "sha256:ab", "track": 0 });
-        assert_eq!(invalid(synthesize_params(clone, relative)), codes::INVALID_PARAMS);
-        let mut contract = synthesize_params(preset.clone(), Value::Null);
-        contract["outputContract"] = json!(OUTPUT_CONTRACT);
-        assert_eq!(invalid(contract), codes::INVALID_PARAMS);
-        let mut empty = synthesize_params(preset.clone(), Value::Null);
-        empty["options"]["text"] = json!("  ");
-        assert_eq!(invalid(empty), codes::INVALID_PARAMS);
-        let mut transcribe = synthesize_params(preset, Value::Null);
-        transcribe["capability"] = json!("transcribe");
-        assert_eq!(invalid(transcribe), codes::INVALID_PARAMS);
-    }
-
-    #[test]
-    fn synthesize_result_round_trips() {
-        let value = json!({
-            "outcome": "completed",
-            "output": { "path": SPEECH_OUTPUT_FILE, "sha256": "ab".repeat(32), "byteLength": 48_044 },
-            "audio": { "sampleRate": 24_000, "channels": 1, "durationSec": 1.0 },
-            "stats": { "referenceMs": 12, "synthesisMs": 900, "encodeMs": 3 },
-            "readingsDropped": [{ "start": 2, "end": 3, "reading": "xing2", "origin": "user" }],
-        });
-        let parsed: SynthesizeRunResult = serde_json::from_value(value.clone()).unwrap();
-        assert_eq!(parsed.outcome, JobOutcome::Completed);
-        assert_eq!(serde_json::to_value(&parsed).unwrap(), value);
-        let cancelled = json!({
-            "outcome": "cancelled", "output": null, "audio": null,
-            "stats": { "referenceMs": 0, "synthesisMs": 0, "encodeMs": 0 },
-            "readingsDropped": [],
-        });
-        let parsed: SynthesizeRunResult = serde_json::from_value(cancelled.clone()).unwrap();
-        assert_eq!(serde_json::to_value(&parsed).unwrap(), cancelled);
-    }
-
     #[test]
     fn not_wired_is_a_structured_unsupported_error() {
-        let error = synthesis_not_wired(Some("qwen3-tts"));
-        assert_eq!(error.code, codes::MODEL_UNSUPPORTED);
-        assert!(!error.retryable);
-        assert_eq!(
-            error.details.unwrap(),
-            json!({ "capability": "synthesize", "reason": "not-wired", "family": "qwen3-tts" })
-        );
-        assert_eq!(
-            serde_json::from_value::<Capability>(json!("synthesize")).unwrap(),
-            Capability::Synthesize
-        );
         let error = transcription_not_wired(Some("moss-transcribe-diarize"));
         assert_eq!(error.code, codes::MODEL_UNSUPPORTED);
+        assert!(!error.retryable);
         assert_eq!(
             error.details.unwrap(),
             json!({ "capability": "transcribe", "reason": "not-wired", "family": "moss-transcribe-diarize" })
@@ -989,11 +734,8 @@ mod tests {
                 .unwrap_err()
                 .code
         };
-        assert_eq!(invalid(&|v| v["capability"] = json!("synthesize")), codes::INVALID_PARAMS);
-        assert_eq!(
-            invalid(&|v| v["outputContract"] = json!(SPEECH_OUTPUT_CONTRACT)),
-            codes::INVALID_PARAMS
-        );
+        assert_eq!(invalid(&|v| v["capability"] = json!("image")), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|v| v["outputContract"] = json!(OUTPUT_CONTRACT)), codes::INVALID_PARAMS);
         assert_eq!(invalid(&|v| v["staging"] = json!("relative")), codes::INVALID_PARAMS);
         assert_eq!(invalid(&|v| v["input"]["file"] = json!("a.mp4")), codes::INVALID_PARAMS);
         assert_eq!(invalid(&|v| v["options"]["sampleRate"] = json!(4_000)), codes::INVALID_PARAMS);
@@ -1040,10 +782,10 @@ mod tests {
         assert_eq!(invalid(&|p| p.options.steps = Some(0)), codes::INVALID_PARAMS);
         assert_eq!(invalid(&|p| p.staging = "relative".into()), codes::INVALID_PARAMS);
         assert_eq!(
-            invalid(&|p| p.output_contract = SPEECH_OUTPUT_CONTRACT.into()),
+            invalid(&|p| p.output_contract = STEMS_OUTPUT_CONTRACT.into()),
             codes::INVALID_PARAMS
         );
-        assert_eq!(invalid(&|p| p.capability = Capability::Synthesize), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|p| p.capability = Capability::Separate), codes::INVALID_PARAMS);
 
         // 没有 seed、多出字段：形状错误。
         let mut missing_seed = value.clone();

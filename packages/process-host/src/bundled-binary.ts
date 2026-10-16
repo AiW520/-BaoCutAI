@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { findCargoBinary } from './cargo-target.ts';
+import { cargoTargetDirs, findCargoBinary } from './cargo-target.ts';
 
 /** 随应用分发的原生可执行文件所在目录的环境变量：桌面应用打包后由主进程给出 `<resources>/bin`。 */
 export const BIN_DIR_ENV = 'BAOCUT_BIN_DIR';
@@ -38,6 +38,35 @@ export function findBundledBinary(
     if (isFile(bundled)) return bundled;
   }
   return findCargoBinary(startDir, exe, env);
+}
+
+/**
+ * 找随 BaoCut 分发的第三方工具目录里的可执行文件（`<子目录>/<name>`，如内置的 audio.cpp 引擎 `audiocpp/audiocpp_cli`），`name` 不带
+ * 后缀。次序同 `findBundledBinary`：`BAOCUT_BIN_DIR/<子目录>/`（给了就只在那里找）、打包后的 `<resources>/bin/<子目录>/`、开发时 cargo
+ * 产物目录里的 `<子目录>/`（由下载脚本放进去，不分 release / debug）。
+ */
+export function findBundledTool(
+  subdir: string,
+  name: string,
+  startDir: string,
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): string | null {
+  const exe = executableName(name, platform);
+  if (env[BIN_DIR_ENV]) {
+    const candidate = path.join(env[BIN_DIR_ENV], subdir, exe);
+    return isFile(candidate) ? candidate : null;
+  }
+  const resources = (process as { resourcesPath?: string }).resourcesPath;
+  if (resources) {
+    const bundled = path.join(resources, RESOURCES_BIN_DIR, subdir, exe);
+    if (isFile(bundled)) return bundled;
+  }
+  for (const dir of cargoTargetDirs(startDir, env)) {
+    const candidate = path.join(dir, subdir, exe);
+    if (isFile(candidate)) return candidate;
+  }
+  return null;
 }
 
 function isFile(file: string): boolean {

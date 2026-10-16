@@ -15,6 +15,5 @@ export const ru: ModelsModelCatalogMessages = {
   moving: "Папка моделей перемещается",
   notInstalled: (p: { repo: string }) => `Модель ${p.repo} не установлена`,
   noFilesInSubdir: (p: { subdir: string }) => `У модели нет файлов в ${p.subdir}/`,
-  engineNoBuild: (p: { platform: string }) => `Для этого компьютера (${p.platform}) нет сборки движка audio.cpp; укажите в BAOCUT_AUDIOCPP_CLI движок, собранный самостоятельно`,
-  engineNotInstalled: (p: { version: string }) => `Движок audio.cpp ${p.version} не установлен`,
+  engineMissing: "Встроенный движок audio.cpp не найден: для этого компьютера нет сборки или установка приложения неполная",
 };

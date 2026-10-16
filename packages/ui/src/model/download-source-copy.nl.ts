@@ -17,7 +17,7 @@ export const nl: DownloadSourceMessages = {
   ghDesc: "Downloaden van de officiële GitHub-releasepagina van elk project.",
   modelsMirrorDesc: (base: string) => `Downloaden van de mirror op ${base}.`,
   toolsMirrorDesc: (base: string) => `Downloaden van de mirror op ${base}.`,
-  msNote: "De paar bestanden die ModelScope niet heeft (whisper.cpp, GPT-SoVITS) komen nog steeds van Hugging Face. Elk bestand wordt gecontroleerd met de ingebouwde checksum.",
+  msNote: "De paar bestanden die ModelScope niet heeft (whisper.cpp) komen nog steeds van Hugging Face. Elk bestand wordt gecontroleerd met de ingebouwde checksum.",
   envNote: (name: string) => `Als de omgevingsvariabele ${name} is ingesteld, wordt die gebruikt.`,
   webNote: "Een browser kan de downloadbronnen niet wijzigen. Stel ze in de BaoCut-desktopapp in.",
   lead:

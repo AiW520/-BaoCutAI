@@ -25,7 +25,7 @@ describe('development prerequisites', () => {
     expect(manifest.engines.node).toBe('>=22.12.0');
     const scripts: string[] = Object.values(manifest.scripts);
     const typedScripts = scripts.filter((script) => /^node .*\.ts$/.test(script));
-    expect(typedScripts).toHaveLength(4);
+    expect(typedScripts).toHaveLength(5);
     for (const script of typedScripts) expect(script).toMatch(/^node --experimental-strip-types /);
   });
 

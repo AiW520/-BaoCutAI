@@ -12,5 +12,4 @@ export const it: ModelsModelDownloaderMessages = {
   diskFull: "Il disco si è riempito durante la scrittura dei file del modello",
   archiveUnpackable: (p: { file: string; reason: string }) => `Impossibile estrarre ${p.file}: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} non contiene ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} è stato estratto ma non si avvia: ${p.reason}`,
 };

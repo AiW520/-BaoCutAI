@@ -17,5 +17,4 @@ export const ja: ModelsModelDownloaderMessages = {
   diskFull: 'モデルファイルの書き込み中にディスクがいっぱいになりました',
   archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} を展開できませんでした：${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} に ${p.executable} が含まれていません`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} は展開されましたが実行できません：${p.reason}`,
 };

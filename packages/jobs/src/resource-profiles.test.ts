@@ -86,19 +86,31 @@ describe('Model Worker 的需求', () => {
             pool: 'memory',
           });
           expect(demand.gpuMemory, def.bundleId).toBe(0);
-        } else if (def.speech?.residentBytes !== undefined) {
-          expect(footprint).toEqual({ bytes: def.speech.residentBytes, pool: 'gpuMemory' });
-          expect(demand.gpuMemory).toBe(def.speech.residentBytes + GiB);
+        } else if (def.capability === 'synthesize') {
+          // audio.cpp 的合成服务：GGUF 的存储字节 × 1.5（权重、激活与工作区），统一内存的 Mac 上计在 GPU 内存。
+          const bytes = def.speech?.residentBytes ?? Math.ceil(weightBytes(requiredSources(def), undefined, 'darwin-arm64')! * 1.5);
+          expect(footprint, def.bundleId).toEqual({ bytes, pool: 'gpuMemory' });
+          expect(demand.gpuMemory, def.bundleId).toBe(Math.max(MODEL_WORKER_DEMAND.gpuMemory!, bytes + GiB));
         } else {
           expect(footprint, def.bundleId).toBeNull();
           expect(demand, def.bundleId).toEqual({ memory: 1 * GiB, gpuMemory: 2 * GiB, cpuThreads: 2 });
         }
         for (const total of [8 * GiB, 16 * GiB]) {
           for (const priority of ['background', 'interactive'] as const) {
-            const expected = def.speech?.residentBytes !== undefined && total === 8 * GiB ? false : true;
-            expect(admitted(def.bundleId, footprint, total, priority), `${def.bundleId} ${total / GiB} GiB ${priority}`).toBe(expected);
+            // 合成模型在 8 GiB 的机器上放不放得下看大小（见下）；16 GiB 的都放得下。
+            if (def.capability === 'synthesize' && total === 8 * GiB) continue;
+            expect(admitted(def.bundleId, footprint, total, priority), `${def.bundleId} ${total / GiB} GiB ${priority}`).toBe(true);
           }
         }
+      }
+      // 8 GiB 的 Mac：小的合成模型（Qwen3-TTS 0.6B、OmniVoice）放得下，IndexTTS 2 与 Fish S2 Pro 放不下。
+      for (const [bundleId, fits] of [
+        ['qwen3-tts-0.6b-base@audio-cpp-q8', true],
+        ['omnivoice@audio-cpp-q8', true],
+        ['indextts2@audio-cpp-q8', false],
+        ['fish-s2-pro@audio-cpp-q8', false],
+      ] as const) {
+        expect(admitted(bundleId, await catalog.workerFootprint(bundleId), 8 * GiB, 'interactive'), bundleId).toBe(fits);
       }
       const large = await catalog.workerFootprint('qwen3-asr-1.7b@mlx-8bit');
       expect(localTranscribeResources('qwen3-asr-1.7b@mlx-8bit', large).holder.demand.gpuMemory).toBeGreaterThan(3.2 * GiB);

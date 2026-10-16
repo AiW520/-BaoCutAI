@@ -108,7 +108,7 @@ describe('音色', () => {
     expect(speechModelLine(speechModel('v', [], { voiceModes: ['custom'], languages: 'any', maxInputChars: 5000 }))).toBe(
       '手填音色 ID · 多种语言 · 一次最多 5000 字',
     );
-    // 模型描述的 notes（本地 candle 在 CPU 上的耗时）写在最前面。
+    // 模型描述的 notes（结构化字段说不清的限制，例如耗时）写在最前面。
     expect(speechModelLine({ ...rich, notes: '在本机的 CPU 上合成' })).toMatch(/^在本机的 CPU 上合成 · 2 个预置音色/);
   });
 

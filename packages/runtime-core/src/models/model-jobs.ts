@@ -1,10 +1,13 @@
 import { statSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { TopicLog, type Logger } from '@baocut/harness';
+import { findBundledTool } from '@baocut/process-host';
 import {
   JobManager,
   LocalEmbeddingProvider,
   LocalMusicProvider,
+  LocalSpeechProvider,
   LocalTranscribeProvider,
   MachineCapacity,
   ResourceScheduler,
@@ -38,14 +41,14 @@ import {
 import {
   AUDIO_CPP_BACKEND_ENV,
   AUDIO_CPP_CLI_ENV,
-  AUDIO_CPP_ENGINE,
+  AUDIO_CPP_COMMAND,
+  AUDIO_CPP_TOOL,
   EMBEDDING_TEXT_PREFERRED,
   LocalProviderSource,
   ModelCatalog,
   ModelServiceStore,
   ModelServices,
   UsageLedger,
-  parseAudioCppVersion,
   type BundleDefinition,
   type ProviderSource,
 } from '@baocut/models';
@@ -80,9 +83,8 @@ import { grantedTextGenerator, withPipelineGrants } from '../grants/pipeline-gra
 import type { TextPlanResult } from '../exports/export-plan.ts';
 import { DUB_DATA_KINDS, dubSpeech, withDubGrantGuidance } from './dub-speech.ts';
 import { pipelineTargets, placeLocation, videoPlace, type PipelineTargetsOptions } from '../videos/pipeline-targets.ts';
-import { RcExternalTools, RcModels } from '@baocut/protocol/messages/runtime-core';
+import { RcModels } from '@baocut/protocol/messages/runtime-core';
 import { toolsDownloadEndpoint } from '../external-tools/external-tool-service.ts';
-import { runVersionProbe } from '../external-tools/tool-probe.ts';
 
 /** Runtime 自己写入转写结果、导入生成的素材时的行为者（架构设计 §7.3）。 */
 export const JOBS_ACTOR: Actor = { kind: 'system', id: 'system:jobs' };
@@ -230,19 +232,19 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
   const configuredDir = dirSetting.get();
   const toolOverrides = options.toolOverrides ?? process.env;
   const { bundles: testBundles, ...modelInstall } = options.modelInstall ?? {};
-  // 音乐模型包的引擎是它的发布页组件（§6.3），装在 Runtime Home 的 `tools/` 下，不随模型目录移动。
+  // 本地语音合成与音乐共用随应用内置的 audio.cpp 引擎（§6.3）：每次用时重新找，不用重启就能认出开发时新下载的引擎。
+  const audioCppEngine = () => resolveAudioCppCli(toolOverrides);
+  // 发布页组件（LiteRT-LM 的 C 库）装在 Runtime Home 的 `tools/` 下，不随模型目录移动。
   const catalog = new ModelCatalog({
     root: envModelsDir ?? (configuredDir ? path.resolve(configuredDir) : defaultModelsDir),
     toolsDir: path.join(home.root, 'tools'),
-    engineOverride: toolOverrides[AUDIO_CPP_CLI_ENV] || null,
     workerAvailable: () => options.worker() !== null,
+    engineAvailable: () => audioCppEngine() !== null,
     // LiteRT-LM 的引擎缓存（embedding 模型包）：在缓存目录里，删了下次加载重建。
     engineCacheDir: path.join(home.cacheDir, 'litertlm'),
     ...(manifests ? { manifests } : {}),
     ...(testBundles ? { bundles: testBundles } : {}),
   });
-  // 每个任务重新找（模型包装好后无需重启）：开发者覆盖 → 装好的引擎组件 → PATH。
-  const musicEngine = (bundleId: string) => resolveAudioCppCli(toolOverrides, () => catalog.engineExecutable(bundleId));
   // 资源调度（§7.6、§7.7）：Model Worker 的进程与所有任务共用一个。
   const resources = new ResourceScheduler({
     capacity:
@@ -268,9 +270,20 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
   // 本地音乐生成（§6.1）：audio.cpp 引擎每个任务一个进程，不经 Model Worker。
   const music = new LocalMusicProvider({
     catalog,
-    engine: musicEngine,
+    engine: audioCppEngine,
     env: options.env,
     backend: process.env[AUDIO_CPP_BACKEND_ENV] || null,
+    log,
+  });
+  // 本地语音合成（§6.1）：audio.cpp 引擎的常驻服务，每个用到的模型包一个，与 Model Worker 共用模型包在调度里的 holder。
+  const speech = new LocalSpeechProvider({
+    catalog,
+    engine: audioCppEngine,
+    env: options.env,
+    ffmpeg: options.ffmpeg,
+    backend: process.env[AUDIO_CPP_BACKEND_ENV] || null,
+    resources,
+    idleMs: options.idleMs,
     log,
   });
   const store = await ModelServiceStore.open(home, options.credentials, undefined, { log: options.log.child('model-services') });
@@ -285,9 +298,10 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
       new LocalProviderSource({
         catalog,
         transcriber: provider,
-        speech: provider.speechGenerator(),
+        speech,
         image: provider.imageGenerator(),
         music,
+        engine: audioCppEngine,
       }),
       ...(options.remote ? [options.remote] : []),
       online,
@@ -483,17 +497,12 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
   const installs = new ModelInstallService({
     catalog,
     provider,
+    speech,
     music,
     jobs,
     log,
     settings: options.installSettings ?? (() => ({ downloadEndpoint: null, offlineStrict: false })),
     toolsEndpoint: options.toolsEndpoint ?? (() => toolsDownloadEndpoint(toolOverrides, null)),
-    // 引擎组件发布之后跑一次 `--version`，确认能运行、认得出是 audio.cpp。
-    probeExecutable: async (executable) => {
-      const outcome = await runVersionProbe(executable, ['--version'], await options.env());
-      if (!outcome.ok) throw new Error(outcome.reason.text);
-      if (parseAudioCppVersion(outcome.output) === null) throw new Error(RcExternalTools.noVersion().text);
-    },
     ...modelInstall,
     refresh: () => void services.refresh().catch(() => {}),
     clearDefaults: (bundleId) => services.clearLocalDefaults(bundleId),
@@ -504,6 +513,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     setting: dirSetting,
     catalog,
     provider,
+    speech,
     jobs,
     log,
     ...(modelInstall.installer?.freeBytes ? { freeBytes: modelInstall.installer.freeBytes } : {}),
@@ -750,22 +760,14 @@ function dubVideos(videos: VideoService, guard: TaskGuard): DubVideos {
 }
 
 /**
- * 找 audio.cpp 引擎（`audiocpp_cli`，Model Worker 协议规范 §4.4）：`BAOCUT_AUDIOCPP_CLI` 给了就只用它（文件不在时找不到）；否则是
- * 模型包装好的引擎组件（`installed`，即 `ModelCatalog.engineExecutable`：`<Runtime Home>/tools/audiocpp/<版本>/`）；最后找 PATH。
- * 只看文件在不在、不执行它。
+ * 找内置的 audio.cpp 引擎（`audiocpp_cli`，Model Worker 协议规范 §4.4）：`BAOCUT_AUDIOCPP_CLI` 给了就只用它（文件不在时找不到）；
+ * 否则是随应用分发的 `<resources>/bin/audiocpp/`，开发时是 cargo 产物目录里的 `audiocpp/`（`npm run build:audiocpp` 下载）。
+ * 不找 PATH。只看文件在不在、不执行它。
  */
-export function resolveAudioCppCli(env: NodeJS.ProcessEnv, installed: () => string | null = () => null): string | null {
+export function resolveAudioCppCli(env: NodeJS.ProcessEnv): string | null {
   const explicit = env[AUDIO_CPP_CLI_ENV];
   if (explicit) return isExecutableFile(explicit) ? explicit : null;
-  const component = installed();
-  if (component) return component;
-  const exe = process.platform === 'win32' ? `${AUDIO_CPP_ENGINE}.exe` : AUDIO_CPP_ENGINE;
-  for (const dir of (env.PATH ?? '').split(path.delimiter)) {
-    if (!dir) continue;
-    const candidate = path.join(dir, exe);
-    if (isExecutableFile(candidate)) return candidate;
-  }
-  return null;
+  return findBundledTool(AUDIO_CPP_TOOL, AUDIO_CPP_COMMAND, path.dirname(fileURLToPath(import.meta.url)), env);
 }
 
 function isExecutableFile(file: string): boolean {

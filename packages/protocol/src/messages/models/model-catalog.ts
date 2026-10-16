@@ -30,8 +30,7 @@ const en = {
   moving: 'The models folder is being moved',
   notInstalled: (p: { repo: string }) => `Model ${p.repo} is not installed`,
   noFilesInSubdir: (p: { subdir: string }) => `The model has no files under ${p.subdir}/`,
-  engineNoBuild: (p: { platform: string }) => `The audio.cpp engine has no build for this machine (${p.platform}); set BAOCUT_AUDIOCPP_CLI to an engine you built yourself`,
-  engineNotInstalled: (p: { version: string }) => `audio.cpp engine ${p.version} is not installed`,
+  engineMissing: 'The built-in audio.cpp engine was not found: this computer has no build of it, or the app installation is incomplete',
 };
 
 export type ModelsModelCatalogMessages = typeof en;

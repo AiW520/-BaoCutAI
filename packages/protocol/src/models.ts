@@ -32,9 +32,8 @@ export type ModelBackend = 'mlx' | 'coreml' | 'candle' | 'ggml' | 'audio-cpp' | 
  * - `installed`：文件齐全，Worker 没有加载它；
  * - `loading` / `ready` / `busy` / `unloading`：Worker 的状态；
  * - `error`：不可用，`reason` 说明原因（`unsupported`：这台机器的平台或后端不支持；`resource`：资源不足或反复崩溃后停用，
- *   `models.enable` 重新启用；`worker-missing`：没有找到 Model Worker 可执行文件）。音乐模型包（`audio-cpp`）的引擎是它的组件
- *   `audiocpp-engine`：权重在而引擎没装是 `not-installed` / `incomplete`；主机平台没有引擎包（又没有 `BAOCUT_AUDIOCPP_CLI`）是
- *   `error` / `unsupported`。
+ *   `models.enable` 重新启用；`worker-missing`：没有找到 Model Worker 可执行文件）。语音合成与音乐模型包（`audio-cpp`）用随应用
+ *   内置的 audio.cpp 引擎：找不到它（又没有 `BAOCUT_AUDIOCPP_CLI`）时是 `error` / `unsupported`。
  *
  * 具体进度未知时不伪造百分比：总字节数未知时 `install.totalBytes` 为 null。
  */
@@ -80,15 +79,15 @@ export interface ModelBundleStatus {
 
 /**
  * 模型包的一个组件：上游仓库的一个固定版本，装在 `<models-root>/<owner>/<repo>/`。几个模型包共用的组件（VAD 等）只装一份，
- * 按引用保留：删除模型包时只回收没有别的模型包在用的组件。来自 GitHub 发布页的组件（`origin: 'github-release'`，音乐模型包的
- * audio.cpp 引擎）是平台专属的，按 Runtime 所在主机取一个压缩包，装在 Runtime Home 的 `tools/<名字>/<版本>/`。
+ * 按引用保留：删除模型包时只回收没有别的模型包在用的组件。来自 GitHub 发布页的组件（`origin: 'github-release'`，embedding
+ * 模型包的 LiteRT-LM C 库）是平台专属的，按 Runtime 所在主机取一个压缩包，装在 Runtime Home 的 `tools/<名字>/<版本>/`。
  */
 export interface ModelComponentStatus {
-  /** `asr`、`vad`、`aligner`、`audiocpp-engine`…… */
+  /** `asr`、`vad`、`aligner`、`tts`…… */
   component: string;
   /** `<owner>/<repo>`（发布页组件是上游的 GitHub 仓库名） */
   repo: string;
-  /** 上游的提交（发布页组件是发布的标签，如 `v0.9.1`）。 */
+  /** 上游的提交（发布页组件是发布的标签）。 */
   revision: string;
   /**
    * 组件从哪里下载：没有这一项是模型仓库（Hugging Face 或设置的镜像）；`github-release` 是 GitHub 发布页的预编译包（按主机平台选，
@@ -523,11 +522,10 @@ export interface ModelLicense {
 }
 
 /**
- * 读音标注（多音字）怎么交给模型：读音标注是输入文本的一部分，Runtime 原样交给 Worker，由引擎换成自己的写法。
- * `homophone`：换成同音字；`inline-pinyin`：行内拼音；`annotated`：模型原生的标注写法；`unsupported`：模型没有读音通道，
- * 按表面文字合成（如实报告，不静默改写）。
+ * 读音标注（多音字）怎么交给模型：读音标注是输入文本的一部分。`annotated`：模型认得标注，Runtime 原样交给引擎；
+ * `unsupported`：模型没有读音通道，按表面文字合成，标注如实报成没念（不静默改写）。
  */
-export type SpeechReadings = 'homophone' | 'inline-pinyin' | 'annotated' | 'unsupported';
+export type SpeechReadings = 'annotated' | 'unsupported';
 
 /** 本地语音合成模型（`local` Provider 的 `synthesizeSpeech` 模型）独有的描述。 */
 export interface LocalSpeechTraits {
@@ -674,8 +672,8 @@ export interface LocalMusicTraits {
   /** 引擎的家族（`yue2`）。 */
   family: string;
   /**
-   * 执行引擎（`audiocpp_cli`）与它此刻找到的可执行文件；没找到时 null（模型不能生成）。引擎是模型包的 `audiocpp-engine` 组件：没装时
-   * 模型包是 `not-installed` / `incomplete`，`unavailableReason: 'not-installed'`。
+   * 执行引擎（`audiocpp_cli`）与它此刻找到的可执行文件；没找到时 null（模型不能生成）。引擎随应用内置：找不到时模型包是
+   * `error` / `unsupported`。
    */
   engine: { id: string; executable: string | null };
   /** 输出的采样率（Hz）。输出一律是 WAV。 */

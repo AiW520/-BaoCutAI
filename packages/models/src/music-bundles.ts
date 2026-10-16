@@ -1,16 +1,16 @@
 import type { ModelLicense } from '@baocut/protocol';
 import { ModelsMusicBundles as M } from '@baocut/protocol/messages/models/music-bundles.ts';
 import type { BundleDefinition } from './bundle-registry.ts';
-import { AUDIO_CPP_COMMAND, AUDIO_CPP_ENGINE_COMPONENT } from './music-engine.ts';
+import { AUDIO_CPP_COMMAND } from './audio-cpp-engine.ts';
 
 /**
  * 本地音乐生成的模型包（架构设计 §6.3）。`bundleId` 是 `<模型>@<backend>-<量化>`。权重是 YuE2 的 GGUF 转换版，由 audio.cpp 引擎
- * （`audiocpp_cli`）执行，不经 Model Worker：主模型、VAE 与分词表同在一个仓库里，整个仓库是一个 `music` 组件，只下载清单
- * （`repo-manifests.ts`）里列出的 Q8 主模型、F16 VAE 与配置文件，仓库里别的量化（Q4、BF16、F32 VAE）不下载。
- * 第二个必需组件是引擎本身（`audiocpp-engine`，见 `music-engine.ts`）：平台专属，随模型包下载，几个模型包共用一份。
+ * （`audiocpp_cli`，随应用内置，见 `audio-cpp-engine.ts`）执行，不经 Model Worker：主模型、VAE 与分词表同在一个仓库里，整个仓库是
+ * 一个 `music` 组件，只下载清单（`repo-manifests.ts`）里列出的 Q8 主模型、F16 VAE 与配置文件，仓库里别的量化（Q4、BF16、F32 VAE）
+ * 不下载。
  *
- * 引擎按构建选设备（macOS 上 Metal，Windows 与 Linux 的下载包是 Vulkan），所以登记的 `device` 是 `auto`；全平台列出，主机平台
- * 没有引擎包时模型包报告为 `unsupported`。
+ * 引擎按构建选设备（macOS 上 Metal，Windows 与 Linux 是 Vulkan 或 CPU），所以登记的 `device` 是 `auto`；全平台列出，主机没有内置
+ * 引擎时模型包报告为 `unsupported`。
  */
 
 const MiB = 1024 * 1024;
@@ -39,8 +39,6 @@ const YUE2_3B_Q8: BundleDefinition = {
   device: 'auto',
   components: {
     music: { family: 'yue2', repo: 'audio-cpp/Yue2-3B-GGUF', revision: 'cca74d8980c00f30ab8d52248a367c01ad633ec2' },
-    // 权重在前：安装按登记的顺序下载。
-    'audiocpp-engine': AUDIO_CPP_ENGINE_COMPONENT,
   },
   label: 'YuE2 3B',
   license: YUE2_LICENSE,

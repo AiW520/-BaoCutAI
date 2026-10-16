@@ -21,7 +21,7 @@
     {id: 'accent', name: '发音标准优先', short: '像母语',
      desc: '换成目标语言的母语声音，发音地道；听起来不再是本人，说话人之间靠不同声音区分'},
   ];
-  /** Qwen3-TTS 预设音色的母语（0.6B 与 1.7B CustomVoice 同一张表）：日语 / 韩语各一位，其余中英双语 */
+  /** Qwen3-TTS 预设音色的母语（只有 1.7B CustomVoice 有预设）：日语 / 韩语各一位，其余中英双语 */
   const PRESET_NATIVE = {
     Vivian: ['zh', 'en'], Serena: ['zh', 'en'], Uncle_Fu: ['zh', 'en'], Dylan: ['zh', 'en'],
     Eric: ['zh', 'en'], Ryan: ['zh', 'en'], Aiden: ['zh', 'en'], Ono_Anna: ['ja'], Sohee: ['ko'],
@@ -36,7 +36,7 @@
       id: e.id, name: e.name, langs: e.langs.slice(), clone: true, presets,
       // 风格：CustomVoice 的预设指令，或 VoxCPM2 的可控克隆（2026-09-26 起不再等于「有预设」）
       emotion: !!e.emotion, style: TTS.hasStyle(e.id),
-      refText: e.id === 'gptsovits' || e.id === 'voxcpm2' || e.id === 'omnivoice',
+      refText: e.id === 'voxcpm2' || e.id === 'omnivoice',
       describe: !!e.models.describe, vocab: !!e.vocab,
       // 按目标时长合成（OmniVoice，每句最长 60 秒）：要压的句直接按目标长度出声，不事后加速
       duration: e.duration || 0, nonCommercial: !!e.nonCommercial,
@@ -109,7 +109,7 @@
     const used = Object.values(r.presets || {}).filter(Boolean);
     return `${p.name} · ${used.length ? used.slice(0, 2).join(' / ') + (used.length > 2 ? ' 等' : '') : acc.items[0].id} 预设`;
   }
-  /** 引擎专属的「其他设置」：Qwen3 一句话风格；IndexTTS 情绪；GPT-SoVITS 参考原文。每项带 `default`，表单按 `r[key]` 读写。 */
+  /** 引擎专属的「其他设置」：Qwen3 一句话风格；IndexTTS 情绪；VoxCPM2 / OmniVoice 参考原文。每项带 `default`，表单按 `r[key]` 读写。 */
   function extraSettings(engine) {
     const c = capabilities(engine);
     const out = [];
@@ -134,13 +134,17 @@
    *  （按候选次序取第一只）；都没装就按候选次序取第一只会念的。返回 {engine, installed, model, speaks}。
    *  候选次序 = 引擎表次序，但 **IndexTTS2 排最前**（D2 裁决，2026-09-23，`docs/design/speech/bcut-tts-pace-stability.md`：
    *  语速最稳且零错字，与 `bcut tts` 1.173.0 起的中英文缺省同一只）。它只会中英，别的语言照旧表头 Qwen3-TTS；
-   *  「已装优先」不变——装了 Qwen3 没装 IndexTTS2 时仍用 Qwen3，不为缺省逼人下 3.7 GB。 */
+   *  「已装优先」不变——装了 Qwen3 没装 IndexTTS2 时仍用 Qwen3，不为缺省逼人下 3.4 GB。
+   *  「发音标准优先」时其余引擎再按母语来源排：有母语预设的（Qwen3-TTS 1.7B CustomVoice）先于内置母语参考，
+   *  再先于任选预设与自己上传——0.6B 没有预设了，日语 / 韩语仍要落到 CustomVoice 的 Ono_Anna / Sohee。 */
   const PREFERRED_ENGINE = 'indextts2';
+  const ACCENT_RANK = {preset: 0, ref: 1, 'preset-any': 2, upload: 3};
   function pickEngine(o) {
     const opt = o || {};
     const installed = opt.installed || (() => false);
+    const rank = (e) => (opt.priority === 'accent' ? ACCENT_RANK[accentSource(e.id, opt.lang).kind] : 0);
     const cands = TTS.ENGINES.filter((e) => TTS.engineSpeaks(e.id, opt.lang))
-      .sort((a, b) => (b.id === PREFERRED_ENGINE) - (a.id === PREFERRED_ENGINE));   // 稳定排序：只把它提到最前
+      .sort((a, b) => ((b.id === PREFERRED_ENGINE) - (a.id === PREFERRED_ENGINE)) || (rank(a) - rank(b)));   // 稳定排序
     if (!cands.length) return {engine: TTS.ENGINES[0].id, installed: false, model: null, speaks: false};
     const need = (e) => modelNeeded({engine: e.id, lang: opt.lang, priority: opt.priority || 'voice'});
     const hit = cands.find((e) => installed(need(e)));

@@ -14,16 +14,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ModelsLocalSpeech as M } from '@baocut/protocol/messages/models/local-speech.ts';
 import { parseLibraryVoice } from '@baocut/runtime-storage/library';
-import type { BundleDefinition } from './bundle-registry.ts';
+import type { BundleDefinition, SpeechBundleProfile } from './bundle-registry.ts';
+import type { SpeechParameters } from './generation-options.ts';
 import { appFileMissing } from './model-assets.ts';
 import { sha256File } from './model-catalog.ts';
 import type { ModelChoice } from './model-selection.ts';
 import { BUILTIN_VOICES, builtinVoice, builtinVoiceFile, defaultBuiltinVoice, type BuiltinVoice } from './speech-voices.ts';
-import type { JobInput, SynthesizeOptions, SynthesizeVoice } from './worker-contract.ts';
+import { renderReadings, type DroppedReading } from './speech-readings.ts';
 
 /**
  * 本地语音合成（架构设计 §6.1、§6.3）：把 `synthesize` 模型包描述成 `local` Provider 的 `synthesizeSpeech` 模型，
- * 在提交时决定声音方式（不换成别的声音），执行时换成 Worker 的 `job.run` 参数（Model Worker 协议规范 §2.5.2）。
+ * 在提交时决定声音方式（不换成别的声音），执行时换成内置 audio.cpp 服务的请求（`audioCppSpeechRequestOf`）。
  */
 
 /**
@@ -72,44 +73,8 @@ export function localSpeechModelInfo(def: BundleDefinition, status: ModelBundleS
     cost: 'free-local',
     available: usable,
     local,
-    ...(onCpu(def, status) ? { notes: cpuNote(def) } : {}),
     ...(!usable && status.detail ? { detail: status.detail, ...(status.detailRef ? { detailRef: status.detailRef } : {}) } : {}),
   };
-}
-
-/** candle 的模型包在 CPU 上跑（Worker 没有报告 CUDA）。 */
-function onCpu(def: BundleDefinition, status: ModelBundleStatus): boolean {
-  return def.backend === 'candle' && (status.device ?? def.device) === 'cpu';
-}
-
-/**
- * candle 在 CPU 上合成有多慢，按模型（`bundleId` 的 `@` 前一段）。数字是 Windows 11 + i7-12700F（12 核 20 线程、32 GB，
- * `--release`，`BAOCUT_GPU=off`，机器空闲时）合成 10–17 秒中英文的实测（架构设计 §6.5），合成用时是音频长度的：
- * Qwen3-TTS 0.6B 5.0–6.1 倍、1.7B 7.1–8.2 倍，IndexTTS2 24.5 倍，IndexTTS 2.5 19.1 倍，GPT-SoVITS 1.7 倍，VoxCPM2 9.3–9.5 倍，
- * OmniVoice 8.2–8.5 倍。没有实测的（Fish S2 Pro）走 `paceDefault`，只说没有实测，不编数字。
- */
-const CPU_PACE: Record<string, () => Localized> = {
-  'qwen3-tts-0.6b-base': M.paceQwen06,
-  'qwen3-tts-0.6b-customvoice': M.paceQwen06,
-  'qwen3-tts-1.7b-base': M.paceQwen17,
-  'qwen3-tts-1.7b-customvoice': M.paceQwen17,
-  'qwen3-tts-1.7b-voicedesign': M.paceQwen17,
-  indextts2: M.paceIndexTts2,
-  'index-tts2.5': M.paceIndexTts25,
-  'gpt-sovits-v2': M.paceGptSovits,
-  voxcpm2: M.paceVoxcpm2,
-  omnivoice: M.paceOmnivoice,
-};
-
-/**
- * 耗时的提示（与文生图的同一个 `notes`）：candle 合成在 CPU 上比实时慢 2 到 25 倍，照实说。CUDA 上快得多：RTX 3060 上
- * Qwen3-TTS 0.6B 合成 9 秒用约 4.5 秒，IndexTTS2 13 秒用约 16 秒（§6.5），只点名这两只；Worker 报告 CUDA 时不写这句，
- * 与 MLX 的同一只模型一样。
- */
-// `notes` 没有引用字段：按生成时的语言存文本。
-function cpuNote(def: BundleDefinition): string {
-  const pace = (CPU_PACE[def.bundleId.split('@')[0]!] ?? M.paceDefault)();
-  return M.cpuNote({ pace }).text;
 }
 
 /**
@@ -275,45 +240,135 @@ export function frozenVoiceOf(plan: LocalVoicePlan): string {
   }
 }
 
-/**
- * 冻结的参数 → Worker 的 `job.run`（`synthesize`）。有参考录音就是 `clone`（内置音色也是），有描述就是 `describe`，
- * 其余是模型的说话人。参考录音的摘要是提交时读出的；执行前由调用方再核对一次文件。
- */
-export function synthesizeRunOf(parameters: {
-  text: string;
-  voice: string;
-  language: string | null;
-  instructions: string | null;
-  speed: number | null;
-  seed: number | null;
-  reference?: FrozenSpeechReference;
-  voiceDescription?: string;
-  cfg?: number;
-  steps?: number;
-}): { input: JobInput | null; options: SynthesizeOptions } {
-  let voice: SynthesizeVoice;
-  let input: JobInput | null = null;
-  if (parameters.reference) {
-    voice = { mode: 'clone', transcript: parameters.reference.transcript };
-    input = { file: parameters.reference.path, contentHash: parameters.reference.sha256, track: 0 };
-  } else if (parameters.voiceDescription !== undefined) {
-    voice = { mode: 'describe', description: parameters.voiceDescription };
-  } else {
-    voice = { mode: 'preset', id: parameters.voice };
-  }
-  return {
-    input,
-    options: {
-      text: parameters.text,
-      language: parameters.language,
-      voice,
-      instructions: parameters.instructions,
-      speed: parameters.speed,
-      cfg: parameters.cfg ?? null,
-      steps: parameters.steps ?? null,
-      seed: parameters.seed,
-    },
+/** audio.cpp 服务（`audiocpp_server`）的一次合成请求：`POST /v1/audio/speech` 的 JSON，以及没能按注记念的读音。 */
+export interface AudioCppSpeechRequest {
+  body: {
+    model: string;
+    input: string;
+    voice_ref?: string;
+    reference_text?: string;
+    seed?: number;
+    options: Record<string, string | number | boolean>;
   };
+  dropped: DroppedReading[];
+}
+
+/** 服务配置里合成模型的 ID（每个服务进程只配一个模型）。 */
+export const AUDIO_CPP_SPEECH_MODEL_ID = 'speech';
+
+/**
+ * 冻结的参数 → audio.cpp 服务的请求（架构设计 §6.1、§6.3）。有参考录音就是克隆（内置音色也是），有描述就是按描述造声，其余是
+ * 模型的说话人；参考录音由调用方先核对摘要、转成 WAV（`referenceWav`）。提交时已经按模型描述检查过声音方式与旋钮，这里只换写法：
+ *
+ * - 文本：读音标注按模型包的 `readings` 渲染（`speech-readings.ts`）；VoxCPM2 的风格说明接在正文前（`(说明)正文`）。
+ * - 语言：请求的语言整个或主语言子标签在引擎认得的语言里时才给，否则由模型自己判断。
+ * - 声音：克隆给 `voice_ref` 与原文（IndexTTS 不读原文；Qwen3-TTS Base 没有原文时只用说话人向量 `x_vector_only_mode`）；
+ *   描述与 Qwen3-TTS CustomVoice 的语气说明都是 `instruct`；CustomVoice 的说话人是 `voice_id`。
+ * - 语速：OmniVoice 是 `speed`，IndexTTS 2.5 是目标时长的倍率 `duration_scale`（语速的倒数）；引导强度与步数是
+ *   `guidance_scale` 与 `num_inference_steps`。
+ */
+export function audioCppSpeechRequestOf(
+  parameters: SpeechParameters,
+  profile: SpeechBundleProfile,
+  referenceWav: string | null,
+): AudioCppSpeechRequest {
+  const engine = profile.engine;
+  const family = engine.family;
+  const rendered = renderReadings(parameters.text, profile.readings);
+  const options: Record<string, string | number | boolean> = {};
+  const instructions = parameters.instructions?.trim() || null;
+  let input = rendered.text;
+  if (instructions && family === 'voxcpm2') input = `(${instructions})${input}`;
+  else if (instructions) options.instruct = instructions;
+
+  const language = engineLanguage(parameters.language, engine.languages);
+  if (language !== null) options.language = language;
+  if (engine.chunkSize !== undefined) options.text_chunk_size = engine.chunkSize;
+
+  const body: AudioCppSpeechRequest['body'] = { model: AUDIO_CPP_SPEECH_MODEL_ID, input, options };
+  if (parameters.reference) {
+    if (referenceWav === null) throw new Error('audio.cpp clone request without a converted reference');
+    body.voice_ref = referenceWav;
+    const transcript = parameters.reference.transcript?.trim() || null;
+    if (transcript && family !== 'index_tts2') body.reference_text = transcript;
+    else if (family === 'qwen3_tts') options.x_vector_only_mode = true;
+  } else if (parameters.voiceDescription !== undefined) {
+    options.instruct = parameters.voiceDescription;
+  } else if (profile.presets === 'model') {
+    options.voice_id = parameters.voice;
+  }
+
+  if (parameters.speed !== null) {
+    if (family === 'index_tts2') options.duration_scale = 1 / parameters.speed;
+    else options.speed = parameters.speed;
+  }
+  if (parameters.cfg !== undefined) options.guidance_scale = parameters.cfg;
+  if (parameters.steps !== undefined) options.num_inference_steps = parameters.steps;
+  if (parameters.seed !== null) body.seed = parameters.seed;
+  return { body, dropped: rendered.dropped };
+}
+
+/** 请求的语言（BCP 47）在引擎认得的语言 ID 里的写法：整个标签或主语言子标签（不分大小写），都不在时 null。 */
+export function engineLanguage(language: string | null, known: readonly string[] | undefined): string | null {
+  if (language === null || !known?.length) return null;
+  const tag = language.toLowerCase();
+  if (known.includes(tag)) return tag;
+  const primary = tag.split('-')[0]!;
+  return known.includes(primary) ? primary : null;
+}
+
+/** 合成结果的峰值上限 −1 dBFS（满幅为 1）：`10^(−1/20)`。 */
+export const SPEECH_PEAK_CEILING = 0.8912509;
+
+/**
+ * 合成结果的峰值上限（原 Model Worker 的 `PeakLimited`）：整段峰值高于 `SPEECH_PEAK_CEILING` 时等比缩到它，只缩不放、不做压缩。
+ * 只处理 16 位 PCM 与 32 位浮点的 WAV（audio.cpp 服务输出 16 位 PCM）；别的格式、解析不了的原样返回。原地改写 `bytes`，返回乘上去的
+ * 增益（没缩时 null）。引擎量化成 16 位时已经削平的样本救不回来，这里只保证交出去的文件不贴满幅。
+ */
+export function limitSpeechPeak(bytes: Buffer): number | null {
+  if (bytes.length < 12 || bytes.toString('ascii', 0, 4) !== 'RIFF' || bytes.toString('ascii', 8, 12) !== 'WAVE') return null;
+  let format = 0;
+  let bits = 0;
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const id = bytes.toString('ascii', offset, offset + 4);
+    const size = bytes.readUInt32LE(offset + 4);
+    const body = offset + 8;
+    if (id === 'fmt ' && size >= 16 && body + 16 <= bytes.length) {
+      format = bytes.readUInt16LE(body);
+      if (format === 0xfffe && size >= 40 && body + 26 <= bytes.length) format = bytes.readUInt16LE(body + 24);
+      bits = bytes.readUInt16LE(body + 14);
+    } else if (id === 'data') {
+      const end = Math.min(body + size, bytes.length);
+      if (format === 1 && bits === 16) return scalePeak(body, end, 2, (at) => bytes.readInt16LE(at) / 32_768, (at, v) => bytes.writeInt16LE(Math.round(v * 32_767), at));
+      if (format === 3 && bits === 32) return scalePeak(body, end, 4, (at) => bytes.readFloatLE(at), (at, v) => bytes.writeFloatLE(v, at));
+      return null;
+    }
+    offset = body + size + (size % 2);
+  }
+  return null;
+}
+
+function scalePeak(
+  start: number,
+  end: number,
+  width: number,
+  read: (at: number) => number,
+  write: (at: number, value: number) => void,
+): number | null {
+  const last = end - ((end - start) % width);
+  let peak = 0;
+  for (let at = start; at < last; at += width) {
+    const value = read(at);
+    if (!Number.isFinite(value)) write(at, 0);
+    else if (Math.abs(value) > peak) peak = Math.abs(value);
+  }
+  if (peak <= SPEECH_PEAK_CEILING) return null;
+  const gain = SPEECH_PEAK_CEILING / peak;
+  for (let at = start; at < last; at += width) {
+    write(at, Math.max(-SPEECH_PEAK_CEILING, Math.min(SPEECH_PEAK_CEILING, read(at) * gain)));
+  }
+  return gain;
 }
 
 /** A model requiring ICL reference text must not silently synthesize without it. */

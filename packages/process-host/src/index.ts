@@ -1,4 +1,4 @@
-export { BIN_DIR_ENV, RESOURCES_BIN_DIR, executableName, findBundledBinary } from './bundled-binary.ts';
+export { BIN_DIR_ENV, RESOURCES_BIN_DIR, executableName, findBundledBinary, findBundledTool } from './bundled-binary.ts';
 export { cargoTargetDirs, findCargoBinary } from './cargo-target.ts';
 export { FFMPEG_DOWNLOAD_URL, ffmpegInstallHint, ffmpegMissingRemedy, ffmpegMissingRemedyMessage } from './install-hint.ts';
 export {

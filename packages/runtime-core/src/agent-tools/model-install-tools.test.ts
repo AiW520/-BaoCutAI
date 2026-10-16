@@ -3,9 +3,8 @@ import { ModelInstallTools, type ModelInstallToolsDeps } from './model-install-t
 import { toolRisk, type ToolConfirmation, type ToolPrincipal } from './tool-scope.ts';
 
 /**
- * `models_install` 与音乐引擎（架构设计 §6.3、§6.5）：音乐模型包（backend `audio-cpp`）的 audio.cpp 引擎是它的必需组件
- * （`audiocpp-engine`），在同一份安装计划里：一次确认，说明里的大小与部件已经含引擎，没有另外的引擎确认与 `engine` 结果。
- * 模型安装与范围都是假的。
+ * `models_install` 与音乐模型包（架构设计 §6.3、§6.5）：audio.cpp 引擎随应用内置，不是模型包的组件；安装计划里只有模型自己的
+ * 权重，一次确认，没有另外的引擎确认与 `engine` 结果。模型安装与范围都是假的。
  */
 
 const MUSIC = 'yue2-3b@audio-cpp-q8';
@@ -21,22 +20,13 @@ function harness(upToDate: boolean) {
       ? []
       : [
           { component: 'music', repo: 'audio-cpp/Yue2-3B-GGUF', revision: 'r', action: 'download', files: ['m.gguf'], bytes: 1000 },
-          {
-            component: 'audiocpp-engine',
-            repo: '0xShug0/audio.cpp',
-            revision: 'v0.9.1',
-            origin: 'github-release',
-            action: 'download',
-            files: ['audio-v0.9.1-bin-macos-arm64-metal.tar.gz'],
-            bytes: 300,
-          },
         ],
-    downloadBytes: upToDate ? 0 : 1300,
-    estimatedBytes: 1300,
-    confirmBytes: upToDate ? 0 : 1300,
+    downloadBytes: upToDate ? 0 : 1000,
+    estimatedBytes: 1000,
+    confirmBytes: upToDate ? 0 : 1000,
     resumedBytes: 0,
     availableBytes: null,
-    source: 'https://hf.example + https://github.com/0xShug0/audio.cpp/releases',
+    source: 'https://hf.example',
   });
   const deps = {
     installs: {
@@ -58,19 +48,19 @@ function harness(upToDate: boolean) {
   return { tools: new ModelInstallTools(deps), confirmed, submitted };
 }
 
-describe('models_install 与音乐引擎', () => {
-  it('要下载：一次确认，大小与部件含引擎组件；结果只有模型包的任务', async () => {
+describe('models_install 与音乐模型包', () => {
+  it('要下载：一次确认，部件只有模型的权重；结果只有模型包的任务、没有引擎', async () => {
     const { tools, confirmed, submitted } = harness(false);
     const result = (await tools.dispatch('models_install', { bundleId: MUSIC, commandId: 'cmd_1' }, agent)) as Record<string, any>;
     expect(confirmed.map((c) => c.summaryRef?.key)).toEqual(['rcAgentTools.installModelSummary']);
-    expect(confirmed[0]!.summary).toContain('0xShug0/audio.cpp');
-    expect(submitted).toEqual([{ bundleId: MUSIC, confirmBytes: 1300, commandId: 'cmd_1' }]);
-    expect(result).toMatchObject({ jobId: 'job_model', downloadBytes: 1300 });
-    expect(result.components.map((c: { component: string }) => c.component)).toEqual(['music', 'audiocpp-engine']);
+    expect(confirmed[0]!.summary).toContain('audio-cpp/Yue2-3B-GGUF');
+    expect(submitted).toEqual([{ bundleId: MUSIC, confirmBytes: 1000, commandId: 'cmd_1' }]);
+    expect(result).toMatchObject({ jobId: 'job_model', downloadBytes: 1000 });
+    expect(result.components.map((c: { component: string }) => c.component)).toEqual(['music']);
     expect(result.engine).toBeUndefined();
   });
 
-  it('已经装好（含引擎）：不确认，不提交', async () => {
+  it('已经装好：不确认，不提交', async () => {
     const { tools, confirmed, submitted } = harness(true);
     const result = (await tools.dispatch('models_install', { bundleId: MUSIC }, agent)) as Record<string, any>;
     expect(confirmed).toEqual([]);

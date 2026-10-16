@@ -24,7 +24,7 @@ BaoCut 提供 macOS 与 Windows 安装包，下面的链接始终下载最新版
 | macOS 14+ · Apple Silicon | [DMG](https://baocut.com/download/mac-dmg) | [ZIP](https://baocut.com/download/mac-zip) | Apple Silicon Mac，已通过 Developer ID 签名与 Apple 公证 |
 | Windows x64 · CPU | [安装 EXE](https://baocut.com/download/win-setup) | [ZIP](https://baocut.com/download/win-zip) | 使用 CPU 推理 |
 | Windows x64 · CUDA | [安装 EXE](https://baocut.com/download/win-cuda-setup) | [ZIP](https://baocut.com/download/win-cuda-zip) | CUDA 13 支持的 NVIDIA 显卡，从 RTX 30 / Ampere 起 |
-| Windows x64 · Vulkan | [安装 EXE](https://baocut.com/download/win-vulkan-setup) | [ZIP](https://baocut.com/download/win-vulkan-zip) | 支持 Vulkan 的 AMD / Intel 显卡或较旧的 NVIDIA 显卡；Whisper 使用 GPU，candle 使用 CPU |
+| Windows x64 · Vulkan | [安装 EXE](https://baocut.com/download/win-vulkan-setup) | [ZIP](https://baocut.com/download/win-vulkan-zip) | 支持 Vulkan 的 AMD / Intel 显卡或较旧的 NVIDIA 显卡；Whisper 与 audio.cpp（语音合成、音乐）使用 GPU，candle 使用 CPU |
 
 macOS 打开 DMG 后，将 BaoCut 拖入“应用程序”。Windows 先安装 [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/)，再运行安装器或解压 ZIP。Windows 包未签名，GPU 版需要兼容的显卡驱动。校验文件与验证说明见各版本的 GitHub 发布页；应用通过各平台的更新源检查 GitHub Releases 中的新版本。
 
@@ -78,7 +78,7 @@ Fish Audio S2 Pro 可在本机使用 MLX 社区 8-bit 权重，支持内置音�
 
 **选择自己的智能体引擎。** Claude Code 与 Codex CLI 已有端到端验证；GitHub Copilot CLI、Pi 和 OpenCode 已内置接入。支持 Agent Client Protocol 的智能体（如 Qwen Code（千问）、Gemini CLI、Cursor Agent、Grok、Kimi Code，或自行添加的引擎）通过统一驱动接入。各引擎的验证状态见下文。
 
-**选择自己的模型。** 转写、语音合成、图片生成、文本生成、音频分离等能力与服务提供方解耦。Apple Silicon 使用 MLX、Core ML 本地后端，Windows 使用 whisper.cpp、candle，并提供 CUDA 与 Vulkan 打包配置。在线接入包括 OpenAI、Anthropic、Google、ElevenLabs、DeepSeek、Moonshot、Qwen、Zhipu、MiniMax、Volcengine、xAI、Mistral、Groq、OpenRouter、SiliconFlow 及其他 OpenAI 兼容端点。各服务支持的能力不同；用量账本记录任务消耗与可获得的费用信息。一台机器也可以向局域网里的其他机器共享本地模型能力。Windows 当前的凭据与硬件验证限制见下文。
+**选择自己的模型。** 转写、语音合成、图片生成、文本生成、音频分离等能力与服务提供方解耦。Apple Silicon 使用 MLX、Core ML 本地后端，Windows 使用 whisper.cpp、candle，并提供 CUDA 与 Vulkan 打包配置；本地语音合成与音乐生成使用随应用内置的 audio.cpp 引擎。在线接入包括 OpenAI、Anthropic、Google、ElevenLabs、DeepSeek、Moonshot、Qwen、Zhipu、MiniMax、Volcengine、xAI、Mistral、Groq、OpenRouter、SiliconFlow 及其他 OpenAI 兼容端点。各服务支持的能力不同；用量账本记录任务消耗与可获得的费用信息。一台机器也可以向局域网里的其他机器共享本地模型能力。Windows 当前的凭据与硬件验证限制见下文。
 
 ## 从源码运行
 
@@ -187,7 +187,7 @@ Windows Command Prompt 中，先执行 `set "BAOCUT_HOME=.dev/baocut-home"`，�
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run doctor` / `npm run setup` | 检查源码构建依赖／检查并构建原生 Worker 与 WASM。 |
+| `npm run doctor` / `npm run setup` | 检查源码构建依赖／检查并构建原生 Worker、取内置的 audio.cpp 引擎并构建 WASM。 |
 | `npm run dev:lite` | 跳过 Rust 构建启动桌面外壳；功能限制见上方。 |
 | `npm run dev:designs` | 用 Vite 启动可交互原型，起始地址为 `http://127.0.0.1:4331/#/home`，源码变化后自动构建并刷新。首次运行前执行 `npm --prefix designs/baocut ci`；见[原型 README](designs/baocut/README.md)。 |
 | `npm run build` | 构建 WASM、工具目录、外部智能体 skill，以及主进程、preload、Runtime 与界面；桌面产物位于 `apps/desktop/out`。 |
@@ -197,6 +197,7 @@ Windows Command Prompt 中，先执行 `set "BAOCUT_HOME=.dev/baocut-home"`，�
 | `npm run runtime` | 单独启动 Runtime，默认主目录为 `~/.baocut`。 |
 | `npm run cli -- --help` | 查看 `baocut` 命令一览。工具命令从 Runtime 的工具目录派生，与 MCP 共用；`baocut help <command>` 查看参数，`baocut spec` 输出机器可读目录。没有 Runtime 时自动在后台启动，空闲后退出；可用 `baocut runtime status\|ensure\|stop` 管理。退出码：0 成功、1 失败、2 需要用户处理、3 Runtime 不可用、4 参数错误。见 [Agent 面设计 §5](docs/design/agent-surface/agent-surface-design.md#5-cli-约定)。 |
 | `npm run build:engine` | 构建视频引擎 `engine-host`、成片渲染器 `export-worker`、`speech-worker`、人脸检测 `face-detect` 与本地推理进程 `model-worker`。Apple Silicon 使用 MLX 与 Core ML，其他平台使用 candle 与 whisper.cpp；额外参数原样交给 cargo，例如 `npm run build:engine -- --release`。 |
+| `npm run build:audiocpp` | 按登记的固定版本下载这台机器的 audio.cpp 引擎（本地语音合成与音乐用）到 cargo 产物目录的 `audiocpp/`，核对大小与 sha256；`-- --variant cpu` 在 Windows / Linux 取 CPU 构建；给了 `BAOCUT_TOOLS_ENDPOINT` 时从镜像下载。打包时内置同一个版本。 |
 | `npm test` | 单元测试与使用假 Driver 的 Runtime 端到端测试，无需 Codex。 |
 | `npm run check:file-fonts` | 构建桌面应用，在 Electron 隐藏窗口中通过 `file://` 检查预览渲染器加载全部字体。 |
 | `npm run typecheck` | 类型检查。 |
@@ -207,7 +208,7 @@ BaoCut 正在积极开发，macOS Apple Silicon 与 Windows x64 安装包见上�
 
 - Codex CLI 与 Claude Code 已有端到端验证。外部智能体的 CLI 链路已通过；MCP 链路在修复后通过脚本客户端复核，仍待 Claude Code 复跑。详见[验收记录](docs/acceptance/agent-surface-e2e.md)。其他内置引擎尚未在 BaoCut 中逐一验证。
 - 已实现 Apple Silicon（MLX、Core ML）和 Windows（whisper.cpp、candle）的本地推理后端。Mac arm64 包已通过 Developer ID 签名与 Apple 公证。Windows CPU、CUDA、Vulkan 包已通过原生构建、安装、同版覆盖升级与 ZIP 自检，但未签名，GPU 推理尚未在实际显卡上验证。Windows 已包含 Credential Manager 存储与 v2 凭据迁移；CI 尚未实测真实凭据迁移。见[桌面端说明](apps/desktop/README.md)。
-- 部分本地模型权重（例如 OmniVoice、Qwen-Image）带有非商业许可，应用会在选择前提示。
+- 部分本地模型权重（例如 OmniVoice、Fish Audio S2 Pro、Qwen-Image）带有非商业许可，应用会在选择前提示。
 - 完整产品范围、发布阶段与当前进度见[产品设计 §11](docs/product/product-design.md#11-发布路线与成功指标)。
 
 ## 进一步了解
@@ -246,6 +247,8 @@ BaoCut 正在积极开发，macOS Apple Silicon 与 Windows x64 安装包见上�
 | `BAOCUT_MODEL_ASSETS_DIR` | 随应用分发的模型数据（自检样本、内置音色参考录音，即 `packages/models/assets`）。否则查找打包的 `model-assets/`，再查仓库数据；打包后的桌面端使用 `<resources>/model-assets`。 |
 | `BAOCUT_WORKER_FEATURES` | `npm run build:engine` 为 `model-worker` 追加的 cargo feature，逗号分隔。Windows / Linux 的 NVIDIA CUDA 配置使用 `cuda,whisper-ggml-cuda`，需要 CUDA 工具链；Whisper 的 Vulkan 配置使用 `whisper-ggml-vulkan`，需要 Vulkan SDK。硬件验证状态见上文。 |
 | `BAOCUT_GPU` | `off`、`0`、`false`、`cpu` 或 `no` 让 `model-worker` 的 candle 与 whisper.cpp 都在 CPU 上运行，见 [Model Worker 协议 §2.1](docs/spec/model-worker-protocol-spec.md)。 |
+| `BAOCUT_AUDIOCPP_CLI` | 自己构建的 `audiocpp_cli` 的路径，`audiocpp_server` 取同目录的；给了就只用它（文件不存在算没有引擎）。否则用内置的 `<resources>/bin/audiocpp/`，开发时是 cargo 产物目录的 `audiocpp/`，见 [Model Worker 协议 §4.4](docs/spec/model-worker-protocol-spec.md)。 |
+| `BAOCUT_AUDIOCPP_BACKEND` | 本地语音合成与音乐用的 audio.cpp 后端（`metal`、`cuda`、`vulkan`、`cpu`）。不给时命令行引擎自选，合成服务按构建依次取 Metal、CUDA、Vulkan，都没有时用 CPU。 |
 | `BAOCUT_FFMPEG` | 媒体分析、WebM 兼容播放缓存与转写音频准备使用的 `ffmpeg` 路径；否则从登录 shell 的 PATH 查找。 |
 
 </details>
@@ -281,7 +284,7 @@ crates/
   render-graph/     原生成片导出与 WASM 预览共用的帧计划
   engine-host/      Engine Host 进程，通过 stdio 与 Runtime 通信
   export-worker/    成片渲染
-  model-worker/     本地推理：转写、语音合成、图片生成、音频分离
+  model-worker/     本地推理：转写、图片生成、音频分离、文本嵌入
   speech-doc/       文稿后处理、对齐与字幕拆分
 bindings/
   preview-wasm/     编辑器预览的 WASM 入口

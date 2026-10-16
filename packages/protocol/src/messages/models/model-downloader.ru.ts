@@ -12,5 +12,4 @@ export const ru: ModelsModelDownloaderMessages = {
   diskFull: "Во время записи файлов модели на диске закончилось место",
   archiveUnpackable: (p: { file: string; reason: string }) => `Не удалось распаковать ${p.file}: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `В ${p.file} нет ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} распакован, но не запускается: ${p.reason}`,
 };

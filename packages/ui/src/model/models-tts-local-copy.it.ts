@@ -17,9 +17,8 @@ export const it: TtsLocalMessages = {
   familyDesc: {
     'qwen3-tts': 'Qwen3-TTS: CustomVoice ha 9 parlanti preset e un prompt di una riga può impostare il tono; Base clona da una registrazione di riferimento; 1.7B VoiceDesign crea una nuova voce solo da una descrizione. 1.7B suona meglio ma è più lento.',
     indextts2: 'IndexTTS: otto voci integrate oppure clona una tua registrazione; usa solo il timbro della registrazione e non ne legge la trascrizione. IndexTTS 2.5 può anche regolare la velocità di parlato.',
-    'gpt-sovits': 'GPT-SoVITS: otto voci integrate oppure clona una tua registrazione; il suono è più simile se fornisci anche la trascrizione della registrazione di riferimento, che in quel caso deve durare 3–10 secondi.',
     voxcpm2: 'VoxCPM2: otto voci integrate oppure clona una tua registrazione; il suono è più simile con la trascrizione della registrazione e un prompt di una riga può impostare lo stile di parlato; produce 48 kHz.',
     omnivoice: 'OmniVoice: otto voci integrate, clona una tua registrazione o crea una nuova voce scegliendo genere, età e altezza da un elenco di parole; legge il maggior numero di lingue. Solo non commerciale.',
   },
-  quickDescribe: 'La voce è determinata interamente da questa descrizione: cambiandola ottieni una persona diversa', quickVoxcpm: 'Circa in tempo reale: una frase richiede per la generazione quanto per la lettura e il primo caricamento richiede circa 5 secondi', quickNonCommercial: (license: string) => `Solo non commerciale (${license}): passa a un altro modello per i contenuti che userai commercialmente`, quickSlow: 'Modello grande: la sintesi è più lenta di modelli simili e il primo caricamento richiede più tempo',
+  quickDescribe: 'La voce è determinata interamente da questa descrizione: cambiandola ottieni una persona diversa', quickNonCommercial: (license: string) => `Solo non commerciale (${license}): passa a un altro modello per i contenuti che userai commercialmente`, quickSlow: 'Modello grande: la sintesi è più lenta di modelli simili e il primo caricamento richiede più tempo',
 };

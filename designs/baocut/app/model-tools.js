@@ -128,7 +128,7 @@
     || (typeof require === 'function' ? require('./model-languages.js') : null);
   const langName = (code) => CATALOG.native(code);
   /* 采样率取引擎原生值（bcut tts `--out`：16-bit PCM 单声道） */
-  const RATES = {'qwen3': 24000, 'qwen3-1.7b': 24000, 'indextts2': 22050, 'indextts25': 22050, 'gptsovits': 32000,
+  const RATES = {'qwen3': 24000, 'qwen3-1.7b': 24000, 'indextts2': 22050, 'indextts25': 22050,
     'voxcpm2': 48000, 'omnivoice': 24000};
   /* 语言 Picker 先列几种、其余收进「更多语言…」：VoxCPM2 31 种、OmniVoice 上百种，一屏列不下 */
   const LANG_FIRST = 12;
@@ -148,7 +148,7 @@
     if (e.cloud) return f.cloudModel && C().providerOf(f.cloudModel) === e.provider ? f.cloudModel : e.models.preset;
     return TTS().modelFor(f.engine, f.mode);
   }
-  /** 一只引擎涉及的全部模型（Qwen3-TTS 两档都按 Base / CustomVoice 分开装） */
+  /** 一只引擎涉及的全部模型（Qwen3-TTS 1.7B 按 Base / CustomVoice / VoiceDesign 分开装） */
   function modelsOf(engine) {
     return voiceModes(engine).map((m) => modelOf({engine, mode: m})).filter((id, i, a) => a.indexOf(id) === i);
   }
@@ -254,7 +254,7 @@
 
   /* ---------- 表单 ---------- */
   function blank() {
-    return {text: '', engine: 'qwen3', mode: 'preset', preset: 'Serena', ref: null, refText: '',
+    return {text: '', engine: 'qwen3-1.7b', mode: 'preset', preset: 'Serena', ref: null, refText: '',
       lang: 'auto', emotion: 'none', emoRef: null, emoLevel: 60, style: '', instruct: TTS().DESCRIBE_VOICES[0].instruct, seed: false,
       /* 本地旋钮（没碰过的键不在里面 = 不传）与 OmniVoice 的词表挑选（从一组现成挑法起步） */
       knobs: {}, omni: Object.assign({}, TTS().OMNI_PRESETS[0].sel),
@@ -285,7 +285,7 @@
     if (!langOptions(f.engine, true, model).some((l) => l.code === f.lang)) next.lang = 'auto';
     return next;
   }
-  /** 打开工作台时先落到一只已经装好的模型：默认那只（Qwen3-TTS 0.6B 预设音色）装了就用它，
+  /** 打开工作台时先落到一只已经装好的模型：默认那只（Qwen3-TTS 1.7B 预设音色）装了就用它，
    *  否则按引擎次序找第一只装好的音色方式。一个都没装时还是默认那只，由下载卡接手。 */
   function preferredForm(installed, cloudDefault) {
     const base = blank();
@@ -422,7 +422,7 @@
       form: Object.assign({}, f),
     };
   }
-  /** 记录的元数据行：「00:07 · 24 kHz · Qwen3-TTS 0.6B · Serena · 中文」 */
+  /** 记录的元数据行：「00:07 · 24 kHz · Qwen3-TTS 1.7B · Serena · 中文」 */
   function recordMeta(r) {
     const mm = Math.floor(r.dur / 60), ss = Math.round(r.dur % 60);
     const khz = (r.rate / 1000).toFixed(r.rate % 1000 ? 2 : 0).replace(/0$/, '');

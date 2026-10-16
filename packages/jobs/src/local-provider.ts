@@ -3,10 +3,9 @@ import path from 'node:path';
 import { JobsLocalProvider as L } from '@baocut/protocol/messages/jobs/local-provider.ts';
 import { ModelsGenerationOptions as GO } from '@baocut/protocol/messages/models/generation-options.ts';
 import { ModelsEmbedding as E } from '@baocut/protocol/messages/models/embedding.ts';
-import { errorText, jobWarning, type JobText } from './job-text.ts';
+import { errorText, type JobText } from './job-text.ts';
 
 import {
-  BUILTIN_REFERENCE_LABEL,
   CRASH_CODES,
   EMBED_MAX_BATCH,
   EMBED_MAX_IMAGE_BATCH,
@@ -16,22 +15,14 @@ import {
   OUTPUT_INVALID,
   OUTPUT_WRITE_FAILED,
   ProviderFailure,
-  appFileMissing,
-  referenceUnreadableMessage,
   SPEAKERS_CONTRACT,
   SPEAKERS_OUTPUT_FILE,
-  SPEECH_COMPONENTS,
-  SPEECH_OUTPUT_FILE,
-  SPEECH_WAV_CONTRACT,
   STEM_OUTPUT_FILES,
   STEMS_WAV_CONTRACT,
   WORKER_CONTRACT_VERSION,
   ASR_RESULT_SCHEMA,
   imageRunOf,
   readFrozenImage,
-  sha256File,
-  synthesizeRunOf,
-  type DroppedReading,
   type GenerationAttempt,
   type GenerationProvider,
   type GenerationRun,
@@ -47,7 +38,6 @@ import {
   type ModelCatalog,
   type ModelLoadResult,
   type SeparateRunResult,
-  type SynthesizeRunResult,
   type TranscribeAttempt,
   type TranscribeJobPhase,
   type TranscribeProvider,
@@ -65,7 +55,7 @@ import {
   type WorkerEvent,
   type WorkerExit,
 } from '@baocut/process-host';
-import type { FrozenImageInput, JobWarning } from '@baocut/protocol';
+import type { FrozenImageInput } from '@baocut/protocol';
 import { silentLog, type JobsLogger } from './jobs-logger.ts';
 import { modelWorkerHolder } from './resource-profiles.ts';
 
@@ -81,16 +71,15 @@ import { modelWorkerHolder } from './resource-profiles.ts';
  *   输出写不进 staging（`OUTPUT_WRITE_FAILED`）是磁盘的问题，是 `output-unwritable`，不计崩溃。
  * - 加载失败（`MODEL_NOT_INSTALLED` / `MODEL_UNSUPPORTED` / `MODEL_RESOURCE`）记到模型目录，不重试。
  * - 资源（§7.7）：进程从启动起持有这个模型包在调度里的 holder 的一份，进程真的退出后才归还；空闲时被要求让位就卸载模型包。
- * - 识别（`transcribe`）、本地语音合成（`synthesize`，经 `speechGenerator()`）与本地文生图（`image`，经 `imageGenerator()`）
- *   共用同一套进程管理。识别的模型包要求 `worker.hello` 报告 `transcribe` 且 `transcribeFamilies` 列出它的 `asr` family，
- *   合成的模型包要求报告 `synthesize` 且 `synthesizeFamilies` 列出它的 `tts` family，文生图的模型包要求报告 `image` 且
+ * - 识别（`transcribe`）与本地文生图（`image`，经 `imageGenerator()`）共用同一套进程管理。识别的模型包要求 `worker.hello`
+ *   报告 `transcribe` 且 `transcribeFamilies` 列出它的 `asr` family，文生图的模型包要求报告 `image` 且
  *   `imageFamilies` 列出它的 `image` family，否则是 `load-failed`（`unsupported` / `capability-missing`），不发
  *   `model.load`，也不停用模型包（换了 Worker 就能用）。
  * - 人声分离（`separate`，经 `separate()`，翻译配音的分离一步直接调用）同样共用：分离的模型包（只带 `separator` 组件）要求
  *   报告 `separate` 且 `separateFamilies` 列出它的 family，规则同上。
  * - 已有转写的说话人区分（`diarize`，经 `diarize()`，识别说话人的流程直接调用）同样共用：「说话人区分」模型包单独加载（只带
  *   `segmentation` 与 `speaker` 组件），要求报告 `diarize`，规则同上。
- * - 合成结果的 `readingsDropped`（念不了的读音标注）逐条转成任务的 `reading-dropped` 警告，不静默丢弃。
+ * - 本地语音合成不经 Model Worker：由 audio.cpp 引擎的常驻服务执行（`LocalSpeechProvider`）。
  * - 本机 embedding（`embed`，经 `embed()`，语义检索的 Provider 直接调用，不是任务）同样共用：embedding 模型包要求报告 `embed` 且
  *   `embeddingCapabilities.families` 列出它的 `embedding` family，规则同上。一批几百毫秒，Worker 忙时排队等它空下来，不报 `worker-busy`。
  */
@@ -301,65 +290,6 @@ export class LocalTranscribeProvider implements TranscribeProvider {
   }
 
   /**
-   * 本地语音合成的一次尝试（架构设计 §6.1、§6.5）：冻结的参数换成 `job.run`（`synthesize`），输出是 staging 里的 WAV，
-   * 由 JobManager 按生成任务的规则校验与发布。参考录音在执行前按提交时的摘要再核对一次，变了就不合成（不换声音）。
-   */
-  async synthesize(run: GenerationRun, sink: GenerationSink, signal: AbortSignal): Promise<GenerationAttempt> {
-    const parameters = run.parameters;
-    if (parameters.capability !== 'synthesizeSpeech') {
-      throw new ProviderFailure('protocol', L.notHandled({ capability: parameters.capability }));
-    }
-    if (signal.aborted) return { outcome: 'cancelled' };
-    const { input, options } = synthesizeRunOf(parameters);
-    // 读不出来时：内置音色的录音是安装不完整（`APP_FILE_MISSING`），请求给出的文件说出文件名。
-    const unreadable = input
-      ? parameters.reference?.source === 'builtin'
-        ? builtinUnreadable(input.file)
-        : { message: referenceUnreadableMessage(input.file), details: { file: input.file } }
-      : null;
-    if (input && unreadable) {
-      const actual = await sha256File(input.file).catch(() => null);
-      if (actual === null) throw new ProviderFailure('input-unreadable', unreadable.message, unreadable.details);
-      if (`sha256:${actual}` !== input.contentHash) {
-        throw new ProviderFailure('input-unreadable', L.referenceChanged(), { file: input.file, expected: input.contentHash });
-      }
-    }
-    const outcome = await this.#run<SynthesizeRunResult>(
-      {
-        bundleId: run.modelId,
-        jobId: run.jobId,
-        loading: () => {},
-        route: (event) => routeSynthesize(sink, event),
-        params: {
-          jobId: run.jobId,
-          runGeneration: run.attempt,
-          capability: 'synthesize',
-          input,
-          options,
-          staging: run.staging,
-          outputContract: SPEECH_WAV_CONTRACT,
-        },
-        inputLabel: unreadable?.message ?? L.referenceUnreadable(),
-        ...(unreadable ? { inputDetails: unreadable.details } : {}),
-      },
-      signal,
-    );
-    if (outcome.outcome === 'cancelled') return { outcome: 'cancelled' };
-    for (const dropped of outcome.result.readingsDropped ?? []) sink.warning?.(readingDropped(dropped));
-    const output = outcome.output;
-    // Worker 报告绝对路径（与识别相同）；生成任务的输出是相对 staging 的路径，且只能是 `speech.wav`。
-    const relative = path.relative(run.staging, path.resolve(run.staging, output.path));
-    if (relative !== SPEECH_OUTPUT_FILE) {
-      throw new ProviderFailure('protocol', L.speechOutputWrong({ file: SPEECH_OUTPUT_FILE }), { path: output.path });
-    }
-    return {
-      outcome: 'completed',
-      outputs: [{ path: relative, sha256: output.sha256.replace(/^sha256:/, ''), byteLength: output.byteLength, mediaType: 'audio/wav' }],
-      workerVersion: outcome.workerVersion,
-    };
-  }
-
-  /**
    * 本地人声分离（架构设计 §6.1 `separateAudio`）：整段输入分成人声与背景，两个 WAV 写在 `run.staging` 里。
    * 输出必须正好是 staging 里的 `vocals.wav` 与 `background.wav`，否则是协议错误。
    */
@@ -453,15 +383,6 @@ export class LocalTranscribeProvider implements TranscribeProvider {
       sha256: outcome.output.sha256.replace(/^sha256:/, ''),
       result: outcome.result,
       workerVersion: outcome.workerVersion,
-    };
-  }
-
-  /** 生成类能力的门面：`local` Provider 的 `synthesizeSpeech`。进程由识别的 Provider 一起关闭。 */
-  speechGenerator(): GenerationProvider {
-    return {
-      id: this.id,
-      generate: (run, sink, signal) => this.synthesize(run, sink, signal),
-      close: async () => {},
     };
   }
 
@@ -929,8 +850,8 @@ export class LocalTranscribeProvider implements TranscribeProvider {
         ...(device && (def?.backend === 'candle' || def?.backend === 'ggml' || def?.backend === 'litert-lm') ? { device } : {}),
         ...(vision ? { vision: true } : {}),
       });
-      // 合成的模型包要 Worker 声明 `synthesize` 且列出这个 family，分离的要声明 `separate` 且列出 `separator` 的 family，文生图的
-      // 要声明 `image` 且列出 `image` 的 family，识别的要声明 `transcribe` 且列出 `asr` 的 family：不认识的 Worker 不去试
+      // 分离的模型包要 Worker 声明 `separate` 且列出 `separator` 的 family，文生图的要声明 `image` 且列出 `image` 的 family，
+      // 识别的要声明 `transcribe` 且列出 `asr` 的 family：不认识的 Worker 不去试
       // （`model.load` 的 `MODEL_UNSUPPORTED` 会停用模型包），也不停用模型包（换了 Worker 就能用）。
       if (bundle.components.embedding) {
         const family = bundle.components.embedding.family;
@@ -991,7 +912,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
             }),
           );
         }
-      } else if (!SPEECH_COMPONENTS.some((c) => bundle.components[c])) {
+      } else {
         const family = bundle.components.asr?.family ?? null;
         const families = hello.transcribeFamilies ?? [];
         if (!hello.capabilities.includes('transcribe') || family === null || !families.includes(family)) {
@@ -1002,20 +923,6 @@ export class LocalTranscribeProvider implements TranscribeProvider {
               family,
               capabilities: hello.capabilities,
               transcribeFamilies: families,
-            }),
-          );
-        }
-      } else {
-        const family = bundle.components.tts?.family ?? null;
-        const families = hello.synthesizeFamilies ?? [];
-        if (!hello.capabilities.includes('synthesize') || family === null || !families.includes(family)) {
-          return fail(
-            new ProviderFailure('load-failed', L.cannotSynthesize(), {
-              reason: 'unsupported',
-              detail: 'capability-missing',
-              family,
-              capabilities: hello.capabilities,
-              synthesizeFamilies: families,
             }),
           );
         }
@@ -1148,29 +1055,6 @@ function routeTranscribe(sink: TranscribeSink, event: WorkerEventParams): void {
   }
 }
 
-/** 念不了的读音标注 → 任务警告。`detail` 只说位置与读音，不带文字本身。 */
-function readingDropped(dropped: DroppedReading): JobWarning {
-  const { reading, origin } = dropped;
-  const detail =
-    dropped.start + 1 === dropped.end
-      ? L.readingDroppedOne({ at: dropped.end, reading, origin })
-      : L.readingDroppedRange({ from: dropped.start + 1, to: dropped.end, reading, origin });
-  return jobWarning('reading-dropped', detail);
-}
-
-/** 合成的事件：进入 `synthesizing` 就是生成阶段；合成阶段有总数的进度（步数）转给生成任务。 */
-function routeSynthesize(sink: GenerationSink, event: WorkerEventParams): void {
-  if (event.event === 'job.phase' && event.params.phase === 'synthesizing') sink.generating();
-  else if (
-    event.event === 'job.progress' &&
-    event.params.phase === 'synthesizing' &&
-    event.params.unit === 'steps' &&
-    event.params.total !== null
-  ) {
-    sink.progress(event.params.done, event.params.total, 'steps');
-  }
-}
-
 /** `overall` 把这次运行的步数换成整个任务的（以图为底重画逐张各跑一次，进度累计）。 */
 function routeImage(sink: GenerationSink, event: WorkerEventParams, overall: (done: number, total: number) => [number, number]): void {
   if (event.event === 'job.phase' && event.params.phase === 'encoding-prompt') sink.generating();
@@ -1230,12 +1114,6 @@ function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T | typ
       },
     );
   });
-}
-
-/** 内置音色的录音读不出来（提交之后被删、或在 Worker 读不到的位置）：与提交时同一句话与错误码（`APP_FILE_MISSING`）。 */
-function builtinUnreadable(file: string): { message: JobText; details: Record<string, unknown> } {
-  const error = appFileMissing(BUILTIN_REFERENCE_LABEL, null, file);
-  return { message: errorText(error), details: error.details as Record<string, unknown> };
 }
 
 function isDiarizePhase(phase: string): phase is 'decoding' | 'diarizing' | 'finalizing' {

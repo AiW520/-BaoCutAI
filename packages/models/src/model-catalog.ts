@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -44,15 +44,22 @@ import type { BundleComponent, ModelBundle, ModelFiles } from './worker-contract
  * 状态按组件算：部分组件装好、另一些缺失时是 `not-installed` / `incomplete`，`components` 列出每个组件；暂存区里留着
  * 没下完的部分时带 `install.state: 'paused'`。这些状态的变化经 `onChange` 通知（`models` 主题的 `bundle.updated`）。
  *
- * 来自 GitHub 发布页的组件（`release`，音乐模型包的 audio.cpp 引擎）是平台专属的：按 `platformKey` 取压缩包，装在
- * `<toolsDir>/<名字>/<版本>/`（同样带清单）。这台主机没有它的压缩包、又没有 `engineOverride` 时模型包是 `error` / `unsupported`；
- * `engineOverride`（`BAOCUT_AUDIOCPP_CLI`）指向存在的文件时它算装好（`bytes` 为 null），安装计划不碰它。旧版作为受管外部工具装下
- * 的引擎（组件目录里有可执行文件、没有清单）也算装好，校验不查它，修复重新下载压缩包。
+ * 来自 GitHub 发布页的组件（`release`，embedding 模型包的 LiteRT-LM C 库）是平台专属的：按 `platformKey` 取压缩包，装在
+ * `<toolsDir>/<名字>/<版本>/`（同样带清单）。这台主机没有它的压缩包时模型包是 `error` / `unsupported`。
+ *
+ * audio.cpp 模型包（`backend: 'audio-cpp'`，本地语音合成与音乐）不经 Model Worker，由随应用分发的 audio.cpp 引擎执行：找不到引擎
+ * （`engineAvailable` 为 false：这个平台没有内置引擎，或开发时还没下载）时已安装的模型包是 `error` / `unsupported`。
  */
 
 export const MANIFEST_FILE = '.bcut-manifest.json';
 /** 分离模型包加载后的权重是文件的几倍：16 位存、32 位算（HTDemucs-FT 实测 673 MB 对 336 MB）。 */
 const SEPARATE_LOADED_WEIGHT_FACTOR = 2;
+/**
+ * 合成模型包的 audio.cpp 服务加载后约占用 GGUF 存储字节的几倍：权重按存储精度常驻，另有激活、KV 缓存与声码器的工作区。
+ * 2026-10-15 在 Apple M4 的 Metal 上实测 OmniVoice Q8：GGUF 1.35 GB，服务就绪后进程常驻约 2.02 GB，合成一句 6 秒的话不再上涨。
+ * 其他模型族没有实测，同样按这个倍数；某个模型包实测出入大时登记 `SpeechBundleProfile.residentBytes`。
+ */
+const SPEECH_LOADED_WEIGHT_FACTOR = 1.5;
 
 export interface BcutManifest {
   format_version: 1;
@@ -71,15 +78,13 @@ export interface ModelCatalogOptions {
   arch?: string;
   /** 有没有 Model Worker 可执行文件。没有时已安装的模型包显示为 `error` / `worker-missing`。 */
   workerAvailable?: () => boolean;
+  /** 有没有内置的 audio.cpp 引擎。没有时 audio.cpp 模型包显示为 `error` / `unsupported`。不给时算有。 */
+  engineAvailable?: () => boolean;
   /**
-   * Runtime Home 的 `tools/`：发布页组件（audio.cpp 引擎）装在 `<toolsDir>/<名字>/<版本>/`。不给时是 `<root>/.bcut-tools`（测试用；
+   * Runtime Home 的 `tools/`：发布页组件（LiteRT-LM 的 C 库）装在 `<toolsDir>/<名字>/<版本>/`。不给时是 `<root>/.bcut-tools`（测试用；
    * Runtime 总是给）。
    */
   toolsDir?: string;
-  /**
-   * 引擎的开发者覆盖（Runtime 传 `BAOCUT_AUDIOCPP_CLI`）：指向存在的文件时发布页组件算装好，不下载、不报告平台不支持。
-   */
-  engineOverride?: string | null;
   /** 发布页组件按哪个平台键取压缩包（测试用）。不给时是 `<platform>-<arch>`。 */
   platformKey?: string;
   /** 交给 Worker 的 CPU 线程数上限。默认取可用核数减二，至少 1、至多 8。 */
@@ -117,8 +122,6 @@ export interface VerifyResult {
 
 interface DiskCheck {
   ok: boolean;
-  /** 发布页组件由 `engineOverride` 满足（没有自己的文件，`bytes` 报告为 null）。 */
-  overridden?: boolean;
   reason?: ModelBundleReason;
   detail?: ModelText;
   /** 齐全时清单里的大小之和。 */
@@ -174,8 +177,8 @@ export class ModelCatalog {
   readonly #platform: NodeJS.Platform;
   readonly #arch: string;
   readonly #workerAvailable: () => boolean;
+  readonly #engineAvailable: () => boolean;
   readonly #toolsDir: string | null;
-  readonly #engineOverride: string | null;
   readonly #platformKey: string;
   readonly #threads: number;
   readonly #engineCacheDir: string | null;
@@ -194,8 +197,8 @@ export class ModelCatalog {
     this.#arch = options.arch ?? process.arch;
     this.#bundles = new Map((options.bundles ?? platformBundles(this.#platform, this.#arch)).map((b) => [b.bundleId, b]));
     this.#workerAvailable = options.workerAvailable ?? (() => true);
+    this.#engineAvailable = options.engineAvailable ?? (() => true);
     this.#toolsDir = options.toolsDir ?? null;
-    this.#engineOverride = options.engineOverride || null;
     this.#platformKey = options.platformKey ?? hostPlatformKey(this.#platform, this.#arch);
     this.#threads = options.threads ?? Math.max(1, Math.min(8, os.availableParallelism() - 2));
     this.#engineCacheDir = options.engineCacheDir ?? null;
@@ -207,7 +210,7 @@ export class ModelCatalog {
     return this.#root;
   }
 
-  /** 发布页组件（audio.cpp 引擎）的存放处：Runtime Home 的 `tools/`。不随模型目录移动。 */
+  /** 发布页组件（LiteRT-LM 的 C 库）的存放处：Runtime Home 的 `tools/`。不随模型目录移动。 */
   get toolsDir(): string {
     return this.#toolsDir ?? path.join(this.#root, '.bcut-tools');
   }
@@ -215,11 +218,6 @@ export class ModelCatalog {
   /** 发布页组件取压缩包用的平台键（`darwin-arm64`、`win32-x64`……）。 */
   get platformKey(): string {
     return this.#platformKey;
-  }
-
-  /** 引擎的开发者覆盖（`BAOCUT_AUDIOCPP_CLI`）；没给时 null。 */
-  get engineOverride(): string | null {
-    return this.#engineOverride;
   }
 
   /** 发布页组件在这台主机上的压缩包；不是发布页组件、或这个平台没有压缩包时 null。 */
@@ -230,28 +228,6 @@ export class ModelCatalog {
   /** 组件的目录：模型仓库是 `<root>/<owner>/<repo>/`，发布页组件是 `<toolsDir>/<名字>/<版本>/`。 */
   componentDir(source: Pick<BundleComponentSource, 'repo' | 'release'>): string {
     return source.release ? releaseDir(this.toolsDir, source.release) : this.repoDir(source.repo);
-  }
-
-  /** 发布页组件此刻由 `engineOverride` 满足：给了覆盖、而且是存在的文件。 */
-  engineOverridden(source: Pick<BundleComponentSource, 'release'>): boolean {
-    // 交给 Worker 的动态库（`workerLibrary`）不是引擎，覆盖不替它。
-    return source.release !== undefined && !source.release.workerLibrary && this.#engineOverride !== null && isFile(this.#engineOverride);
-  }
-
-  /**
-   * 一个模型包的引擎可执行文件（绝对路径），给 Runtime 找引擎用（Model Worker 协议规范 §4.4）：给了 `engineOverride` 就只用它（文件
-   * 不存在时 null）；否则是装好的发布页组件里的可执行文件（`<toolsDir>/<名字>/<版本>/<可执行文件>`，旧版装下、没有清单的也算）。
-   * 模型包没有发布页组件、这个平台没有压缩包或还没装时 null。只看文件在不在，不执行它。
-   */
-  engineExecutable(bundleId: string): string | null {
-    const def = this.#bundles.get(bundleId);
-    const source = def ? componentsOf(def).find(([, s]) => s.release && !s.release.workerLibrary)?.[1] : undefined;
-    if (!source?.release) return null;
-    if (this.#engineOverride !== null) return isFile(this.#engineOverride) ? this.#engineOverride : null;
-    const asset = releaseAsset(source.release, this.#platformKey);
-    if (!asset) return null;
-    const exe = path.join(this.componentDir(source), asset.executable);
-    return isFile(exe) ? exe : null;
   }
 
   /**
@@ -311,8 +287,7 @@ export class ModelCatalog {
   }
 
   /**
-   * 一个组件（仓库与版本）在磁盘上齐不齐：清单、版本、每个文件存在且大小相符。发布页组件另算 `engineOverride` 与旧版装下的
-   * 可执行文件（见类的说明）。
+   * 一个组件（仓库与版本）在磁盘上齐不齐：清单、版本、每个文件存在且大小相符。发布页组件还要这个平台有压缩包。
    */
   async componentInstalled(source: Pick<BundleComponentSource, 'repo' | 'revision' | 'release'>): Promise<boolean> {
     return (await this.#checkComponent(source)).ok;
@@ -329,9 +304,6 @@ export class ModelCatalog {
   async #workerComponents(def: BundleDefinition): Promise<Array<[BundleComponent, BundleComponentSource]>> {
     const out: Array<[BundleComponent, BundleComponentSource]> = [];
     for (const [name, source] of componentsOf(def)) {
-      // 发布页组件（audio.cpp 引擎）不交给 Worker：执行它的 Provider 自己找可执行文件（`engineExecutable`）。交给 Worker 的
-      // 动态库（`workerLibrary`，LiteRT-LM）照常交。
-      if (source.release && !source.release.workerLibrary) continue;
       if (source.optional && !(await this.#checkComponent(source)).ok) continue;
       out.push([name, source]);
     }
@@ -382,8 +354,9 @@ export class ModelCatalog {
    * 识别、分离与「说话人区分」模型包的 Model Worker 加载后约常驻多少、在哪个池里（`workerWeightBytes` 同样的组件）。MLX、Core ML 是存储字节
    * （分离按两倍，见 `workerWeightBytes`）、计在 GPU 内存；candle 按设备换算：`cuda` 计在 GPU 内存，`cpu` 计在内存。candle 的
    * 分离在两种设备上都升成 f32（同 v2），同样按文件的两倍。GGML 的 Whisper 权重按存储字节，VAD 与对齐器在 candle 的 CPU 上按
-   * `cpu` 换算，合计在设备不是 `cpu`（`cuda` 或 `vulkan`）时计在 GPU 内存、`cpu` 时计在内存（架构设计 §6.5）。合成只算 candle 的模型包（同样按设备换算）；
-   * 合成模型包登记了 `speech.residentBytes` 时优先用它（Fish 的量化计算与分阶段 codec）；其余 MLX 合成模型包按固定需求，null。不知道多大时 null。
+   * `cpu` 换算，合计在设备不是 `cpu`（`cuda` 或 `vulkan`）时计在 GPU 内存、`cpu` 时计在内存（架构设计 §6.5）。合成模型包是内置 audio.cpp
+   * 引擎的常驻服务（`audiocpp_server`）：登记了 `speech.residentBytes` 时用它，否则按 GGUF 的存储字节乘 `SPEECH_LOADED_WEIGHT_FACTOR`
+   * （激活、KV 缓存与解码器的工作区）；池与音乐相同（`musicPeak`）。不知道多大时 null。
    */
   async workerFootprint(bundleId: string): Promise<WorkerFootprint | null> {
     const def = this.#bundles.get(bundleId);
@@ -394,12 +367,13 @@ export class ModelCatalog {
       const vision = def.embedding?.vision ? EMBEDDING_VISION_OVERHEAD_BYTES : 0;
       return { bytes: bytes + EMBEDDING_WORKER_OVERHEAD_BYTES + vision, pool: 'memory' };
     }
-    if (def?.capability === 'synthesize' && def.speech?.residentBytes !== undefined) {
-      return {bytes: def.speech.residentBytes, pool: this.#device(def) === 'cpu' ? 'memory' : 'gpuMemory'};
+    if (def?.capability === 'synthesize') {
+      const weights = weightBytes(requiredSources(def), this.#manifests, this.#platformKey);
+      const bytes = def.speech?.residentBytes ?? (weights === null ? null : Math.ceil(weights * SPEECH_LOADED_WEIGHT_FACTOR));
+      return bytes === null ? null : { bytes, pool: this.#unifiedMemory() ? 'gpuMemory' : 'memory' };
     }
-    const synthesizeOnCandle = def?.capability === 'synthesize' && def.backend === 'candle';
     const local = def?.capability === 'transcribe' || def?.capability === 'separate' || def?.capability === 'diarize';
-    if (!def || (!local && !synthesizeOnCandle)) return null;
+    if (!def || !local) return null;
     const sources = (await this.#workerComponents(def)).map(([, source]) => source);
     if (def.backend === 'ggml') {
       const [asr, rest] = [sources.filter((s) => s.family === 'whisper-ggml'), sources.filter((s) => s.family !== 'whisper-ggml')];
@@ -467,8 +441,12 @@ export class ModelCatalog {
   musicPeak(bundleId: string): WorkerFootprint | null {
     const def = this.#bundles.get(bundleId);
     if (!def?.music) return null;
-    const unified = this.#platform === 'darwin' && this.#arch === 'arm64';
-    return { bytes: def.music.peakBytes, pool: unified ? 'gpuMemory' : 'memory' };
+    return { bytes: def.music.peakBytes, pool: this.#unifiedMemory() ? 'gpuMemory' : 'memory' };
+  }
+
+  /** Apple Silicon 的统一内存：audio.cpp 引擎（Metal）的占用计在 GPU 内存；别的平台不知道引擎用 GPU 还是 CPU，保守地计在内存。 */
+  #unifiedMemory(): boolean {
+    return this.#platform === 'darwin' && this.#arch === 'arm64';
   }
 
   /** 这台机器上的默认转写模型包（Apple Silicon 是 MLX 的，别的平台是 candle 的）。 */
@@ -520,7 +498,7 @@ export class ModelCatalog {
       revision: source.revision,
       ...(source.release ? { origin: 'github-release' as const } : {}),
       state: check.ok ? 'installed' : 'missing',
-      bytes: check.ok && !check.overridden ? (check.bytes ?? 0) : null,
+      bytes: check.ok ? (check.bytes ?? 0) : null,
       estimatedBytes: weightBytes([source], this.#manifests, this.#platformKey),
       sharedWith: this.#sharers(bundleId, source),
       ...(source.optional ? { optional: true } : {}),
@@ -544,7 +522,7 @@ export class ModelCatalog {
     if (!backendSupported(def.backend, this.#platform, this.#arch)) {
       return make('error', 'unsupported', M.backendUnsupported({ backend: def.backend, platform: this.#platform, arch: this.#arch }));
     }
-    // 发布页组件（audio.cpp 引擎）在这个平台上没有压缩包，又没有 `engineOverride`。
+    // 发布页组件（LiteRT-LM 的 C 库）在这个平台上没有压缩包。
     const noBuild = checks.find((c) => c.check.reason === 'unsupported');
     if (noBuild) return make('error', 'unsupported', noBuild.check.detail);
     if (this.#relocating) return make('error', 'relocating', M.relocating());
@@ -561,7 +539,8 @@ export class ModelCatalog {
     if (verified && !verified.ok) return make('not-installed', 'hash-mismatch', describeProblems(verified));
     const blocked = this.#blocked.get(bundleId);
     if (blocked) return make(blocked.state, blocked.reason, blocked.detail);
-    // 音乐模型包（`audio-cpp`）不经 Model Worker：引擎是它的组件，缺了就是上面的 `incomplete`。
+    // audio.cpp 模型包（语音合成与音乐）不经 Model Worker：由内置的 audio.cpp 引擎执行。
+    if (def.backend === 'audio-cpp' && !this.#engineAvailable()) return make('error', 'unsupported', M.engineMissing());
     if (def.backend !== 'audio-cpp' && !this.#workerAvailable()) return make('error', 'worker-missing', M.workerMissing());
     const runtime = this.#runtime.get(bundleId);
     return make(runtime ?? 'installed');
@@ -608,14 +587,10 @@ export class ModelCatalog {
     if (!def) throw new Error(M.noBundle({ bundleId }).text);
     const problems: VerifyResult['problems'] = [];
     for (const [, source] of componentsOf(def)) {
-      // 由 `engineOverride` 满足的发布页组件没有自己的文件。
-      if (this.engineOverridden(source)) continue;
       const dir = this.componentDir(source);
       const manifest = await readManifest(dir);
       // 没装的可选组件不算问题。
       if (source.optional && manifest?.revision !== source.revision) continue;
-      // 旧版装下的引擎（有可执行文件、没有清单）没有可以核对的摘要：算通过，修复会重新下载压缩包。
-      if (!manifest && (await this.#legacyRelease(source))) continue;
       if (!manifest) {
         problems.push({ repo: source.repo, path: MANIFEST_FILE, problem: 'missing' });
         continue;
@@ -663,34 +638,14 @@ export class ModelCatalog {
     this.changed(bundleId);
   }
 
-  /** 旧版（受管外部工具）装下的发布页组件：组件目录里有这个平台的可执行文件，没有清单。 */
-  async #legacyRelease(source: Pick<BundleComponentSource, 'repo' | 'release'>): Promise<boolean> {
-    // 交给 Worker 的动态库没有旧版装法：没有清单就是没装（交给 Worker 时要清单里的文件列表）。
-    if (source.release?.workerLibrary) return false;
-    const asset = this.releaseAsset(source);
-    if (!asset) return false;
-    const stat = await fs.stat(path.join(this.componentDir(source), asset.executable)).catch(() => null);
-    return stat?.isFile() ?? false;
-  }
-
   async #checkComponent(source: Pick<BundleComponentSource, 'repo' | 'revision' | 'release'>): Promise<DiskCheck> {
-    if (source.release) {
-      if (this.engineOverridden(source)) return { ok: true, overridden: true };
-      if (!this.releaseAsset(source)) {
-        const detail = source.release.workerLibrary
-          ? E.runtimeNoBuild({ platform: this.#platformKey })
-          : M.engineNoBuild({ platform: this.#platformKey });
-        return { ok: false, reason: 'unsupported', detail };
-      }
+    if (source.release && !this.releaseAsset(source)) {
+      return { ok: false, reason: 'unsupported', detail: E.runtimeNoBuild({ platform: this.#platformKey }) };
     }
     const dir = this.componentDir(source);
     const manifest = await readManifest(dir);
     if (!manifest && source.release) {
-      if (await this.#legacyRelease(source)) return { ok: true, bytes: await rootFileBytes(dir) };
-      const detail = source.release.workerLibrary
-        ? E.runtimeNotInstalled({ version: source.release.version })
-        : M.engineNotInstalled({ version: source.release.version });
-      return { ok: false, reason: 'missing-file', detail };
+      return { ok: false, reason: 'missing-file', detail: E.runtimeNotInstalled({ version: source.release.version }) };
     }
     if (!manifest) return { ok: false, reason: 'missing-manifest', detail: M.noManifest({ repo: source.repo }) };
     if (manifest.revision !== source.revision) {
@@ -772,23 +727,6 @@ function describeProblems(result: VerifyResult): string {
     .slice(0, 3)
     .map((p) => `${p.repo}/${p.path}: ${p.problem}`)
     .join('; ');
-}
-
-function isFile(file: string): boolean {
-  try {
-    return statSync(file).isFile();
-  } catch {
-    return false;
-  }
-}
-
-/** 目录根下普通文件的字节数之和（旧版装下、没有清单的引擎目录）。 */
-async function rootFileBytes(dir: string): Promise<number> {
-  let total = 0;
-  for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
-    if (entry.isFile()) total += (await fs.stat(path.join(dir, entry.name)).catch(() => null))?.size ?? 0;
-  }
-  return total;
 }
 
 export async function sha256File(file: string): Promise<string> {

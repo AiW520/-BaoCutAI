@@ -12,8 +12,8 @@ import { RpcError } from '@baocut/protocol';
 import { BUNDLES } from './bundle-registry.ts';
 import { musicParameters } from './generation-options.ts';
 import { LocalProviderSource } from './local-source.ts';
+import { AUDIO_CPP_CLI_ENV } from './audio-cpp-engine.ts';
 import {
-  AUDIO_CPP_CLI_ENV,
   localMusicModelInfo,
   localMusicSeed,
   musicEngineRunOf,
@@ -31,7 +31,6 @@ import {
   musicSelfTestParameters,
   musicSelfTestVerdict,
 } from './music-self-test.ts';
-import { AUDIO_CPP_ENGINE_COMPONENT, AUDIO_CPP_RELEASE } from './music-engine.ts';
 import { repoManifestFor } from './repo-manifests.ts';
 import { MUSIC_OUTPUT_FILE } from './worker-contract.ts';
 
@@ -42,7 +41,7 @@ const GiB = 1024 * 1024 * 1024;
 const status = { detail: undefined } as unknown as ModelBundleStatus;
 
 describe('本地音乐模型包的登记', () => {
-  it('YuE2 3B 的 q8 GGUF 在总登记里，是 music / audio-cpp；仓库整个是一个 music 组件，第二个组件是引擎，有非商用许可与名字', () => {
+  it('YuE2 3B 的 q8 GGUF 在总登记里，是 music / audio-cpp；仓库整个是唯一的 music 组件（引擎随应用内置），有非商用许可与名字', () => {
     expect(MUSIC_BUNDLES.map((b) => b.bundleId)).toEqual([
       'yue2-3b@audio-cpp-q8',
     ]);
@@ -53,9 +52,8 @@ describe('本地音乐模型包的登记', () => {
       device: 'auto',
       label: 'YuE2 3B',
     });
-    expect(Object.keys(YUE.components)).toEqual(['music', 'audiocpp-engine']);
+    expect(Object.keys(YUE.components)).toEqual(['music']);
     expect(YUE.components.music!.family).toBe('yue2');
-    expect(YUE.components['audiocpp-engine']).toBe(AUDIO_CPP_ENGINE_COMPONENT);
     expect(YUE.music).toMatchObject({
       family: 'yue2',
       engine: AUDIO_CPP_ENGINE,
@@ -97,7 +95,7 @@ describe('本地音乐模型包的登记', () => {
       await fs.rm(dir, { recursive: true, force: true });
     });
 
-    it('哪个平台都列；没装时 not-installed；只有模型没有引擎是 not-installed / incomplete，引擎齐了才 installed；没有引擎包的平台是 unsupported', async () => {
+    it('哪个平台都列；没装时 not-installed；权重齐了就 installed（引擎随应用内置）；找不到内置引擎时 unsupported', async () => {
       for (const [platform, arch] of [
         ['darwin', 'arm64'],
         ['win32', 'x64'],
@@ -125,7 +123,6 @@ describe('本地音乐模型包的登记', () => {
           backend: 'audio-cpp',
         });
       }
-      // 引擎是第二个必需组件：权重齐了、引擎没装时是 incomplete（下载或修复模型包补上），Model Worker 在不在与它无关。
       await writeRepo(
         dir,
         YUE.components.music!.repo,
@@ -135,32 +132,21 @@ describe('本地音乐模型包的登记', () => {
           [YUE.music!.files.vae]: 'vae',
         },
       );
+      // Model Worker 在不在与它无关。
       const catalog = new ModelCatalog({
         root: dir,
-        platform: 'darwin',
+        platform: 'linux',
         arch: 'arm64',
         workerAvailable: () => false,
       });
-      const incomplete = await catalog.status(YUE.bundleId);
-      expect(incomplete).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
-      expect(incomplete!.components!.map((c) => c.component)).toEqual(['music', 'audiocpp-engine']);
-      expect(incomplete!.components![1]).toMatchObject({
-        repo: '0xShug0/audio.cpp',
-        origin: 'github-release',
-        state: 'missing',
-      });
-      expect(catalog.engineExecutable(YUE.bundleId)).toBeNull();
-      const exe = await writeEngine(dir, 'audiocpp_cli');
-      catalog.changed(YUE.bundleId);
-      expect(await catalog.status(YUE.bundleId)).toMatchObject({ state: 'installed' });
-      expect(catalog.engineExecutable(YUE.bundleId)).toBe(exe);
-      // 交给执行者的组件不含引擎（它不是 Worker 读的权重）。
+      const installed = await catalog.status(YUE.bundleId);
+      expect(installed).toMatchObject({ state: 'installed' });
+      expect(installed!.components!.map((c) => c.component)).toEqual(['music']);
       expect(Object.keys((await catalog.bundleFor(YUE.bundleId)).components)).toEqual(['music']);
-      // 这个平台没有引擎包：error / unsupported，说明里写平台。
-      const arm = new ModelCatalog({ root: dir, platform: 'linux', arch: 'arm64', workerAvailable: () => false });
-      const unsupported = await arm.status(YUE.bundleId);
+      const noEngine = new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64', engineAvailable: () => false });
+      const unsupported = await noEngine.status(YUE.bundleId);
       expect(unsupported).toMatchObject({ state: 'error', reason: 'unsupported' });
-      expect(unsupported!.detail).toContain('linux-arm64');
+      expect(unsupported!.detail).toContain('audio.cpp');
     });
 
     it('峰值按登记的估计值取池：Apple Silicon 计 GPU 内存，别的平台计内存；不是音乐包时 null', () => {
@@ -185,12 +171,13 @@ describe('本地音乐模型包的登记', () => {
       });
     });
 
-    it('本机 Provider：没装时 not-installed；只缺引擎也是 not-installed（修复模型包即可）；引擎齐了可用；没有引擎包的平台 unsupported', async () => {
-      const catalog = (arch: 'arm64' | 'x64' = 'arm64', platform: 'darwin' | 'linux' = 'darwin') =>
-        new ModelCatalog({ root: dir, platform, arch, workerAvailable: () => false });
+    it('本机 Provider：没装时 not-installed；装好且有内置引擎时可用；找不到内置引擎时 unsupported', async () => {
+      let engine: string | null = '/opt/baocut/bin/audiocpp/audiocpp_cli';
+      const catalog = () =>
+        new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64', workerAvailable: () => false, engineAvailable: () => engine !== null });
       const music = {} as never;
       const describe = (c: ModelCatalog) =>
-        new LocalProviderSource({ catalog: c, transcriber: null, music }).describe('local', 'view');
+        new LocalProviderSource({ catalog: c, transcriber: null, music, engine: () => engine }).describe('local', 'view');
       const neither = await describe(catalog());
       expect(neither!.capabilities.generateMusic).toMatchObject({
         available: false,
@@ -201,9 +188,6 @@ describe('本地音乐模型包的登记', () => {
         available: false,
         unavailableReason: 'not-installed',
       });
-      expect(
-        neither!.capabilities.generateMusic!.models[0]!.local!.engine,
-      ).toEqual({ id: AUDIO_CPP_ENGINE, executable: null });
 
       await writeRepo(
         dir,
@@ -214,26 +198,18 @@ describe('本地音乐模型包的登记', () => {
           [YUE.music!.files.vae]: 'vae',
         },
       );
+      const present = await describe(catalog());
+      expect(present!.capabilities.generateMusic).toMatchObject({ available: true });
+      expect(present!.capabilities.generateMusic!.models[0]!.local!.engine).toEqual({ id: AUDIO_CPP_ENGINE, executable: engine });
+
+      engine = null;
       const missing = await describe(catalog());
       expect(missing!.capabilities.generateMusic).toMatchObject({
         available: false,
-        unavailableReason: 'not-installed',
-      });
-      expect(missing!.capabilities.generateMusic!.models[0]!.detail).toBeTruthy();
-
-      const exe = await writeEngine(dir, 'audiocpp_cli');
-      const present = await describe(catalog());
-      expect(present!.capabilities.generateMusic).toMatchObject({ available: true });
-      expect(
-        present!.capabilities.generateMusic!.models[0]!.local!.engine
-          .executable,
-      ).toBe(exe);
-
-      const arm = await describe(catalog('arm64', 'linux'));
-      expect(arm!.capabilities.generateMusic).toMatchObject({
-        available: false,
         unavailableReason: 'unsupported',
       });
+      expect(missing!.capabilities.generateMusic!.models[0]!.detail).toBeTruthy();
+      expect(missing!.capabilities.generateMusic!.models[0]!.local!.engine.executable).toBeNull();
     });
   });
 });
@@ -510,15 +486,6 @@ describe('自检', () => {
 });
 
 /** 在模型目录里写一个合成的仓库：几个小文件和与之相符的清单。 */
-/** 旧版装下的引擎：`<root>/.bcut-tools/audiocpp/<版本>/` 里只有可执行文件、没有清单（算装好了）。返回可执行文件路径。 */
-async function writeEngine(root: string, executable: string): Promise<string> {
-  const dir = path.join(root, '.bcut-tools', AUDIO_CPP_RELEASE.name, AUDIO_CPP_RELEASE.version);
-  await fs.mkdir(dir, { recursive: true });
-  const file = path.join(dir, executable);
-  await fs.writeFile(file, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-  return file;
-}
-
 async function writeRepo(
   root: string,
   repo: string,

@@ -29,6 +29,13 @@ describe('license and third-party notice distribution', () => {
       expect(license).toContain('Copyright 2025 Ivan Digital');
       expect(license).toContain('4. Redistribution.');
       expect(license).toContain('8. Limitation of Liability.');
+      // 内置的 audio.cpp 引擎：它与静态链接的第三方组件的许可原文。
+      const audioCppLink = notices.match(/\[audio\.cpp 与第三方组件的许可原文\]\(([^)]+)\)/)?.[1];
+      expect(audioCppLink).toBe('packages/models/licenses/audio.cpp.txt');
+      const audioCpp = readFileSync(resolve(output, audioCppLink!), 'utf8');
+      expect(audioCpp).toContain('Copyright 2026 ShugoAI LLC');
+      expect(audioCpp).toContain('The ggml authors');
+      expect(audioCpp).toContain('Susumu Yata');
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

@@ -66,15 +66,12 @@ const en = {
       'Qwen3-TTS: CustomVoice has 9 preset speakers and a one-line prompt can set the tone; Base clones from a reference recording; 1.7B VoiceDesign creates a new voice from just a description. 1.7B sounds better but is slower.',
     indextts2:
       'IndexTTS: eight built-in voices, or clone your own recording; it takes only the timbre of the recording and does not read its transcript. IndexTTS 2.5 can also adjust the speaking rate.',
-    'gpt-sovits':
-      "GPT-SoVITS: eight built-in voices, or clone your own recording; it sounds closer if you also give the reference recording's transcript, and then the reference must be 3–10 seconds.",
     voxcpm2:
       "VoxCPM2: eight built-in voices, or clone your own recording; it sounds closest with the recording's transcript, and a one-line prompt can set the speaking style; outputs 48 kHz.",
     omnivoice:
       'OmniVoice: eight built-in voices, clone your own recording, or create a new voice by choosing gender, age and pitch from a word list; it reads the most languages. Non-commercial only.',
   } as Record<string, string>,
   quickDescribe: 'The voice is decided entirely by this description: change the description and you get a different person',
-  quickVoxcpm: 'About real time: a sentence takes as long to generate as it does to read, and the first load takes about 5 seconds',
   quickNonCommercial: (license: string) => `Non-commercial only (${license}): switch to another model for content you'll use commercially`,
   quickSlow: 'Large model: synthesis is slower than similar models, and the first load takes a while longer',
 };

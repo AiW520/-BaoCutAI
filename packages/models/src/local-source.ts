@@ -38,20 +38,24 @@ export class LocalProviderSource implements ProviderSource {
   readonly #speech: GenerationProvider | null;
   readonly #image: GenerationProvider | null;
   readonly #music: GenerationProvider | null;
+  readonly #engine: () => string | null;
 
   constructor(options: {
     catalog: ModelCatalog;
     transcriber: TranscribeProvider | null;
     speech?: GenerationProvider | null;
     image?: GenerationProvider | null;
-    /** 音乐生成的执行者。引擎（audio.cpp）是模型包的必需组件，可执行文件由目录的 `engineExecutable` 给出。 */
+    /** 音乐生成的执行者（内置 audio.cpp 引擎，与本地合成共用）。 */
     music?: GenerationProvider | null;
+    /** 内置 audio.cpp 引擎 `audiocpp_cli` 的路径；null 表示这台主机没有。 */
+    engine?: () => string | null;
   }) {
     this.#catalog = options.catalog;
     this.#transcriber = options.transcriber;
     this.#speech = options.speech ?? null;
     this.#image = options.image ?? null;
     this.#music = options.music ?? null;
+    this.#engine = options.engine ?? (() => null);
   }
 
   owns(providerId: string): boolean {
@@ -222,9 +226,8 @@ export class LocalProviderSource implements ProviderSource {
   }
 
   /**
-   * 音乐生成的模型包：登记了才有这项能力。引擎（audio.cpp）是模型包的必需组件，随模型一起下载：引擎没装时模型包是
-   * `not-installed` / `incomplete`，原因是 `not-installed`（下载或修复模型包即可）；只有这个平台没有引擎包时模型包是
-   * `error` / `unsupported`，原因才是 `unsupported`。
+   * 音乐生成的模型包：登记了才有这项能力。引擎（audio.cpp）随应用内置，找不到时模型目录把模型包报告为 `error` /
+   * `unsupported`，原因是 `unsupported`（这台主机没有引擎的构建，或安装不完整）。
    */
   #musicCapability(all: ModelBundleStatus[]): { generateMusic?: ProviderCapability<MusicModelInfo> } {
     const models = all
@@ -232,11 +235,11 @@ export class LocalProviderSource implements ProviderSource {
       .flatMap((status) => {
         const def = this.#catalog.definition(status.bundleId);
         if (!def?.music) return [];
-        const engine = this.#music === null ? null : this.#catalog.engineExecutable(def.bundleId);
+        const engine = this.#music === null ? null : this.#engine();
         const usable = bundleUsable(status);
         const info = localMusicModelInfo(def, status, usable, engine);
         if (info.available) return [info];
-        return [{ ...info, unavailableReason: usable ? ('not-installed' as const) : unavailableReasonOf(status) }];
+        return [{ ...info, unavailableReason: usable ? ('unsupported' as const) : unavailableReasonOf(status) }];
       });
     if (models.length === 0) return {};
     const usable = models.filter((m) => m.available);

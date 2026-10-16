@@ -24,7 +24,7 @@ BaoCut is available for macOS and Windows. The links below always download the l
 | macOS 14+ · Apple Silicon | [DMG](https://baocut.com/download/mac-dmg) | [ZIP](https://baocut.com/download/mac-zip) | Apple Silicon Macs; Developer ID signed and notarized |
 | Windows x64 · CPU | [Setup EXE](https://baocut.com/download/win-setup) | [ZIP](https://baocut.com/download/win-zip) | CPU inference |
 | Windows x64 · CUDA | [Setup EXE](https://baocut.com/download/win-cuda-setup) | [ZIP](https://baocut.com/download/win-cuda-zip) | NVIDIA GPUs supported by CUDA 13, starting with RTX 30 / Ampere |
-| Windows x64 · Vulkan | [Setup EXE](https://baocut.com/download/win-vulkan-setup) | [ZIP](https://baocut.com/download/win-vulkan-zip) | Vulkan-capable AMD / Intel GPUs or older NVIDIA GPUs; Whisper uses the GPU, candle uses the CPU |
+| Windows x64 · Vulkan | [Setup EXE](https://baocut.com/download/win-vulkan-setup) | [ZIP](https://baocut.com/download/win-vulkan-zip) | Vulkan-capable AMD / Intel GPUs or older NVIDIA GPUs; Whisper and audio.cpp (speech, music) use the GPU, candle uses the CPU |
 
 On macOS, open the DMG and drag BaoCut into Applications. On Windows, install the [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/) first, then run the installer or extract the ZIP. Windows packages are unsigned; GPU variants need compatible graphics drivers. Checksums and verification details are on each release's GitHub page. The app checks GitHub Releases for updates through its platform-specific update feed.
 
@@ -82,7 +82,7 @@ Every surface talks to the same local Runtime over the same protocol and edits t
 
 **Bring your own agent engine.** Claude Code and Codex CLI are validated end to end. GitHub Copilot CLI, Pi and OpenCode are built in, and any Agent Client Protocol agent (Qwen Code, Gemini CLI, Cursor Agent, Grok, Kimi Code, or one you add) plugs in through the same driver.
 
-**Bring your own models.** Capabilities (transcribe, speak, generate image, generate text, separate audio) are decoupled from providers. Run local models on Apple Silicon (MLX, Core ML) or on Windows (whisper.cpp + candle, with CUDA and Vulkan builds), run Fish Audio S2 Pro locally with the MLX community 8-bit weights (Built with Fish Audio; research/non-commercial license), or point a capability at OpenAI, Anthropic, Google, ElevenLabs, DeepSeek, Moonshot, Qwen, Zhipu, MiniMax, Volcengine, xAI, Mistral, Groq, OpenRouter, SiliconFlow or any OpenAI-compatible endpoint. A usage ledger tracks cost per job. One machine can share its local models with others on the LAN.
+**Bring your own models.** Capabilities (transcribe, speak, generate image, generate text, separate audio) are decoupled from providers. Run local models on Apple Silicon (MLX, Core ML) or on Windows (whisper.cpp + candle, with CUDA and Vulkan builds), with local speech (Qwen3-TTS, IndexTTS, VoxCPM2, OmniVoice, Fish Audio S2 Pro; Built with Fish Audio, research/non-commercial license) and music on the bundled audio.cpp engine, or point a capability at OpenAI, Anthropic, Google, ElevenLabs, DeepSeek, Moonshot, Qwen, Zhipu, MiniMax, Volcengine, xAI, Mistral, Groq, OpenRouter, SiliconFlow or any OpenAI-compatible endpoint. A usage ledger tracks cost per job. One machine can share its local models with others on the LAN.
 
 ## Run from source
 
@@ -191,7 +191,7 @@ In Windows Command Prompt, use `set "BAOCUT_HOME=.dev/baocut-home"` before the C
 
 | Command | What it does |
 | --- | --- |
-| `npm run doctor` / `npm run setup` | Check source-build prerequisites / check and build native workers plus WASM |
+| `npm run doctor` / `npm run setup` | Check source-build prerequisites / check and build native workers, fetch the bundled audio.cpp engine, and build WASM |
 | `npm run dev:lite` | Run the desktop shell without Rust builds; see the limits above |
 | `npm run dev:designs` | Start the interactive prototype with Vite at `http://127.0.0.1:4331/#/home`, rebuilding and reloading on source changes. First run `npm --prefix designs/baocut ci`; see the [prototype README](designs/baocut/README.md). |
 | `npm run build` | Build main process, preload, Runtime and UI into `apps/desktop/out` |
@@ -201,6 +201,7 @@ In Windows Command Prompt, use `set "BAOCUT_HOME=.dev/baocut-home"` before the C
 | `npm run runtime` | Start the Runtime alone (default home `~/.baocut`) |
 | `npm run cli -- --help` | The `baocut` CLI. Tool commands derive from the Runtime's tool catalog (same as MCP); `baocut help <command>` for arguments, `baocut spec` for a machine-readable catalog. Starts a Runtime in the background when none is running and lets it exit when idle (`baocut runtime status\|ensure\|stop`). Exit codes: 0 ok, 1 failed, 2 user action needed, 3 Runtime unavailable, 4 bad arguments. Design in [Agent surface §5](docs/design/agent-surface/agent-surface-design.md#5-cli-约定) |
 | `npm run build:engine` | Build the video engine (`engine-host`), export renderer (`export-worker`), `speech-worker`, face detection (`face-detect`) and local inference process (`model-worker`). Backend follows the platform: MLX and Core ML on Apple Silicon, candle and whisper.cpp elsewhere (needs CMake and a C++ compiler). Extra args go to cargo (`-- --release`) |
+| `npm run build:audiocpp` | Download the pinned audio.cpp release (local speech and music engine) for this machine into the cargo output dir's `audiocpp/`, checking size and sha256; `-- --variant cpu` takes the CPU build on Windows / Linux. `BAOCUT_TOOLS_ENDPOINT` downloads from a mirror. Packaging bundles the same release |
 | `npm test` | Unit tests and Runtime end-to-end tests with a fake driver (no Codex needed) |
 | `npm run check:file-fonts` | Build the desktop app and verify, in a hidden Electron window over `file://`, that the preview renderer loads every font |
 | `npm run typecheck` | Type check |
@@ -215,7 +216,7 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 
 - Codex CLI and Claude Code are validated end to end, including an external-agent run over CLI and MCP ([record](docs/acceptance/agent-surface-e2e.md)). Other engines are built in but not individually tested in BaoCut.
 - Local inference is implemented for Apple Silicon (MLX, Core ML) and Windows (whisper.cpp, candle). Mac arm64 packages are Developer ID signed and notarized. Windows CPU, CUDA and Vulkan packages passed native build, installation, update-in-place and ZIP self-checks; they are unsigned, and GPU inference has not been tested on hardware. Windows Credential Manager storage and v2 credential migration are included; live credential migration has not been tested by CI. See the [desktop guide](apps/desktop/README.md).
-- Some local model weights (OmniVoice, Qwen-Image) carry non-commercial licenses. The app says so before you pick them.
+- Some local model weights (OmniVoice, Fish Audio S2 Pro, Qwen-Image) carry non-commercial licenses. The app says so before you pick them.
 - Full product scope, release stages and the current position on them: [Product design §11](docs/product/product-design.md).
 
 ## Learn more
@@ -258,6 +259,8 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 | `BAOCUT_MODEL_ASSETS_DIR` | Model data shipped with the app (self-test samples, reference recordings of built-in voices, i.e. `packages/models/assets`). Otherwise the packaged `model-assets/`, then the repo's; the packaged desktop app sets `<resources>/model-assets` |
 | `BAOCUT_WORKER_FEATURES` | Extra cargo features for `model-worker` in `npm run build:engine`, comma separated. `cuda,whisper-ggml-cuda` for NVIDIA on Windows / Linux (needs the CUDA toolkit; Whisper on CUDA untested), `whisper-ggml-vulkan` for AMD / Intel (needs the Vulkan SDK; untested) |
 | `BAOCUT_GPU` | `off`, `0`, `false`, `cpu` or `no` keeps `model-worker` on the CPU for both candle and whisper.cpp ([Model Worker protocol §2.1](docs/spec/model-worker-protocol-spec.md)) |
+| `BAOCUT_AUDIOCPP_CLI` | Path to an `audiocpp_cli` you built; `audiocpp_server` is taken from the same directory. When set, only it is used (a missing file means no engine). Otherwise the bundled `<resources>/bin/audiocpp/`, in development the cargo output dir's `audiocpp/` ([Model Worker protocol §4.4](docs/spec/model-worker-protocol-spec.md)) |
+| `BAOCUT_AUDIOCPP_BACKEND` | audio.cpp backend for local speech and music (`metal`, `cuda`, `vulkan`, `cpu`). Otherwise the CLI picks its own and the speech server uses the first of Metal, CUDA, Vulkan compiled into the build, else CPU |
 | `BAOCUT_FFMPEG` | `ffmpeg` used for media analysis, WebM playback cache and transcription audio preparation. Otherwise found on the login shell's PATH |
 
 </details>
@@ -305,7 +308,7 @@ crates/
   render-graph/     Frame plans shared by native export and WASM preview
   engine-host/      Engine Host process, talks to the Runtime over stdio
   export-worker/    Final render
-  model-worker/     Local inference (ASR, TTS, image, separation)
+  model-worker/     Local inference (ASR, image, separation, embeddings)
   speech-doc/       Transcript post-processing, alignment, subtitle splitting
 bindings/
   preview-wasm/     WASM entry for the editor preview

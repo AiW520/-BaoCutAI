@@ -9,17 +9,6 @@ use support::{WorkerProcess, error_code, result};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
-/// 合成主模型的全部 family（`packages/models` 的 `ModelFamily` 里 tts 那几个）。
-const SYNTHESIS_FAMILIES: [&str; 7] = [
-    "qwen3-tts",
-    "indextts2",
-    "indextts2.5",
-    "gpt-sovits",
-    "voxcpm2",
-    "omnivoice",
-    "fish-s2-pro",
-];
-
 /// 识别主模型的全部 family（`packages/models` 的 `ModelFamily` 里 asr 那几个）。
 const TRANSCRIPTION_FAMILIES: [&str; 5] = [
     "qwen3-asr",
@@ -35,20 +24,12 @@ const IMAGE_FAMILIES: [&str; 1] = ["qwen-image"];
 #[test]
 fn hello_reports_version_backends_and_capabilities() {
     let mut worker = WorkerProcess::spawn();
-    let (events, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (events, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     assert!(events.is_empty());
     let hello = result(&response);
-    assert_eq!(hello["contractVersion"], 1);
+    assert_eq!(hello["contractVersion"], 2);
     assert_eq!(hello["workerVersion"], env!("CARGO_PKG_VERSION"));
     assert!(hello["pid"].as_u64().is_some_and(|pid| pid > 0));
-    // 合成按 family 声明：能加载的列在 synthesizeFamilies，有一个就声明 synthesize 能力。
-    let families: Vec<&str> = hello["synthesizeFamilies"]
-        .as_array()
-        .expect("synthesizeFamilies is always present")
-        .iter()
-        .map(|family| family.as_str().unwrap())
-        .collect();
-    assert!(families.iter().all(|family| SYNTHESIS_FAMILIES.contains(family)), "{families:?}");
     // 识别同样按 family 声明（`asr` 组件的 family）。
     let transcribe: Vec<&str> = hello["transcribeFamilies"]
         .as_array()
@@ -72,9 +53,6 @@ fn hello_reports_version_backends_and_capabilities() {
         expected.push("align");
         // 说话人区分（Pyannote + WeSpeaker）同样接在 MLX 与 candle 上。
         expected.push("diarize");
-    }
-    if !families.is_empty() {
-        expected.push("synthesize");
     }
     // 分离同样按 family 声明（`separator` 组件的 family）：MLX 与 candle 的构建都接上了 HTDemucs-FT。
     let separate: Vec<&str> = hello["separateFamilies"]
@@ -116,9 +94,6 @@ fn hello_reports_version_backends_and_capabilities() {
     assert_eq!(hello["capabilities"], json!(expected));
     #[cfg(all(target_os = "macos", target_arch = "aarch64", feature = "backend-mlx"))]
     {
-        for family in ["qwen3-tts", "voxcpm2", "omnivoice", "gpt-sovits"] {
-            assert!(families.contains(&family), "{family} is wired on Apple Silicon: {families:?}");
-        }
         let mut wired = vec!["qwen3-asr", "whisper-mlx"];
         if cfg!(feature = "backend-coreml") {
             wired.push("whisper-coreml");
@@ -193,9 +168,46 @@ fn hello_reports_version_backends_and_capabilities() {
 #[test]
 fn contract_mismatch_is_rejected() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
     assert_eq!(error_code(&response), "CONTRACT_MISMATCH");
     assert_eq!(response["error"]["retryable"], false);
+}
+
+/// 本地语音合成已移出 Worker（合同第 2 版）：hello 不再有 `synthesizeFamilies`，`capability: "synthesize"` 的 `job.run`
+/// 与带 `tts` 组件的模型包都是形状错误（`INVALID_PARAMS`），失败的加载不留状态。
+#[test]
+fn synthesis_is_no_longer_in_the_contract() {
+    let mut worker = WorkerProcess::spawn();
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
+    assert!(result(&response).get("synthesizeFamilies").is_none(), "{response}");
+    let staging = tempfile::tempdir().unwrap();
+    let run = json!({
+        "jobId": "job-tts",
+        "runGeneration": 1,
+        "capability": "synthesize",
+        "options": { "text": "hello", "voice": { "mode": "preset", "id": "a" } },
+        "staging": staging.path().to_string_lossy(),
+        "outputContract": "baocut.speech-wav/v1",
+    });
+    let (_, response) = worker.call("job.run", run, TIMEOUT);
+    assert_eq!(error_code(&response), "INVALID_PARAMS");
+
+    let models = tempfile::tempdir().unwrap();
+    std::fs::write(models.path().join("model.safetensors"), b"1234").unwrap();
+    let tts = json!({ "family": "qwen3-tts", "revision": "r1", "dir": models.path().to_string_lossy(),
+                      "files": [{ "path": "model.safetensors", "sha256": "0".repeat(64), "byteLength": 4 }] });
+    let bundle = json!({ "bundle": {
+        "bundleId": "qwen3-tts@test",
+        "backend": "mlx",
+        "device": "metal",
+        "components": { "tts": tts },
+        "threads": 2,
+        "memoryBudgetBytes": null,
+    } });
+    let (_, response) = worker.call("model.load", bundle, TIMEOUT);
+    assert_eq!(error_code(&response), "INVALID_PARAMS");
+    let (_, response) = worker.call("worker.status", json!({}), TIMEOUT);
+    assert_eq!(result(&response)["state"], "empty");
 }
 
 #[test]
@@ -206,7 +218,7 @@ fn unknown_methods_and_bad_params_are_protocol_errors() {
 
     let (_, response) = worker.call("worker.hello", json!({ "contractVersion": "one" }), TIMEOUT);
     assert_eq!(error_code(&response), "INVALID_PARAMS");
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1, "extra": true }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2, "extra": true }), TIMEOUT);
     assert_eq!(error_code(&response), "INVALID_PARAMS");
     let (_, response) = worker.call("job.cancel", json!({}), TIMEOUT);
     assert_eq!(error_code(&response), "INVALID_PARAMS");
@@ -288,85 +300,12 @@ fn missing_model_files_are_not_installed() {
     assert_eq!(result(&response)["state"], "empty");
 }
 
-/// 合成参数照常先检查；没列在 `synthesizeFamilies` 里的 family 加载时是结构化的 `MODEL_UNSUPPORTED`（`not-wired`），
-/// 列着的 family 照常核对文件（缺文件不是 `not-wired`）；失败的加载都不留状态。
-#[test]
-fn synthesis_is_checked_and_unlisted_families_are_not_wired() {
-    let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
-    let listed: Vec<String> = result(&response)["synthesizeFamilies"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|family| family.as_str().unwrap().to_owned())
-        .collect();
-    let staging = tempfile::tempdir().unwrap();
-    let run = |voice: Value| {
-        json!({
-            "jobId": "job-tts",
-            "runGeneration": 1,
-            "capability": "synthesize",
-            "input": null,
-            "options": { "text": "hello", "language": null, "voice": voice, "instructions": null,
-                         "speed": null, "cfg": null, "steps": null, "seed": null },
-            "staging": staging.path().to_string_lossy(),
-            "outputContract": "baocut.speech-wav/v1",
-        })
-    };
-    // clone 没有参考录音：参数错，先于状态检查。
-    let (_, response) = worker.call("job.run", run(json!({ "mode": "clone", "transcript": null })), TIMEOUT);
-    assert_eq!(error_code(&response), "INVALID_PARAMS");
-    let (_, response) = worker.call("job.run", run(json!({ "mode": "preset", "id": "a" })), TIMEOUT);
-    assert_eq!(error_code(&response), "WORKER_BUSY");
-
-    let models = tempfile::tempdir().unwrap();
-    std::fs::write(models.path().join("model.safetensors"), b"1234").unwrap();
-    let component = |family: &str| {
-        json!({ "family": family, "revision": "r1", "dir": models.path().to_string_lossy(),
-                "files": [{ "path": "model.safetensors", "sha256": "0".repeat(64), "byteLength": 4 }] })
-    };
-    let bundle = |family: &str| {
-        let mut components = json!({ "tts": component(family) });
-        if family == "qwen3-tts" {
-            components["codec"] = component("qwen3-tts-tokenizer");
-        }
-        json!({ "bundle": {
-            "bundleId": format!("{family}@test"),
-            "backend": "mlx",
-            "device": "metal",
-            "components": components,
-            "threads": 2,
-            "memoryBudgetBytes": null,
-        } })
-    };
-    for family in SYNTHESIS_FAMILIES {
-        let (_, response) = worker.call("model.load", bundle(family), Duration::from_secs(60));
-        assert!(
-            response["error"].is_object(),
-            "{family}: a four-byte weight file never loads: {response}"
-        );
-        assert_eq!(response["error"]["retryable"], false, "{family}: {response}");
-        let reason = &response["error"]["details"]["reason"];
-        if listed.iter().any(|listed| listed == family) {
-            assert_ne!(reason, "not-wired", "{family} is listed in hello: {response}");
-        } else {
-            assert_eq!(error_code(&response), "MODEL_UNSUPPORTED");
-            assert_eq!(
-                response["error"]["details"],
-                json!({ "capability": "synthesize", "reason": "not-wired", "family": family })
-            );
-        }
-        let (_, response) = worker.call("worker.status", json!({}), TIMEOUT);
-        assert_eq!(result(&response)["state"], "empty", "{family}");
-    }
-}
-
 /// 分离参数照常先检查（形状 → `INVALID_PARAMS`，没有模型 → `WORKER_BUSY`）；分离的模型包只带 `separator`，
 /// 缺文件是 `MODEL_NOT_INSTALLED`、带了别的组件是 `MODEL_UNSUPPORTED`，失败的加载都不留状态。
 #[test]
 fn separation_is_checked_before_and_at_load() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     let wired = !result(&response)["separateFamilies"].as_array().unwrap().is_empty();
     let staging = tempfile::tempdir().unwrap();
     let run = |options: Value| {
@@ -448,7 +387,7 @@ fn separation_is_checked_before_and_at_load() {
 #[test]
 fn image_is_checked_and_unlisted_families_are_not_wired() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     let listed = result(&response)["imageFamilies"]
         .as_array()
         .unwrap()
@@ -471,7 +410,7 @@ fn image_is_checked_and_unlisted_families_are_not_wired() {
     let (_, response) = worker.call("job.run", run("a cat", 0), TIMEOUT);
     assert_eq!(error_code(&response), "INVALID_PARAMS");
     let mut wrong_contract = run("a cat", 256);
-    wrong_contract["outputContract"] = json!("baocut.speech-wav/v1");
+    wrong_contract["outputContract"] = json!("baocut.stems-wav/v1");
     let (_, response) = worker.call("job.run", wrong_contract, TIMEOUT);
     assert_eq!(error_code(&response), "INVALID_PARAMS");
     let (_, response) = worker.call("job.run", run("a cat", 256), TIMEOUT);
@@ -548,7 +487,7 @@ fn image_is_checked_and_unlisted_families_are_not_wired() {
 #[test]
 fn stdin_eof_exits_promptly() {
     let mut worker = WorkerProcess::spawn();
-    let _ = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let _ = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     worker.close_stdin();
     let status = worker.wait_exit(Duration::from_secs(2)).expect("exits within 2 s of stdin EOF");
     assert!(status.success(), "{status:?}");
@@ -594,7 +533,7 @@ fn oversized_lines_are_a_fatal_protocol_error() {
 #[test]
 fn unlisted_transcription_families_are_not_wired() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     let listed = result(&response)["transcribeFamilies"].clone();
     let models = tempfile::tempdir().unwrap();
     std::fs::write(models.path().join("model.safetensors"), b"1234").unwrap();
@@ -649,7 +588,7 @@ fn unlisted_transcription_families_are_not_wired() {
 #[test]
 fn whisper_bundles_name_the_missing_model_directory() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     if result(&response)["backends"][1]["available"] != true {
         eprintln!("skipped: no Metal device");
         return;
@@ -695,7 +634,7 @@ fn whisper_bundles_name_the_missing_model_directory() {
 #[test]
 fn whisper_mlx_bundles_name_the_missing_file() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     if result(&response)["backends"][0]["available"] != true {
         eprintln!("skipped: no Metal device");
         return;
@@ -752,7 +691,7 @@ fn whisper_mlx_bundles_name_the_missing_file() {
 #[test]
 fn moss_bundles_name_the_missing_file() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     if result(&response)["backends"][0]["available"] != true {
         eprintln!("skipped: no Metal device");
         return;
@@ -795,7 +734,7 @@ fn moss_bundles_name_the_missing_file() {
 #[test]
 fn ggml_bundles_check_device_components_and_weights() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     let preferred = result(&response)["backends"][3]["devices"][0].as_str().unwrap().to_owned();
     let models = tempfile::tempdir().unwrap();
     std::fs::write(models.path().join("model.safetensors"), b"1234").unwrap();
@@ -854,7 +793,7 @@ fn ggml_bundles_check_device_components_and_weights() {
 #[test]
 fn diarization_is_checked_before_and_at_load() {
     let mut worker = WorkerProcess::spawn();
-    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 1 }), TIMEOUT);
+    let (_, response) = worker.call("worker.hello", json!({ "contractVersion": 2 }), TIMEOUT);
     let wired = result(&response)["capabilities"].as_array().unwrap().contains(&json!("diarize"));
     let staging = tempfile::tempdir().unwrap();
     let run = |options: Value| {

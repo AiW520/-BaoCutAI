@@ -10,7 +10,7 @@ const T = global.window.BC_TOOLS;
 const TTS = global.window.BC_TTS;
 
 test('本地默认模型覆盖内置推荐，未安装的默认模型不会预选', () => {
-  const id = T.modelOf({engine: 'gptsovits', mode: 'clone'});
+  const id = T.modelOf({engine: 'voxcpm2', mode: 'clone'});
   assert.equal(T.modelOf(T.preferredForm(() => true, id)), id);
   const fallback = T.modelOf(T.blank());
   assert.equal(T.modelOf(T.preferredForm(mid => mid === fallback, id)), fallback);
@@ -88,15 +88,16 @@ test('压缩 / 合并两张卡的状态行读 ffmpeg 探测结果', () => {
   assert.deepEqual(T.videoStatus({found: true, major: 7, version: '7.1'}), {text: 'ffmpeg 7.1 就绪', on: true});
 });
 
-test('音色方式与模型：Qwen3 0.6B 预设 / 克隆，1.7B 多描述，OmniVoice 克隆 + 描述同一只权重', () => {
-  assert.deepEqual(T.voiceModes('qwen3'), ['preset', 'clone']);
+test('音色方式与模型：Qwen3 0.6B 只有克隆，1.7B 预设 / 克隆 / 描述，OmniVoice 克隆 + 描述同一只权重', () => {
+  assert.deepEqual(T.voiceModes('qwen3'), ['clone']);
   assert.deepEqual(T.voiceModes('qwen3-1.7b'), ['preset', 'clone', 'describe']);
   assert.deepEqual(T.voiceModes('voxcpm2'), ['clone']);
   assert.deepEqual(T.voiceModes('omnivoice'), ['clone', 'describe']);
-  assert.equal(T.modelOf({engine: 'qwen3', mode: 'preset'}), 'qwen3-tts-0.6b-customvoice');
-  assert.equal(T.modelOf({engine: 'qwen3', mode: 'describe'}), 'qwen3-tts-0.6b-customvoice', '0.6B 没有描述，非法方式落到首选');
+  assert.equal(T.modelOf({engine: 'qwen3', mode: 'preset'}), 'qwen3-tts-0.6b-base', '0.6B 没有预设了：旧草稿的预设落到 Base');
+  assert.equal(T.modelOf({engine: 'qwen3', mode: 'describe'}), 'qwen3-tts-0.6b-base', '0.6B 没有描述，非法方式落到它唯一的方式');
+  assert.equal(T.modelOf({engine: 'qwen3-1.7b', mode: 'preset'}), 'qwen3-tts-1.7b-customvoice');
   assert.equal(T.modelOf({engine: 'qwen3-1.7b', mode: 'describe'}), 'qwen3-tts-1.7b-voicedesign');
-  assert.deepEqual(T.modelsOf('qwen3'), ['qwen3-tts-0.6b-customvoice', 'qwen3-tts-0.6b-base']);
+  assert.deepEqual(T.modelsOf('qwen3'), ['qwen3-tts-0.6b-base']);
   assert.deepEqual(T.modelsOf('qwen3-1.7b'), ['qwen3-tts-1.7b-customvoice', 'qwen3-tts-1.7b-base', 'qwen3-tts-1.7b-voicedesign']);
   // 两种方式同一只权重：只算一次（体积、下载都不翻倍）
   assert.deepEqual(T.modelsOf('omnivoice'), ['omnivoice']);
@@ -105,13 +106,12 @@ test('音色方式与模型：Qwen3 0.6B 预设 / 克隆，1.7B 多描述，Omni
 
 test('模型卡能力标签随引擎变', () => {
   const labels = (e) => T.engineCard(e).tags.map((t) => t.label);
-  assert.deepEqual(labels('qwen3'), ['预设音色', '克隆', '风格指令', '中 / 英 / 日 / 韩 等 10 种']);
+  assert.deepEqual(labels('qwen3'), ['需要参考音频', '中 / 英 / 日 / 韩 等 10 种']);
   assert.deepEqual(labels('qwen3-1.7b'), ['预设音色', '克隆', '风格指令', '描述声音', '中 / 英 / 日 / 韩 等 10 种', '较慢']);
   assert.deepEqual(labels('voxcpm2'), ['需要参考音频', '风格指令', '中 / 英 / 日 / 韩 等 31 种']);
   assert.deepEqual(labels('omnivoice'), ['克隆', '描述声音', '按时长念', '英 / 中 / 德 / 西 等 100 种', '仅限非商用']);
   assert.equal(T.engineCard('omnivoice').tags.find((t) => t.label === '仅限非商用').tone, 'notice');
   assert.deepEqual(labels('indextts2'), ['需要参考音频', '情绪', '中 / 英']);
-  assert.deepEqual(labels('gptsovits'), ['需要参考音频', '中 / 英']);
 });
 
 test('语言表只列引擎会念的；「自动」时文字语种不支持就拦', () => {
@@ -132,7 +132,7 @@ test('换引擎：音色方式落到合法值，语言回自动，谁都不强�
   assert.equal(g.mode, 'clone');
   assert.equal(g.lang, 'auto');
   assert.equal(g.ref, null, '2026-09-21：不给参考就是按语言挑的内置音色');
-  const h = T.switchEngine(Object.assign({}, g, {emotion: 'happy'}), 'gptsovits');
+  const h = T.switchEngine(Object.assign({}, g, {emotion: 'happy'}), 'voxcpm2');
   assert.equal(h.emotion, 'none');
   const k = T.switchEngine(T.blank(), 'qwen3-1.7b');
   assert.equal(k.ref, null);
@@ -143,7 +143,7 @@ test('校验：空文字、超长、缺参考、描述为空、情绪音频', ()
   assert.deepEqual(T.validate(base), ['先写要念的文字']);
   assert.deepEqual(T.validate(Object.assign({}, base, {text: '好'})), []);
   assert.match(T.validate(Object.assign({}, base, {text: 'x'.repeat(2001)}))[0], /最多 2000 字/);
-  const clone = Object.assign({}, base, {engine: 'gptsovits', mode: 'clone', text: '你好'});
+  const clone = Object.assign({}, base, {engine: 'voxcpm2', mode: 'clone', text: '你好'});
   assert.deepEqual(T.validate(clone), [], '不给参考就是默认音色');
   // 选了「我的音频」还没给文件：这半步要拦
   assert.match(T.validate(Object.assign({}, clone, TTS.pickRef({refText: ''}, 'file')))[0], /先选一段参考音频/);
@@ -170,10 +170,10 @@ test('念法卡：填进风格、顺手带示例文字，再点一次清空', ()
 
 test('开页落到已装模型，没装的指一只装好的替代', () => {
   const none = () => false;
-  assert.equal(T.preferredForm(none).engine, 'qwen3', '一个都没装还是默认那只');
+  assert.deepEqual([T.preferredForm(none).engine, T.preferredForm(none).mode], ['qwen3-1.7b', 'preset'], '一个都没装还是默认那只（1.7B 预设音色）');
   assert.equal(T.installedAlternative(T.blank(), none), null);
-  const only = (id) => id === 'qwen3-tts-0.6b-customvoice';
-  assert.equal(T.preferredForm(only).engine, 'qwen3');
+  const only = (id) => id === 'qwen3-tts-1.7b-customvoice';
+  assert.equal(T.preferredForm(only).engine, 'qwen3-1.7b');
   assert.equal(T.installedAlternative(T.blank(), only), null, '装好了就没有替代一说');
 
   const idx = (id) => id === 'indextts2';
@@ -184,9 +184,9 @@ test('开页落到已装模型，没装的指一只装好的替代', () => {
   const far = T.installedAlternative(T.blank(), idx);
   assert.deepEqual([far.engine, far.mode, far.switched], ['indextts2', 'clone', true]);
 
-  const big = (id) => id === 'qwen3-tts-1.7b-customvoice';
-  const near = T.installedAlternative(T.blank(), big);
-  assert.deepEqual([near.engine, near.mode, near.switched], ['qwen3-1.7b', 'preset', false], '同一种音色方式优先');
+  const big = (id) => id === 'qwen3-tts-1.7b-base';
+  const near = T.installedAlternative(Object.assign(T.blank(), {engine: 'qwen3', mode: 'clone'}), big);
+  assert.deepEqual([near.engine, near.mode, near.switched], ['qwen3-1.7b', 'clone', false], '同一种音色方式优先');
 });
 
 test('字数行、示例句、音色短名', () => {
@@ -200,10 +200,10 @@ test('字数行、示例句、音色短名', () => {
 });
 
 test('生成记录：命名、元数据、一次只跑一条', () => {
-  const r = T.makeRecord(Object.assign(T.blank(), {text: '欢迎回来。', engine: 'gptsovits', mode: 'clone', ref: {builtin: 'zh-male', name: 'x', dur: 6.16}}), 7);
+  const r = T.makeRecord(Object.assign(T.blank(), {text: '欢迎回来。', engine: 'voxcpm2', mode: 'clone', ref: {builtin: 'zh-male', name: 'x', dur: 6.16}}), 7);
   assert.equal(r.name, '语音-007.wav');
-  assert.equal(r.rate, 32000);
-  assert.equal(T.recordMeta(r), `00:0${Math.round(r.dur)} · 32 kHz · GPT-SoVITS · 中文男声 · 简体中文`);
+  assert.equal(r.rate, 48000);
+  assert.equal(T.recordMeta(r), `00:0${Math.round(r.dur)} · 48 kHz · VoxCPM2 · 中文男声 · 简体中文`);
   assert.match(T.recordMeta(Object.assign({}, r, {rate: 22050})), /22\.05 kHz/);
   const list = [{id: 'a', seq: 1, status: 'done'}, {id: 'b', seq: 3, status: 'queued'}, {id: 'c', seq: 2, status: 'queued'}];
   assert.equal(T.nextQueued(list).id, 'c');
@@ -212,8 +212,8 @@ test('生成记录：命名、元数据、一次只跑一条', () => {
 });
 
 test('生成语音卡状态行按已装模型数', () => {
-  assert.equal(T.ttsStatus(() => false).text, '11 个语音模型可下载');
-  assert.equal(T.ttsStatus((id) => id === 'indextts2').text, '已装 1 / 11 个语音模型');
+  assert.equal(T.ttsStatus(() => false).text, '9 个语音模型可下载');
+  assert.equal(T.ttsStatus((id) => id === 'indextts2').text, '已装 1 / 9 个语音模型');
 });
 
 test('自建 API 提供方（留的口子）：登记后只凭 cloud:<id> 就能出卡、语言、上限与记录', () => {
@@ -232,7 +232,7 @@ test('自建 API 提供方（留的口子）：登记后只凭 cloud:<id> 就能
   assert.equal(r.provider, '自家 TTS');
   assert.equal(r.chars, 11);
   assert.equal(r.engineName, '自家 TTS · kokoro-v1');
-  assert.equal(T.ttsStatus(() => false, ['custom-9']).text, '11 个语音模型可下载 · 1 家云端已连接');
+  assert.equal(T.ttsStatus(() => false, ['custom-9']).text, '9 个语音模型可下载 · 1 家云端已连接');
   assert.ok(T.validate(Object.assign({}, f, {text: 'hi'}), {voices: [], saved: ['custom-9']}).length === 0);
   assert.equal(C.engines(['custom-9']).length, 1, 'engines 不带 extra 也认登记过的自建');
   assert.equal(p.custom, true);

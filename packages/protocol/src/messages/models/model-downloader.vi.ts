@@ -9,5 +9,4 @@ remedyManifestIncomplete: 'Bản kê có sẵn cho gói mô hình này thiếu s
 downloadFailed: (p) => `Không tải xuống được ${p.file}: ${p.reason}`, integrityMismatch: (p) => `Kích thước hoặc sha256 của ${p.file} không khớp bản kê`, sourceHttp: (p) => `Nguồn tải trả về HTTP ${p.status} cho ${p.file}`, diskFull: 'Đĩa đầy khi ghi tệp mô hình',
   archiveUnpackable: (p: { file: string; reason: string }) => `Không giải nén được ${p.file}: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} không chứa ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} đã giải nén nhưng không chạy được: ${p.reason}`,
 };

@@ -12,7 +12,7 @@ import {
   ttsBrief,
   ttsChips,
 } from './models-tts-local.ts';
-import { CC_BY_NC, GPT_SOVITS, INDEX_TTS2, OMNIVOICE, QWEN_BASE, QWEN_CUSTOM, QWEN_DESIGN, VOXCPM2 } from './tts-test-fixtures.ts';
+import { CC_BY_NC, INDEX_TTS2, OMNIVOICE, QWEN_BASE, QWEN_CUSTOM, QWEN_DESIGN, VOXCPM2 } from './tts-test-fixtures.ts';
 
 const BASE = QWEN_BASE.modelId;
 const CUSTOM = QWEN_CUSTOM.modelId;
@@ -21,9 +21,9 @@ describe('localDefaultPicker（语音合成）', () => {
   const synth = (id: string, label: string, patch = {}) => bundle(id, { capability: 'synthesize', label, ...patch });
   const bundles = [
     synth(BASE, 'Qwen3-TTS 0.6B Base'),
-    synth(CUSTOM, 'Qwen3-TTS 0.6B CustomVoice'),
-    synth('omnivoice@mlx-int8', 'OmniVoice', { state: 'not-installed' }),
-    synth('voxcpm2@mlx-int8', 'VoxCPM2', { state: 'downloading', components: [{ component: 'tts', repo: 'a/b', revision: 'r', state: 'missing', bytes: null, sharedWith: [] }] }),
+    synth(CUSTOM, 'Qwen3-TTS 1.7B CustomVoice'),
+    synth('omnivoice@audio-cpp-q8', 'OmniVoice', { state: 'not-installed' }),
+    synth('voxcpm2@audio-cpp-q8', 'VoxCPM2', { state: 'downloading', components: [{ component: 'tts', repo: 'a/b', revision: 'r', state: 'missing', bytes: null, sharedWith: [] }] }),
     bundle('qwen3-asr-0.6b@mlx-4bit'),
   ];
 
@@ -32,7 +32,7 @@ describe('localDefaultPicker（语音合成）', () => {
     expect(picker).toMatchObject({ selectedKey: null, other: null, autoUses: null, hasAuto: false });
     expect(picker.items).toEqual([
       { key: BASE, label: 'Qwen3-TTS 0.6B Base' },
-      { key: CUSTOM, label: 'Qwen3-TTS 0.6B CustomVoice' },
+      { key: CUSTOM, label: 'Qwen3-TTS 1.7B CustomVoice' },
     ]);
   });
 
@@ -40,7 +40,7 @@ describe('localDefaultPicker（语音合成）', () => {
     const view = fixtureView();
     view.synthesizeSpeech.default = { providerId: 'local', modelId: CUSTOM };
     expect(localDefaultPicker(view, bundles, 'synthesize').selectedKey).toBe(CUSTOM);
-    for (const stale of ['omnivoice@mlx-int8', 'voxcpm2@mlx-int8']) {
+    for (const stale of ['omnivoice@audio-cpp-q8', 'voxcpm2@audio-cpp-q8']) {
       view.synthesizeSpeech.default = { providerId: 'local', modelId: stale };
       const picker = localDefaultPicker(view, bundles, 'synthesize');
       expect(picker).toMatchObject({ selectedKey: null, other: null, hasAuto: false });
@@ -74,7 +74,7 @@ describe('ttsBrief', () => {
       facts: ['内置音色 / 克隆', '中 / 英 / 日 / 韩 等 10 种语言', '24 kHz'],
     });
     expect(ttsBrief(VOXCPM2).facts).toEqual(['内置音色 / 克隆', '风格指令', '语言不限', '48 kHz']);
-    expect(ttsBrief(GPT_SOVITS).facts[1]).toBe('中 / 英');
+    expect(ttsBrief({ ...QWEN_BASE, languages: ['zh', 'en'] }).facts[1]).toBe('中 / 英');
   });
 
   it('情绪控制这一版带不了：IndexTTS 行上不写「情绪可调」', () => {
@@ -102,7 +102,7 @@ describe('ttsBrief', () => {
 
 describe('许可、说明与体积', () => {
   it('不许商用的标「仅限非商用」，许可提要写出向谁申请', () => {
-    const omni = bundle('omnivoice@mlx-int8', { capability: 'synthesize', license: CC_BY_NC });
+    const omni = bundle('omnivoice@audio-cpp-q8', { capability: 'synthesize', license: CC_BY_NC });
     expect(ttsChips(omni, true)).toEqual([
       { label: '默认', tone: 'accent' },
       { label: '仅限非商用', tone: 'notice' },
@@ -111,15 +111,15 @@ describe('许可、说明与体积', () => {
     expect(ttsChips(bundle(BASE, { capability: 'synthesize' }), false)).toEqual([]);
   });
 
-  it('试听前的一句：描述模型、VoxCPM2、不许商用、大模型各有说法，其余没有', () => {
+  it('试听前的一句：描述模型、不许商用、大模型各有说法，其余没有', () => {
     expect(quickNote(QWEN_DESIGN)).toContain('描述决定');
-    expect(quickNote(VOXCPM2)).toContain('一倍实时');
+    expect(quickNote(VOXCPM2)).toBeNull();
     expect(quickNote(OMNIVOICE)).toBe('仅限非商用（CC-BY-NC-4.0）：做要商用的内容请换别的模型');
     expect(quickNote({ ...QWEN_CUSTOM, local: { ...QWEN_CUSTOM.local!, slow: true } })).toContain('大模型');
     expect(quickNote(QWEN_BASE)).toBeNull();
   });
 
-  it('模型描述带了 notes（candle 在 CPU 上的耗时）时试听前先说它', () => {
+  it('模型描述带了 notes 时试听前先说它', () => {
     const notes = '在本机的 CPU 上合成，比实时慢 5–6 倍，10 秒的一句要一分钟左右';
     expect(quickNote({ ...VOXCPM2, notes })).toBe(notes);
     expect(quickNote({ ...QWEN_DESIGN, notes })).toBe(notes);

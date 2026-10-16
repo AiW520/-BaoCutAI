@@ -72,7 +72,7 @@ export const ko: TtsLocalMessages = {
     auditionClone: '복제 미리 듣기',
     auditionCloneLabel: (name: string) => `복제 미리 듣기 · ${name}`,
     noCloneModel:
-      '복제할 수 있는 로컬 모델이 아직 설치되지 않았습니다. 먼저 로컬 모델 페이지에서 하나를 다운로드하세요(IndexTTS2, Qwen3-TTS Base, GPT-SoVITS…).',
+      '복제할 수 있는 로컬 모델이 아직 설치되지 않았습니다. 먼저 로컬 모델 페이지에서 하나를 다운로드하세요(IndexTTS2, Qwen3-TTS Base, VoxCPM2…).',
     goLocal: '로컬 모델로 이동',
   },
 };

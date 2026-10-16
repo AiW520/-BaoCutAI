@@ -337,7 +337,7 @@
               <div className="ttsw__row">
                 <span className="ttsw__lab">录音原文</span>
                 <Field size="s" className="grow" value={f.refText} aria-label="录音原文" onChange={(e) => set({refText: e.target.value})}
-                  placeholder={f.engine === 'gptsovits' ? '可选 · 给出原文会更像，这时录音要 3–10 秒' : TTS.refTextRequired(f.engine) ? '必填 · 录音里说的是什么（不写会吞掉开头）' : '可选 · 录音里说的是什么，给出会更像'} />
+                  placeholder={TTS.refTextRequired(f.engine) ? '必填 · 录音里说的是什么（不写会吞掉开头）' : '可选 · 录音里说的是什么，给出会更像'} />
               </div>
             ) : null}
             {refErr ? <div className="hint hint--warn ttsw__indent">{refErr}</div> : null}

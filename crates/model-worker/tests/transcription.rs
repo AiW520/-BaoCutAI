@@ -53,7 +53,7 @@ fn loaded_worker_within(bundle: Value, load_timeout: Duration) -> WorkerProcess 
     let bundle_id = bundle["bundleId"].clone();
     let backend = bundle["backend"].as_str().unwrap().to_owned();
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     let status = result(&hello)["backends"]
         .as_array()
         .unwrap()
@@ -462,7 +462,7 @@ fn aligns_known_text_with_the_forced_aligner() {
         return;
     }
     let mut worker = loaded_worker();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     assert!(
         result(&hello)["capabilities"].as_array().unwrap().iter().any(|c| c == "align"),
         "{hello}"
@@ -782,7 +782,7 @@ fn loaded_moss_worker_with(adapt: impl FnOnce(Value) -> Value, load_timeout: Dur
     let bundle = adapt(moss_bundle(&root));
     let bundle_id = bundle["bundleId"].clone();
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     assert!(
         result(&hello)["transcribeFamilies"]
             .as_array()
@@ -1251,7 +1251,7 @@ fn candle_transcribes_with(bundle_id: &str, asr: (&str, &str)) {
         return;
     }
     let mut probe = WorkerProcess::spawn();
-    let (_, hello) = probe.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = probe.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     let hello = result(&hello);
     let candle = hello["backends"]
         .as_array()

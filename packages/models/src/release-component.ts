@@ -4,7 +4,7 @@ import type { ComponentRelease, ComponentReleaseAsset } from './bundle-registry.
 import { removeEmptyParents } from './model-staging.ts';
 
 /**
- * 来自 GitHub 发布页的组件（`BundleComponentSource.release`，目前只有音乐模型包的 audio.cpp 引擎；架构设计 §6.3）的位置与地址。
+ * 来自 GitHub 发布页的组件（`BundleComponentSource.release`，目前只有 embedding 模型包的 LiteRT-LM C 库；架构设计 §6.3）的位置与地址。
  *
  * - 组件目录：`<toolsDir>/<name>/<version>/`（Runtime Home 的 `tools/`，不在模型目录里，移动模型目录时不跟着走）。解开的文件旁边
  *   写一份 `.bcut-manifest.json`（每个文件的大小与 sha256），装没装好、校验与修复照旧按清单判断。

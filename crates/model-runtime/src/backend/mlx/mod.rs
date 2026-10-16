@@ -1,7 +1,7 @@
 //! MLX 后端（Apple Silicon + Metal）：Silero VAD、Qwen3-ASR、Whisper、MOSS-Transcribe-Diarize、Qwen3-ForcedAligner、WeSpeaker、Pyannote，
-//! 以及本地语音合成的引擎（[`crate::synthesize`]）与本地文生图的引擎（[`crate::image`]）。
+//! 以及本地文生图的引擎（[`crate::image`]）。
 //!
-//! MLX 的数组不是 `Send`：加载出来的 [`MlxModel`] 与合成引擎只能留在加载它的线程上。进 MLX 之前一律先过
+//! MLX 的数组不是 `Send`：加载出来的 [`MlxModel`] 与别的引擎只能留在加载它的线程上。进 MLX 之前一律先过
 //! [`runtime::ensure_metal_device`]，否则没有 Metal 设备时 MLX 会在 C++ 里抛异常、整个进程 abort。
 
 pub mod aligner;
@@ -19,8 +19,7 @@ use std::time::Instant;
 use serde_json::{Value, json};
 
 use super::{
-    Backend, LoadedDiarization, LoadedImage, LoadedModel, LoadedSeparation, LoadedSynthesis, ModelPhase, PhaseCallback,
-    REASON_NO_METAL_DEVICE, RunMode,
+    Backend, LoadedDiarization, LoadedImage, LoadedModel, LoadedSeparation, ModelPhase, PhaseCallback, REASON_NO_METAL_DEVICE, RunMode,
 };
 use crate::bundle::{FAMILY_MOSS_TRANSCRIBE_DIARIZE, FAMILY_QWEN3_ASR, FAMILY_WHISPER_MLX, VerifiedBundle, VerifiedFiles};
 use crate::pressure::{self, MemoryPressure};
@@ -30,7 +29,6 @@ use crate::speech::{
     ForcedAlignment, SegmentedTranscription, SegmentingCallbacks, SegmentingRecognizer, SpeakerDiarization, SpeakerEmbedding,
     SpeechRecognizer,
 };
-use crate::synthesize::{self, EngineFiles, TtsEngineKind};
 use aligner::ForcedAligner;
 use moss::MossTranscribeDiarize;
 use pyannote::DiarizerSlot;
@@ -64,36 +62,6 @@ impl Backend for MlxBackend {
                 devices: Vec::new(),
             },
         }
-    }
-
-    fn load_synthesis(
-        &self,
-        bundle: &VerifiedBundle,
-        kind: TtsEngineKind,
-        phase: &mut PhaseCallback<'_>,
-    ) -> Result<LoadedSynthesis, ErrorBody> {
-        check_device(bundle)?;
-        let Some(model) = &bundle.tts else {
-            // backend::load 已经检查过；这里只为类型。
-            return Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "the bundle needs a tts component"));
-        };
-        let files = EngineFiles {
-            model,
-            codec: bundle.codec.as_ref(),
-            aux: bundle.aux.as_ref(),
-        };
-        phase(ModelPhase::LoadingWeights, Some(kind.family()));
-        let started = Instant::now();
-        // 引擎自己先核对清单（缺文件是 MODEL_NOT_INSTALLED），再确认 Metal、配置缓存、读权重。
-        let engine = synthesize::load(kind, files).map_err(|error| load_failed("tts", &error))?;
-        let load_ms = started.elapsed().as_millis() as u64;
-        Ok(LoadedSynthesis {
-            kind,
-            engine,
-            load_ms,
-            resident_bytes: Some(runtime::memory_snapshot().0 as u64),
-            memory,
-        })
     }
 
     fn load_separation(&self, bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<LoadedSeparation, ErrorBody> {

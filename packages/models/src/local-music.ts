@@ -8,20 +8,14 @@ import { MUSIC_OUTPUT_FILE } from './worker-contract.ts';
 
 /**
  * 本地音乐生成（架构设计 §6.1、§6.3）：模型包的描述、提交时冻结的 seed，与冻结参数到 audio.cpp 引擎命令行的换算。
- * 引擎（`audiocpp_cli`）每个任务起一个进程，读模型包目录里的 GGUF，把 WAV 写进 staging；没有 Model Worker 参与。
+ * 内置引擎（`audiocpp_cli`）每个任务起一个进程，读模型包目录里的 GGUF，把 WAV 写进 staging；没有 Model Worker 参与。
  */
 
 export type MusicParameters = Extract<GenerationParameters, { capability: 'generateMusic' }>;
 
-/** 引擎可执行文件的环境变量：给了就只用它（开发时指向自己构建或下载的 `audiocpp_cli`；目录的 `engineOverride`），不看 PATH。 */
-export const AUDIO_CPP_CLI_ENV = 'BAOCUT_AUDIOCPP_CLI';
-/** 引擎后端的环境变量（`metal` / `cuda` / `vulkan` / `cpu`）：不给时由引擎按构建自己选。 */
-export const AUDIO_CPP_BACKEND_ENV = 'BAOCUT_AUDIOCPP_BACKEND';
-
 /**
- * `generateMusic` 的模型描述：歌曲与纯音乐、只出 WAV、接受 seed 与步数；上限来自模型包登记的特性。`engine` 是引擎组件的可执行
- * 文件（`ModelCatalog.engineExecutable`；没装时 null，模型整体不可用，`unavailableReason` 由调用方给）。引擎是模型包的必需组件，
- * 没装的说明就是模型包状态的 `detail`。
+ * `generateMusic` 的模型描述：歌曲与纯音乐、只出 WAV、接受 seed 与步数；上限来自模型包登记的特性。`engine` 是内置引擎的可执行
+ * 文件（找不到时 null，模型整体不可用；模型目录同样把模型包报告为 `unsupported`，说明在模型包状态的 `detail` 里）。
  */
 export function localMusicModelInfo(def: BundleDefinition, status: ModelBundleStatus, usable: boolean, engine: string | null): MusicModelInfo {
   const profile = def.music!;

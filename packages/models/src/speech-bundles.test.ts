@@ -1,94 +1,76 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ModelBundleStatus } from '@baocut/protocol';
-import { BUNDLES, backendSupported, type BundleDefinition } from './bundle-registry.ts';
+import { BUNDLES, backendSupported } from './bundle-registry.ts';
 import { localSpeechModelInfo, LOCAL_SPEECH_MAX_CHARS } from './local-speech.ts';
-import { ModelCatalog } from './model-catalog.ts';
+import { MANIFEST_FILE, ModelCatalog } from './model-catalog.ts';
 import { REPO_MANIFESTS, repoManifestFor } from './repo-manifests.ts';
 import { SPEECH_BUNDLES } from './speech-bundles.ts';
 import { BUILTIN_VOICES } from './speech-voices.ts';
-import { SPEECH_COMPONENTS } from './worker-contract.ts';
 
-/** 本地语音合成模型包的登记（架构设计 §6.3）：每个文件有哈希与大小，共用组件按引用保留，许可随模型描述给出。 */
+/** 本地语音合成模型包的登记（架构设计 §6.3）：每个模型包是 audio.cpp 的一个 Q8 GGUF，由内置引擎执行；许可随模型描述给出。 */
 
-const MLX_IDS = [
-  'qwen3-tts-0.6b-base@mlx-8bit',
-  'qwen3-tts-0.6b-customvoice@mlx-bf16',
-  'qwen3-tts-1.7b-base@mlx-8bit',
-  'qwen3-tts-1.7b-customvoice@mlx-8bit',
-  'qwen3-tts-1.7b-voicedesign@mlx-8bit',
-  'indextts2@mlx-fp16',
-  'index-tts2.5@mlx-fp16',
-  'gpt-sovits-v2@mlx-fp16',
-  'voxcpm2@mlx-int8',
-  'omnivoice@mlx-int8',
-  'fish-s2-pro@mlx-8bit',
+const EXPECTED_IDS = [
+  'qwen3-tts-0.6b-base@audio-cpp-q8',
+  'qwen3-tts-1.7b-base@audio-cpp-q8',
+  'qwen3-tts-1.7b-customvoice@audio-cpp-q8',
+  'qwen3-tts-1.7b-voicedesign@audio-cpp-q8',
+  'indextts2@audio-cpp-q8',
+  'index-tts2.5@audio-cpp-q8',
+  'voxcpm2@audio-cpp-q8',
+  'omnivoice@audio-cpp-q8',
+  'fish-s2-pro@audio-cpp-q8',
 ];
-/** 每个 MLX 模型包都有 candle 变体：同一仓库，Apple Silicon 以外的平台列出。 */
-const CANDLE_IDS = MLX_IDS.map((id) => `${id.split('@')[0]}@candle`);
-const EXPECTED_IDS = [...MLX_IDS, ...CANDLE_IDS];
 
-const componentsOf = (def: BundleDefinition) => Object.entries(def.components).filter(([, source]) => source !== undefined);
 const status = { detail: undefined } as unknown as ModelBundleStatus;
+const def = (id: string) => SPEECH_BUNDLES.find((b) => b.bundleId === id)!;
 
 describe('本地语音合成模型包的登记', () => {
-  it('十一个 MLX 模型包与它们的 candle 变体，都在总登记里，都是 synthesize；不登记 AuK', () => {
+  it('九个 audio.cpp 模型包都在总登记里，都是 synthesize；每个只有一个 tts 组件；不登记 AuK', () => {
     expect(SPEECH_BUNDLES.map((b) => b.bundleId)).toEqual(EXPECTED_IDS);
-    for (const def of SPEECH_BUNDLES) {
-      expect(BUNDLES).toContain(def);
-      expect(def.capability).toBe('synthesize');
-      expect(def.speech).toBeDefined();
-      expect(def.license).toBeDefined();
-      expect(def.label).toBeTruthy();
-      expect(def.components.tts).toBeDefined();
-      for (const [name] of componentsOf(def)) expect(SPEECH_COMPONENTS).toContain(name);
+    for (const bundle of SPEECH_BUNDLES) {
+      expect(BUNDLES).toContain(bundle);
+      expect(bundle).toMatchObject({ capability: 'synthesize', backend: 'audio-cpp', device: 'auto' });
+      expect(bundle.speech).toBeDefined();
+      expect(bundle.license).toBeDefined();
+      expect(bundle.label).toBeTruthy();
+      expect(Object.keys(bundle.components)).toEqual(['tts']);
     }
     expect(JSON.stringify(BUNDLES).toLowerCase()).not.toMatch(/\bauk\b/);
     expect(new Set(BUNDLES.map((b) => b.bundleId)).size).toBe(BUNDLES.length);
   });
 
-  it('每个组件都有内置清单：每个文件都有 64 位十六进制 sha256 与正的大小，估计字节等于大小之和', () => {
-    for (const def of SPEECH_BUNDLES) {
-      for (const [name, source] of componentsOf(def)) {
-        const manifest = repoManifestFor(source!.repo, source!.revision);
-        expect(manifest, `${def.bundleId} 的 ${name}（${source!.repo}@${source!.revision}）`).not.toBeNull();
-        expect(manifest!.files.length).toBeGreaterThan(0);
-        let total = 0;
-        for (const file of manifest!.files) {
-          expect(file.sha256, `${source!.repo}/${file.path}`).toMatch(/^[0-9a-f]{64}$/);
-          expect(file.size, `${source!.repo}/${file.path}`).toBeGreaterThan(0);
-          total += file.size!;
-        }
-        expect(manifest!.estimatedBytes).toBe(total);
-      }
+  it('每个组件都有内置清单：一个 GGUF，就是引擎要加载的文件；有 64 位十六进制 sha256 与正的大小', () => {
+    const repos = new Set<string>();
+    for (const bundle of SPEECH_BUNDLES) {
+      const source = bundle.components.tts!;
+      repos.add(source.repo);
+      const manifest = repoManifestFor(source.repo, source.revision);
+      expect(manifest, `${bundle.bundleId}（${source.repo}@${source.revision}）`).not.toBeNull();
+      expect(manifest!.sourceRepo).toBe('audio-cpp/audio.cpp-gguf');
+      expect(manifest!.files.map((f) => f.path)).toEqual([bundle.speech!.engine.file]);
+      const [file] = manifest!.files;
+      expect(file!.path).toMatch(/\.gguf$/);
+      expect(file!.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(file!.size).toBeGreaterThan(0);
+      expect(manifest!.estimatedBytes).toBe(file!.size);
     }
+    // 各模型包各装各删，不共用仓库目录。
+    expect(repos.size).toBe(SPEECH_BUNDLES.length);
     // 同一仓库版本只登记一次。
     const keys = REPO_MANIFESTS.map((m) => `${m.repo}@${m.revision}`);
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('candle 变体与 MLX 模型包同一仓库、同一特性，只换后端与设备；组件都带参数个数', () => {
-    for (const [i, id] of CANDLE_IDS.entries()) {
-      const candle = SPEECH_BUNDLES.find((b) => b.bundleId === id)!;
-      const mlx = SPEECH_BUNDLES.find((b) => b.bundleId === MLX_IDS[i])!;
-      expect(candle).toEqual({ ...mlx, bundleId: id, backend: 'candle', device: 'cpu' });
-      for (const [name, source] of componentsOf(candle)) {
-        expect(source!.parameters, `${id} 的 ${name}`).toBeGreaterThan(0);
-        expect(source!.weightBits, `${id} 的 ${name}`).toBeDefined();
-      }
+  it('列出的语言都在引擎认得的语言里（请求的语言原样交给引擎）', () => {
+    for (const bundle of SPEECH_BUNDLES) {
+      const speech = bundle.speech!;
+      if (speech.languages === 'any') continue;
+      for (const language of speech.languages) expect(speech.engine.languages, `${bundle.bundleId}：${language}`).toContain(language);
     }
-  });
-
-  it('Qwen3-TTS 共用一份编解码器；IndexTTS 2.5 的辅助权重就是 IndexTTS2 的仓库', () => {
-    const qwen = SPEECH_BUNDLES.filter((b) => b.bundleId.startsWith('qwen3-tts-'));
-    expect(qwen).toHaveLength(10);
-    const codecs = new Set(qwen.map((b) => `${b.components.codec!.repo}@${b.components.codec!.revision}`));
-    expect(codecs.size).toBe(1);
-    const index2 = SPEECH_BUNDLES.find((b) => b.bundleId === 'indextts2@mlx-fp16')!;
-    const index25 = SPEECH_BUNDLES.find((b) => b.bundleId === 'index-tts2.5@mlx-fp16')!;
-    expect(index25.components.aux).toMatchObject({ repo: index2.components.tts!.repo, revision: index2.components.tts!.revision });
   });
 
   describe('目录里的状态', () => {
@@ -100,163 +82,128 @@ describe('本地语音合成模型包的登记', () => {
       await fs.rm(dir, { recursive: true, force: true });
     });
 
-    it('Apple Silicon：没装是 not-installed，共用的编解码器列出其余四个 Qwen3-TTS 模型包，许可与名字随状态给出', async () => {
-      const catalog = new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64', workerAvailable: () => true });
-      const base = (await catalog.status('qwen3-tts-0.6b-base@mlx-8bit'))!;
-      expect(base).toMatchObject({ capability: 'synthesize', state: 'not-installed', label: 'Qwen3-TTS 0.6B Base' });
-      expect(base.license).toMatchObject({ commercialUse: true });
-      const codec = base.components!.find((c) => c.component === 'codec')!;
-      expect(codec.sharedWith.sort()).toEqual(MLX_IDS.filter((id) => id.startsWith('qwen3-tts-') && id !== base.bundleId).sort());
-      expect(base.components!.find((c) => c.component === 'tts')!.sharedWith).toEqual([]);
-      const index2 = (await catalog.status('indextts2@mlx-fp16'))!;
-      expect(index2.components!.find((c) => c.component === 'tts')!.sharedWith).toEqual(['index-tts2.5@mlx-fp16']);
+    it('哪个平台都列；没装时 not-installed，不与别的模型包共用组件；Model Worker 在不在与它无关', async () => {
+      for (const [platform, arch] of [
+        ['darwin', 'arm64'],
+        ['win32', 'x64'],
+        ['linux', 'arm64'],
+      ] as const) {
+        expect(backendSupported('audio-cpp', platform, arch)).toBe(true);
+        const catalog = new ModelCatalog({ root: dir, platform, arch, workerAvailable: () => false });
+        for (const id of EXPECTED_IDS) {
+          const s = await catalog.status(id);
+          expect(s, `${platform}/${arch} ${id}`).toMatchObject({ capability: 'synthesize', state: 'not-installed', backend: 'audio-cpp' });
+          expect(s!.components!.map((c) => [c.component, c.sharedWith])).toEqual([['tts', []]]);
+        }
+      }
+      const base = (await new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64' }).status(EXPECTED_IDS[0]!))!;
+      expect(base).toMatchObject({ label: 'Qwen3-TTS 0.6B Base', license: { commercialUse: true } });
     });
 
-    it('别的平台：mlx 不可用，模型包不列出、硬登记进去的是 error / unsupported；列 candle 变体', async () => {
-      expect(backendSupported('mlx', 'darwin', 'arm64')).toBe(true);
-      expect(backendSupported('mlx', 'darwin', 'x64')).toBe(false);
-      expect(backendSupported('mlx', 'win32', 'x64')).toBe(false);
-      expect(backendSupported('candle', 'linux', 'x64')).toBe(true);
-      const catalog = new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64', workerAvailable: () => true });
-      for (const id of MLX_IDS) expect(await catalog.status(id)).toBeNull();
-      for (const id of CANDLE_IDS)
-        expect(await catalog.status(id)).toMatchObject({ state: 'not-installed', backend: 'candle', device: 'cpu' });
-      const forced = new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64', workerAvailable: () => true, bundles: SPEECH_BUNDLES });
-      for (const id of MLX_IDS) expect(await forced.status(id)).toMatchObject({ state: 'error', reason: 'unsupported' });
+    it('权重齐了就 installed（引擎随应用内置）；找不到内置引擎时 unsupported', async () => {
+      const omni = def('omnivoice@audio-cpp-q8');
+      await writeRepo(dir, omni.components.tts!.repo, omni.components.tts!.revision, { [omni.speech!.engine.file]: 'gguf' });
+      const catalog = new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64', workerAvailable: () => false });
+      expect(await catalog.status(omni.bundleId)).toMatchObject({ state: 'installed' });
+      const noEngine = new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64', engineAvailable: () => false });
+      const unsupported = await noEngine.status(omni.bundleId);
+      expect(unsupported).toMatchObject({ state: 'error', reason: 'unsupported' });
+      expect(unsupported!.detail).toContain('audio.cpp');
     });
 
-    it('常驻量：candle 变体按参数个数 × 计算精度（CPU 计在内存，CUDA 计在 GPU 内存）；MLX 的合成按固定的需求（null）', async () => {
-      const win = new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64', workerAvailable: () => true });
-      // 0.6B Base（8 位，914.6M 参数）加共用的编解码器（f32，170.6M 参数）：CPU 上 f32。
-      expect(await win.workerFootprint('qwen3-tts-0.6b-base@candle')).toEqual({ bytes: (914_643_008 + 170_557_441) * 4, pool: 'memory' });
-      // IndexTTS 2.5：主模型加 IndexTTS2 仓库 `aux/` 下的辅助权重。
-      expect(await win.workerFootprint('index-tts2.5@candle')).toEqual({ bytes: (966_515_596 + 699_767_331) * 4, pool: 'memory' });
-      win.setWorkerDevice('candle', 'cuda');
-      expect(await win.workerFootprint('voxcpm2@candle')).toEqual({ bytes: 2_383_791_364 * 2, pool: 'gpuMemory' });
-      const mac = new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64', workerAvailable: () => true });
-      expect(await mac.workerFootprint('qwen3-tts-0.6b-base@mlx-8bit')).toBeNull();
+    it('常驻量按 GGUF 的存储字节估计：Apple Silicon 计在 GPU 内存，别的平台计在内存', async () => {
+      const id = 'omnivoice@audio-cpp-q8';
+      const gguf = repoManifestFor(def(id).components.tts!.repo, def(id).components.tts!.revision)!.estimatedBytes;
+      const mac = await new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64' }).workerFootprint(id);
+      const win = await new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64' }).workerFootprint(id);
+      expect(mac).toMatchObject({ pool: 'gpuMemory' });
+      expect(win).toMatchObject({ pool: 'memory' });
+      expect(mac!.bytes).toBe(win!.bytes);
+      expect(mac!.bytes).toBeGreaterThan(gguf);
+      expect(mac!.bytes).toBeLessThan(gguf * 2);
     });
   });
 
   describe('模型描述', () => {
-    const info = (id: string) =>
-      localSpeechModelInfo(
-        SPEECH_BUNDLES.find((b) => b.bundleId === id)!,
-        status,
-        true,
-      );
+    const info = (id: string) => localSpeechModelInfo(def(id), status, true);
 
-    it('OmniVoice 的许可不可商用，写在模型描述里；能克隆、能按词表描述', () => {
-      const omni = info('omnivoice@mlx-int8');
+    it('OmniVoice 与 Fish 的许可不可商用，写在模型描述里；OmniVoice 能克隆、能按词表描述', () => {
+      const omni = info('omnivoice@audio-cpp-q8');
       expect(omni.local!.license).toMatchObject({ name: 'CC-BY-NC-4.0', commercialUse: false });
       expect(omni.voiceModes).toEqual(['preset', 'clone', 'describe']);
       expect(omni.local!.voiceDescription).toMatchObject({ kind: 'vocabulary' });
       expect(omni.local!.maxDurationSec).toBe(60);
-      expect(info('omnivoice@candle').local!.license.commercialUse).toBe(false);
-      for (const id of EXPECTED_IDS.filter((x) => !x.startsWith('omnivoice@') && !x.startsWith('fish-s2-pro@'))) expect(info(id).local!.license.commercialUse).toBe(true);
+      const nonCommercial = ['omnivoice@audio-cpp-q8', 'fish-s2-pro@audio-cpp-q8'];
+      for (const id of EXPECTED_IDS) expect(info(id).local!.license.commercialUse, id).toBe(!nonCommercial.includes(id));
     });
 
     it('CustomVoice 列出模型自己的说话人；克隆模型列出内置音色；VoiceDesign 的内置音色是描述', () => {
-      const custom = info('qwen3-tts-1.7b-customvoice@mlx-8bit');
+      const custom = info('qwen3-tts-1.7b-customvoice@audio-cpp-q8');
       expect(custom.voices.every((v) => v.source === 'model')).toBe(true);
       expect(custom.defaultVoice).toBe('Vivian');
       expect(custom.local!.builtinVoices).toBeNull();
       expect(custom.acceptsInstructions).toBe(true);
 
-      const base = info('qwen3-tts-0.6b-base@mlx-8bit');
+      const base = info('qwen3-tts-0.6b-base@audio-cpp-q8');
       expect(base.voices.map((v) => v.voiceId)).toEqual(BUILTIN_VOICES.map((v) => v.id));
       expect(base.local!.builtinVoices).toBe('reference');
       expect(base.voiceModes).toEqual(['preset', 'clone']);
 
-      const design = info('qwen3-tts-1.7b-voicedesign@mlx-8bit');
+      const design = info('qwen3-tts-1.7b-voicedesign@audio-cpp-q8');
       expect(design.local!.builtinVoices).toBe('description');
       expect(design.voiceModes).toEqual(['preset', 'describe']);
 
       for (const id of EXPECTED_IDS) {
-        const model = info(id);
-        expect(model).toMatchObject({ formats: ['wav'], defaultFormat: 'wav', cost: 'free-local', maxInputChars: LOCAL_SPEECH_MAX_CHARS });
+        expect(info(id)).toMatchObject({ formats: ['wav'], defaultFormat: 'wav', cost: 'free-local', maxInputChars: LOCAL_SPEECH_MAX_CHARS });
       }
     });
 
-    it('candle 在 CPU 上照实提示比实时慢多少；Worker 报告了 CUDA 时与 MLX 一样不写', () => {
-      const on = (device: string) => ({ device, detail: undefined }) as unknown as ModelBundleStatus;
-      const of = (id: string, s: ModelBundleStatus) =>
-        localSpeechModelInfo(
-          SPEECH_BUNDLES.find((b) => b.bundleId === id)!,
-          s,
-          true,
-        ).notes;
-      for (const id of CANDLE_IDS) {
-        const note = of(id, on('cpu'));
-        expect(note).toMatch(/^在本机的 CPU 上合成，比实时慢|^在本机的 CPU 上合成，这只没有实测；/);
-        expect(note).toContain('RTX 3060 上 Qwen3-TTS 0.6B 和 IndexTTS2 都与实时相当');
-        expect(note).not.toContain('未实测');
-        expect(of(id, on('cuda'))).toBeUndefined();
-        // 状态没报设备时按登记的设备（cpu）算。
-        expect(of(id, status)).toBe(note);
+    it('只有 IndexTTS 2.5 认读音标注；语速旋钮只在 IndexTTS 2.5 与 OmniVoice', () => {
+      for (const id of EXPECTED_IDS) {
+        expect(info(id).local!.readings, id).toBe(id === 'index-tts2.5@audio-cpp-q8' ? 'annotated' : 'unsupported');
+        const speed = id === 'index-tts2.5@audio-cpp-q8' || id === 'omnivoice@audio-cpp-q8';
+        expect(info(id).speedRange === null, id).toBe(!speed);
       }
-      const paces: Record<string, string> = {
-        'qwen3-tts-0.6b-base@candle': '比实时慢 5–6 倍',
-        'qwen3-tts-0.6b-customvoice@candle': '比实时慢 5–6 倍',
-        'qwen3-tts-1.7b-base@candle': '比实时慢 7–8 倍',
-        'qwen3-tts-1.7b-customvoice@candle': '比实时慢 7–8 倍',
-        'qwen3-tts-1.7b-voicedesign@candle': '比实时慢 7–8 倍',
-        'indextts2@candle': '比实时慢约 25 倍',
-        'index-tts2.5@candle': '比实时慢约 19 倍',
-        'gpt-sovits-v2@candle': '比实时慢约 1.7 倍',
-        'voxcpm2@candle': '比实时慢约 9 倍',
-        'omnivoice@candle': '比实时慢约 8 倍',
-        // 没有实测的不编数字。
-        'fish-s2-pro@candle': '这只没有实测',
-      };
-      for (const id of CANDLE_IDS) expect(of(id, on('cpu'))).toContain(paces[id]);
-      for (const id of MLX_IDS) expect(of(id, on('metal'))).toBeUndefined();
     });
 
     it('不可用时带上原因', () => {
-      const def = SPEECH_BUNDLES[0]!;
-      const model = localSpeechModelInfo(def, { detail: '没装' } as unknown as ModelBundleStatus, false);
+      const model = localSpeechModelInfo(SPEECH_BUNDLES[0]!, { detail: '没装' } as unknown as ModelBundleStatus, false);
       expect(model).toMatchObject({ available: false, detail: '没装' });
     });
   });
 });
 
-describe('引擎的语言表与旋钮区间', () => {
-  // 与 model-runtime 的引擎常量对照的同一份夹具（crates/model-runtime/tests/synthesize_engine_limits.rs）。
-  const LIMITS_FILE = new URL('../../../crates/model-runtime/tests/fixtures/speech-engine-limits.json', import.meta.url);
-  // 按模型包 ID 的 `@` 前一段：MLX 与 candle 变体是同一只引擎。
-  const ENGINE_OF: Record<string, string> = {
-    voxcpm2: 'voxcpm2',
-    omnivoice: 'omnivoice',
-    'index-tts2.5': 'index-tts2.5',
-    'gpt-sovits-v2': 'gpt-sovits',
-  };
-
-  it('与 Worker 一侧的引擎常量一致', async () => {
-    const limits = JSON.parse(await fs.readFile(LIMITS_FILE, 'utf8')) as {
-      languages: Record<string, string[]>;
-      knobs: Record<string, Record<string, unknown>>;
-    };
-    for (const bundle of SPEECH_BUNDLES) {
-      const speech = bundle.speech!;
-      const engine = speech.family === 'qwen3-tts' ? 'qwen3-tts' : ENGINE_OF[bundle.bundleId.split('@')[0]!];
-      expect(speech.knobs, bundle.bundleId).toEqual((engine && limits.knobs[engine]) ?? {});
-      const languages = engine ? limits.languages[engine] : undefined;
-      expect(speech.languages, bundle.bundleId).toEqual(languages ?? 'any');
-    }
-  });
-});
-
 describe('Fish S2 Pro', () => {
-  it('registers identical MLX and Candle weights with reference cloning and a research license', () => {
-    const mlx = SPEECH_BUNDLES.find(b => b.bundleId === 'fish-s2-pro@mlx-8bit')!;
-    const candle = SPEECH_BUNDLES.find(b => b.bundleId === 'fish-s2-pro@candle')!;
-    expect(candle.components).toEqual(mlx.components);
-    expect(mlx.speech).toMatchObject({sampleRate: 44100, voiceModes: ['preset', 'clone'], reference: {requiresTranscript: true}, instructions: null, knobs: {}});
-    expect(mlx.license!.commercialUse).toBe(false);
-    const manifest = repoManifestFor(mlx.components.tts!.repo, mlx.components.tts!.revision)!;
-    const codecManifest = repoManifestFor(mlx.components.codec!.repo, mlx.components.codec!.revision)!;
-    expect(codecManifest.files.some(f => f.path === 'codec.safetensors')).toBe(true);
-    expect(manifest.files.filter(f => f.path === 'model.safetensors')).toHaveLength(1);
+  it('克隆按 audio.cpp 的 clon 任务；带参考录音必须给原文，参考至多 30 秒；研究许可', () => {
+    const fish = def('fish-s2-pro@audio-cpp-q8');
+    expect(fish.speech).toMatchObject({
+      engine: { family: 'fish_audio', task: 'clon' },
+      sampleRate: 44_100,
+      voiceModes: ['preset', 'clone'],
+      reference: { requiresTranscript: true, withTranscriptSeconds: [0, 30] },
+      instructions: null,
+      knobs: {},
+    });
+    expect(fish.license!.commercialUse).toBe(false);
   });
 });
+
+/** 在模型目录里写一个合成的仓库：几个小文件和与之相符的清单。 */
+async function writeRepo(root: string, repo: string, revision: string, files: Record<string, string>): Promise<void> {
+  const dir = path.join(root, ...repo.split('/'));
+  const entries = [];
+  for (const [name, content] of Object.entries(files)) {
+    await fs.mkdir(path.dirname(path.join(dir, name)), { recursive: true });
+    await fs.writeFile(path.join(dir, name), content);
+    entries.push({
+      path: name,
+      size: Buffer.byteLength(content),
+      sha256: crypto.createHash('sha256').update(content).digest('hex'),
+      source_verified: true,
+    });
+  }
+  await fs.writeFile(
+    path.join(dir, MANIFEST_FILE),
+    JSON.stringify({ format_version: 1, repo, revision, source: 'https://huggingface.co', files: entries }),
+  );
+}

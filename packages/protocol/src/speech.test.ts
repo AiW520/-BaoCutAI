@@ -29,8 +29,8 @@ describe('models.synthesizeSpeech 的请求', () => {
   it('本地模型包可以设为合成的默认', () => {
     const setDefault = methodParamSchemas['models.setDefault'];
     expect(
-      setDefault.safeParse({ capability: 'synthesizeSpeech', providerId: 'local', modelId: 'qwen3-tts-0.6b-base@mlx-8bit' }).success,
+      setDefault.safeParse({ capability: 'synthesizeSpeech', providerId: 'local', modelId: 'qwen3-tts-0.6b-base@audio-cpp-q8' }).success,
     ).toBe(true);
-    expect(methodParamSchemas['models.test'].safeParse({ bundleId: 'omnivoice@mlx-int8' }).success).toBe(true);
+    expect(methodParamSchemas['models.test'].safeParse({ bundleId: 'omnivoice@audio-cpp-q8' }).success).toBe(true);
   });
 });

@@ -1,8 +1,8 @@
 /* 音频 Tab 的「生成语音」/「克隆声音」子页 —— §13.6。
-   同一张表单两个入口：「生成语音」默认预设音色，「克隆声音」默认参考音频。引擎七选一
-   （Qwen3-TTS 0.6B / Qwen3-TTS 1.7B / IndexTTS2 / IndexTTS 2.5 / GPT-SoVITS / VoxCPM2 / OmniVoice）：两只 Qwen3-TTS 都有
-   Qwen3-TTS 的 9 个预设音色与克隆，1.7B 再多一档「描述」（VoiceDesign，一句自由描述）；OmniVoice 克隆或「描述」
-   （按类挑项，不是自由文字）；其余引擎只能克隆。情绪只 IndexTTS 两只有，风格指令在 CustomVoice 的预设档与
+   同一张表单两个入口：「生成语音」默认预设音色（Qwen3-TTS 1.7B），「克隆声音」默认参考音频（Qwen3-TTS 0.6B）。本地引擎
+   （Qwen3-TTS 0.6B / Qwen3-TTS 1.7B / IndexTTS2 / IndexTTS 2.5 / VoxCPM2 / OmniVoice / Fish Audio S2 Pro）：只有 1.7B 有
+   Qwen3-TTS 的 9 个预设音色，另有克隆与一档「描述」（VoiceDesign，一句自由描述）；OmniVoice 克隆或「描述」
+   （按类挑项，不是自由文字）；其余引擎只能克隆（含 0.6B）。情绪只 IndexTTS 两只有，风格指令在 CustomVoice 的预设档与
    VoxCPM2 的克隆档（可控克隆），语言 Picker 只列引擎会念的。IndexTTS 2.5 / VoxCPM2 / OmniVoice 多一个「高级」折叠放数值旋钮
    （2026-09-26，panel-tts-local.jsx）。音色方式换的是要装的那只模型，
    模型没装时表单下方挂一张下载卡（与 AI 工具的模型下拉同一
@@ -25,7 +25,7 @@
   const SAMPLE = '欢迎使用 BaoCut！转录、翻译、配音、剪辑，全都在你自己的电脑上完成，素材一步都不用上传。';
 
   function blank(clone) {
-    return {text: '', engine: 'qwen3', mode: clone ? 'clone' : 'preset', preset: 'Serena', ref: null, refText: '',
+    return {text: '', engine: clone ? 'qwen3' : 'qwen3-1.7b', mode: clone ? 'clone' : 'preset', preset: 'Serena', ref: null, refText: '',
       lang: 'auto', emotion: 'none', emoRef: null, emoLevel: 60, style: '', instruct: '',
       knobs: {}, omni: Object.assign({}, TTS.OMNI_PRESETS[0].sel),
       cloudModel: null, cloudVoice: {kind: 'default'}, speed: 1, pitch: 0, volume: 1, stability: 0.5, similarity: 0.75, styleStrength: 0, cloudEmotion: 'none'};

@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ModelInstallPlan, ModelSelfTestResult } from '@baocut/protocol';
-import { ModelsModelCatalog as MC } from '@baocut/protocol/messages/models/model-catalog.ts';
 import { ModelsModelDownloader as MD } from '@baocut/protocol/messages/models/model-downloader.ts';
 import { ModelsEmbedding as ME } from '@baocut/protocol/messages/models/embedding.ts';
 import { ModelsModelInstaller as M } from '@baocut/protocol/messages/models/model-installer.ts';
@@ -33,11 +32,10 @@ import { extractToolArchive } from './tool-archive.ts';
  *   保留，模型包报告为 `incomplete`，下次只补缺的。完成后把模型包记进安装记录。
  * - 删除（`remove`）：只删没有别的模型包持有的组件。持有者是用到同一仓库与版本、并且在安装记录里或文件齐全的模型包。
  *   仓库目录里是别的版本时不删（不属于这个模型包）。
- * - 发布页组件（`release`，audio.cpp 引擎）：按主机平台的压缩包下载（地址见 `release-component.ts`，不发 HEAD，大小取登记的），
- *   核对大小与 sha256，在进程内解开到暂存区（只取包根目录的普通文件，略过 `archive.skip`），没有可执行文件或解不开时删掉暂存、
- *   `MODEL_DOWNLOAD_INTEGRITY`；写好清单后原子地改名到 `<toolsDir>/<名字>/<版本>/`，再交给 `probeExecutable` 确认能运行（失败时
- *   删掉组件目录，同样是 `MODEL_DOWNLOAD_INTEGRITY`）。`engineOverride` 满足的不碰；修复时有清单就按清单核对 sha256，旧版装下、
- *   没有清单的重新下载压缩包。最后一个持有者删除时回收组件目录。
+ * - 发布页组件（`release`，LiteRT-LM 的 C 库）：按主机平台的压缩包下载（地址见 `release-component.ts`，不发 HEAD，大小取登记的），
+ *   核对大小与 sha256，在进程内解开到暂存区（只取包根目录的普通文件，略过 `archive.skip`），没有登记的文件或解不开时删掉暂存、
+ *   `MODEL_DOWNLOAD_INTEGRITY`；写好清单后原子地改名到 `<toolsDir>/<名字>/<版本>/`。修复时按清单核对 sha256，没有清单的重新下载
+ *   压缩包。最后一个持有者删除时回收组件目录。
  */
 
 export interface ModelInstallerOptions {
@@ -61,11 +59,6 @@ export interface ModelInstallerOptions {
    * 否则是登记的官方地址。函数形式每次做计划时取一次。
    */
   toolsEndpoint?: string | null | (() => string | null);
-  /**
-   * 发布页组件发布之后确认可执行文件能运行（Runtime 传 `--version` 探测）；抛错时删掉刚发布的组件目录，安装以
-   * `MODEL_DOWNLOAD_INTEGRITY` 失败。不给时不探测。
-   */
-  probeExecutable?: (executable: string) => Promise<void>;
 }
 
 /** 计划里的一个组件（内部形态，安装时照着做）。 */
@@ -308,7 +301,7 @@ export class ModelInstaller {
   }
 
   /**
-   * 发布页组件的计划：`engineOverride` 满足的、装好的不动；修复时有清单就按清单核对 sha256，好的不动，旧版装下没有清单的重新下载。
+   * 发布页组件的计划：装好的不动；修复时有清单就按清单核对 sha256，好的不动，没有清单的重新下载。
    * 要下载的只有这台主机的压缩包，大小取登记的（不发 HEAD）；暂存区里已有的部分续传。这个平台没有压缩包时拒绝。
    */
   async #planRelease(component: string, source: BundleComponentSource, repair: boolean, toolsEndpoint: string | null): Promise<PlannedComponent> {
@@ -324,12 +317,10 @@ export class ModelInstaller {
       bytes: 0,
       estimatedBytes: 0,
     });
-    if (this.#catalog.engineOverridden(source)) return keep();
     const asset = this.#catalog.releaseAsset(source);
     if (!asset) {
       const platform = this.#catalog.platformKey;
-      const detail = release.workerLibrary ? ME.runtimeNoBuild({ platform }) : MC.engineNoBuild({ platform });
-      throw new DownloadError('MODEL_DOWNLOAD_SOURCE', detail, { repo: source.repo, platform });
+      throw new DownloadError('MODEL_DOWNLOAD_SOURCE', ME.runtimeNoBuild({ platform }), { repo: source.repo, platform });
     }
     if (!repair && (await this.#catalog.componentInstalled(source))) return keep();
     if (repair) {
@@ -421,21 +412,6 @@ export class ModelInstaller {
     }
     if (hadOld) await fs.rm(aside, { recursive: true, force: true });
     await discardReleaseStaging(toolsDir, release);
-    // 交给 Worker 的动态库（`workerLibrary`）不能当程序运行：不探测，加载时由 Worker 报错。
-    if (this.#options.probeExecutable && !release.workerLibrary) {
-      try {
-        await this.#options.probeExecutable(path.join(target, asset.executable));
-      } catch (error) {
-        await fs.rm(target, { recursive: true, force: true });
-        await removeEmptyParents(path.dirname(target), path.dirname(target));
-        const reason = error instanceof Error ? error.message : String(error);
-        throw new DownloadError('MODEL_DOWNLOAD_INTEGRITY', MD.engineProbeFailed({ executable: asset.executable, reason }), {
-          file: asset.fileName,
-          executable: asset.executable,
-          reason,
-        });
-      }
-    }
     return manifest;
   }
 

@@ -7,7 +7,7 @@
 //!
 //! 权重表：读入列出的全部 safetensors，去掉 `thinker.` 前缀，按键取用。
 //!
-//! `from_arrays` 与 `load_thinker_text*` 移植自 v2，供本地语音合成批次（Qwen2.5-Omni Thinker 文本骨干）使用。
+//! `from_arrays` 与 `load_thinker_text*` 移植自 v2（后者读 Qwen2.5-Omni Thinker 文本骨干）。
 
 use std::collections::HashMap;
 use std::path::Path;

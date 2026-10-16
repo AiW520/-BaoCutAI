@@ -36,10 +36,8 @@ whisper-ggml-cuda = ["whisper-ggml", "whisper-rs?/cuda"]
 anyhow = "1.0.102"
 candle-core = { version = "0.11", optional = true }
 candle-nn = { version = "0.11", optional = true }
-# OmniVoice 文本前端与分词器的预切分正则、GPT-SoVITS 中文数字规范化、IndexTTS2 数字规范化（都要 lookaround）。
+# Qwen-Image 分词器（Qwen2 BPE）的预切分正则（要 lookaround）。
 fancy-regex = "0.18.0"
-# GPT-SoVITS 文本前端与注音：内嵌词典的 zlib 解压。
-flate2 = "1.1.9"
 hound = "3.5.1"
 # 无空格书写（日、泰等）的分词：估计词时间时按词切开段文本。
 icu_segmenter = "2.2"
@@ -55,18 +53,14 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 rand_chacha = { version = "0.9", optional = true }
 rand_distr = { version = "0.5", optional = true }
 realfft = "3.5.0"
-# GPT-SoVITS 文本前端：分词与英文规范化。
-regex = "1.13.1"
 # candle 后端按需读 safetensors 分片（不整份读进内存）。
 safetensors = { version = "0.8", optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.11.0"
 unicode-general-category = "1.1"
-# OmniVoice 分词器的 NFC 规范化、GPT-SoVITS 英文规范化的 NFKD、IndexTTS2 文本前端的 NFKC。
+# Qwen-Image 分词器的 NFC 规范化。
 unicode-normalization = "0.1.25"
-# Fish S2 Pro: use the exact exported tokenizer pipeline and added tokens.
-tokenizers = { version = "0.22.2", default-features = false, features = ["onig"] }
 # 自动语言识别的兜底：模型没有报出语言时按累计文本判断。
 whatlang = "0.18"
 # raw-api：暴露 whisper_rs_sys，用于 ggml 的设备枚举与动态后端加载。

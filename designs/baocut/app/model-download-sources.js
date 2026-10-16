@@ -2,7 +2,7 @@
    `tools.downloadEndpoint`、§6.3「来源」，规格目前只有一个基址，差异见交付说明）。
    · 两种来源，地址的拼法不同，不能混用：
      models   模型仓库 —— 模型权重与大多数组件，镜像按 Hugging Face 的路径提供文件（内置 Hugging Face、ModelScope）；
-     releases 发布页   —— yt-dlp 等外部工具与 LiteRT-LM 运行时、audio.cpp 引擎这类 GitHub 发布的文件，
+     releases 发布页   —— yt-dlp 等外部工具与 LiteRT-LM 运行时这类 GitHub 发布的文件（audio.cpp 引擎随应用内置，不下载），
                           镜像按「基址/名称/版本/文件名」提供（内置 GitHub）。
    · 每种来源：内置几个 + 用户添加的镜像（名字可留空，留空显示主机名），其中一个在用；删掉在用的那个退回默认。
    · 环境变量（BAOCUT_MODELS_ENDPOINT / BAOCUT_TOOLS_ENDPOINT）优先于选择，设了以后这一种只读。
@@ -17,10 +17,10 @@
      builtin: [
        {id: 'hf', name: 'Hugging Face', base: LM.HF_ENDPOINT, hint: '默认'},
        {id: 'ms', name: 'ModelScope', base: LM.MS_ENDPOINT, hint: '中国大陆通常更快',
-        note: 'ModelScope 上没有的少数文件（whisper.cpp、GPT-SoVITS）仍从 Hugging Face 下载。'},
+        note: 'ModelScope 上没有的少数文件（whisper.cpp）仍从 Hugging Face 下载。'},
      ]},
     {k: 'releases', title: '工具与运行库', env: 'BAOCUT_TOOLS_ENDPOINT', placeholder: 'https://gh-mirror.example.com',
-     desc: 'yt-dlp 等外部工具，以及 LiteRT-LM 运行时、audio.cpp 引擎这类从 GitHub 发布页下载的文件。镜像按「基址/名称/版本/文件名」提供。',
+     desc: 'yt-dlp 等外部工具，以及 LiteRT-LM 运行时这类从 GitHub 发布页下载的文件。镜像按「基址/名称/版本/文件名」提供。',
      builtin: [{id: 'gh', name: 'GitHub', base: 'https://github.com', hint: '官方发布页 · 默认'}]},
   ];
   const kindOf = (k) => KINDS.find((x) => x.k === k) || KINDS[0];

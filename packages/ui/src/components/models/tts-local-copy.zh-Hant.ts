@@ -71,7 +71,7 @@ export const zhHant: TtsLocalMessages = {
     handoffCancel: '不用了，回去',
     auditionClone: '試聽克隆',
     auditionCloneLabel: (name: string) => `試聽克隆 · ${name}`,
-    noCloneModel: '還沒有安裝可以克隆的本機模型。請先在本機模型頁下載一個（IndexTTS2、Qwen3-TTS Base、GPT-SoVITS…）。',
+    noCloneModel: '還沒有安裝可以克隆的本機模型。請先在本機模型頁下載一個（IndexTTS2、Qwen3-TTS Base、VoxCPM2…）。',
     goLocal: '前往本機模型',
   },
 };

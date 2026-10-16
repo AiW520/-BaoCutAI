@@ -8,8 +8,8 @@
 //! Qwen3 文本解码器：GQA 注意力 + Q/K RMSNorm + RoPE + SwiGLU，按 256 步扩容的 KV cache。
 //!
 //! 除转写用的 `decode` 外，`large`、`load_with_prefix`、`forward_hidden*`、`final_norm`、`into_hidden_prenorm`、
-//! `forward_fused_hidden` 移植自 v2：1.7B 配置给 Qwen3-ASR 1.7B，其余给本地语音合成（Thinker 层融合）
-//! 与本地文生图（Qwen 文本编码器）批次。
+//! `forward_fused_hidden` 移植自 v2：1.7B 配置给 Qwen3-ASR 1.7B，其余给 Thinker 层融合与本地文生图（Qwen 文本编码器）
+//! 批次。
 
 use super::WeightStore;
 use super::layers::{Projection, RmsNorm, TokenEmbedding};

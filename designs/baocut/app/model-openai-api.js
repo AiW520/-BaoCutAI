@@ -25,7 +25,6 @@
     [/voicedesign$/, {instructions: true}],
     [/^qwen3-tts-.*-base$/, {reference_audio: true, reference_text: true}],
     [/^index-?tts/, {reference_audio: true}],
-    [/^gpt-sovits/, {reference_audio: true, reference_text: true}],
     [/^voxcpm/, {reference_audio: true, reference_text: true, instructions: true}],
     [/^omnivoice/, {reference_audio: true, reference_text: true, instructions: true}],
   ];

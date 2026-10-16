@@ -2,16 +2,6 @@ import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const ja: ModelsLocalSpeechMessages = {
   referenceTranscriptRequired: "参照録音の原文を入力してください",
-  paceQwen06: 'リアルタイムの 5〜6 倍遅く、10 秒の 1 文に 1 分ほどかかります',
-  paceQwen17: 'リアルタイムの 7〜8 倍遅く、10 秒の 1 文に 1 分強かかります',
-  paceIndexTts2: 'リアルタイムの約 25 倍遅く、10 秒の 1 文に 4 分ほどかかります',
-  paceIndexTts25: 'リアルタイムの約 19 倍遅く、10 秒の 1 文に 3 分強かかります',
-  paceGptSovits: 'リアルタイムの約 1.7 倍遅く、10 秒の 1 文に 20 秒弱かかります',
-  paceVoxcpm2: 'リアルタイムの約 9 倍遅く、10 秒の 1 文に 1 分半ほどかかります',
-  paceOmnivoice: 'リアルタイムの約 8 倍遅く、10 秒の 1 文に 1 分半近くかかります',
-  paceDefault: 'このモデルは実測していません',
-  cpuNote: (p: { pace: string }) =>
-    `このコンピュータの CPU で合成します。${p.pace}。NVIDIA GPU（CUDA）があればはるかに速く、RTX 3060 では Qwen3-TTS 0.6B と IndexTTS2 がほぼリアルタイムで動きます`,
   oneVoiceSource: 'voice、reference、voiceDescription のうち指定できるのは 1 つだけです',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `モデル ${p.modelId} は ${p.what}（${p.mode}）に対応していません`,
   modeClone: '参照録音からのクローン',

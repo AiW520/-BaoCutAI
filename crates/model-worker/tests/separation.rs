@@ -102,7 +102,7 @@ fn run_params(job_id: &str, input: &Path, staging: &Path) -> Value {
 #[ignore = "needs installed models (BAOCUT_TEST_MODELS_DIR)"]
 fn htdemucs_splits_speech_from_a_bass_line_and_cancels() {
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     let hello = result(&hello);
     assert_eq!(hello["separateFamilies"], json!(["htdemucs-ft"]), "{hello}");
     assert!(hello["capabilities"].as_array().unwrap().iter().any(|c| c == "separate"));

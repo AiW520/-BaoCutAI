@@ -29,7 +29,7 @@ const MODELSCOPE_ALIASES: Readonly<Record<string, string>> = {
 };
 
 /** ModelScope 上没有的仓库（或没有同样内容的）：选了 ModelScope 时这些改从公共模型仓库下载。 */
-const MODELSCOPE_UNAVAILABLE: ReadonlySet<string> = new Set(['ggerganov/whisper.cpp', 'PJMixers-Dev/lj1995_GPT-SoVITS-safetensors']);
+const MODELSCOPE_UNAVAILABLE: ReadonlySet<string> = new Set(['ggerganov/whisper.cpp']);
 
 export type EndpointOrigin = 'env' | 'setting' | 'default';
 

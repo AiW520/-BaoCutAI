@@ -27,7 +27,6 @@ const en = {
   diskFull: 'The disk filled up while writing model files',
   archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} could not be unpacked: ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} does not contain ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} was unpacked but does not run: ${p.reason}`,
 };
 
 export type ModelsModelDownloaderMessages = typeof en;

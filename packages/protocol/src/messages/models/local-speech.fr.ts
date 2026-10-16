@@ -2,15 +2,6 @@ import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const fr: ModelsLocalSpeechMessages = {
   referenceTranscriptRequired: "Saisissez la transcription de l’enregistrement de référence",
-  paceQwen06: "5 à 6 fois plus lent que le temps réel ; une phrase de 10 secondes prend donc environ une minute",
-  paceQwen17: "7 à 8 fois plus lent que le temps réel ; une phrase de 10 secondes prend donc un peu plus d’une minute",
-  paceIndexTts2: "environ 25 fois plus lent que le temps réel ; une phrase de 10 secondes prend environ quatre minutes",
-  paceIndexTts25: "environ 19 fois plus lent que le temps réel ; une phrase de 10 secondes prend un peu plus de trois minutes",
-  paceGptSovits: "environ 1,7 fois plus lent que le temps réel ; une phrase de 10 secondes prend moins de 20 secondes",
-  paceVoxcpm2: "environ 9 fois plus lent que le temps réel ; une phrase de 10 secondes prend environ une minute et demie",
-  paceOmnivoice: "environ 8 fois plus lent que le temps réel ; une phrase de 10 secondes prend près d’une minute et demie",
-  paceDefault: "ce modèle n’a pas été mesuré",
-  cpuNote: (p: { pace: string }) => `Synthétise sur le CPU de cet ordinateur : ${p.pace}. Bien plus rapide avec un GPU NVIDIA (CUDA) : sur une RTX 3060, Qwen3-TTS 0.6B et IndexTTS2 tournent à peu près en temps réel`,
   oneVoiceSource: "Indiquez un seul choix parmi voice, reference et voiceDescription",
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `Le modèle ${p.modelId} ne prend pas en charge ${p.what} (${p.mode})`,
   modeClone: "le clonage depuis un enregistrement de référence",

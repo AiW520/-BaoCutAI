@@ -12,5 +12,4 @@ export const zhHans: ModelsModelDownloaderMessages = {
   diskFull: '写入模型文件时磁盘满了',
   archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} 解不开：${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} 里没有 ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} 解开了，但运行不起来：${p.reason}`,
 };

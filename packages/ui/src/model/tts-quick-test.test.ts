@@ -20,10 +20,13 @@ import {
   SAMPLE_LINES,
   type QuickPick,
 } from './tts-quick-test.ts';
-import { GPT_SOVITS, INDEX_TTS2, OMNIVOICE, QWEN_BASE, QWEN_CUSTOM, QWEN_DESIGN, VOXCPM2 } from './tts-test-fixtures.ts';
+import { INDEX_TTS2, OMNIVOICE, QWEN_BASE, QWEN_CUSTOM, QWEN_DESIGN, VOXCPM2 } from './tts-test-fixtures.ts';
 
 const mine = [{ id: 'v1', name: '我自己' }];
 const exclusive = (r: object) => ['voice', 'reference', 'voiceDescription'].filter((k) => k in r).length;
+
+/** 只会中英两门语言的克隆模型。 */
+const ZH_EN = { ...QWEN_BASE, languages: ['zh', 'en'] };
 
 describe('示例台词与语言', () => {
   it('十一门语言、每门三句', () => {
@@ -34,7 +37,7 @@ describe('示例台词与语言', () => {
 
   it('语言芯片来自模型声明的语言：不限时给全部；有清单时取有示例的，按示例表的次序；没有示例的不给', () => {
     expect(sampleLangs(INDEX_TTS2)).toHaveLength(11);
-    expect(sampleLangs(GPT_SOVITS).map((l) => l.code)).toEqual(['zh', 'en']);
+    expect(sampleLangs(ZH_EN).map((l) => l.code)).toEqual(['zh', 'en']);
     expect(sampleLangs({ languages: ['es', 'ar', 'sw', 'ja'] }).map((l) => l.code)).toEqual(['ja', 'es', 'ar']);
     expect(sampleLangs({ languages: ['sw'] })).toEqual([]);
     expect(sampleLangs({ languages: ['zh-CN'] }).map((l) => l.code)).toEqual(['zh']);
@@ -131,17 +134,17 @@ describe('quickForm', () => {
   });
 
   it('临时用一段：没选录音时说清楚；选了给 reference（模型读原文时带上原文）；示例录音用内置音色', () => {
-    const pick = chooseVoice(quickDefaults(GPT_SOVITS), 'file');
-    expect(quickForm(GPT_SOVITS, pick, mine)).toMatchObject({ request: null, problem: '先选一段参考录音，或换回内置音色' });
+    const pick = chooseVoice(quickDefaults(ZH_EN), 'file');
+    expect(quickForm(ZH_EN, pick, mine)).toMatchObject({ request: null, problem: '先选一段参考录音，或换回内置音色' });
     const withFile = { ...chooseFile(pick, '/Users/me/rec/我的录音.wav'), transcript: ' 你好 ' };
     expect(withFile.file).toEqual({ path: '/Users/me/rec/我的录音.wav', name: '我的录音.wav' });
-    expect(quickForm(GPT_SOVITS, withFile, mine).request).toMatchObject({
+    expect(quickForm(ZH_EN, withFile, mine).request).toMatchObject({
       reference: { file: '/Users/me/rec/我的录音.wav', transcript: '你好' },
     });
     // IndexTTS 不读原文：写了也不带
     expect(quickForm(INDEX_TTS2, { ...withFile }, mine).request!.reference).toEqual({ file: '/Users/me/rec/我的录音.wav' });
-    const sample = chooseSample(GPT_SOVITS, { ...pick, lang: 'en' });
-    expect(quickForm(GPT_SOVITS, sample, mine).request).toMatchObject({ voice: 'en-female' });
+    const sample = chooseSample(ZH_EN, { ...pick, lang: 'en' });
+    expect(quickForm(ZH_EN, sample, mine).request).toMatchObject({ voice: 'en-female' });
   });
 
   it('要求参考原文的模型：空原文不能试听，填写后提交克隆请求', () => {

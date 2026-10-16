@@ -28,12 +28,10 @@ export const pl: TtsLocalMessages = {
     'qwen3-tts':
       "Qwen3-TTS: CustomVoice ma 9 gotowych mówców i ustawia ton jednolinijkowym promptem; Base klonuje nagranie; 1.7B VoiceDesign tworzy głos z opisu. 1.7B brzmi lepiej, ale jest wolniejszy.",
     indextts2: "IndexTTS: osiem wbudowanych głosów lub klon własnego nagrania; bierze tylko barwę, nie odczytuje transkrypcji. IndexTTS 2.5 zmienia też tempo mowy.",
-    'gpt-sovits': "GPT-SoVITS: osiem wbudowanych głosów lub klon własnego nagrania; brzmi podobniej z transkrypcją nagrania, wtedy musi mieć 3–10 sekund.",
     voxcpm2: "VoxCPM2: osiem wbudowanych głosów lub klon własnego nagrania; najbliższy z transkrypcją, styl ustawia jednolinijkowy prompt; wynik 48 kHz.",
     omnivoice: "OmniVoice: osiem wbudowanych głosów, klon własnego nagrania lub nowy głos z płcią, wiekiem i wysokością ze słownika; czyta najwięcej języków. Tylko niekomercyjnie.",
   },
   quickDescribe: "Głos wynika całkowicie z opisu: zmień opis, a otrzymasz inną osobę",
-  quickVoxcpm: "Około czasu rzeczywistego: generowanie zdania trwa tyle co odczyt; pierwsze wczytanie około 5 sekund",
   quickNonCommercial: (license) => `Tylko niekomercyjnie (${license}): dla treści komercyjnych wybierz inny model`,
   quickSlow: "Duży model: synteza wolniejsza od podobnych, pierwsze wczytanie dłuższe",
 };

@@ -14,12 +14,10 @@ export const es: TtsLocalMessages = {
  familyDesc: {
  'qwen3-tts': 'Qwen3-TTS: CustomVoice tiene 9 hablantes predefinidos y un prompt de una línea puede definir el tono; Base clona a partir de una grabación de referencia; 1.7B VoiceDesign crea una voz nueva solo con una descripción. 1.7B suena mejor, pero es más lento.',
  indextts2: 'IndexTTS: ocho voces integradas o clona tu propia grabación; solo toma el timbre de la grabación y no lee su transcripción. IndexTTS 2.5 también puede ajustar la velocidad del habla.',
- 'gpt-sovits': 'GPT-SoVITS: ocho voces integradas o clona tu propia grabación; suena más parecido si también proporcionas la transcripción de la grabación de referencia, que entonces debe durar entre 3 y 10 segundos.',
  voxcpm2: 'VoxCPM2: ocho voces integradas o clona tu propia grabación; se parece más con la transcripción de la grabación y un prompt de una línea puede definir el estilo de habla; produce 48 kHz.',
  omnivoice: 'OmniVoice: ocho voces integradas, clona tu propia grabación o crea una voz nueva eligiendo género, edad y tono de una lista de palabras; lee la mayor cantidad de idiomas. Solo uso no comercial.',
  },
  quickDescribe: 'La voz se determina completamente por esta descripción: cambia la descripción y obtendrás otra persona',
- quickVoxcpm: 'Aproximadamente en tiempo real: una frase tarda en generarse lo mismo que en leerse y la primera carga tarda unos 5 segundos',
  quickNonCommercial: (license) => `Solo uso no comercial (${license}): cambia de modelo para el contenido que usarás comercialmente`,
  quickSlow: 'Modelo grande: la síntesis es más lenta que en modelos similares y la primera carga tarda algo más',
 };

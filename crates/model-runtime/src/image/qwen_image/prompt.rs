@@ -1,14 +1,13 @@
 //! 文本编码器的输入：文生图提示词模板与分词。纯逻辑，全平台编译。
 //!
-//! 分词：v2 用 HF `tokenizers` crate 读 `processor/tokenizer.json`；这里复用 OmniVoice 的纯 Rust Qwen2 BPE
-//! （[`crate::synthesize::omnivoice::tokenizer::Tokenizer`]，同一份 `tokenizer.json` 格式：added token 先切出、NFC、
-//! Qwen2 预切分正则、byte-level BPE，不加 BOS / EOS），不为它再引一个分词库。它的报错文案带「OmniVoice」字样，
-//! 读的其实是这里的分词表。
+//! 分词：v2 用 HF `tokenizers` crate 读 `processor/tokenizer.json`；这里用纯 Rust 的 Qwen2 BPE
+//! （[`super::tokenizer::Tokenizer`]：added token 先切出、NFC、Qwen2 预切分正则、byte-level BPE，不加 BOS / EOS），
+//! 不为它再引一个分词库。
 
 use anyhow::{Context, Result, bail};
 use std::path::Path;
 
-use crate::synthesize::omnivoice::tokenizer::Tokenizer;
+use super::tokenizer::Tokenizer;
 
 /// 管线的系统提示；编码器输出里这一段（[`Prompter::drop_idx`] 个 token）被丢掉。
 pub const SYSTEM: &str = "<|im_start|>system\nComprehend and analyze the provided prompt.<|im_end|>\n";

@@ -92,7 +92,7 @@ const en = {
     auditionClone: 'Preview clone',
     auditionCloneLabel: (name: string) => `Preview clone · ${name}`,
     noCloneModel:
-      'No local model that can clone is installed yet. Download one on the local models page first (IndexTTS2, Qwen3-TTS Base, GPT-SoVITS…).',
+      'No local model that can clone is installed yet. Download one on the local models page first (IndexTTS2, Qwen3-TTS Base, VoxCPM2…).',
     goLocal: 'Go to local models',
   },
 };

@@ -21,6 +21,8 @@ export {
   type ImageBundleProfile,
   type MusicBundleProfile,
   type SpeechBundleProfile,
+  type SpeechEngineModel,
+  type AudioCppSpeechFamily,
 } from './bundle-registry.ts';
 export { SPEECH_BUNDLES } from './speech-bundles.ts';
 export {
@@ -48,13 +50,17 @@ export { IMAGE_BUNDLES, QWEN_IMAGE_2K, QWEN_IMAGE_ASPECTS, QWEN_IMAGE_TIERED_ASP
 export { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
 export { AUDIO_CPP_ENGINE, MUSIC_BUNDLES, YUE2_SEMANTIC_TOKENS_PER_SEC } from './music-bundles.ts';
 export {
+  AUDIO_CPP_BACKEND_ENV,
+  AUDIO_CPP_CLI_ENV,
   AUDIO_CPP_COMMAND,
-  AUDIO_CPP_ENGINE_COMPONENT,
-  AUDIO_CPP_LICENSE,
   AUDIO_CPP_RELEASE,
+  AUDIO_CPP_SERVER,
   AUDIO_CPP_TOOL,
+  audioCppAssetKey,
+  audioCppServerBackend,
+  audioCppServerOf,
   parseAudioCppVersion,
-} from './music-engine.ts';
+} from './audio-cpp-engine.ts';
 export {
   hostPlatformKey,
   releaseAsset,
@@ -65,8 +71,6 @@ export {
 } from './release-component.ts';
 export { ToolArchiveError, extractToolArchive, rootEntryName, type ToolArchiveSpec } from './tool-archive.ts';
 export {
-  AUDIO_CPP_BACKEND_ENV,
-  AUDIO_CPP_CLI_ENV,
   localMusicModelInfo,
   localMusicSeed,
   musicEngineRunOf,
@@ -104,11 +108,27 @@ export {
   frozenVoiceOf,
   localSpeechModelInfo,
   planLocalVoice,
-  synthesizeRunOf,
+  AUDIO_CPP_SPEECH_MODEL_ID,
+  SPEECH_PEAK_CEILING,
+  audioCppSpeechRequestOf,
+  engineLanguage,
+  limitSpeechPeak,
+  type AudioCppSpeechRequest,
   type LocalVoicePlan,
   type ReferenceToFreeze,
   checkReferenceTranscript,
 } from './local-speech.ts';
+export {
+  parseReadings,
+  readingsToText,
+  renderReadings,
+  stripReadings,
+  type AnnotatedText,
+  type DroppedReading,
+  type ReadingOrigin,
+  type RenderedReadings,
+  type SpeechReading,
+} from './speech-readings.ts';
 export {
   ModelCatalog,
   MANIFEST_FILE,

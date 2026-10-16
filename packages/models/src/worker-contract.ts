@@ -5,7 +5,7 @@ import type { ModelBackend, ModelCapability } from '@baocut/protocol';
  * 这是私有执行器通道，不进公共协议包；字段名与规范逐字对应。
  */
 
-export const WORKER_CONTRACT_VERSION = 1;
+export const WORKER_CONTRACT_VERSION = 2;
 export const ASR_RESULT_SCHEMA = 'baocut.asr-result/v1';
 export const DEFAULT_TIMESCALE = 1_000_000;
 
@@ -26,28 +26,19 @@ export type ModelFamily =
   | 'wespeaker'
   /** 「说话人区分」模型包的 Pyannote 分段模型（`segmentation` 组件，与 `speaker` 的 WeSpeaker 一起用，§4）。 */
   | 'pyannote-segmentation'
-  // 本地语音合成（§4.1）：主模型、共享的语音编解码器与 IndexTTS 2.5 取自 IndexTTS2 仓库的辅助权重。
+  // 本地语音合成（§4.1）：audio.cpp 的 GGUF（`tts` 组件），由内置 audio.cpp 引擎的常驻服务执行，不交给 Model Worker。
   | 'qwen3-tts'
-  | 'qwen3-tts-tokenizer'
   | 'indextts2'
   | 'indextts2.5'
-  | 'indextts2-aux'
-  | 'gpt-sovits'
   | 'voxcpm2'
   | 'omnivoice'
   | 'fish-s2-pro'
-  | 'fish-s2-pro-codec'
   /** 人声与伴奏分离（`separator` 组件，§4.2）：HTDemucs-FT，四个子模型同在一个权重文件里。 */
   | 'htdemucs-ft'
   // 本地文生图（§4.2）：Qwen-Image-2.1（文本编码器、DiT、VAE 与分词表同在一个 `image` 组件里）。
   | 'qwen-image'
   /** 本地音乐生成（§4.4）：YuE2 的 GGUF 权重（主模型、VAE 与分词表同在一个 `music` 组件里），由 audio.cpp 引擎执行，不交给 Model Worker。 */
   | 'yue2'
-  /**
-   * audio.cpp 引擎（`audiocpp-engine` 组件，§4.4）：上游 GitHub 发布页的预编译包，按主机平台取一个压缩包解开；不交给 Model Worker，
-   * 音乐生成的本地 Provider 直接执行它。
-   */
-  | 'audio-cpp-engine'
   /**
    * 本地文本嵌入（`embedding` 组件，§4.5）：EmbeddingGemma 2 的 LiteRT-LM 包（单个 `.litertlm`）。文字搜索（text 270M）与多模态搜索
    * （740M）两个模型包同一个 family；这一阶段只用文本编码器。
@@ -56,8 +47,8 @@ export type ModelFamily =
   /** LiteRT-LM 的 C 动态库（`litertlm-runtime` 组件，§4.5）：GitHub 发布页的预编译包，Model Worker 运行期打开它。 */
   | 'litertlm-runtime';
 /**
- * `asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` 是识别的组件；`tts` / `codec` / `aux` 是语音合成的组件（§4.1）；
- * `separator` 是人声与伴奏分离的组件，`image` 是文生图的组件（§4.2）：两者都不与别的组件同在一个模型包里。
+ * `asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` 是识别的组件；`tts` 是语音合成的组件（§4.1，audio.cpp 的 GGUF，
+ * 不交给 Model Worker）；`separator` 是人声与伴奏分离的组件，`image` 是文生图的组件（§4.2）：两者都不与别的组件同在一个模型包里。
  */
 export type BundleComponent =
   | 'asr'
@@ -67,25 +58,17 @@ export type BundleComponent =
   | 'segmentation'
   | 'tokenizer'
   | 'tts'
-  | 'codec'
-  | 'aux'
   | 'separator'
   | 'image'
   /** 音乐生成的组件（§4.4）：不与别的组件同在一个模型包里，也不交给 Model Worker（audio.cpp 引擎直接读它的目录）。 */
   | 'music'
-  /**
-   * 音乐生成模型包的 audio.cpp 引擎（§4.4）：平台专属的共享组件，来自 GitHub 发布页而不是模型仓库，装在 Runtime Home 的
-   * `tools/audiocpp/<版本>/`，不在模型目录里，也不交给 Model Worker。
-   */
-  | 'audiocpp-engine'
   /** 文本嵌入的模型（§4.5）：不与识别、合成等组件同在一个模型包里；必须带上 `litertlm-runtime`。 */
   | 'embedding'
   /**
    * 文本嵌入模型包的 LiteRT-LM C 库（§4.5）：平台专属的共享组件，来自 GitHub 发布页，装在 Runtime Home 的
-   * `tools/litertlm-runtime/<版本>/`；与 `audiocpp-engine` 不同，它交给 Model Worker（Worker 运行期 `dlopen`）。
+   * `tools/litertlm-runtime/<版本>/`，交给 Model Worker（Worker 运行期 `dlopen`）。
    */
   | 'litertlm-runtime';
-export const SPEECH_COMPONENTS: readonly BundleComponent[] = ['tts', 'codec', 'aux'];
 
 export interface ModelFiles {
   family: ModelFamily;
@@ -122,11 +105,6 @@ export interface WorkerHello {
    * 识别的模型包只交给列出了它的 family 的 Worker（§2.1）。
    */
   transcribeFamilies: ModelFamily[];
-  /**
-   * 这个 Worker 能加载的合成主模型 family（`components.tts.family`）。有一个时 `capabilities` 才含 `synthesize`；
-   * 合成的模型包只交给列出了它的 family 的 Worker（§2.1）。
-   */
-  synthesizeFamilies: ModelFamily[];
   /**
    * 这个 Worker 能加载的分离模型 family（`components.separator.family`）。有一个时 `capabilities` 才含 `separate`；
    * 分离的模型包只交给列出了它的 family 的 Worker（§2.1）。
@@ -204,42 +182,8 @@ export interface TranscribeRunParams {
   outputContract: typeof ASR_RESULT_SCHEMA;
 }
 
-/** 合成的输出合同：staging 里的一个 WAV（PCM，单声道或立体声，采样率是模型的原生采样率）。 */
-export const SPEECH_WAV_CONTRACT = 'baocut.speech-wav/v1';
-/** 合成结果在 staging 里的文件名。 */
+/** 合成结果在 staging 里的文件名（audio.cpp 服务的输出，`LocalSpeechProvider`）。 */
 export const SPEECH_OUTPUT_FILE = 'speech.wav';
-
-/**
- * 合成的声音（§2.5.2）：`preset` 是模型的说话人；`clone` 用 `input` 的参考录音，`transcript` 是它的原文；
- * `describe` 是一句描述。Worker 不换成别的声音：模型做不到就是 `INVALID_PARAMS`。
- */
-export type SynthesizeVoice =
-  { mode: 'preset'; id: string } | { mode: 'clone'; transcript: string | null } | { mode: 'describe'; description: string };
-
-/** `job.run`（capability `synthesize`）的冻结参数。文本原样交给 Worker，读音标注由引擎换成自己的写法。 */
-export interface SynthesizeOptions {
-  text: string;
-  /** BCP 47；null 为由引擎按文本判断。 */
-  language: string | null;
-  voice: SynthesizeVoice;
-  /** 语气与风格的说明（模型接受时）。 */
-  instructions: string | null;
-  speed: number | null;
-  cfg: number | null;
-  steps: number | null;
-  seed: number | null;
-}
-
-export interface SynthesizeRunParams {
-  jobId: string;
-  runGeneration: number;
-  capability: 'synthesize';
-  /** `clone` 的参考录音（只读、整段、轨 0）；其余声音方式为 null。 */
-  input: JobInput | null;
-  options: SynthesizeOptions;
-  staging: string;
-  outputContract: typeof SPEECH_WAV_CONTRACT;
-}
 
 /** 分离的输出合同：staging 里人声与背景两个 16-bit PCM 立体声 WAV，采样率是请求的 `sampleRate`，长度与输入相同。 */
 export const STEMS_WAV_CONTRACT = 'baocut.stems-wav/v1';
@@ -332,7 +276,7 @@ export interface SpeakersFile {
   provenance: Record<string, unknown>;
 }
 
-export type JobRunParams = TranscribeRunParams | SynthesizeRunParams | SeparateRunParams | ImageRunParams | DiarizeRunParams;
+export type JobRunParams = TranscribeRunParams | SeparateRunParams | ImageRunParams | DiarizeRunParams;
 
 export interface JobOutput {
   path: string;
@@ -347,32 +291,12 @@ export interface JobRunResult {
   stats: { decodeMs: number; vadMs: number; asrMs: number; alignMs: number; speechSeconds: number };
 }
 
-/** `job.run`（`synthesize`）的结果：`output` 是 staging 里的 `speech.wav`。 */
-export interface SynthesizeRunResult {
-  outcome: 'completed' | 'cancelled';
-  output: JobOutput | null;
-  audio: { sampleRate: number; channels: number; durationSec: number } | null;
-  stats: { referenceMs: number; synthesisMs: number; encodeMs: number };
-  /** 没能按注记念出来的读音（引擎不认读音、注记畸形等）：警告，不是失败；取消时为空（§2.5.2）。 */
-  readingsDropped: DroppedReading[];
-}
-
 /** `job.run`（`separate`）的结果：`stems` 是 staging 里的 `vocals.wav` 与 `background.wav`（背景是鼓、贝斯与其他之和），取消时为 null。 */
 export interface SeparateRunResult {
   outcome: 'completed' | 'cancelled';
   stems: { vocals: JobOutput; background: JobOutput } | null;
   audio: { sampleRate: number; channels: number; durationSec: number } | null;
   stats: { decodeMs: number; separationMs: number; encodeMs: number };
-}
-
-/** 一条没念出来的读音注记：去注记后的文字里 `[start, end)`（Unicode 码点偏移）原本要读作 `reading`。 */
-export interface DroppedReading {
-  start: number;
-  end: number;
-  /** 规范化后的拼音读音，多字用空格分（`yin2 hang2`）；畸形注记是原文。 */
-  reading: string;
-  /** 注记的来源：手写、词组表、字典默认或 LLM 定的。 */
-  origin: 'user' | 'phrase' | 'dict' | 'llm';
 }
 
 /** `job.run`（`image`）的结果：`output` 是 staging 里的 `image.png`。 */
@@ -387,15 +311,12 @@ export interface ImageRunResult {
 
 /** 识别的阶段。 */
 export type TranscribeJobPhase = 'decoding' | 'vad' | 'transcribing' | 'aligning' | 'diarizing' | 'finalizing';
-/** 合成的阶段：`preparing-reference` → `synthesizing` → `encoding`。 */
-export type SynthesizeJobPhase = 'preparing-reference' | 'synthesizing' | 'encoding';
-export const SYNTHESIZE_JOB_PHASES: readonly SynthesizeJobPhase[] = ['preparing-reference', 'synthesizing', 'encoding'];
 /** 分离的阶段：`decoding` → `separating`（进度单位 `steps` = 窗口 × 子模型）→ `encoding`。 */
 export type SeparateJobPhase = 'decoding' | 'separating' | 'encoding';
 /** 文生图的阶段：`encoding-prompt` → `denoising`（按步报进度，开始时 `0/n`）→ `decoding`。 */
 export type ImageJobPhase = 'encoding-prompt' | 'denoising' | 'decoding';
 export const IMAGE_JOB_PHASES: readonly ImageJobPhase[] = ['encoding-prompt', 'denoising', 'decoding'];
-export type WorkerJobPhase = TranscribeJobPhase | SynthesizeJobPhase | SeparateJobPhase | ImageJobPhase;
+export type WorkerJobPhase = TranscribeJobPhase | SeparateJobPhase | ImageJobPhase;
 
 export type WorkerEventParams =
   | { event: 'model.phase'; params: { phase: 'loading-weights' | 'compiling' | 'warming-up'; detail?: string } }

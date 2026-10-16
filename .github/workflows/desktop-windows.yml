@@ -166,10 +166,10 @@ jobs:
           log-file-suffix: cuda13.txt
 
       # ggml 的 Vulkan 后端在构建期要 Vulkan 头文件、loader 导入库与 glslc（预编译着色器）。LunarG SDK 安装包按 sha256 钉死（同 v2）。
-      # model-worker 静态链接 ggml 的 Vulkan 后端，启动就要 vulkan-1.dll；runner 没有显卡驱动，把 SDK 的运行库目录加进 PATH，
-      # 只给后面的自检用，不进包（用户的显卡驱动自带）。
+      # model-worker 静态链接 ggml 的 Vulkan 后端，启动就要 vulkan-1.dll；CUDA 版与 Vulkan 版内置的 audio.cpp（Vulkan 包）同样要它。
+      # runner 没有显卡驱动，把 SDK 的运行库目录加进 PATH，只给后面的自检用，不进包（用户的显卡驱动自带）。
       - name: Install the LunarG Vulkan SDK
-        if: steps.gate.outputs.skip != 'true' && matrix.variant == 'vulkan'
+        if: steps.gate.outputs.skip != 'true' && matrix.variant != 'cpu'
         shell: pwsh
         env:
           VULKAN_SDK_VERSION: "1.4.357.0"

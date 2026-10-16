@@ -2,7 +2,7 @@ import { modelAssetPath } from './model-assets.ts';
 
 /**
  * 本地语音合成的内置音色（架构设计 §6.1）：随应用分发的八段参考录音，四种语言各一男一女（`assets/tts-voices/`，
- * 来源与许可见同目录的 `COPYING.txt`）。只能克隆的模型（IndexTTS、GPT-SoVITS、VoxCPM2、OmniVoice、Qwen3-TTS Base）
+ * 来源与许可见同目录的 `COPYING.txt`）。只能克隆的模型（IndexTTS、VoxCPM2、OmniVoice、Qwen3-TTS Base、Fish S2 Pro）
  * 把它们列为预设音色：选一只就是用这段录音与它的原文克隆。
  *
  * `description` 是英文的一句声音描述，留给按描述造声的模型复用（不翻译：它是交给模型的文字，不是界面文案）。

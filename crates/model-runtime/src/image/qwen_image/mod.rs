@@ -22,6 +22,7 @@ pub mod inputs;
 pub mod prompt;
 pub mod rope;
 pub mod scheduler;
+pub mod tokenizer;
 
 #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
 mod dit;

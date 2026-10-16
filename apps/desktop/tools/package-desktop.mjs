@@ -13,7 +13,8 @@
 // 2. 在仓库外的临时目录里搭一个只含产物的应用：out/、按 out 里真正 require 的第三方包生成的 package.json 与它们的 node_modules。
 //    不直接打 apps/desktop：它的 dependencies 里有工作区的 TypeScript 包与只给渲染进程用的 React，会被原样塞进 asar。
 // 3. 资源按 `src/main/packaged-resources.ts`（主进程启动 Runtime 时用的同一份）放到 `<resources>` 下：bin/（Worker、凭据助手，
-//    CUDA 版另带 NVIDIA 运行库）、templates/、skills/（说明书与内置 skill）、model-assets/、web/、slides-editor/、design-editor/、
+//    CUDA 版另带 NVIDIA 运行库；bin/audiocpp/ 是内置的 audio.cpp 引擎，本地语音合成与音乐共用，由 tools/fetch-audiocpp.ts 按目标平台
+//    从上游发布页取、核对 sha256：Mac 取 Metal 包，Windows 标准版取 CPU 包，CUDA 版与 Vulkan 版取 Vulkan 包）、templates/、skills/（说明书与内置 skill）、model-assets/、web/、slides-editor/、design-editor/、
 //    design-system-editor/、docs-editor/。都在 asar 外面，子进程要按路径读。
 // 4. electron-builder 出包。它会把 Electron 的 win32-x64 发行包与 NSIS 工具下到自己的缓存目录（~/Library/Caches/electron-builder 等）。
 // 5. 核对解开的包：resources 里的每一项都在，asar 里有主进程、Runtime 与 editor.wasm。在 Windows 上另由 check-packaged-app.mjs 真跑一遍。
@@ -52,6 +53,8 @@ import { parseArgs } from 'node:util';
 import { BUNDLE_ID, PRODUCT_NAME, feedFileName, feedTarget, parseManifest, releaseManifest } from '../src/main/app-update-rules.ts';
 import { BUNDLED_EXECUTABLES, RESOURCE_DIRS } from '../src/main/packaged-resources.ts';
 import { ensureCargo } from '../../../tools/cargo-path.mjs';
+import { devTargetDir, fetchAudioCpp } from '../../../tools/fetch-audiocpp.ts';
+import { AUDIO_CPP_COMMAND, AUDIO_CPP_SERVER, AUDIO_CPP_TOOL } from '../../../packages/models/src/audio-cpp-engine.ts';
 import { DISTRIBUTED_NOTICES } from '../../../tools/third-party-notices.ts';
 import { distributeMac, runMac, signingPreflight } from './macos-distribution.mjs';
 import { macElectronLanguages, shareMacFonts } from './macos-package-resources.mjs';
@@ -197,6 +200,8 @@ const variant = VARIANTS[options.variant];
 if (!variant) fail(`不认识的变体 ${options.variant}（cpu、cuda 或 vulkan）`);
 if (!isMac && !options.target.includes('windows')) fail(`Unsupported target: ${options.target}`);
 const exe = (name) => isMac ? name : `${name}.exe`;
+// 内置 audio.cpp 引擎在 bin/ 下的相对路径（bin/audiocpp/audiocpp_cli、audiocpp_server）。
+const AUDIO_CPP_EXECUTABLES = [AUDIO_CPP_COMMAND, AUDIO_CPP_SERVER].map((name) => path.join(AUDIO_CPP_TOOL, exe(name)));
 const outDir = path.resolve(options.out ?? path.join(DESKTOP, 'dist', isMac ? 'mac' : options.variant));
 const packageTargets = options.targets.split(',').filter(Boolean);
 const build = options.build === undefined || options.build === '' ? 0 : Number(options.build);
@@ -347,6 +352,20 @@ try {
     if (isMac) runMac('lipo', [file, '-verify_arch', macPlan.intel ? 'x86_64' : 'arm64']);
     cpSync(file, path.join(bin, exe(name)));
   }
+  // 压缩包缓存在 cargo 产物目录的 audiocpp-download/（与 npm run build:audiocpp 共用）；BAOCUT_TOOLS_ENDPOINT 给了时走镜像。
+  try {
+    await fetchAudioCpp({
+      platform: isMac ? 'darwin' : 'win32',
+      arch: isMac ? macPlan.electronArch : 'x64',
+      variant: isMac ? null : options.variant,
+      dest: path.join(bin, AUDIO_CPP_TOOL),
+      cacheDir: path.join(devTargetDir(), `${AUDIO_CPP_TOOL}-download`),
+      mirror: process.env.BAOCUT_TOOLS_ENDPOINT || null,
+    });
+  } catch (error) {
+    fail(`取 audio.cpp 引擎失败：${error.message}`);
+  }
+  if (isMac) for (const file of AUDIO_CPP_EXECUTABLES) runMac('lipo', [path.join(bin, file), '-verify_arch', macPlan.intel ? 'x86_64' : 'arm64']);
   if (options.variant === 'cuda') {
     const cudaPath = process.env.CUDA_PATH;
     const redist =
@@ -452,7 +471,7 @@ try {
     const distribution = await distributeMac({ app: unpacked, output: outDir, stem, version: desktop.version, build, appId: APP_ID,
       local: options.local,
       signingSha1: options['sign-sha1'], profile: options['notary-profile'], keychain: options['sign-keychain'],
-      executables: BUNDLED_EXECUTABLES.map((name) => path.join(unpacked, 'Contents/Resources/bin', name)),
+      executables: [...BUNDLED_EXECUTABLES, ...AUDIO_CPP_EXECUTABLES].map((name) => path.join(unpacked, 'Contents/Resources/bin', name)),
       entitlements: path.join(DESKTOP, 'build/entitlements.mac.plist') });
     run(process.execPath, [path.join(HERE, 'check-packaged-app.mjs'), distribution.verifiedApp]);
     run(process.execPath, [path.join(HERE, 'check-file-fonts.mjs'),
@@ -611,6 +630,9 @@ function verifyUnpacked(dir, variantName) {
   if (!existsSync(path.join(dir, isMac ? `Contents/MacOS/${PRODUCT_NAME}` : `${PRODUCT_NAME}.exe`))) problems.push(`没有 ${PRODUCT_NAME}.exe`);
   for (const name of BUNDLED_EXECUTABLES) {
     if (!existsSync(path.join(resources, RESOURCE_DIRS.bin, exe(name)))) problems.push(`没有 resources/${RESOURCE_DIRS.bin}/${exe(name)}`);
+  }
+  for (const file of [...AUDIO_CPP_EXECUTABLES, path.join(AUDIO_CPP_TOOL, 'LICENSE')]) {
+    if (!existsSync(path.join(resources, RESOURCE_DIRS.bin, file))) problems.push(`没有 resources/${RESOURCE_DIRS.bin}/${file.replaceAll('\\', '/')}`);
   }
   if (variantName === 'cuda') {
     for (const dll of CUDA_REDIST_DLLS) if (!existsSync(path.join(resources, RESOURCE_DIRS.bin, dll))) problems.push(`没有 ${dll}`);

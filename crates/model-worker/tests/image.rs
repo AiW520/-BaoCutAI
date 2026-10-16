@@ -99,7 +99,7 @@ fn generate(worker: &mut WorkerProcess, job_id: &str, seed: u64) -> Vec<u8> {
 fn qwen_image_writes_a_deterministic_png() {
     let root = models_root();
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), QUICK);
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), QUICK);
     let hello = result(&hello);
     assert_eq!(hello["imageFamilies"], json!(["qwen-image"]), "{hello}");
     assert!(hello["capabilities"].as_array().unwrap().iter().any(|c| c == "image"));

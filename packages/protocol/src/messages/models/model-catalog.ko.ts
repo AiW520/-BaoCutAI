@@ -16,6 +16,5 @@ export const ko: ModelsModelCatalogMessages = {
   moving: '모델 폴더를 옮기는 중입니다',
   notInstalled: (p: { repo: string }) => `${p.repo} 모델이 설치되어 있지 않습니다`,
   noFilesInSubdir: (p: { subdir: string }) => `모델의 ${p.subdir}/ 아래에 파일이 없습니다`,
-  engineNoBuild: (p: { platform: string }) => `audio.cpp 엔진에는 이 컴퓨터(${p.platform})용 빌드가 없습니다. 직접 빌드한 엔진을 BAOCUT_AUDIOCPP_CLI로 지정할 수 있습니다`,
-  engineNotInstalled: (p: { version: string }) => `audio.cpp 엔진 ${p.version}이(가) 설치되어 있지 않습니다`,
+  engineMissing: '내장 audio.cpp 엔진을 찾을 수 없습니다. 이 컴퓨터용 빌드가 없거나 앱 설치가 완전하지 않습니다',
 };

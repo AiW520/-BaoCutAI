@@ -99,7 +99,7 @@ export function componentDesc(component: string): string | null {
 }
 
 /**
- * 组件从哪里下载（详情里组件那一行）：GitHub 发布页的（音乐模型包的 audio.cpp 引擎）写「GitHub 发布 <仓库> <标签>」，标签原样；
+ * 组件从哪里下载（详情里组件那一行）：GitHub 发布页的（embedding 模型包的 LiteRT-LM C 库）写「GitHub 发布 <仓库> <标签>」，标签原样；
  * 模型仓库的写 `<仓库>@<提交前 7 位>`。
  */
 export function componentSource(c: Pick<ModelComponentStatus, 'repo' | 'revision' | 'origin'>): string {
@@ -270,7 +270,7 @@ function componentKey(c: Pick<ModelComponentStatus, 'component' | 'repo' | 'revi
 }
 
 /** 公共组件区里的顺序（设计稿 data.js `setComponents`：VAD、对齐器、分词器、声纹嵌入……）；没列的排后面。 */
-const SHARED_ORDER = ['vad', 'aligner', 'tokenizer', 'speaker', 'segmentation', 'codec', 'aux', 'audiocpp-engine'];
+const SHARED_ORDER = ['vad', 'aligner', 'tokenizer', 'speaker', 'segmentation', 'codec', 'aux'];
 
 export interface SharedComponent {
   key: string;
@@ -318,8 +318,8 @@ export function sharedComponents(bundles: readonly ModelBundleStatus[], category
 
 /**
  * 模型包自己的文件在盘上（设计稿的 `on[m.id]`，权重在）：装好了，或者公共组件、可选组件以外有装好的组件——权重在、缺公共组件的
- * （`incomplete`）也算。只是公共组件被别的模型装上了的、只有可选组件的不算；GitHub 发布页的组件（audio.cpp 引擎，装在 Runtime
- * Home 的 `tools/` 下，也可能是 `BAOCUT_AUDIOCPP_CLI` 指的自建引擎）也不算，只有引擎没有权重的仍是「可下载」。
+ * （`incomplete`）也算。只是公共组件被别的模型装上了的、只有可选组件的不算；GitHub 发布页的组件（LiteRT-LM 的 C 库，装在 Runtime
+ * Home 的 `tools/` 下）也不算，只有它没有权重的仍是「可下载」。
  */
 export function hasOwnFiles(bundle: ModelBundleStatus, shared: readonly SharedComponent[]): boolean {
   if (isBundleInstalled(bundle)) return true;

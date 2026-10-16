@@ -98,8 +98,6 @@ describe('embedding 模型包在目录里', () => {
     await writeRuntime();
     catalog.changed(TEXT.bundleId);
     expect(await catalog.status(TEXT.bundleId)).toMatchObject({ state: 'installed' });
-    // 动态库不是 Runtime 执行的引擎。
-    expect(catalog.engineExecutable(TEXT.bundleId)).toBeNull();
     const bundle = await catalog.bundleFor(TEXT.bundleId);
     expect(Object.keys(bundle.components)).toEqual(['embedding', 'litertlm-runtime']);
     expect(bundle.components['litertlm-runtime']).toMatchObject({
@@ -129,15 +127,6 @@ describe('embedding 模型包在目录里', () => {
       expect(status!.detailRef).toEqual({ key: 'modelsEmbedding.runtimeNoBuild', params: { platform: `${platform}-${arch}` } });
       expect(status!.detail).toContain('LiteRT-LM');
     }
-  });
-
-  it('引擎覆盖（BAOCUT_AUDIOCPP_CLI）不替动态库', async () => {
-    const fake = path.join(dir, 'audiocpp_cli');
-    await fs.writeFile(fake, '#!/bin/sh\n');
-    await writeModel();
-    const catalog = new ModelCatalog({ root: dir, platform: 'darwin', arch: 'arm64', engineOverride: fake });
-    expect(catalog.engineOverridden(LITERTLM_RUNTIME_COMPONENT)).toBe(false);
-    expect(await catalog.status(TEXT.bundleId)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
   });
 });
 

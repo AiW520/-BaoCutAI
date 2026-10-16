@@ -190,9 +190,6 @@ pub fn check_bundle(bundle: &VerifiedBundle) -> Result<(), ErrorBody> {
         ("speaker", &bundle.speaker),
         ("segmentation", &bundle.segmentation),
         ("tokenizer", &bundle.tokenizer),
-        ("tts", &bundle.tts),
-        ("codec", &bundle.codec),
-        ("aux", &bundle.aux),
         ("separator", &bundle.separator),
         ("image", &bundle.image),
     ] {

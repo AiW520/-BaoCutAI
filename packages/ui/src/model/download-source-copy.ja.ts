@@ -16,7 +16,7 @@ export const ja: DownloadSourceMessages = {
   ghDesc: "各プロジェクトの GitHub 公式リリースページからダウンロードします。",
   modelsMirrorDesc: (base: string) => `ミラー ${base} からダウンロードします。`,
   toolsMirrorDesc: (base: string) => `ミラー ${base} からダウンロードします。`,
-  msNote: "ModelScope にない一部のファイル（whisper.cpp、GPT-SoVITS）は引き続き Hugging Face からダウンロードします。どのファイルも内蔵のチェックサムで照合します。",
+  msNote: "ModelScope にない一部のファイル（whisper.cpp）は引き続き Hugging Face からダウンロードします。どのファイルも内蔵のチェックサムで照合します。",
   envNote: (name: string) => `環境変数 ${name} が設定されている場合はそちらが優先されます。`,
   webNote: "ブラウザーではダウンロード元を変更できません。BaoCut デスクトップアプリで設定してください。",
   lead: "複数のダウンロード元を保存し、種類ごとに 1 つを選んで使えます。ダウンロードの確認画面でも切り替えられ、その変更はここに反映されます。どこからダウンロードしても、すべてのファイルを内蔵のチェックサムで照合します。",

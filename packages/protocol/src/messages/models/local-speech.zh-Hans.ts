@@ -2,15 +2,6 @@ import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const zhHans: ModelsLocalSpeechMessages = {
   referenceTranscriptRequired: "请填写参考录音的原文",
-  paceQwen06: '比实时慢 5–6 倍，10 秒的一句要一分钟左右',
-  paceQwen17: '比实时慢 7–8 倍，10 秒的一句要一分多钟',
-  paceIndexTts2: '比实时慢约 25 倍，10 秒的一句要四分钟左右',
-  paceIndexTts25: '比实时慢约 19 倍，10 秒的一句要三分多钟',
-  paceGptSovits: '比实时慢约 1.7 倍，10 秒的一句不到 20 秒',
-  paceVoxcpm2: '比实时慢约 9 倍，10 秒的一句要一分半钟左右',
-  paceOmnivoice: '比实时慢约 8 倍，10 秒的一句要将近一分半钟',
-  paceDefault: '这只没有实测',
-  cpuNote: (p: { pace: string }) => `在本机的 CPU 上合成，${p.pace}；有 NVIDIA 显卡（CUDA）时快得多，RTX 3060 上 Qwen3-TTS 0.6B 和 IndexTTS2 都与实时相当`,
   oneVoiceSource: 'voice、reference 与 voiceDescription 只能给一个',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `模型 ${p.modelId} 不支持${p.what}（${p.mode}）`,
   modeClone: '用参考录音克隆',

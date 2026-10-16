@@ -27,7 +27,7 @@ fn metal_worker_transcribes_reference_fixture() {
     bundle["device"] = json!("metal");
 
     let mut worker = WorkerProcess::spawn();
-    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 1 }), Duration::from_secs(30));
+    let (_, hello) = worker.call("worker.hello", json!({ "contractVersion": 2 }), Duration::from_secs(30));
     let ggml = result(&hello)["backends"]
         .as_array()
         .unwrap()

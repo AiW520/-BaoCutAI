@@ -2,15 +2,6 @@ import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const nl: ModelsLocalSpeechMessages = {
   referenceTranscriptRequired: "Voer het transcript van de referentieopname in",
-  paceQwen06: "5 tot 6 keer langzamer dan realtime, dus een zin van 10 seconden duurt ongeveer een minuut",
-  paceQwen17: "7 tot 8 keer langzamer dan realtime, dus een zin van 10 seconden duurt iets meer dan een minuut",
-  paceIndexTts2: "ongeveer 25 keer langzamer dan realtime, dus een zin van 10 seconden duurt ongeveer vier minuten",
-  paceIndexTts25: "ongeveer 19 keer langzamer dan realtime, dus een zin van 10 seconden duurt iets meer dan drie minuten",
-  paceGptSovits: "ongeveer 1,7 keer langzamer dan realtime, dus een zin van 10 seconden duurt minder dan 20 seconden",
-  paceVoxcpm2: "ongeveer 9 keer langzamer dan realtime, dus een zin van 10 seconden duurt ongeveer anderhalve minuut",
-  paceOmnivoice: "ongeveer 8 keer langzamer dan realtime, dus een zin van 10 seconden duurt bijna anderhalve minuut",
-  paceDefault: "dit model is nog niet gemeten",
-  cpuNote: (p: { pace: string }) => `Synthetiseert op de CPU van deze computer: ${p.pace}. Met een NVIDIA-GPU (CUDA) gaat het veel sneller: op een RTX 3060 draaien Qwen3-TTS 0.6B en IndexTTS2 ongeveer in realtime`,
   oneVoiceSource: "Geef alleen voice, reference of voiceDescription op",
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) => `Model ${p.modelId} ondersteunt niet ${p.what} (${p.mode})`,
   modeClone: "klonen vanuit een referentieopname",

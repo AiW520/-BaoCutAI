@@ -17,8 +17,7 @@ import { commandIdArg } from './video-tools.ts';
  * 同组还有 `models_list`（本地模型包与状态，网关的 `models.list`，三个面都有）与 `models_test`（跑一遍固定样本检查一个模型包，
  * 网关的 `models.test`；占用本机算力，与 `models_install` 一样不开放给 MCP）。
  *
- * 音乐生成的模型包（backend `audio-cpp`）的 audio.cpp 引擎是它的必需组件（`audiocpp-engine`）：在同一份安装计划里，大小算在
- * 模型包里，一次确认就够。
+ * 语音合成与音乐生成的模型包（backend `audio-cpp`）只下载模型权重：执行它们的 audio.cpp 引擎随应用内置，不另外下载。
  */
 
 export interface ModelInstallToolsDeps {
@@ -57,7 +56,6 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     description: [
       '下载并安装一个本机模型包（几百 MB 到几 GB）。',
       '装好之后才能用本机转写、语音合成、生图或音乐生成。只在本机模型没有安装（CAPABILITY_NOT_CONFIGURED 的 remedy.action 为 install-model）时用。',
-      '音乐生成的模型包含 audio.cpp 引擎（组件 audiocpp-engine），随模型包一起下载，大小已算在内；音乐能力因为引擎没装而不可用时，也用本工具带上那个模型包补装。',
       '提交前会把大小告诉用户并按访问模式确认；已经装好时不下载（jobId 为 null）。只下载缺的部分，之前没下完的会续传。',
       '立即返回 jobId 与大小（downloadBytes；大小未知时为 null，estimatedBytes 是估计值）。用 jobs_wait 等它结束（要看进度用 jobs_inspect，progress.unit 为 bytes），state 为 completed 才算装好；之后再提交转写，或带上 provider: local 与这个模型包提交合成或生图（合成没有出厂默认；生图不指定时可能先用 Codex）。不要重复提交同一件事。',
     ].join('\n'),

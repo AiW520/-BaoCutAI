@@ -12,5 +12,4 @@ export const fr: ModelsModelDownloaderMessages = {
   diskFull: "Le disque s’est rempli pendant l’écriture des fichiers de modèle",
   archiveUnpackable: (p: { file: string; reason: string }) => `Impossible de décompresser ${p.file} : ${p.reason}`,
   executableMissing: (p: { file: string; executable: string }) => `${p.file} ne contient pas ${p.executable}`,
-  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} a été décompressé mais ne s’exécute pas : ${p.reason}`,
 };

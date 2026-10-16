@@ -42,12 +42,10 @@ export const zhHant: TtsLocalMessages = {
     'qwen3-tts':
       'Qwen3-TTS：CustomVoice 有 9 位內建說話者，可用一句話指定語氣；Base 用一段參考錄音克隆；1.7B VoiceDesign 只憑一句描述就能建立新的音色。1.7B 音質較好，但也較慢。',
     indextts2: 'IndexTTS：八個內建音色，或用自己的錄音克隆；只擷取錄音的音色，不會讀取它的逐字稿。IndexTTS 2.5 還能調整語速。',
-    'gpt-sovits': 'GPT-SoVITS：八個內建音色，或用自己的錄音克隆；同時提供參考錄音的逐字稿會更像，此時參考錄音須為 3–10 秒。',
     voxcpm2: 'VoxCPM2：八個內建音色，或用自己的錄音克隆；提供錄音的逐字稿時最像，也可用一句話指定說話風格；輸出 48 kHz。',
     omnivoice: 'OmniVoice：八個內建音色、用自己的錄音克隆，或從詞彙表選擇性別、年齡和音高建立新的音色；支援的語言最多。僅限非商業用途。',
   },
   quickDescribe: '音色完全由這句描述決定：換一句描述，就是另一個人',
-  quickVoxcpm: '約為即時速度：一句話念多久，產生就要多久；第一次載入約需 5 秒',
   quickNonCommercial: (license) => `僅限非商業用途（${license}）：製作商業用途的內容時，請改用其他模型`,
   quickSlow: '大型模型：合成速度比同類模型慢，第一次載入也需要多等一會兒',
 };

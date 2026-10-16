@@ -51,3 +51,76 @@ export async function writeFakeYtDlp(dir: string, options: { version?: string; n
     },
   };
 }
+
+/** 假的 `audiocpp_server` 脚本（`fake-audiocpp-server.ts`）的绝对路径。 */
+export const FAKE_AUDIOCPP_SERVER = fileURLToPath(new URL('./fake-audiocpp-server.ts', import.meta.url));
+
+/** 假 audio.cpp 服务收到的一次启动或一次合成请求（`fake-audiocpp-server.ts` 记下的一行）。 */
+export interface FakeAudioCppRecord {
+  kind: 'start' | 'request';
+  pid: number;
+  args?: string[];
+  config?: { port: number; host: string; models: Array<Record<string, unknown>> } & Record<string, unknown>;
+  body?: { model: string; input: string; voice_ref?: string; reference_text?: string; seed?: number; options: Record<string, unknown> };
+  reference?: string | null;
+}
+
+/** 假 audio.cpp 服务的故障控制（每次启动与请求时重新读）。 */
+export interface FakeAudioCppControl {
+  startExit?: string;
+  crash?: string;
+  reject?: { status: number; message: string };
+  slowMs?: number;
+  silent?: boolean;
+  notWav?: boolean;
+}
+
+export interface FakeAudioCpp {
+  /** 给 `BAOCUT_AUDIOCPP_CLI` 的路径（`<dir>/audiocpp_cli`）：服务取它同目录的 `audiocpp_server`，合成用不到命令行引擎本身（它只认 `--version`）。 */
+  cli: string;
+  /** 改故障控制。 */
+  control(value: FakeAudioCppControl): Promise<void>;
+  /** 读出记下的启动与请求，可按种类过滤。 */
+  recorded(kind?: FakeAudioCppRecord['kind']): Promise<FakeAudioCppRecord[]>;
+}
+
+/**
+ * 在 `dir` 里写假的 audio.cpp：`audiocpp_server` 是用当前 Node 运行假脚本的 sh 包装，控制文件与记录也在 `dir` 里。
+ * 包装是 sh 脚本，Windows 上不能直接启动。
+ */
+export async function writeFakeAudioCpp(dir: string): Promise<FakeAudioCpp> {
+  await fs.mkdir(dir, { recursive: true });
+  const controlFile = path.join(dir, 'audiocpp-control.json');
+  const recordFile = path.join(dir, 'audiocpp-runs.jsonl');
+  await fs.writeFile(controlFile, '{}');
+  const quote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
+  const lines = [
+    '#!/bin/sh',
+    `export FAKE_AUDIOCPP_CONTROL=${quote(controlFile)}`,
+    `export FAKE_AUDIOCPP_RECORD=${quote(recordFile)}`,
+    `exec ${quote(process.execPath)} ${quote(FAKE_AUDIOCPP_SERVER)} "$@"`,
+    '',
+  ];
+  await fs.writeFile(path.join(dir, 'audiocpp_server'), lines.join('\n'), { mode: 0o755 });
+  // 命令行引擎只用来让 Runtime 找到这个目录：认得 `--version`，别的调用失败。
+  const cli = path.join(dir, 'audiocpp_cli');
+  const cliLines = [
+    '#!/bin/sh',
+    `if [ "$1" = "--version" ]; then echo 'audio.cpp 0.9.2'; exit 0; fi`,
+    `echo 'fake audiocpp_cli does not run models' >&2`,
+    'exit 2',
+    '',
+  ];
+  await fs.writeFile(cli, cliLines.join('\n'), { mode: 0o755 });
+  return {
+    cli,
+    control: (value) => fs.writeFile(controlFile, JSON.stringify(value)),
+    async recorded(kind) {
+      return (await fs.readFile(recordFile, 'utf8').catch(() => ''))
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as FakeAudioCppRecord)
+        .filter((r) => kind === undefined || r.kind === kind);
+    },
+  };
+}
