@@ -980,7 +980,7 @@ interface ErrorBody {
 | `MODEL_OUTPUT_INVALID` | 模型输出不满足 `outputContract`（Runtime 发布前校验不过，或本地 Worker 写出前自检不过；`details.problems`）；翻译流程的一批在有界重发后仍不合约定（`details.reason: 'schema'`、`details.problem`）；生成任务的输出长度、摘要、媒体类型或文件头不符，或 ffprobe 解码不出有效的音频或图片（`details.problems`）；文本生成的结构化输出不是 JSON 或不符合 schema、到了输出上限被截断，或输出为空（`details.reason`：`schema`、`length`、`empty`） | 不重试同一输入；保留原始输出供上报 |
 | `STAGING_WRITE_FAILED` | 本地 Model Worker 的输出写不进 staging（磁盘满或目录不可写，`details.file`）：配音的分离与合成、本地语音合成 | 腾出空间后重试；不算崩溃，不停用模型包 |
 | `VOICE_CONSENT_REQUIRED` | 音色没有本人声明（`consent.declared` 与 `declaredAt`），不能把参考录音交给在线 Provider，也不能使用它的克隆（`details.id` 是音色条目，另有 `details.providerId`） | 由用户在音色库里补上声明；不绕过 |
-| `VOICE_CLONE_REQUIRED` | `voice: 'library:<id>'` 在所选 Provider 上没有可用的克隆（`details.reason`：`missing` 没有建立过，`stale` 参考录音已更换或条目已删除；另有 `details.id`、`details.providerId`） | 先为这个 Provider 建立克隆（`library.createVoiceClone`），或换一个音色；不换成别的声音 |
+| `VOICE_CLONE_REQUIRED` | `voice: 'library:<id>'` 在所选的在线 Provider 上没有可用的克隆（本地模型直接用条目的参考录音，不要克隆；`details.reason`：`missing` 没有建立过，`stale` 参考录音已更换或条目已删除；另有 `details.id`、`details.providerId`） | 先为这个 Provider 建立克隆（`library.createVoiceClone`），或换一个音色；不换成别的声音 |
 | `VOICE_NOT_FOUND` | 翻译配音里说话人绑定的 `library:<id>` 音色在库里已经删了（`details.library: 'voices'`、`details.reason: 'removed'`） | 那位说话人的句子不合成、逐句报告；在视频里换一个音色，或删掉这条绑定后重试 |
 | `APPLY_FAILED` | 结果已发布，但写入视频的事务被拒绝（转写写文档、生成导入素材、翻译流程写译文文档；`details.cause`；触碰任务保护时 `details.reason` 是 `TASK_PROTECTED`，带 `details.protections`） | 产物保留在 `result` 里；不自动重试。转写与生成由用户 `jobs.reconcile apply` 重新应用（先按上次的 `commandId` 查回执），固定流程用 `pipelines.retry` |
 | `VOICE_CLONE_UNSUPPORTED` | `library.createVoiceClone` 的 Provider 没有克隆接口（能力视图没有 `voiceClone`，现在只有 ElevenLabs 与 Google Gemini 有；`details.providerId`） | 换一个 Provider |

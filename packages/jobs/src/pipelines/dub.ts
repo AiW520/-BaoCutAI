@@ -99,6 +99,11 @@ export interface DubVoice {
   maxInputChars: number;
   /** 模型接受种子（`seed`）；句级重配据此决定记不记种子。旧的冻结参数没有，当作不接受。 */
   acceptsSeed?: boolean;
+  /**
+   * 本地模型用音色库的音色、模型接受种子时冻结的种子（§5.9：这个音色给模型记的，其次兜底的，都没有时抽一个），每句都用它；
+   * 句级重配的种子优先。别的音色没有。它算在句子的摘要里：换了种子的句子重新合成，不混两种声音。
+   */
+  seed?: number;
 }
 
 /** 语音合成：由 Runtime 实现（选择 Provider、换算库里的音色、授权与预算、调用）。 */
@@ -117,7 +122,7 @@ export interface DubSpeech {
     jobId: Id;
     staging: string;
     signal: AbortSignal;
-    /** 合成的种子（句级重配，模型接受时才给）。 */
+    /** 合成的种子（句级重配，模型接受时才给）；比音色冻结的种子（`DubVoice.seed`）优先。 */
     seed?: number;
   }): Promise<{ file: string }>;
 }

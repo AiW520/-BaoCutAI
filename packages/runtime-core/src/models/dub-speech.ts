@@ -1,14 +1,25 @@
+import crypto from 'node:crypto';
 import path from 'node:path';
-import { PipelineStepError, libraryVoice, type DubSpeech, type DubVoice, type JobLibrary, type PipelineDefinition } from '@baocut/jobs';
+import {
+  PipelineStepError,
+  libraryVoice,
+  localLibraryVoice,
+  type DubSpeech,
+  type DubVoice,
+  type JobLibrary,
+  type PipelineDefinition,
+} from '@baocut/jobs';
 import {
   ProviderFailure,
   builtinReferenceFile,
   checkReferenceTranscript,
   freezeReferenceFile,
+  frozenVoiceOf,
   planLocalVoice,
   speechParameters,
   type GenerationSelection,
   type LocalSpeechFreeze,
+  type LocalVoicePlan,
   type ModelServices,
   type SpeechParameters,
 } from '@baocut/models';
@@ -16,6 +27,7 @@ import {
   RpcError,
   estimateCallCost,
   refOf,
+  type FrozenSpeechReference,
   type Localized,
   type GrantDataKind,
   type JobSubmitter,
@@ -32,8 +44,10 @@ import { localizedOf } from '../localized.ts';
  *
  * - 启动时选定 Provider 与模型（§6.2），按模型检查音色、语言与格式（与 `models.synthesizeSpeech` 同一份 `speechParameters`）；
  *   格式优先 WAV（对齐按采样数算，不受 MP3 编码延迟的影响）；
- * - `library:<id>` 每次调用都重新换成这个 Provider 上的有效克隆（克隆在两次调用之间可能过期或被删）；
- * - 本地克隆模型的内置音色：随应用分发的录音启动时读出摘要（读不出时拒绝），合成时每个音色冻结一次，逐句共用（§6.1）；
+ * - 在线 Provider 上，`library:<id>` 每次调用都重新换成这个 Provider 上的有效克隆（克隆在两次调用之间可能过期或被删）；
+ * - 本地模型按 `models.synthesizeSpeech` 的规则冻结声音（§5.9、§6.1），在启动与每次重试时冻结一次、之后逐句共用：内置音色读出
+ *   随应用分发的录音的摘要（读不出时拒绝）；音色库的音色直接用条目的参考录音与它记下的摘要（不要克隆，也不要本人声明），
+ *   每句先查库里还在，种子随 `DubVoice` 冻结；
  * - 每次调用（含重发）各预留一次授权与预算、结束时结算；外发的是译文（`transcript`）。本机与节点的 Provider 不经授权；
  * - Provider 的失败换成任务的错误码（与生成任务相同）。
  */
@@ -52,33 +66,48 @@ export function dubSpeech(options: { services: ModelServices; grants: GrantServi
       ...(provider !== undefined ? { provider } : {}),
       ...(model !== undefined ? { model } : {}),
     });
-  /** 本地模型的声音（`voice` 已经冻结过的照用）；`DubVoice` 第一次合成时冻结，之后逐句共用。 */
-  const frozenVoices = new WeakMap<DubVoice, Promise<LocalSpeechFreeze>>();
-  /** 冻结一次调用的参数；`library:<id>` 换成克隆的 voiceId。 */
+  /**
+   * 本地模型冻结的声音，按 Provider、模型与音色记：启动、重试与说话人绑定的检查（`prepare`）各重新冻结一份（音色库的条目可能
+   * 改过），之后的句子共用这一份；没有时（Runtime 重启后接着跑）第一句冻结。冻结失败不留下：装好、改好之后重新读。
+   */
+  const frozenVoices = new Map<string, Promise<LocalVoice>>();
+  const localVoice = (selection: GenerationSelection<'synthesizeSpeech'>, speech: SynthesizeSpeechRequest, refresh: boolean) => {
+    const plan = planLocalVoice(selection, speech);
+    const libraryId = plan.mode === 'clone' && plan.source === 'library' ? plan.libraryId : null;
+    // 库里删了的音色每句都报 `VOICE_NOT_FOUND`（与在线 Provider 每次换算克隆一样）；还在时照用冻结的录音。
+    if (!refresh && libraryId !== null && library) inLibrary(speech.voice!, () => library.get({ library: 'voices', id: libraryId }));
+    const key = [selection.providerId, selection.modelId, frozenVoiceOf(plan)].join('\0');
+    const cached = refresh ? undefined : frozenVoices.get(key);
+    if (cached) return cached;
+    const frozen = freezeLocalVoice(library, selection, plan);
+    frozenVoices.set(key, frozen);
+    frozen.catch(() => {
+      if (frozenVoices.get(key) === frozen) frozenVoices.delete(key);
+    });
+    return frozen;
+  };
+  /**
+   * 冻结一次调用的参数：在线 Provider 的 `library:<id>` 换成克隆的 voiceId；本地模型的声音见 `localVoice`。`voice` 为 null 是
+   * 启动（与重试）时的检查，本地模型的声音在这时重新冻结。
+   */
   const parameters = async (
     selection: GenerationSelection<'synthesizeSpeech'>,
     voice: DubVoice | null,
     request: { text: string; voice?: string; language: string; format?: SpeechFormat; seed?: number },
-  ): Promise<{ parameters: SpeechParameters; local: Promise<LocalSpeechFreeze> | null }> => {
-    const resolved = voiceFromLibrary(library, request.voice, selection.providerId);
+  ): Promise<{ parameters: SpeechParameters; local: LocalVoice | null }> => {
     const speech: SynthesizeSpeechRequest = {
       text: request.text,
       language: request.language,
-      ...(resolved ? { voice: resolved.voiceId } : request.voice !== undefined ? { voice: request.voice } : {}),
+      ...(request.voice !== undefined ? { voice: request.voice } : {}),
       ...(voice ? { format: voice.format } : request.format ? { format: request.format } : {}),
       ...(request.seed !== undefined ? { seed: request.seed } : {}),
     };
-    if (!selection.model.local) return { parameters: speechParameters(selection, speech), local: null };
-    let local = voice ? frozenVoices.get(voice) : undefined;
-    if (!local) {
-      local = freezeLocalVoice(selection, speech);
-      // 冻结失败（录音读不出）不留下：装好之后重试时重新读。
-      if (voice) {
-        frozenVoices.set(voice, local);
-        local.catch(() => frozenVoices.delete(voice));
-      }
+    if (selection.model.local) {
+      const local = await localVoice(selection, speech, voice === null);
+      return { parameters: speechParameters(selection, speech, local), local };
     }
-    return { parameters: speechParameters(selection, speech, await local), local };
+    const resolved = voiceFromLibrary(library, request.voice, selection.providerId);
+    return { parameters: speechParameters(selection, resolved ? { ...speech, voice: resolved.voiceId } : speech), local: null };
   };
 
   return {
@@ -94,16 +123,19 @@ export function dubSpeech(options: { services: ModelServices; grants: GrantServi
         format,
         ...(target.voice !== undefined ? { voice: target.voice } : {}),
       });
-      const voice: DubVoice = {
+      // 音色库的音色交给收种子的本地模型：种子随音色冻结（§5.9），每句、每次重试都用同一颗。
+      const local = checked.local;
+      const fromLibrary = local?.plan.mode === 'clone' && local.plan.source === 'library';
+      const seed = local && fromLibrary && model.acceptsSeed ? (local.seed ?? crypto.randomInt(0, 2 ** 32)) : null;
+      return {
         providerId: selection.providerId,
         modelId: selection.modelId,
         voice: target.voice ?? checked.parameters.voice,
         format,
         maxInputChars: model.maxInputChars,
         acceptsSeed: model.acceptsSeed,
+        ...(seed !== null ? { seed } : {}),
       };
-      if (checked.local) frozenVoices.set(voice, checked.local);
-      return voice;
     },
 
     async synthesize(request) {
@@ -112,8 +144,9 @@ export function dubSpeech(options: { services: ModelServices; grants: GrantServi
       let frozen;
       try {
         selection = await select(voice.providerId, voice.modelId);
-        // 种子（句级重配）：冻结时已经按模型检查过；模型后来不接受了时不传（`speechParameters` 会拒绝）。
-        const seed = request.seed !== undefined && selection.model.acceptsSeed ? { seed: request.seed } : {};
+        // 种子：句级重配的优先，其次音色冻结的。冻结时已经按模型检查过；模型后来不接受了时不传（`speechParameters` 会拒绝）。
+        const chosen = request.seed ?? voice.seed;
+        const seed = chosen !== undefined && selection.model.acceptsSeed ? { seed: chosen } : {};
         frozen = (await parameters(selection, voice, { text: request.text, voice: voice.voice, language: request.language, ...seed })).parameters;
       } catch (error) {
         throw stepError(error, voice.providerId);
@@ -213,27 +246,49 @@ function localizedStepError(code: string, message: Localized): PipelineStepError
   return Object.assign(new PipelineStepError(code, message.text), { messageRef: refOf(message) });
 }
 
+/** 本地模型冻结的声音；`seed` 是音色库的音色给这个模型记的种子（其次兜底的），别的声音与没有记的 null。 */
+type LocalVoice = LocalSpeechFreeze & { seed: number | null };
+
 /**
- * 本地模型的声音按 `models.synthesizeSpeech` 的规则冻结（架构设计 §6.1）：克隆模型的内置音色是随应用分发的录音，读出摘要与长度；
- * 读不出时 `APP_FILE_MISSING`（安装不完整）。执行前由本地 Provider 按摘要再核对，变了或读不出时这句失败，不换声音。
- * `library:<id>` 在这之前已经按克隆换算（本地没有克隆，以 `VOICE_CLONE_REQUIRED` 拒绝），到不了这里。
+ * 本地模型的声音按 `models.synthesizeSpeech` 的规则冻结（架构设计 §5.9、§6.1）：音色库条目直接用它的参考录音（本机不上传，不要
+ * 克隆，也不要本人声明）；克隆模型的内置音色是随应用分发的录音，读出摘要与长度，读不出时 `APP_FILE_MISSING`（安装不完整）。
+ * 模型不读原文时不带原文。执行前由本地 Provider 按摘要再核对，变了或读不出时这句失败，不换声音。
  */
-async function freezeLocalVoice(selection: GenerationSelection<'synthesizeSpeech'>, request: SynthesizeSpeechRequest): Promise<LocalSpeechFreeze> {
-  const plan = planLocalVoice(selection, request);
-  const builtin = builtinReferenceFile(selection.model, plan);
-  const withTranscript = selection.model.local?.reference?.acceptsTranscript ?? false;
-  const reference = builtin ? await freezeReferenceFile({ ...builtin, transcript: withTranscript ? builtin.transcript : null }) : null;
-  checkReferenceTranscript(selection.model, reference?.transcript);
-  return { plan, reference };
+async function freezeLocalVoice(
+  library: JobLibrary | undefined,
+  selection: GenerationSelection<'synthesizeSpeech'>,
+  plan: LocalVoicePlan,
+): Promise<LocalVoice> {
+  const model = selection.model;
+  const withTranscript = model.local?.reference?.acceptsTranscript ?? false;
+  let reference: FrozenSpeechReference | null = null;
+  let seed: number | null = null;
+  if (plan.mode === 'clone' && plan.source === 'library') {
+    const voice = inLibrary(`library:${plan.libraryId}`, () =>
+      localLibraryVoice(library, plan.libraryId, withTranscript, PIPELINE_SUBMITTER, selection.modelId),
+    );
+    reference = voice.reference;
+    seed = voice.seed;
+  } else {
+    const builtin = builtinReferenceFile(model, plan);
+    if (builtin) reference = await freezeReferenceFile({ ...builtin, transcript: withTranscript ? builtin.transcript : null });
+  }
+  checkReferenceTranscript(model, reference?.transcript);
+  return { plan, reference, seed };
 }
 
-/** `library:<id>` 换成克隆；库里删了的音色报 `VOICE_NOT_FOUND`（配音按说话人逐句报告时要与别的失败分开）。 */
+/** `library:<id>` 换成在线 Provider 上的克隆。 */
 function voiceFromLibrary(library: JobLibrary | undefined, voice: string | undefined, providerId: string) {
+  return inLibrary(String(voice), () => libraryVoice(library, voice, providerId, PIPELINE_SUBMITTER));
+}
+
+/** 读音色库；库里删了的音色报 `VOICE_NOT_FOUND`（配音按说话人逐句报告时要与别的失败分开）。 */
+function inLibrary<T>(voice: string, read: () => T): T {
   try {
-    return libraryVoice(library, voice, providerId, PIPELINE_SUBMITTER);
+    return read();
   } catch (error) {
     if (error instanceof RpcError && error.code === 'not-found') {
-      throw new RpcError('not-found', RcModels.voiceRemoved({ reason: localizedOf(error), voice: String(voice) }), { code: 'VOICE_NOT_FOUND', library: 'voices', reason: 'removed' });
+      throw new RpcError('not-found', RcModels.voiceRemoved({ reason: localizedOf(error), voice }), { code: 'VOICE_NOT_FOUND', library: 'voices', reason: 'removed' });
     }
     throw error;
   }

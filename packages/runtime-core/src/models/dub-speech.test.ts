@@ -18,12 +18,14 @@ import {
 } from '@baocut/models';
 import type { RpcError } from '@baocut/protocol';
 import { FileCredentialStore } from '@baocut/runtime-storage';
+import { LibraryStore } from '@baocut/runtime-storage/library';
 import type { GrantService } from '../grants/grant-service.ts';
 import { dubSpeech } from './dub-speech.ts';
 
 /**
- * 配音的逐句合成用本地克隆模型（架构设计 §6.1、§7.9）：内置音色是随应用分发的一段录音，启动时读出摘要冻结，逐句的调用共用这一份，
- * 执行前由本地 Provider 按摘要再核对；录音读不出是 `APP_FILE_MISSING`，变了的不换声音。服务是假的 audio.cpp（按同样的 HTTP 接口
+ * 配音的逐句合成用本地克隆模型（架构设计 §5.9、§6.1、§7.9）：内置音色是随应用分发的一段录音，音色库的音色直接用条目的参考录音
+ * （不要克隆，也不要本人声明）；启动时读出摘要冻结，逐句的调用共用这一份，执行前由本地 Provider 按摘要再核对；录音读不出是
+ * `APP_FILE_MISSING`，变了的不换声音。音色库的音色的种子随音色冻结，逐句同一颗。服务是假的 audio.cpp（按同样的 HTTP 接口
  * 回 WAV），ffmpeg 也是假的（原样复制参考录音）；模型包是测试用的，特性借真实模型包的。
  */
 
@@ -53,6 +55,7 @@ describe.skipIf(process.platform === 'win32')('配音的逐句合成：本地克
   let fake: FakeAudioCpp;
   let provider: LocalSpeechProvider;
   let speech: DubSpeech;
+  let library: LibraryStore;
   let savedAssets: string | undefined;
 
   beforeEach(async () => {
@@ -106,18 +109,20 @@ describe.skipIf(process.platform === 'win32')('配音的逐句合成：本地克
       new FileCredentialStore(path.join(dir, 'store', 'model-credentials.json')),
     );
     const services = new ModelServices({ store, sources: [new LocalProviderSource({ catalog, transcriber: null, speech: provider })] });
+    library = await LibraryStore.open({ dir: path.join(dir, 'library'), validateAudio: async () => {} });
     // 本机的 Provider 不经授权：授权服务不该被碰到。
-    speech = dubSpeech({ services, grants: {} as GrantService, library: undefined });
+    speech = dubSpeech({ services, grants: {} as GrantService, library });
   });
 
   afterEach(async () => {
     if (savedAssets === undefined) delete process.env[MODEL_ASSETS_ENV];
     else process.env[MODEL_ASSETS_ENV] = savedAssets;
     await provider.close();
+    await library.idle();
     await fs.rm(dir, { recursive: true, force: true });
   });
 
-  const say = (voice: DubVoice, text: string, n: number) =>
+  const say = (voice: DubVoice, text: string, n: number, seed?: number) =>
     fs.mkdir(path.join(dir, 'staging', String(n)), { recursive: true }).then(() =>
       speech.synthesize({
         voice,
@@ -127,6 +132,7 @@ describe.skipIf(process.platform === 'win32')('配音的逐句合成：本地克
         jobId: `job_${n}`,
         staging: path.join(dir, 'staging', String(n)),
         signal: new AbortController().signal,
+        ...(seed !== undefined ? { seed } : {}),
       }),
     );
   const failure = (promise: Promise<unknown>) =>
@@ -199,5 +205,51 @@ describe.skipIf(process.platform === 'win32')('配音的逐句合成：本地克
     expect(refused.message).toContain('重新安装 BaoCut');
     expect(refused.message).not.toContain(empty);
     expect(await fake.recorded()).toEqual([]);
+  });
+
+  /** 音色库里的一个音色：参考录音借内置音色的，没有本人声明（本地合成不上传，用不着）。 */
+  const libraryVoice = async (seeds: { seed?: number; seeds?: Record<string, number> } = {}) => {
+    const ref = path.join(dir, `lib-${crypto.randomUUID()}.wav`);
+    await fs.copyFile(builtinVoiceFile(builtinVoice('zh-male')!)!, ref);
+    const content = { name: '我', language: null, transcript: '你好', origin: 'recorded' as const, consent: { declared: false, statement: null } };
+    return (await library.put({ library: 'voices', content: { ...content, ...seeds }, file: { path: ref } })).entry;
+  };
+
+  it('音色库的音色：直接用条目的参考录音，不要克隆与本人声明；种子取这个模型记的，冻结进音色，逐句同一颗；句级重配的种子优先', async () => {
+    const entry = await libraryVoice({ seed: 99, seeds: { [CLONE]: 123, 'other@cpu': 5 } });
+    const voice = structuredClone(await speech.prepare({ provider: 'local', model: CLONE, voice: `library:${entry.id}`, language: 'en' }));
+    expect(voice).toMatchObject({ providerId: 'local', modelId: CLONE, voice: `library:${entry.id}`, format: 'wav', seed: 123 });
+
+    await say(voice, 'Hello everyone.', 1);
+    await say(voice, 'Today we talk about editing.', 2);
+    await say(voice, 'This is the third one.', 3, 7);
+    const requests = await fake.recorded('request');
+    expect(requests.map((r) => [r.body!.input, r.body!.seed])).toEqual([
+      ['Hello everyone.', 123],
+      ['Today we talk about editing.', 123],
+      ['This is the third one.', 7],
+    ]);
+    for (const request of requests) {
+      expect(request).toMatchObject({ body: { reference_text: '你好' }, reference: entry.content.reference.sha256.replace(/^sha256:/, '') });
+    }
+  });
+
+  it('音色没有记种子：启动时抽一颗冻结进音色，逐句同一颗；库里删了：启动与合成都是 VOICE_NOT_FOUND', async () => {
+    const entry = await libraryVoice();
+    const voice = structuredClone(await speech.prepare({ provider: 'local', model: CLONE, voice: `library:${entry.id}`, language: 'en' }));
+    expect(Number.isInteger(voice.seed)).toBe(true);
+    expect(voice.seed).toBeGreaterThanOrEqual(0);
+    expect(voice.seed).toBeLessThan(2 ** 32);
+    await say(voice, 'Hello everyone.', 1);
+    await say(voice, 'Today we talk about editing.', 2);
+    expect((await fake.recorded('request')).map((r) => r.body!.seed)).toEqual([voice.seed, voice.seed]);
+
+    await library.remove('voices', entry.id);
+    const gone = await failure(say(voice, 'This is the third one.', 3));
+    expect(gone).toBeInstanceOf(PipelineStepError);
+    expect(gone).toMatchObject({ code: 'VOICE_NOT_FOUND' });
+    expect(await fake.recorded('request')).toHaveLength(2);
+    const refused = (await failure(speech.prepare({ provider: 'local', model: CLONE, voice: `library:${entry.id}`, language: 'en' }))) as RpcError;
+    expect(refused).toMatchObject({ code: 'not-found', details: { code: 'VOICE_NOT_FOUND', library: 'voices', reason: 'removed' } });
   });
 });

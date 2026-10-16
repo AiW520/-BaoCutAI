@@ -94,7 +94,7 @@ export {
   type RemoteTaskStatus,
 } from './job-recovery.ts';
 export { RECONCILE_DECISIONS, reconcileChoices } from './job-reconcile.ts';
-export { libraryVoice, transcribeGlossaries, type JobLibrary } from './job-library.ts';
+export { libraryVoice, localLibraryVoice, transcribeGlossaries, type JobLibrary } from './job-library.ts';
 export { emptySelection, readSelection, selectionBody, selectionDocument, videoSelection } from './library-selection.ts';
 export {
   ArtifactStore,
