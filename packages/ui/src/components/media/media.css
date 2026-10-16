@@ -175,12 +175,6 @@
 }
 .bc-image-header > button {
   flex-shrink: 0;
-  border-radius: 9999px;
-}
-.bc-image-name {
-  color: var(--media-muted);
-  font-size: 12px;
-  text-align: center;
 }
 .bc-image-stage {
   display: flex;
@@ -243,11 +237,6 @@
 }
 .bc-image-preview .bc-image-stage {
   min-height: 0;
-}
-.bc-image-button-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 .bc-image-tools {
   display: flex;
@@ -468,7 +457,7 @@
   .bc-image-header {
     gap: 4px;
   }
-  .bc-image-header > button:first-child {
+  .bc-image-header > :first-child {
     margin-inline-end: auto;
   }
   .bc-image-preview > .bc-image-layout {

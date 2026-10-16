@@ -40,6 +40,8 @@ export const vi: ImagePreviewMessages = {
   "zoomOut": "Thu nhỏ",
   "zoomIn": "Phóng to",
   "fit": "Vừa cửa sổ",
+  "view": "Chế độ xem",
+  "zoom": "Thu phóng",
   "annotations": "Chú thích",
   "ratio": "Đổi tỷ lệ",
   "download": "Tải xuống",

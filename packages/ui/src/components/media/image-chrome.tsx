@@ -1,7 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActionButton, MenuTrigger, Menu, MenuItem, Text, ToggleButton } from '@react-spectrum/s2';
+import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import {
+  ActionButton,
+  ActionMenu,
+  MenuTrigger,
+  Menu,
+  MenuItem,
+  Picker,
+  PickerItem,
+  SegmentedControl,
+  SegmentedControlItem,
+  Text,
+  ToggleButton,
+} from '@react-spectrum/s2';
 import ImageIcon from '@react-spectrum/s2/icons/Image';
-import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
+import ViewGrid from '@react-spectrum/s2/icons/ViewGrid';
 import Download from '@react-spectrum/s2/icons/Download';
 import Close from '@react-spectrum/s2/icons/Close';
 import Edit from '@react-spectrum/s2/icons/Edit';
@@ -13,6 +26,8 @@ import { PANEL } from '../panel-copy.ts';
 import { IMAGE_ZOOMS, IMAGE_RATIOS, type ImageCandidate } from '../../model/image-preview.ts';
 import { targetKey } from '../../model/media.ts';
 import { useRuntime } from '../../runtime/context.tsx';
+// 查看器挂在 body 下，不在应用根的字体里；文件名要自己带 S2 字体。
+const nameText = style({ font: 'ui-sm', color: 'gray-600', textAlign: 'center' });
 export function ImageChrome({
   name,
   gif,
@@ -42,75 +57,56 @@ export function ImageChrome({
   onCopy: () => void;
   onPanorama: () => void;
 }) {
+  const zooms = [...new Set([...IMAGE_ZOOMS, ...(zoom === 'fit' ? [] : [Number(zoom)])])].sort((a, b) => a - b);
   return (
     <header className="bc-image-header">
-      <MenuTrigger>
-        <ActionButton aria-label={M.image}>
-          <Text>
-            <span className="bc-image-button-label">
-              <ImageIcon />
-              {view === 'canvas' ? M.canvasView : M.image}
-              <ChevronDown />
-            </span>
-          </Text>
-        </ActionButton>
-        <Menu selectionMode="single" selectedKeys={[view]} onAction={(k) => onView(k as 'focused' | 'canvas')}>
-          <MenuItem id="focused">{M.image}</MenuItem>
-          <MenuItem id="canvas" isDisabled={gif}>
-            {M.canvasView}
-          </MenuItem>
-        </Menu>
-      </MenuTrigger>
-      <span className="bc-image-name" title={name}>
+      <SegmentedControl aria-label={M.view} selectedKey={view} onSelectionChange={(k) => onView(k as 'focused' | 'canvas')}>
+        <SegmentedControlItem id="focused">
+          <ImageIcon />
+          <Text>{M.image}</Text>
+        </SegmentedControlItem>
+        <SegmentedControlItem id="canvas" isDisabled={gif}>
+          <ViewGrid />
+          <Text>{M.canvasView}</Text>
+        </SegmentedControlItem>
+      </SegmentedControl>
+      <span className={`bc-image-name ${nameText}`} title={name}>
         {name}
       </span>
-      <MenuTrigger align="end">
-        <ActionButton aria-label={M.fit}>
-          <Text>
-            <span className="bc-image-button-label">
-              {Math.round(percent)}%<ChevronDown />
-            </span>
-          </Text>
-        </ActionButton>
-        <Menu selectionMode="single" selectedKeys={[zoom]} onAction={(k) => onZoom(String(k))}>
-          <MenuItem id="fit">{M.fit}</MenuItem>
-          {[...new Set([...IMAGE_ZOOMS, ...(zoom === 'fit' ? [] : [Number(zoom)])])]
-            .sort((a, b) => a - b)
-            .map((z) => (
-              <MenuItem key={z} id={String(z)}>
-                {z}%
-              </MenuItem>
-            ))}
-        </Menu>
-      </MenuTrigger>
-      <MenuTrigger align="end">
-        <ActionButton aria-label={M.more}>
-          <Text>
-            <span className="bc-image-button-label">
-              {M.more}
-              <ChevronDown />
-            </span>
-          </Text>
-        </ActionButton>
-        <Menu
-          onAction={(k) => {
-            if (k === 'tab') onOpenTab?.();
-            if (k === 'copy') onCopy();
-            if (k === 'panorama') onPanorama();
-            if (k === 'default') onDefaultOpen?.();
-          }}
-        >
-          {onDefaultOpen && <MenuItem id="default">{PANEL.openDefault}</MenuItem>}
-          {onOpenTab && <MenuItem id="tab">{M.openTab}</MenuItem>}
-          <MenuItem id="copy">{M.copy}</MenuItem>
-          <MenuItem id="panorama">{M.panorama}</MenuItem>
-        </Menu>
-      </MenuTrigger>
-      <ActionButton aria-label={M.download} onPress={onDownload}>
+      <Picker
+        aria-label={M.zoom}
+        isQuiet
+        align="end"
+        value={zoom}
+        onChange={(k) => k != null && onZoom(String(k))}
+        renderValue={() => `${Math.round(percent)}%`}
+      >
+        <PickerItem id="fit">{M.fit}</PickerItem>
+        {zooms.map((z) => (
+          <PickerItem key={z} id={String(z)}>{`${z}%`}</PickerItem>
+        ))}
+      </Picker>
+      <ActionMenu
+        aria-label={M.more}
+        isQuiet
+        align="end"
+        onAction={(k) => {
+          if (k === 'tab') onOpenTab?.();
+          if (k === 'copy') onCopy();
+          if (k === 'panorama') onPanorama();
+          if (k === 'default') onDefaultOpen?.();
+        }}
+      >
+        {onDefaultOpen && <MenuItem id="default">{PANEL.openDefault}</MenuItem>}
+        {onOpenTab && <MenuItem id="tab">{M.openTab}</MenuItem>}
+        <MenuItem id="copy">{M.copy}</MenuItem>
+        <MenuItem id="panorama">{M.panorama}</MenuItem>
+      </ActionMenu>
+      <ActionButton isQuiet aria-label={M.download} onPress={onDownload}>
         <Download />
       </ActionButton>
       {onClose && (
-        <ActionButton aria-label={M.cancel} onPress={onClose}>
+        <ActionButton isQuiet aria-label={M.cancel} onPress={onClose}>
           <Close />
         </ActionButton>
       )}

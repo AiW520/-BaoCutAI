@@ -40,6 +40,8 @@ export const zhHans: ImagePreviewMessages = {
   "zoomOut": "缩小图片",
   "zoomIn": "放大图片",
   "fit": "适合窗口",
+  "view": "视图",
+  "zoom": "缩放",
   "annotations": "批注",
   "ratio": "调整比例",
   "download": "下载",

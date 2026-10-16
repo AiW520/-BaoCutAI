@@ -54,6 +54,8 @@ const en = {
   "zoomOut": "Zoom out",
   "zoomIn": "Zoom in",
   "fit": "Fit to window",
+  "view": "View",
+  "zoom": "Zoom",
   "annotations": "Annotations",
   "ratio": "Change aspect ratio",
   "download": "Download",

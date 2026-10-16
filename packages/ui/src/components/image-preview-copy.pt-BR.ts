@@ -40,6 +40,8 @@ export const ptBR: ImagePreviewMessages = {
   "zoomOut": "Reduzir",
   "zoomIn": "Ampliar",
   "fit": "Ajustar à janela",
+  "view": "Visualização",
+  "zoom": "Zoom",
   "annotations": "Anotações",
   "ratio": "Alterar proporção",
   "download": "Baixar",

@@ -40,6 +40,8 @@ export const ru: ImagePreviewMessages = {
   "zoomOut": "Уменьшить",
   "zoomIn": "Увеличить",
   "fit": "По размеру окна",
+  "view": "Вид",
+  "zoom": "Масштаб",
   "annotations": "Аннотации",
   "ratio": "Изменить пропорции",
   "download": "Скачать",

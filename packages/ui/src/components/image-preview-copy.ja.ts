@@ -40,6 +40,8 @@ export const ja: ImagePreviewMessages = {
   "zoomOut": "縮小",
   "zoomIn": "拡大",
   "fit": "ウィンドウに合わせる",
+  "view": "表示",
+  "zoom": "ズーム",
   "annotations": "注釈",
   "ratio": "縦横比を変更",
   "download": "ダウンロード",

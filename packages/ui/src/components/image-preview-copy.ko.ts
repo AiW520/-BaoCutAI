@@ -40,6 +40,8 @@ export const ko: ImagePreviewMessages = {
   "zoomOut": "축소",
   "zoomIn": "확대",
   "fit": "창에 맞춤",
+  "view": "보기",
+  "zoom": "확대/축소",
   "annotations": "주석",
   "ratio": "화면 비율 변경",
   "download": "다운로드",

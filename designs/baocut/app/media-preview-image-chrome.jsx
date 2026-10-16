@@ -38,34 +38,31 @@
   }
   function MediaImageHeader({file, view, setView, zoom, scale, setZoom, onClose, onOpenTab, onCopy, gif, onPanorama}) {
     const app = useApp();
+    const zooms = [...new Set([...M.ZOOM, ...(zoom !== 'fit' ? [Number(zoom)] : [])])].sort((a, b) => a - b);
     return <header className="media-image-header">
-      <R.MenuTrigger><R.ActionButton size="M" aria-label="图片视图"><R.Text><span className="media-image-header__label"><R.Icons.Image /><span>{view === 'canvas' ? '画布' : '图片'}</span><R.Icons.ChevronDown /></span></R.Text></R.ActionButton>
-        <R.Menu selectionMode="single" selectedKeys={[view]} onAction={key => setView(String(key))}>
-          <R.MenuItem id="focused">单图</R.MenuItem><R.MenuItem id="canvas" isDisabled={gif}>画布</R.MenuItem>
-        </R.Menu>
-      </R.MenuTrigger>
+      <R.SegmentedControl aria-label="视图" selectedKey={view} onSelectionChange={key => setView(String(key))}>
+        <R.SegmentedControlItem id="focused"><R.Icons.Image /><R.Text>图片</R.Text></R.SegmentedControlItem>
+        <R.SegmentedControlItem id="canvas" isDisabled={gif}><R.Icons.ViewGrid /><R.Text>画布</R.Text></R.SegmentedControlItem>
+      </R.SegmentedControl>
       <span className="media-image-header__name" title={file.name}>{file.name}</span>
-      <R.MenuTrigger align="end"><R.ActionButton size="M" aria-label="图片缩放"><R.Text><span className="media-image-header__label"><span>{Math.round(scale * 100)}%</span><R.Icons.ChevronDown /></span></R.Text></R.ActionButton>
-        <R.Menu selectionMode="single" selectedKeys={[String(zoom)]} onAction={setZoom}>
-          <R.MenuItem id="fit">适合窗口</R.MenuItem>
-          {[...new Set([...M.ZOOM, ...(zoom !== 'fit' ? [Number(zoom)] : [])])].sort((a,b) => a-b).map(n => <R.MenuItem key={n} id={String(n)}>{Math.round(n)}%</R.MenuItem>)}
-        </R.Menu>
-      </R.MenuTrigger>
-      <R.MenuTrigger align="end"><R.ActionButton size="M"><R.Text><span className="media-image-header__label"><span>打开</span><R.Icons.ChevronDown /></span></R.Text></R.ActionButton>
-        <R.Menu onAction={key => {
-          if (key === 'tab') onOpenTab?.();
-          if (key === 'copy') onCopy();
-          if (key === 'system') app.toast(`原型演示：用系统默认应用打开 ${file.file || file.name}`);
-          if (key === 'panorama') onPanorama();
-        }}>
-          {onOpenTab && <R.MenuItem id="tab">在标签页打开</R.MenuItem>}
-          <R.MenuItem id="system">用默认应用打开</R.MenuItem>
-          <R.MenuItem id="copy">复制图片</R.MenuItem>
-          {file.panorama && <R.MenuItem id="panorama">360° 全景</R.MenuItem>}
-        </R.Menu>
-      </R.MenuTrigger>
-      <R.ActionButton size="M" aria-label={gif ? '下载原始 GIF' : '下载图片'} onPress={() => window.savePreviewMedia(file)}><R.Icons.Download /></R.ActionButton>
-      {onClose && <R.ActionButton size="M" aria-label="关闭图片预览" onPress={onClose}><R.Icons.Close /></R.ActionButton>}
+      <R.Picker aria-label="缩放" isQuiet align="end" value={String(zoom)} onChange={key => key != null && setZoom(String(key))}
+        renderValue={() => `${Math.round(scale * 100)}%`}>
+        <R.PickerItem id="fit">适合窗口</R.PickerItem>
+        {zooms.map(n => <R.PickerItem key={n} id={String(n)}>{`${Math.round(n)}%`}</R.PickerItem>)}
+      </R.Picker>
+      <R.ActionMenu aria-label="更多选项" isQuiet align="end" onAction={key => {
+        if (key === 'tab') onOpenTab?.();
+        if (key === 'copy') onCopy();
+        if (key === 'system') app.toast(`原型演示：用系统默认应用打开 ${file.file || file.name}`);
+        if (key === 'panorama') onPanorama();
+      }}>
+        {onOpenTab && <R.MenuItem id="tab">在标签页打开</R.MenuItem>}
+        <R.MenuItem id="system">用默认应用打开</R.MenuItem>
+        <R.MenuItem id="copy">复制图片</R.MenuItem>
+        {file.panorama && <R.MenuItem id="panorama">360° 全景</R.MenuItem>}
+      </R.ActionMenu>
+      <R.ActionButton isQuiet aria-label={gif ? '下载原始 GIF' : '下载图片'} onPress={() => window.savePreviewMedia(file)}><R.Icons.Download /></R.ActionButton>
+      {onClose && <R.ActionButton isQuiet aria-label="关闭图片预览" onPress={onClose}><R.Icons.Close /></R.ActionButton>}
     </header>;
   }
   function MediaImageTools({mode, setTool, setView, gif, onRemoveBackground, onResize}) {

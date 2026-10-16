@@ -40,6 +40,8 @@ export const zhHant: ImagePreviewMessages = {
   "zoomOut": "縮小圖片",
   "zoomIn": "放大圖片",
   "fit": "符合視窗",
+  "view": "檢視",
+  "zoom": "縮放",
   "annotations": "註解",
   "ratio": "調整比例",
   "download": "下載",

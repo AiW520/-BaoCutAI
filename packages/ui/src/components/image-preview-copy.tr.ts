@@ -40,6 +40,8 @@ export const tr: ImagePreviewMessages = {
   "zoomOut": "Uzaklaştır",
   "zoomIn": "Yakınlaştır",
   "fit": "Pencereye sığdır",
+  "view": "Görünüm",
+  "zoom": "Yakınlaştırma",
   "annotations": "Notlar",
   "ratio": "En boy oranını değiştir",
   "download": "İndir",
