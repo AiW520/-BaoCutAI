@@ -1681,7 +1681,7 @@ interface UsageUnits { inputTokens?: number; outputTokens?: number; cachedTokens
 
 **费用**。账本只记 API 提供方报告的金额（`reported`，原样的币种）；没有报告时是 `unknown`。估算不写进账本，在读的时候按价目表算：`packages/models/src/model-prices.ts` 是一张常量表，按 `providerId/modelId` 给出每百万输入、输出与缓存 token、每分钟音频、每千字符与每张图的单价和币种，每个单价在注释里写明官方价目页与查阅日期，拿不准的不填。价目表更新之后，过去的估算按新表重算：估算只是参考，不是账单。
 
-金额分三种：提供方报告（`reported`）、按标价估算（`estimated`）与未知（`unknown`），不得合成一个数掩盖其中的差别。一条记录有报告就用报告；否则价目表里有这个模型的单价、所需的用量也齐全时算出估算；否则是未知，计入未知的次数。不同币种分别汇总，不换算。
+金额分三种：提供方报告（`reported`）、按标价估算（`estimated`）与未知（`unknown`），不得合成一个数掩盖其中的差别。一条记录有报告就用报告；验证密钥与失败且没有用量（各项用量都没有或为 0）的调用不计费用，也不算未知；否则价目表里有这个模型的单价、所需的用量也齐全时算出估算；否则是未知，计入未知的次数。不同币种分别汇总，不换算。
 
 **读取**。`models.usage { period, providerId? }` 返回 `UsageReport`；`period` 是 `today`、`7d`、`30d` 或 `all`，按 Runtime 所在机器的本地日期划分，`providerId` 只看一家 API 提供方。
 
@@ -1696,11 +1696,11 @@ interface UsageRow {
   key: string; label: string; providerId?: string;
   calls: number; failed: number; units: UsageUnits;
   cost: Money[];                                      // 按币种，一种一项；没有可计的金额时为空
-  costKind: 'reported' | 'estimated' | 'mixed' | 'unknown';
+  costKind: 'reported' | 'estimated' | 'mixed' | 'unknown' | 'none';
 }
 ```
 
-`Money` 是 `{ amount, currency }`，金额是十进制字符串（与 §7.8 相同）。`costKind` 说明这一行的金额从哪里来：全部报告、全部估算、两者都有，或一个都没有。账号的 `label` 为空时用掩码；已经删掉的账号仍按 `accountId` 列出。用量不进视频，也不进 Space。
+`Money` 是 `{ amount, currency }`，金额是十进制字符串（与 §7.8 相同）。`costKind` 说明这一行的金额从哪里来：全部报告、全部估算、两者都有，或一个都没有（`unknown`：有费用未知的调用；`none`：没有要计费的调用，只有验证或失败且没有用量的调用，界面写「—」）。账号的 `label` 为空时用掩码；已经删掉的账号仍按 `accountId` 列出。用量不进视频，也不进 Space。
 
 **余额（P1）**。`models.checkBalance { providerId, accountId? }` 用账号的密钥向 API 提供方查余额，返回余额（按币种）与查询的时间；`accountId` 不给时用第一个启用且有密钥的账号。只有开放了查询接口的提供方才支持：DeepSeek（`/user/balance`）、OpenRouter（`/api/v1/credits`）与 Moonshot（`/v1/users/me/balance`）；其余的以 `invalid-request` 拒绝。查到的余额不写进用量账本，也不参与预算。
 

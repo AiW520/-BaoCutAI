@@ -51,9 +51,10 @@ export type UsagePeriod = (typeof USAGE_PERIODS)[number];
  * - `reported`：算得出的金额全部是供应商报告的；
  * - `estimated`：全部是按价目表（`model-prices`）估算的；
  * - `mixed`：两者都有；
- * - `unknown`：一个都没有。
+ * - `unknown`：一个都没有，且有费用未知的调用；
+ * - `none`：没有要计费的调用（只有验证密钥，或失败且没有用量的调用）。
  */
-export type UsageCostKind = 'reported' | 'estimated' | 'mixed' | 'unknown';
+export type UsageCostKind = 'reported' | 'estimated' | 'mixed' | 'unknown' | 'none';
 
 export interface UsageRow {
   key: string;

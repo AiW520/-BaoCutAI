@@ -201,7 +201,7 @@ const en = {
     estimated: 'estimated from list prices',
     mixed: 'reported and estimated',
     unknown: 'cost unknown',
-  } satisfies Record<UsageRow['costKind'], string>,
+  } satisfies Record<Exclude<UsageRow['costKind'], 'none'>, string>,
   rowCalls: (calls: number, failed: number) => `${calls} call${s(calls)}${failed > 0 ? ` (${failed} failed)` : ''}`,
   costApprox: (money: string, kind: string) => `≈ ${money} (${kind})`,
   usageHeader: (scope: string | undefined, period: string, from: string, to: string) =>

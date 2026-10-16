@@ -121,6 +121,28 @@ describe('buildUsageReport', () => {
     });
   });
 
+  it('失败且没有用量、只有验证：不计费用，不算未知，行是 none', () => {
+    const report = buildUsageReport(
+      [
+        // 失败的转写记 `audioSeconds: 0`：什么都没用到。
+        rec({ providerId: 'openai', capability: 'transcribe', modelId: 'whisper-1', units: { audioSeconds: 0 }, status: 'error', error: 'x' }),
+        rec({ providerId: 'google', capability: 'transcribe', modelId: 'no-price', units: { audioSeconds: 0 }, status: 'error', error: 'x' }),
+        rec({ providerId: 'deepseek', source: 'verify', capability: null, modelId: null, accountId: null }),
+        // 失败但用了一部分：照常估算。
+        rec({ units: { inputTokens: 1_000_000, outputTokens: 0 }, status: 'error', error: 'x' }),
+      ],
+      { period: 'today', now: NOW, price },
+    );
+    expect(report.totals).toMatchObject({ calls: 4, failed: 3, cost: { estimated: [{ amount: '2.00', currency: 'USD' }], reported: [], unknownCalls: 0 } });
+    const kinds = Object.fromEntries(report.byProvider.map((r) => [r.key, [r.costKind, r.cost]]));
+    expect(kinds).toEqual({
+      openai: ['none', []],
+      google: ['none', []],
+      deepseek: ['none', []],
+      anthropic: ['estimated', [{ amount: '2.00', currency: 'USD' }]],
+    });
+  });
+
   it('只看一家服务商；today 只有今天', () => {
     const report = buildUsageReport(RECORDS, { period: '30d', providerId: 'qwen', now: NOW, price });
     expect(report.totals).toMatchObject({

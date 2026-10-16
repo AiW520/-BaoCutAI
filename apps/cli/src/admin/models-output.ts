@@ -289,7 +289,8 @@ export function formatUnits(units: UsageUnits): string {
 function formatRow(row: UsageRow, total: number): string {
   const share = total > 0 ? `${Math.round((row.calls / total) * 100)}%` : '—';
   const money = formatMoney(row.cost);
-  const cost = money ? M.costApprox(money, M.costKinds[row.costKind]) : M.costKinds[row.costKind];
+  // 没有要计费的调用（验证、失败且没有用量）：不写种类。
+  const cost = row.costKind === 'none' ? '—' : money ? M.costApprox(money, M.costKinds[row.costKind]) : M.costKinds[row.costKind];
   const units = formatUnits(row.units);
   return `  ${row.label}  ${M.rowCalls(row.calls, row.failed)}  ${share}${units ? `  ${units}` : ''}  ${cost}`;
 }

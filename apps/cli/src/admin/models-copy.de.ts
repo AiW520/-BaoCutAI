@@ -179,7 +179,7 @@ export const de: ModelsMessages = {
     estimated: "anhand von Listenpreisen geschätzt",
     mixed: "gemeldet und geschätzt",
     unknown: "Kosten unbekannt",
-  } satisfies Record<UsageRow["costKind"], string>,
+  } satisfies Record<Exclude<UsageRow["costKind"], "none">, string>,
   rowCalls: (calls: number, failed: number) => `${calls} ${noun(calls, "Aufruf", "Aufrufe")}${failed > 0 ? ` (${failed} fehlgeschlagen)` : ""}`,
   costApprox: (money: string, kind: string) => `≈ ${money} (${kind})`,
   usageHeader: (scope: string | undefined, period: string, from: string, to: string) =>
