@@ -153,12 +153,15 @@
        它必须在 store 里，因为同一批模型出现在三处：新建向导的模型列、AI 工具
        「重新转录」的模型下拉、设置 · 本地模型。三处各存一份的后果是「设置里刚下完，
        下拉里还写着未安装」——同一类错误在第 33 轮的 cue 表上已经踩过一次。
-       **模型下载不是任务**（§17.3），所以它不进 jobs 那张表，单独存在这里。 */
+       每次下载另落一条后台任务（`kind: 'model-install'`，2026-10-16 首次启动引导要求下载进后台任务）：与实现一致——
+       Runtime 的模型安装是 JobManager 的任务（architecture-design §7.6），桌面任务页列出 `modelInstall`。
+       装没装与百分比仍以这里为准，任务记录只跟着它走；`downloadModel` 返回那条任务的 id。 */
     const [modelOn, setModelOn] = useState(() => {
       const m = {}; D.setModels.forEach((x) => { m[x.id] = !!x.installed; }); return m;
     });
     const [modelDl, setModelDl] = useState({});      // id → 0..100，只装在下的
     const dlTimers = useRef({});
+    const dlTasks = useRef({});                      // 模型 id → 这次下载的任务 id
     /* API 提供方与账号（product-design §7.6）：已添加的 API 提供方的设置（启用、地区、端点改写、添加的模型 id、自建端点）与每家的账号表。
        账号只存掩码（BC_VENDORS.mask），密钥原文不进 store。写入口只有设置 › 模型 › API 提供方；工具页 / 面板 / 我的声音只读。
        cloudSaved（「连着密钥的提供方 id」）由它们推出：启用且有一个启用带密钥的账号，同一把密钥给文本 / 识别 / 合成 / 生图共用；
@@ -222,19 +225,26 @@
     const setModelInstalled = useCallback((id, on) =>
       setModelOn((s) => ({...s, [id]: !!on})), []);
     const downloadModel = useCallback((id) => {
-      if (dlTimers.current[id]) return;
+      if (dlTimers.current[id]) return dlTasks.current[id] || null;
+      const m = D.setModels.find((x) => x.id === id);
+      dlTasks.current[id] = addTask({kind: 'model-install', title: `下载「${m ? m.name : id}」`, sub: '本机模型',
+        phase: '下载中', cancellable: false, model: id});
       setModelDl((s) => ({...s, [id]: 0}));
       dlTimers.current[id] = setInterval(() => {
         setModelDl((s) => (id in s ? {...s, [id]: Math.min(100, s[id] + 7)} : s));
       }, 150);
-    }, []);
+      return dlTasks.current[id];
+    }, [addTask]);
     /* 收口放在 effect 里而不是 updater 里：updater 必须是纯函数，
        把「装好了 + 弹一条 toast」塞进去在 StrictMode 的双调用下会跑两遍。 */
     useEffect(() => {
       Object.keys(modelDl).forEach((id) => {
-        if (modelDl[id] < 100) return;
+        const tid = dlTasks.current[id];
+        if (modelDl[id] < 100) { if (tid) patchTask(tid, {pct: Math.round(modelDl[id])}); return; }
         clearInterval(dlTimers.current[id]);
         delete dlTimers.current[id];
+        delete dlTasks.current[id];
+        if (tid) patchTask(tid, {pct: 100, status: 'done', phase: null});
         setModelDl((s) => { const n = {...s}; delete n[id]; return n; });
         setModelOn((s) => ({...s, [id]: true}));
       });

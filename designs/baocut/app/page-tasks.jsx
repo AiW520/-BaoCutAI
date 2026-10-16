@@ -21,6 +21,7 @@
     compress: {icon: 'video', label: '压缩视频'}, merge: {icon: 'layers', label: '合并视频'},
     image: {icon: 'image', label: '生成图片'}, music: {icon: 'music', label: '生成音乐'}, link: {icon: 'link', label: '从链接导入'},
     'legacy-import': {icon: 'projects', label: '导入旧版项目'},
+    'model-install': {icon: 'download', label: '下载模型'},
   };
 
   /* 跑完的 AI run 在这里也能撤销 / 恢复。

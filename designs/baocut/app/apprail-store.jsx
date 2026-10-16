@@ -198,12 +198,13 @@
     const [legacySettingsOpen, setLegacySettingsOpen] = useState(() => legacySettingsAvailable && !base.prefs.legacySettingsRead);
 
     /* ---- 首次启动引导（onboarding.jsx）：开着没有（{fresh} | null）；只在没有记录时弹，关掉就记下（偏好 `onboarding`）。
-       原型里第一次启动由 `?onboarding=1 | installed` 或原型开关模拟；「全新安装」把本机模型都改成没装（随应用附带的除外） ---- */
+       原型里第一次启动由 `?onboarding=1 | installed` 或原型开关模拟；「全新安装」把本机模型与语义搜索都改成没装（随应用附带的除外） ---- */
     const OB = window.BC_ONBOARDING;
     const [onboarding, setOnboarding] = useState(() => (OB.demoLaunch(window.location.search) && OB.shouldShow(base.prefs.onboarding)
       ? {fresh: OB.demoFresh(window.location.search)} : null));
     const freshModels = useCallback(() => {
       window.BC_DATA.setModels.forEach((m) => base.setModelInstalled(m.id, OB.freshInstalled(m.id)));
+      if (window.BC_SEMSTATE) window.BC_SEMSTATE.set({install: 'none', half: null});
     }, [base.setModelInstalled]);
     useLayoutEffect(() => { if (onboarding && onboarding.fresh) freshModels(); }, []);
     const launchOnboarding = useCallback((fresh) => {
