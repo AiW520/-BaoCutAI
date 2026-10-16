@@ -36,6 +36,10 @@
     }, [file.id]);
     return <div className={`media-image-dock${peek ? ' is-peek' : ''}`}><MediaImageRail files={files} file={file} onSelect={onSelect} /></div>;
   }
+  /* 查看器里只有图标的按钮都配说明提示；表头的朝下弹，底部工具条的朝上弹。 */
+  function MediaTip({label, placement = 'bottom', children}) {
+    return <R.TooltipTrigger placement={placement}>{children}<R.Tooltip>{label}</R.Tooltip></R.TooltipTrigger>;
+  }
   function MediaImageHeader({file, view, setView, zoom, scale, setZoom, onClose, onOpenTab, onCopy, gif, onPanorama}) {
     const app = useApp();
     const zooms = [...new Set([...M.ZOOM, ...(zoom !== 'fit' ? [Number(zoom)] : [])])].sort((a, b) => a - b);
@@ -50,19 +54,27 @@
         <R.PickerItem id="fit">适合窗口</R.PickerItem>
         {zooms.map(n => <R.PickerItem key={n} id={String(n)}>{`${Math.round(n)}%`}</R.PickerItem>)}
       </R.Picker>
-      <R.ActionMenu aria-label="更多选项" isQuiet align="end" onAction={key => {
-        if (key === 'tab') onOpenTab?.();
-        if (key === 'copy') onCopy();
-        if (key === 'system') app.toast(`原型演示：用系统默认应用打开 ${file.file || file.name}`);
-        if (key === 'panorama') onPanorama();
-      }}>
-        {onOpenTab && <R.MenuItem id="tab">在标签页打开</R.MenuItem>}
-        <R.MenuItem id="system">用默认应用打开</R.MenuItem>
-        <R.MenuItem id="copy">复制图片</R.MenuItem>
-        {file.panorama && <R.MenuItem id="panorama">360° 全景</R.MenuItem>}
-      </R.ActionMenu>
-      <R.ActionButton isQuiet aria-label={gif ? '下载原始 GIF' : '下载图片'} onPress={() => window.savePreviewMedia(file)}><R.Icons.Download /></R.ActionButton>
-      {onClose && <R.ActionButton isQuiet aria-label="关闭图片预览" onPress={onClose}><R.Icons.Close /></R.ActionButton>}
+      {/* ActionMenu 套不上提示，拆成 MenuTrigger 里包 TooltipTrigger 的按钮。 */}
+      <R.MenuTrigger align="end">
+        <MediaTip label="更多选项"><R.ActionButton isQuiet aria-label="更多选项"><R.Icons.More /></R.ActionButton></MediaTip>
+        <R.Menu onAction={key => {
+          if (key === 'tab') onOpenTab?.();
+          if (key === 'copy') onCopy();
+          if (key === 'system') app.toast(`原型演示：用系统默认应用打开 ${file.file || file.name}`);
+          if (key === 'panorama') onPanorama();
+        }}>
+          {onOpenTab && <R.MenuItem id="tab">在标签页打开</R.MenuItem>}
+          <R.MenuItem id="system">用默认应用打开</R.MenuItem>
+          <R.MenuItem id="copy">复制图片</R.MenuItem>
+          {file.panorama && <R.MenuItem id="panorama">360° 全景</R.MenuItem>}
+        </R.Menu>
+      </R.MenuTrigger>
+      <MediaTip label={gif ? '下载原始 GIF' : '下载图片'}>
+        <R.ActionButton isQuiet aria-label={gif ? '下载原始 GIF' : '下载图片'} onPress={() => window.savePreviewMedia(file)}><R.Icons.Download /></R.ActionButton>
+      </MediaTip>
+      {onClose && <MediaTip label="关闭图片预览">
+        <R.ActionButton isQuiet aria-label="关闭图片预览" onPress={onClose}><R.Icons.Close /></R.ActionButton>
+      </MediaTip>}
     </header>;
   }
   function MediaImageTools({mode, setTool, setView, gif, onRemoveBackground, onResize}) {
@@ -77,8 +89,10 @@
       <R.MenuTrigger direction="top"><R.ActionButton size="S" isQuiet><R.Icons.Crop /><R.Text>调整比例</R.Text></R.ActionButton>
         <R.Menu onAction={onResize}>{M.RATIOS.map(ratio => <R.MenuItem id={ratio} key={ratio}>{ratio}</R.MenuItem>)}</R.Menu>
       </R.MenuTrigger>
-      {!gif && <R.ActionButton size="S" isQuiet aria-label="多选图片" onPress={() => {setView('canvas'); setTool('select');}}><R.Icons.Images /></R.ActionButton>}
+      {!gif && <MediaTip label="多选图片" placement="top">
+        <R.ActionButton size="S" isQuiet aria-label="多选图片" onPress={() => {setView('canvas'); setTool('select');}}><R.Icons.Images /></R.ActionButton>
+      </MediaTip>}
     </div>;
   }
-  Object.assign(window, {MediaImageRail, MediaImageDock, MediaImageHeader, MediaImageTools});
+  Object.assign(window, {MediaTip, MediaImageRail, MediaImageDock, MediaImageHeader, MediaImageTools});
 })();

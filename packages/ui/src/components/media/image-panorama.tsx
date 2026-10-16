@@ -10,8 +10,11 @@ import Revert from '@react-spectrum/s2/icons/Revert';
 import FullScreen from '@react-spectrum/s2/icons/FullScreen';
 import Close from '@react-spectrum/s2/icons/Close';
 import { mediaHeaderTitle, mediaTheme } from './theme.tsx';
+import { Tip } from './image-chrome.tsx';
 import { loadPreviewImage } from './gif.ts';
-const fovText = style({ font: 'ui-sm', color: 'gray-800', textAlign: 'center', minWidth: 32 });
+const zoomText = style({ font: 'ui-sm', color: 'gray-800', textAlign: 'center', minWidth: 40 });
+// 读数按画面中心的放大倍数算（默认 90° 视野为 100%），放大时数字变大，和按钮方向一致。
+const zoomPercent = (fov: number) => Math.round(100 / Math.tan((fov * Math.PI) / 360));
 /** onBack 回到普通图片；onClose 关闭整个查看器（标签页里没有）。 */
 export function ImagePanorama({
   url,
@@ -30,6 +33,7 @@ export function ImagePanorama({
     drag = React.useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null),
     render = React.useRef(() => {});
   const [fov, setFov] = React.useState(90),
+    [turned, setTurned] = React.useState(false),
     [status, setStatus] = React.useState('loading');
   React.useEffect(() => {
     let closed = false,
@@ -142,35 +146,48 @@ export function ImagePanorama({
           <R.Text>{M.backToImage}</R.Text>
         </R.ActionButton>
         <span className={`bc-image-name ${mediaHeaderTitle}`}>{M.panorama}</span>
-        <R.ActionButton isQuiet aria-label={M.zoomOut} onPress={() => zoom(fov + 10)}>
-          <ZoomOut />
-        </R.ActionButton>
-        <span className={fovText}>{fov}°</span>
-        <R.ActionButton isQuiet aria-label={M.zoomIn} onPress={() => zoom(fov - 10)}>
-          <ZoomIn />
-        </R.ActionButton>
-        <R.ActionButton
-          isQuiet
-          aria-label={M.reset}
-          onPress={() => {
-            camera.current = { yaw: 0, pitch: 0, fov: 90 };
-            setFov(90);
-            render.current();
-          }}
-        >
-          <Revert />
-        </R.ActionButton>
-        <R.ActionButton
-          isQuiet
-          aria-label={P.fullscreen}
-          onPress={() => root.current?.requestFullscreen?.().catch(() => setStatus('fullscreen-error'))}
-        >
-          <FullScreen />
-        </R.ActionButton>
-        {onClose && (
-          <R.ActionButton isQuiet aria-label={M.cancel} onPress={onClose}>
-            <Close />
+        <Tip label={M.zoomOut}>
+          <R.ActionButton isQuiet aria-label={M.zoomOut} isDisabled={fov >= 110} onPress={() => zoom(fov + 10)}>
+            <ZoomOut />
           </R.ActionButton>
+        </Tip>
+        <span className={zoomText}>{zoomPercent(fov)}%</span>
+        <Tip label={M.zoomIn}>
+          <R.ActionButton isQuiet aria-label={M.zoomIn} isDisabled={fov <= 30} onPress={() => zoom(fov - 10)}>
+            <ZoomIn />
+          </R.ActionButton>
+        </Tip>
+        {/* 已在初始视角时没有可重置的，按钮置灰，免得点了像没反应。 */}
+        <Tip label={M.reset}>
+          <R.ActionButton
+            isQuiet
+            aria-label={M.reset}
+            isDisabled={fov === 90 && !turned}
+            onPress={() => {
+              camera.current = { yaw: 0, pitch: 0, fov: 90 };
+              setFov(90);
+              setTurned(false);
+              render.current();
+            }}
+          >
+            <Revert />
+          </R.ActionButton>
+        </Tip>
+        <Tip label={P.fullscreen}>
+          <R.ActionButton
+            isQuiet
+            aria-label={P.fullscreen}
+            onPress={() => root.current?.requestFullscreen?.().catch(() => setStatus('fullscreen-error'))}
+          >
+            <FullScreen />
+          </R.ActionButton>
+        </Tip>
+        {onClose && (
+          <Tip label={M.close}>
+            <R.ActionButton isQuiet aria-label={M.close} onPress={onClose}>
+              <Close />
+            </R.ActionButton>
+          </Tip>
         )}
       </header>
       <canvas
@@ -186,6 +203,7 @@ export function ImagePanorama({
           if (!drag.current) return;
           camera.current.yaw = drag.current.yaw - (e.clientX - drag.current.x) * 0.005;
           camera.current.pitch = Math.max(-1.5, Math.min(1.5, drag.current.pitch + (e.clientY - drag.current.y) * 0.005));
+          setTurned(true);
           render.current();
         }}
         onPointerUp={() => {
@@ -205,6 +223,7 @@ export function ImagePanorama({
               -1.5,
               Math.min(1.5, camera.current.pitch + (e.key === 'ArrowUp' ? 0.1 : e.key === 'ArrowDown' ? -0.1 : 0)),
             );
+            setTurned(true);
             render.current();
           }
         }}

@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ActionButton,
-  ActionMenu,
   MenuTrigger,
   Menu,
   MenuItem,
@@ -11,10 +10,13 @@ import {
   SegmentedControlItem,
   Text,
   ToggleButton,
+  Tooltip,
+  TooltipTrigger,
 } from '@react-spectrum/s2';
 import ImageIcon from '@react-spectrum/s2/icons/Image';
 import ViewGrid from '@react-spectrum/s2/icons/ViewGrid';
 import Download from '@react-spectrum/s2/icons/Download';
+import More from '@react-spectrum/s2/icons/More';
 import Close from '@react-spectrum/s2/icons/Close';
 import Edit from '@react-spectrum/s2/icons/Edit';
 import Comment from '@react-spectrum/s2/icons/Comment';
@@ -84,31 +86,57 @@ export function ImageChrome({
           <PickerItem key={z} id={String(z)}>{`${z}%`}</PickerItem>
         ))}
       </Picker>
-      <ActionMenu
-        aria-label={M.more}
-        isQuiet
-        align="end"
-        onAction={(k) => {
-          if (k === 'tab') onOpenTab?.();
-          if (k === 'copy') onCopy();
-          if (k === 'panorama') onPanorama();
-          if (k === 'default') onDefaultOpen?.();
-        }}
-      >
-        {onDefaultOpen && <MenuItem id="default">{PANEL.openDefault}</MenuItem>}
-        {onOpenTab && <MenuItem id="tab">{M.openTab}</MenuItem>}
-        <MenuItem id="copy">{M.copy}</MenuItem>
-        <MenuItem id="panorama">{M.panorama}</MenuItem>
-      </ActionMenu>
-      <ActionButton isQuiet aria-label={M.download} onPress={onDownload}>
-        <Download />
-      </ActionButton>
-      {onClose && (
-        <ActionButton isQuiet aria-label={M.cancel} onPress={onClose}>
-          <Close />
+      {/* ActionMenu 套不上提示，拆成 MenuTrigger 里包 TooltipTrigger 的按钮。 */}
+      <MenuTrigger align="end">
+        <Tip label={M.more}>
+          <ActionButton isQuiet aria-label={M.more}>
+            <More />
+          </ActionButton>
+        </Tip>
+        <Menu
+          onAction={(k) => {
+            if (k === 'tab') onOpenTab?.();
+            if (k === 'copy') onCopy();
+            if (k === 'panorama') onPanorama();
+            if (k === 'default') onDefaultOpen?.();
+          }}
+        >
+          {onDefaultOpen && <MenuItem id="default">{PANEL.openDefault}</MenuItem>}
+          {onOpenTab && <MenuItem id="tab">{M.openTab}</MenuItem>}
+          <MenuItem id="copy">{M.copy}</MenuItem>
+          <MenuItem id="panorama">{M.panorama}</MenuItem>
+        </Menu>
+      </MenuTrigger>
+      <Tip label={M.download}>
+        <ActionButton isQuiet aria-label={M.download} onPress={onDownload}>
+          <Download />
         </ActionButton>
+      </Tip>
+      {onClose && (
+        <Tip label={M.close}>
+          <ActionButton isQuiet aria-label={M.close} onPress={onClose}>
+            <Close />
+          </ActionButton>
+        </Tip>
       )}
     </header>
+  );
+}
+/** 查看器里只有图标的按钮都配说明提示；表头的朝下弹，底部工具条的朝上弹。 */
+export function Tip({
+  label,
+  placement = 'bottom',
+  children,
+}: {
+  label: string;
+  placement?: 'top' | 'bottom';
+  children: ReactElement;
+}) {
+  return (
+    <TooltipTrigger placement={placement}>
+      {children}
+      <Tooltip>{label}</Tooltip>
+    </TooltipTrigger>
   );
 }
 export function ImageTools({
@@ -170,9 +198,11 @@ export function ImageTools({
         </Menu>
       </MenuTrigger>
       {!gif && (
-        <ActionButton size="S" isQuiet aria-label={M.select} onPress={onSelect}>
-          <Images />
-        </ActionButton>
+        <Tip label={M.select} placement="top">
+          <ActionButton size="S" isQuiet aria-label={M.select} onPress={onSelect}>
+            <Images />
+          </ActionButton>
+        </Tip>
       )}
     </div>
   );
