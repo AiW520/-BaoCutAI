@@ -106,15 +106,21 @@ description: 配乐与音效的机制：配乐从哪来、本机音乐生成怎�
 
 | 画面上的事件 | 配方 |
 | --- | --- |
+| 屏幕录制里的鼠标点击、打字 | `click`、`keypress`（拟真） |
+| 元素弹出、气泡、通知出现 | `pop`（拟真） |
+| 重物落地、大标题砸下、揭晓的那一下 | `impact`（拟真） |
 | 标题、数字、卡片落版 | `stamp`、`kick` |
-| 转场、元素快速划过 | `whoosh` |
+| 转场、元素快速划过 | `whoosh`：最响处在正中，放在切点前它长度的一半处 |
 | 切点前的蓄势 | `riser`：放在切点前它的长度处，末尾对准切点 |
-| 数字跳动、打字、UI 点击 | `tick`、`blip`、`click` |
+| 数字跳动、计时 | `tick`、`blip` |
 | 揭晓、完成、出现一个答案 | `ping` |
 | 故障风、信号干扰 | `glitch`、`static` |
 | 大场面、片头冲击 | `boom`、`crash` |
 
+`click`、`keypress`、`pop`、`impact` 是物理建模的拟真配方：一次接触激励物体的振动，再过小房间与话筒，带一点底噪，听着像近距离录下来的。其余配方听得出是合成的，放在风格本来就电子、故障风或节奏型的片子里；产品演示与屏幕录制优先用拟真的。
+
 - 少而准：一段视频里同一种事件用同一个配方，只配推动信息的那几下，不给每个动作都配。
+- 发布片、产品演示与屏幕录制怎么配（UI 拟音、重音放哪、响度、配完怎么核对）见 {{skill:video-production}} 的声音设计参考。
 - 时刻对到画面：代码画面的事件时刻读代码包自己的 `cues.json`（{{skill:video-production}} 的代码画面参考），或用 {{tool:assets_analyze}} 的 `onsets` 对到配乐的起音。
 - 单独一条「音效」音频轨；音量比旁白低 6–12 dB（`setAudioMix`），旁白说话时不压音效，压的是配乐。
 - {{arg:pitch}} 正的更亮更小，负的更沉更大；{{arg:space}} 的 `room` / `hall` 加空间，片子整体偏干时不加。
@@ -127,12 +133,19 @@ description: 配乐与音效的机制：配乐从哪来、本机音乐生成怎�
 - 剪辑点：镜头切换对到 `beats.times` 或 `bars` 的开始；段落（`sections`）的边界放章节或大的转场。
 - 代码画面跟着声音动：把文件拷进代码包，先换成源文件时间 `s` = 时间线时间 − 片段在时间线上的开始 + 片段的源起点，帧号 = `floor((s − source.offset) × fps)`，读 `frames.bass` 做脉动、`frames.onset` 做闪动、`frames.level` 做整体亮度。
 - 讲话与环境声通常没有稳定的拍（`beats` 为 null，`beatsError` 说原因），只用 `frames` 与 `onsets`。
+- 重音（`accents`）是明显高出前面底子的起音：大的剪辑点、揭晓与 Logo 落在它们上，比落在随便一个起音上更有力。
+
+### 核对时刻、画听音表
+
+- {{arg:cues}}：要对上的时刻（源文件里的秒，与 {{arg:range}} 同一个时钟）。每个对到最近的起音，`sync` 回各自的状态（ok、near、none、outside）与 `delta`（起音减去时刻，正的是声音晚到），以及 `hitRate` 与 `chance`。起音很密时随便放一个时刻也容易落在起音旁边，`hitRate` 只比 `chance` 高一点就是没对上。
+- {{arg:sheet}}：另画一张听音表 PNG（最长 120 秒，长片分段给 {{arg:range}}），用看图的工具看。时刻是贯穿全图的竖线：绿 ok、琥珀 near、红 none。
+- 核对整条时间线的声画对位：先导出时间线的音频再分析它，步骤见 {{skill:video-production}} 的声音设计参考。
 
 ## 结果怎么读
 
 - {{tool:music}}：`outputs` 里是一个 WAV 的 `artifactId`；带了 video 时还有 `assetId`。
 - {{tool:assets_sfx}}：回执另有 `assetId`、`itemId`（没放上时间线为 null）与 `durationSeconds`。
-- {{tool:assets_analyze}}：`file` 是整份结果的路径；结果里的 `onsets` 只列前 120 条，`onsetCount` 是总数。
+- {{tool:assets_analyze}}：`file` 是整份结果的路径；结果里的 `onsets` 只列前 120 条，`onsetCount` 是总数；`accents` 只列前 60 条，`accentCount` 是总数；给了 {{arg:cues}} 时 `sync.misses` 只列前 60 个没对上的，全部在文件的 `sync.cues` 里；给了 {{arg:sheet}} 时 `sheet` 是 PNG 的路径。
 - 实际时长看素材的媒体事实（{{tool:videos_inspect}} 的素材时长），不按 targetDurationSec 算；短于要配的长度时按上文循环或重生成，不变速拉长。
 - `warnings` 里有 `output-truncated`：生成到了时长预算，结尾可能收得急。在时间线上截在前一个乐句并淡出，或加大 maxDurationSec 重生成（不超过上限）。
 
