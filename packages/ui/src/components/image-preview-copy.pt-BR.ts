@@ -42,6 +42,7 @@ export const ptBR: ImagePreviewMessages = {
   "fit": "Ajustar à janela",
   "view": "Visualização",
   "zoom": "Zoom",
+  "backToImage": "Voltar à imagem",
   "annotations": "Anotações",
   "ratio": "Alterar proporção",
   "download": "Baixar",

@@ -1,7 +1,8 @@
 /* 等距柱状投影的 360° 查看器。只做查看，不改图片。产品设计 §3.3。 */
 (function () {
   const R = window.RSP;
-  function MediaPanorama({ file, active, onClose }) {
+  /* onBack 回到普通图片；onClose 关闭整个查看器（标签页里没有）；inset 给 macOS 红绿灯让位。 */
+  function MediaPanorama({ file, active, onBack, onClose, inset }) {
     const root = React.useRef(null),
       canvas = React.useRef(null),
       camera = React.useRef({ yaw: 0, pitch: 0, fov: 90 }),
@@ -114,25 +115,29 @@
       render.current();
     };
     return (
-      <section ref={root} className="media-panorama" aria-label="360° 全景预览">
-        <div className="media-preview__toolbar">
-          <R.ActionButton onPress={() => zoom(fov - 10)}>放大</R.ActionButton>
-          <R.ActionButton onPress={() => zoom(fov + 10)}>缩小</R.ActionButton>
-          <span>视角 {fov}°</span>
+      <section ref={root} className={inset ? 'media-panorama media-preview--window-inset' : 'media-panorama'} aria-label="360° 全景预览">
+        <header className="media-image-header">
+          <R.ActionButton isQuiet onPress={onBack}><R.Icons.ChevronLeft /><R.Text>返回图片</R.Text></R.ActionButton>
+          <span className="media-image-header__name">360° 全景</span>
+          <R.ActionButton isQuiet aria-label="缩小" onPress={() => zoom(fov + 10)}><R.Icons.ZoomOut /></R.ActionButton>
+          <span className="media-panorama__fov">{fov}°</span>
+          <R.ActionButton isQuiet aria-label="放大" onPress={() => zoom(fov - 10)}><R.Icons.ZoomIn /></R.ActionButton>
           <R.ActionButton
+            isQuiet
+            aria-label="重置视角"
             onPress={() => {
               camera.current = { yaw: 0, pitch: 0, fov: 90 };
               setFov(90);
               render.current();
             }}
           >
-            重置视角
+            <R.Icons.Revert />
           </R.ActionButton>
-          <R.ActionButton onPress={() => root.current.requestFullscreen?.().catch(() => setStatus('fullscreen-error'))}>
-            全屏
+          <R.ActionButton isQuiet aria-label="全屏" onPress={() => root.current.requestFullscreen?.().catch(() => setStatus('fullscreen-error'))}>
+            <R.Icons.FullScreen />
           </R.ActionButton>
-          <R.ActionButton onPress={onClose}>返回图片</R.ActionButton>
-        </div>
+          {onClose && <R.ActionButton isQuiet aria-label="关闭图片预览" onPress={onClose}><R.Icons.Close /></R.ActionButton>}
+        </header>
         <canvas
           ref={canvas}
           tabIndex={0}

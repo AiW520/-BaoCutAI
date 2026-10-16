@@ -42,6 +42,7 @@ export const zhHant: ImagePreviewMessages = {
   "fit": "符合視窗",
   "view": "檢視",
   "zoom": "縮放",
+  "backToImage": "返回圖片",
   "annotations": "註解",
   "ratio": "調整比例",
   "download": "下載",

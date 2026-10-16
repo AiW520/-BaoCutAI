@@ -42,6 +42,7 @@ export const ru: ImagePreviewMessages = {
   "fit": "По размеру окна",
   "view": "Вид",
   "zoom": "Масштаб",
+  "backToImage": "Назад к изображению",
   "annotations": "Аннотации",
   "ratio": "Изменить пропорции",
   "download": "Скачать",

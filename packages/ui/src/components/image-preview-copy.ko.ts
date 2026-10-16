@@ -42,6 +42,7 @@ export const ko: ImagePreviewMessages = {
   "fit": "창에 맞춤",
   "view": "보기",
   "zoom": "확대/축소",
+  "backToImage": "이미지로 돌아가기",
   "annotations": "주석",
   "ratio": "화면 비율 변경",
   "download": "다운로드",

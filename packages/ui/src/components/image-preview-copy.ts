@@ -56,6 +56,7 @@ const en = {
   "fit": "Fit to window",
   "view": "View",
   "zoom": "Zoom",
+  "backToImage": "Back to image",
   "annotations": "Annotations",
   "ratio": "Change aspect ratio",
   "download": "Download",

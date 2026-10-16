@@ -2,9 +2,28 @@ import * as React from 'react';
 import * as R from '@react-spectrum/s2';
 import { IMAGE as M } from '../image-preview-copy.ts';
 import { P } from '../player/player-copy.ts';
-import { mediaTheme } from './theme.tsx';
+import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import ChevronLeft from '@react-spectrum/s2/icons/ChevronLeft';
+import ZoomIn from '@react-spectrum/s2/icons/ZoomIn';
+import ZoomOut from '@react-spectrum/s2/icons/ZoomOut';
+import Revert from '@react-spectrum/s2/icons/Revert';
+import FullScreen from '@react-spectrum/s2/icons/FullScreen';
+import Close from '@react-spectrum/s2/icons/Close';
+import { mediaHeaderTitle, mediaTheme } from './theme.tsx';
 import { loadPreviewImage } from './gif.ts';
-export function ImagePanorama({ url, active = true, onClose }: { url: string; active?: boolean; onClose: () => void }) {
+const fovText = style({ font: 'ui-sm', color: 'gray-800', textAlign: 'center', minWidth: 32 });
+/** onBack 回到普通图片；onClose 关闭整个查看器（标签页里没有）。 */
+export function ImagePanorama({
+  url,
+  active = true,
+  onBack,
+  onClose,
+}: {
+  url: string;
+  active?: boolean;
+  onBack: () => void;
+  onClose?: () => void;
+}) {
   const root = React.useRef<HTMLElement>(null),
     canvas = React.useRef<HTMLCanvasElement>(null),
     camera = React.useRef({ yaw: 0, pitch: 0, fov: 90 }),
@@ -117,24 +136,43 @@ export function ImagePanorama({ url, active = true, onClose }: { url: string; ac
   };
   return (
     <section ref={root} className={`${mediaTheme} bc-image-panorama`} aria-label={M.panorama}>
-      <div className="bc-image-header">
-        <R.ActionButton onPress={() => zoom(fov - 10)}>{M.zoomIn}</R.ActionButton>
-        <R.ActionButton onPress={() => zoom(fov + 10)}>{M.zoomOut}</R.ActionButton>
-        <span>{fov}°</span>
+      <header className="bc-image-header">
+        <R.ActionButton isQuiet onPress={onBack}>
+          <ChevronLeft />
+          <R.Text>{M.backToImage}</R.Text>
+        </R.ActionButton>
+        <span className={`bc-image-name ${mediaHeaderTitle}`}>{M.panorama}</span>
+        <R.ActionButton isQuiet aria-label={M.zoomOut} onPress={() => zoom(fov + 10)}>
+          <ZoomOut />
+        </R.ActionButton>
+        <span className={fovText}>{fov}°</span>
+        <R.ActionButton isQuiet aria-label={M.zoomIn} onPress={() => zoom(fov - 10)}>
+          <ZoomIn />
+        </R.ActionButton>
         <R.ActionButton
+          isQuiet
+          aria-label={M.reset}
           onPress={() => {
             camera.current = { yaw: 0, pitch: 0, fov: 90 };
             setFov(90);
             render.current();
           }}
         >
-          {M.reset}
+          <Revert />
         </R.ActionButton>
-        <R.ActionButton onPress={() => root.current?.requestFullscreen?.().catch(() => setStatus('fullscreen-error'))}>
-          {P.fullscreen}
+        <R.ActionButton
+          isQuiet
+          aria-label={P.fullscreen}
+          onPress={() => root.current?.requestFullscreen?.().catch(() => setStatus('fullscreen-error'))}
+        >
+          <FullScreen />
         </R.ActionButton>
-        <R.ActionButton onPress={onClose}>{M.image}</R.ActionButton>
-      </div>
+        {onClose && (
+          <R.ActionButton isQuiet aria-label={M.cancel} onPress={onClose}>
+            <Close />
+          </R.ActionButton>
+        )}
+      </header>
       <canvas
         ref={canvas}
         tabIndex={0}

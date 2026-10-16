@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import {
   ActionButton,
   ActionMenu,
@@ -26,8 +25,7 @@ import { PANEL } from '../panel-copy.ts';
 import { IMAGE_ZOOMS, IMAGE_RATIOS, type ImageCandidate } from '../../model/image-preview.ts';
 import { targetKey } from '../../model/media.ts';
 import { useRuntime } from '../../runtime/context.tsx';
-// 查看器挂在 body 下，不在应用根的字体里；文件名要自己带 S2 字体。
-const nameText = style({ font: 'ui-sm', color: 'gray-600', textAlign: 'center' });
+import { mediaHeaderTitle } from './theme.tsx';
 export function ImageChrome({
   name,
   gif,
@@ -70,7 +68,7 @@ export function ImageChrome({
           <Text>{M.canvasView}</Text>
         </SegmentedControlItem>
       </SegmentedControl>
-      <span className={`bc-image-name ${nameText}`} title={name}>
+      <span className={`bc-image-name ${mediaHeaderTitle}`} title={name}>
         {name}
       </span>
       <Picker

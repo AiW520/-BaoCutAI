@@ -333,7 +333,7 @@ export function ImagePreview({
     }
   };
   const currentCandidate = { target, handle, name: fileName };
-  if (panorama) return <ImagePanorama url={handle.url} onClose={() => setPanorama(false)} />;
+  if (panorama) return <ImagePanorama url={handle.url} onBack={() => setPanorama(false)} onClose={onClose} />;
   if (tool)
     return (
       <ImageMarkup

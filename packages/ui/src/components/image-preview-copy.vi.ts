@@ -42,6 +42,7 @@ export const vi: ImagePreviewMessages = {
   "fit": "Vừa cửa sổ",
   "view": "Chế độ xem",
   "zoom": "Thu phóng",
+  "backToImage": "Quay lại ảnh",
   "annotations": "Chú thích",
   "ratio": "Đổi tỷ lệ",
   "download": "Tải xuống",

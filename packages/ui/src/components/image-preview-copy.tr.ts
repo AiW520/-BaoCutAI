@@ -42,6 +42,7 @@ export const tr: ImagePreviewMessages = {
   "fit": "Pencereye sığdır",
   "view": "Görünüm",
   "zoom": "Yakınlaştırma",
+  "backToImage": "Görsele dön",
   "annotations": "Notlar",
   "ratio": "En boy oranını değiştir",
   "download": "İndir",

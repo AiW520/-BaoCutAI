@@ -42,6 +42,7 @@ export const ja: ImagePreviewMessages = {
   "fit": "ウィンドウに合わせる",
   "view": "表示",
   "zoom": "ズーム",
+  "backToImage": "画像に戻る",
   "annotations": "注釈",
   "ratio": "縦横比を変更",
   "download": "ダウンロード",

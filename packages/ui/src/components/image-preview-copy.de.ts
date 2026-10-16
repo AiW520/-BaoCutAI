@@ -42,6 +42,7 @@ export const de: ImagePreviewMessages = {
   "fit": "An Fenster anpassen",
   "view": "Ansicht",
   "zoom": "Zoom",
+  "backToImage": "Zurück zum Bild",
   "annotations": "Anmerkungen",
   "ratio": "Seitenverhältnis ändern",
   "download": "Herunterladen",
