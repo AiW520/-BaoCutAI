@@ -46,7 +46,7 @@
 
 - 每个包一份 `cues.json`：`[{ "t": 3.2, "kind": "flash", "dur": 0.25, "strength": 0.8, "sfx": "boom" }]`。`t` 是包内的秒（与 `renderAt(time)` 同一个时间），`kind` 取 `flash`、`glow`、`shake`、`zoom`、`glitch`，`dur` 是效果的长度，`strength` 是 0..1。画面与音效读同一份表，事件只记一次。
 - `sfx` 可选，是 assets_sfx 的配方名：导入包之后，按表里带 `sfx` 的每一条，在「包在时间线上的开始 + t」处用 assets_sfx 放到音效轨（`place.at`；`riser` 让末尾对准 t，放在 t 减去它的长度处）。改了表就同步改音效，不让画面和声音各走各的。
-- 后期效果：用 `skills_read` 读本 skill 的 `references/post-fx.md`，把其中的代码原样存成包里的 `post-fx.js` 引入。`PostFX.cuesAt(cues, t)` 把表合成这一刻各种效果的强度，再按它画震动、推近、发光、色散、暗角、颗粒、闪白，文件开头有 `renderAt` 的写法。都由 t 决定，不破坏确定性。色散逐像素处理，只在故障那几帧开。
+- 后期效果：用 `skills_read` 读本 skill 的 `examples/post-fx.js`，原样存成包里的 `post-fx.js`，在 `index.html` 里用 `<script src="./post-fx.js"></script>` 引入，得到全局的 `PostFX`。`PostFX.cuesAt(cues, t)` 把表合成这一刻各种效果的强度，再按它画震动、推近、发光、色散、暗角、颗粒、闪白，文件开头的注释是 `renderAt(time)` 里的写法与叠加顺序。都由 t 决定，不破坏确定性。色散逐像素处理，只在故障那几帧开。
 
 ## 6. 字幕、封面与署名
 

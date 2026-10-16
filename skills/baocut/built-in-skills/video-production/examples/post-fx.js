@@ -1,8 +1,3 @@
-# 后期效果
-
-代码画面的后期效果（Canvas2D）：震动、推近、发光、色散、暗角、颗粒与闪白，按包里的 `cues.json` 取强度。把下面的代码原样存成代码包里的 `post-fx.js`，在 `index.html` 里用 `<script src="./post-fx.js"></script>` 引入，得到全局的 `PostFX`；开头的注释是 `renderAt(time)` 里的写法与叠加顺序。每个效果只由时间与参数决定，不破坏确定性。
-
-```js
 // post-fx.js — 代码画面的后期效果（Canvas2D），给 `baocut/1` 代码包用。
 // 拷进代码包，用 <script src="./post-fx.js"></script> 引入，得到全局的 PostFX。
 // 每个效果只由时间 t 与参数决定：不用 Math.random、Date.now，也不逐帧累加，同一时刻两次取帧一致。
@@ -183,4 +178,3 @@
 
   globalThis.PostFX = { hash, envelope, cuesAt, shake, zoom, flash, vignette, glow, chroma, grain };
 })();
-```

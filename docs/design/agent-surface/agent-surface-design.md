@@ -406,14 +406,14 @@ skills/baocut/
       system.md                 runtime、spec、status，以及管理桶命令（要用户同意）
       web.md                    网页版编辑器：web open --video、链接与会话、浏览器用来看与拖、交付时的新链接（只给 CLI 面，§8.8）
     workflows.md                端到端 recipe：链接 → 转录 → 双语字幕 → 成片；润色后翻译；翻译配音；剪口播；切短视频；总结与写稿；每条按 §8.7 的骨架写
-    craft/                      由 built-in-skills/<id>/ 同步来的 craft（prompts、步骤、best practice），CLI 面用
+    craft/                      由 built-in-skills/<id>/ 同步来的 craft（prompts、步骤、best practice），CLI 面用：<id>.md 是正文，<id>/ 是它的参考页与代码
     mcp.md                      走 MCP 时怎么接、工具名映射、jobs_wait 的用法
   built-in-skills/              内置 craft 的源，一个 skill 一个目录，README.md 是索引；不是说明书的页，不随 skill install 装进宿主
 ```
 
 **craft 不 fork。** `built-in-skills/<id>/SKILL.md` 与它们的 `references/` 就是用户要的 prompts、workflow 与最佳实践，单一来源仍是 `built-in-skills/<id>/`。两条路把它们交给外部 Agent：
 
-1. **同步副本**：构建脚本 `tools/sync-agent-skill.ts`（`npm run build:agent-skill`，`--check` 核对）把每个内置 skill 复制成 `references/craft/<id>.md`（合并它的 `references/`），并把其中的工具桥工具名按 §4.1 的规则改写成 CLI 命令（`documents_read` → `baocut documents read`，一级动词 `speak` → `baocut speak`；连着 `-`、`/`、`.` 或后跟 `:` 的字面量是文件名或字段，不改）；craft 引用共享目录页时，`用 skills_read 读 baocut-catalog-<页>` 改写为该目录页的相对链接，不把参考表展开进附录；目标页必须存在。只在会话里有、终端没有对应命令的工具（`downloads_save`）换成不提工具名的兜底写法（终端里直接把文件路径告诉用户）。测试断言副本与源一致。
+1. **同步副本**：构建脚本 `tools/sync-agent-skill.ts`（`npm run build:agent-skill`，`--check` 核对）把每个内置 skill 复制成 `references/craft/<id>.md`（SKILL.md 正文，末尾列出同目录的文件）与同名目录 `references/craft/<id>/`（skill 目录里的其余文件，相对路径不变：`references/*.md` 各成一页，代码、样例与数据原样复制，不内嵌进 Markdown；正文与参考页里提到的这些路径改成相对链接，`用 skills_read 读本 skill 的 …` 改写为读那个链接），并把 `.md` 里的工具桥工具名按 §4.1 的规则改写成 CLI 命令（`documents_read` → `baocut documents read`，一级动词 `speak` → `baocut speak`；连着 `-`、`/`、`.` 或后跟 `:` 的字面量是文件名或字段，不改）；craft 引用共享目录页时，`用 skills_read 读 baocut-catalog-<页>` 改写为该目录页的相对链接，不把参考表展开进附录；目标页必须存在。只在会话里有、终端没有对应命令的工具（`downloads_save`）换成不提工具名的兜底写法（终端里直接把文件路径告诉用户）。测试断言副本与源一致。
 2. **现取**：`baocut skills read <id>` 随时能取当前 Runtime 里的版本（含用户自己添加的 skill）。SKILL.md 说明两者的关系：副本是随 skill 发布时的版本，现取是这台机器上的版本。
 
 SKILL.md 第 3 节末尾的「内置 skill」表（只在 CLI 面）给每份内置 craft 一个名字与一句话，`{{skill:<id>}}` 链到副本，第 1 节的路由没覆盖的任务按它判断该读哪一份；会话内智能体看会话开始的 skill 索引，不重复这张表。只给会话内智能体的 craft（`slides`）不列。
@@ -447,7 +447,7 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 | 形态 | 一个 skill，整体装进宿主的 skills 目录 | SKILL.md 正文渲染成 system prompt 的「工作方式」段（取代 `guidance.ts` 手写的内容）；`references/catalog/*.md`、`workflows.md` 与 `conventions.md` 成为内置的说明书页（`baocut-catalog-<页>`、`baocut-workflows`、`baocut-conventions`；工具桥面正文为空的页除外，§8.8），craft 照旧是内置 skill；索引附在指导后，按需 `skills_read` |
 | 工具的写法 | `baocut documents read` | `documents_read` |
 | 不适用的段落 | — | 找 CLI、`runtime ensure`、版本门、`--yes`、退出码、落盘到 `.baocut-out/`、MCP 接法、网页版编辑器（§8.8） |
-| craft | `references/craft/<id>.md`（从 `built-in-skills/<id>/` 同步，§8.3） | `built-in-skills/<id>/` 本身 |
+| craft | `references/craft/<id>.md` 与 `references/craft/<id>/`（从 `built-in-skills/<id>/` 同步，§8.3） | `built-in-skills/<id>/` 本身 |
 
 写法上用两个标记，不写两份文稿：
 
