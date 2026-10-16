@@ -110,6 +110,7 @@
       "app/model-skill-install.js",
       "app/model-agent-skills.js",
       "app/model-skill-package.js",
+      "app/model-project-brand.js",
       "app/model-readings.js",
       "app/model-cloud-tts.js",
       "app/model-cloud-image.js",
@@ -214,6 +215,7 @@
       "app/page-skills.jsx",
       "app/page-skill-detail.jsx",
       "app/page-skills-upload.jsx",
+      "app/page-project-brand.jsx",
       "app/settings-tts.jsx",
       "app/settings-music.jsx",
       "app/page-services-mcp-tools.jsx",
@@ -473,9 +475,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=397998dda51e",
-    "css": "generated/app.css?v=161165c5e92f",
-    "bytes": 4428774
+    "js": "generated/app.js?v=68005866b438",
+    "css": "generated/app.css?v=d9a59511c674",
+    "bytes": 4454997
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -718,9 +720,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=42e6ef80c60e",
+    "js": "generated/web.js?v=4700b6393b6f",
     "css": "generated/web.css?v=a859723b8989",
-    "bytes": 2578742
+    "bytes": 2582037
   },
   "components": {
     "file": "Components.html",

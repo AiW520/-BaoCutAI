@@ -42,12 +42,12 @@
     return Icon ? <Icon /> : <span className="skp-thumb__font">Aa</span>;
   }
 
-  function AssetGallery({skill, onOpen}) {
+  function AssetGallery({skill, onOpen, hint}) {
     const list = P.assets(skill);
     if (!list.length) return null;
     return <section className="skp-block" aria-label="素材">
       <h3>素材 <span>{P.assetLine(list)}</span></h3>
-      <p className="skp-block__hint">Agent 用这个 skill 时，可以把这些素材直接用进视频。要换素材，编辑这个 skill 或上传新版本。</p>
+      <p className="skp-block__hint">{hint || 'Agent 用这个 skill 时，可以把这些素材直接用进视频。要换素材，编辑这个 skill 或上传新版本。'}</p>
       <div className="skp-assets">
         {list.map((a) => <BCAction key={a.path} type="button" className="skp-asset" aria-label={'查看 ' + a.path} onClick={() => onOpen(a.path)}>
           <span className={cx('skp-thumb', (a.kind === 'svg' || a.kind === 'image') && 'skp-thumb--pic')}><AssetThumb file={a} /></span>
@@ -269,5 +269,5 @@
     </window.Page>;
   }
 
-  Object.assign(window, {SkillDetailPage});
+  Object.assign(window, {SkillDetailPage, SkillBlocks: Blocks, SkillAssetGallery: AssetGallery, SkillFileView: FileView});
 })();

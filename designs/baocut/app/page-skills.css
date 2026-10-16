@@ -7,6 +7,10 @@
 .skp-section { margin-bottom: 32px; }
 .skp-section__hd { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px; font-size: 14px; font-weight: 700; color: var(--gray-900); }
 .skp-section__hd span { font-size: 12px; font-weight: 400; color: var(--gray-600); }
+.skp-section__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.skp-section__bar .skp-section__hd { margin: 0; }
+.skp-section__hint { max-width: 720px; margin: 0 0 8px; font-size: 12px; line-height: 1.6; color: var(--gray-700); }
+.skp-auto { padding-inline-end: 4px; font-size: 12px; color: var(--gray-600); white-space: nowrap; }
 .skp-list { display: flex; flex-direction: column; border-top: 1px solid var(--gray-200); }
 .skp-row { position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; border-bottom: 1px solid var(--gray-200); transition: background-color 150ms cubic-bezier(0.45,0,0.4,1); }
 .skp-row:hover { background: var(--gray-50); }
@@ -153,3 +157,12 @@
 .skp-form__field { width: 100%; }
 .skp-form__preview { margin: 12px 0 0; font-size: 12px; color: var(--gray-700); }
 .skp-form + .skp-note, .skp-form__preview + .skp-note { margin-top: 12px; }
+
+/* 项目品牌（page-project-brand.jsx）：优先级、BRAND.md 预览、新建 */
+.skp-rule { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-inline-start: 20px; font-size: 12px; line-height: 1.6; color: var(--gray-700); }
+.skp-rule li b { display: block; font-size: 14px; color: var(--gray-900); }
+.skp-brand-doc { padding: 16px 20px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--gray-200); }
+.skp-create { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; max-width: 720px; }
+.skp-create .skp-lede { margin: 0; }
+.skp-create__pick { width: 320px; max-width: 100%; }
+.skp-create__acts { display: flex; flex-wrap: wrap; gap: 8px; }

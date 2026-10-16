@@ -32,7 +32,7 @@
       : r.r === 'tools'  ? <window.ToolsPage key={r.id || 'gallery'} id={r.id} />
       /* 2026-10-16：Skills 是 rail 上的一格（Space 下面）；旧的 `skill` 与 设置 › Skills 链接都落到这里 */
       : r.r === 'skills' || r.r === 'skill' || (r.r === 'settings' && (r.sec === 'skills' || r.sec === 'integrations'))
-        ? <window.SkillsPage key={r.id || 'list'} id={r.r === 'skills' ? r.id : null} tab={r.tab} file={r.file} />
+        ? <window.SkillsPage key={r.id || (r.dir ? 'dir:' + r.dir : 'list')} id={r.r === 'skills' ? r.id : null} dir={r.r === 'skills' ? r.dir : null} tab={r.tab} file={r.file} />
       : r.r === 'models' ? <window.SettingsPage sec={r.sec || "local"} tab={r.tab} />
       : r.r === 'settings' ? <window.SettingsPage sec={r.sec} tab={r.tab} id={r.id} from={r.from} />
       : <window.HomePage />;

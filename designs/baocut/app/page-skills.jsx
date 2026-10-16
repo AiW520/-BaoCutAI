@@ -1,8 +1,9 @@
 /* Skills 页（App rail 上 Space 下面一格，2026-10-16；原来在设置 › Skills）。
    一个 skill 是一个文件夹：SKILL.md 加上参考文件和素材（logo、印章、片头音乐、字体……）。素材就是 skill 的一部分，
    上传 zip 或文件夹时一起进来，Agent 用这个 skill 时能把它们用进视频。
-   路由：#/skills（列表）、#/skills/<id>（详情，?tab=files&file=<路径> 看文件）、#/skills?tab=external（页底「在终端或其他应用里用 BaoCut」展开）。
-   列表自上而下：一句导语 → 「我的」（个人与从 GitHub 导入的）→ 「BaoCut 内置」→ 页底折叠区。
+   路由：#/skills（列表）、#/skills/<id>（详情，?tab=files&file=<路径> 看文件）、#/skills?dir=<项目 id>（那个项目的 BRAND.md，
+   page-project-brand.jsx）、#/skills?tab=external（页底「在终端或其他应用里用 BaoCut」展开）。
+   列表自上而下：一句导语 → 「我的」（个人与从 GitHub 导入的）→ 「项目品牌」（各项目根目录的 BRAND.md）→ 「BaoCut 内置」→ 页底折叠区。
    每行：类别图标、名字与标记（新 / 类别 / 素材数 / GitHub）、作者与一句话、日期、开关、更多菜单；点行进详情。
    把 zip 或文件夹拖到页面上任何地方都打开上传。详情在 page-skill-detail.jsx，上传与新建在 page-skills-upload.jsx。
    添加、导入、编辑与移除都是演示，不碰磁盘、不访问网络。 */
@@ -13,7 +14,7 @@
   const P = window.BC_SKILL_PKG;
 
   function SkillIcon({skill, size}) {
-    const Icon = R.Icons[P.iconName(skill.category)] || R.Icons.Lightbulb;
+    const Icon = skill.source === 'project' ? R.Icons.Folder : R.Icons[P.iconName(skill.category)] || R.Icons.Lightbulb;
     return <span className={cx('skp-icon', size === 'l' && 'skp-icon--l')} aria-hidden="true"><Icon /></span>;
   }
 
@@ -74,7 +75,7 @@
     const st = P.stats(skill);
     return <span className="skp-badges">
       {skill.fresh ? <R.Badge variant="accent" size="S">新</R.Badge> : null}
-      <R.Badge variant="neutral" fillStyle="subtle" size="S">{skill.category}</R.Badge>
+      <R.Badge variant="neutral" fillStyle="subtle" size="S">{skill.source === 'project' ? 'BRAND.md' : skill.category}</R.Badge>
       {st.assets.length ? <R.Badge variant="informative" fillStyle="subtle" size="S">{`素材 ${st.assets.length}`}</R.Badge> : null}
       {skill.source === 'third-party' ? <R.Badge variant="neutral" fillStyle="outline" size="S">GitHub</R.Badge> : null}
     </span>;
@@ -153,7 +154,7 @@
         <AddSkillMenu onPick={pick} />
       </>}>
         <p className="skp-lede">Skill 教 Agent 按你的方法做事：一份 SKILL.md，加上参考文件和素材（logo、印章、片头音乐、字体）。开着的，Agent 觉得相关时会自己用；关着的，只在你从输入框「+」里选它时才用。</p>
-        {groups.map((g) => <section key={g.k} className="skp-section" aria-label={g.label}>
+        {groups.map((g) => <React.Fragment key={g.k}>{g.k === 'builtin' ? <window.ProjectBrandsSection query={query} /> : null}<section className="skp-section" aria-label={g.label}>
           <h2 className="skp-section__hd">{g.label}<span>{g.items.length}</span></h2>
           {g.items.length ? <div className="skp-list">
             {g.items.map((s) => <SkillRow key={s.id} skill={s} onToggle={(on) => toggle(s, on)} />)}
@@ -165,7 +166,7 @@
               <Btn onClick={() => setAdding('blank')}>新建 skill</Btn>
             </span>
           </div> : <p className="skp-none">{q ? `没有和「${q}」相关的${g.label === '我的' ? '个人' : '内置'} skill` : '没有'}</p>}
-        </section>)}
+        </section></React.Fragment>)}
 
         <div ref={extRef} className="skp-external">
           <Card layer className="agset-advanced">
@@ -184,7 +185,8 @@
     </div>;
   }
 
-  function SkillsPage({id, tab, file}) {
+  function SkillsPage({id, dir, tab, file}) {
+    if (dir) return <window.ProjectBrandPage dir={dir} tab={tab} file={file} />;
     return id ? <window.SkillDetailPage id={id} tab={tab} file={file} /> : <SkillsList tab={tab} />;
   }
 

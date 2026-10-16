@@ -3774,6 +3774,65 @@
     {name: '剪辑笔记.zip', entries: [{path: 'README.md', body: '# 剪辑笔记\n\n随手记的剪辑心得。'}, {path: 'notes/2026-09.md', body: '- 口播先剪口癖'}]},
   ];
 
+  /* 项目根目录的 BRAND.md（model-project-brand.js）：这个项目里 Agent 创作时的品牌参考，每条会话自动用。
+     科浪访谈带 brand/ 里的 logo 与片头音乐；确定性渲染课程只有一份纯文字的 BRAND.md。路径相对项目根目录。 */
+  const KELANG_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80"><rect width="200" height="80" rx="40" fill="#0B0B0B"/><circle cx="40" cy="40" r="22" fill="#FF6B5E"/><rect x="34" y="28" width="12" height="20" rx="6" fill="#FFE1BD"/><text x="76" y="50" font-size="26" font-weight="700" fill="#FFE1BD" font-family="sans-serif">科浪访谈</text></svg>`;
+  const projectBrands = [
+    {dir: 'd1', updated: '2026-10-12', files: [
+      {path: 'BRAND.md', body: `# 科浪访谈 · 品牌
+
+一档科技人物长访谈。每期剪成一部横版正片和三条竖版切片，口吻克制、不煽情。
+
+## 名字与口号
+
+| 项目 | 内容 |
+| --- | --- |
+| 栏目名 | 科浪访谈 |
+| 口号 | 和做事的人聊做事 |
+| 片头 | 黑底，brand/logo.svg 居中淡入，配 brand/intro.mp3（3 秒） |
+
+## 视觉
+
+- 主色珊瑚红，只用在 logo、章节条与重点字幕上；底色黑或深灰。
+- 嘉宾名条：左下角，第一次出现时 4 秒，姓名一行、头衔一行。
+- 字幕：白字黑描边，一行不超过 18 个字。
+
+## 声音
+
+- 不加配音；旁白只在片头片尾出现，用主持人原声。
+- 背景音乐压到人声以下 18 dB，访谈正文不加。
+
+## 每期怎么套
+
+1. 片头：logo + intro.mp3，接本期最有张力的一句原话。
+2. 正片按话题分章，章节条用主色。
+3. 竖版切片每条 60 秒以内，开头 3 秒内给出问题。`},
+      {path: 'brand/logo.svg', body: KELANG_LOGO},
+      {path: 'brand/intro.mp3', size: 61440, dur: 3},
+    ]},
+    {dir: 'd5', updated: '2026-10-08', files: [
+      {path: 'BRAND.md', body: `---
+description: 「确定性渲染」课程的统一规范：讲师口吻、代码画面、章节命名与片尾。
+---
+
+# 确定性渲染课程 · 品牌
+
+## 口吻
+
+- 讲师第一人称，先讲为什么，再讲怎么做。
+- 术语第一次出现时给英文原词，之后统一用中文。
+
+## 画面
+
+- 代码用等宽字体，深色背景，一屏不超过 20 行；正在讲的那一行高亮。
+- 每节开头一张标题卡：「第 N 课 · 标题」。
+
+## 片尾
+
+- 一句本节要点，接下一课预告，共 6 秒。`},
+    ]},
+  ];
+
   /* 「从本地文件夹添加」的演示文件夹：最后一个故意没有 SKILL.md，用来演示校验的错误态。 */
   const agentSkillFolders = [
     {path: '~/BaoCut/skills/片尾致谢/', skill: {id: 'outro-credits', name: '片尾致谢', author: '你', category: '品牌',
@@ -3989,7 +4048,7 @@
     srcLang: LANG.zh, dstLang: LANG.en, activateProject, projectSetup,
     elements, textGroup, ELEMENT_HUE_STOPS,
     projects, ptypes, templates, agentProjects, spaceOutputs,
-    agentSkills, agentSkillFolders, agentSkillPackages,
+    agentSkills, agentSkillFolders, agentSkillPackages, projectBrands,
     models, transModels, sttLangs, transLangs,
     tasks, modelActivity, rail, ratios, speeds, zoomMenu, BADGE, app,
     glossary,
