@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CUE_PARAMS, captionBody, deriveCues, readSpeechWords } from './caption-cues.ts';
+import { CUE_PARAMS, captionBody, deriveCues, readSpeechWords, splitUntimed } from './caption-cues.ts';
 
 type W = [id: string, start: number, end: number, text: string, flags?: { hidden?: boolean; timingQuality?: string; glue?: true }];
 
@@ -30,6 +30,25 @@ describe('读转写（与编辑器的 speech-cues.ts 同一条规则）', () => 
     const cues = deriveCues(read.words, { ...CUE_PARAMS, maxChars: 13 });
     expect(cues.map((cue) => cue.text)).toEqual(['international']);
     expect(cues[0]!.wordIds).toEqual(['w1', 'w2']);
+  });
+
+  it('转写把西文词切成几段（后一段贴前）：停顿、溢出都不在词内断，整词跟着上一条', () => {
+    const tokens = [...'我们今天来讲一讲这个很有名的模型就是它', 'Tra', 'nsformer', ...'的注意力'];
+    const list = (pause: number): W[] =>
+      tokens.map((text, i) => {
+        const at = i * 0.2 + (i >= 20 ? pause : 0);
+        return [`w${i}`, at, at + 0.2, text, i === 20 ? { glue: true } : undefined];
+      });
+    for (const pause of [0, 0.7]) {
+      const texts = deriveCues(readSpeechWords(speechBody(list(pause)))!.words).map((cue) => cue.text);
+      expect(texts.some((text) => text.includes('Transformer')), texts.join('|')).toBe(true);
+    }
+  });
+
+  it('没有词时间的长段按宽度切时，一串西文整串挪进下一段', () => {
+    const pieces = splitUntimed('我们今天要讲的是Transformer模型为什么能够理解上下文', 0, 5, 20).map((p) => p.text);
+    expect(pieces.join('')).toBe('我们今天要讲的是Transformer模型为什么能够理解上下文');
+    expect(pieces.some((piece) => piece.includes('Transformer'))).toBe(true);
   });
 
   it('零时长词并进相邻词时仍保留 glue 指定的词缝', () => {

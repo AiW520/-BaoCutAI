@@ -90,7 +90,8 @@ pub fn split_boundary_at_char<W: crate::atomize::JoinWord>(
 }
 
 /// 标点优先断行阶梯（§18.5 条件 3–6，对拍 JS/Swift `autoBreak`）：
-/// 句末 > 从句标点（破折号低门槛）> 长停顿 > 溢出。溢出在下一词以从句/
+/// 句末 > 从句标点（破折号低门槛）> 长停顿 > 溢出；同一个词被切开的几段之间
+/// （[`crate::atomize::glued_word_interior`]）不因停顿或溢出断。溢出在下一词以从句/
 /// 句末标点收尾且总宽不超 `maxChars + overflowSlack` 时延长收入标点，
 /// 避免在标点前一格硬切。
 pub(crate) fn auto_break(word: &Word, next: &Word, line_chars: usize, params: &CueParams) -> bool {
@@ -106,6 +107,10 @@ pub(crate) fn auto_break(word: &Word, next: &Word, line_chars: usize, params: &C
         if line_chars >= gate {
             return true;
         }
+    }
+    // 同一个词被切开的几段（`Tra` + `nsformer`）：停顿、溢出都不在词内断。
+    if crate::atomize::glued_word_interior(&word.text, next) {
+        return false;
     }
     if next.t0 - word.t1 >= params.pause_sec && line_chars >= params.min_pause_chars {
         return true;
@@ -336,6 +341,62 @@ mod tests {
         assert_eq!(split_boundary_at_char(&["ab", "c", "de"], 99), Some(1));
         assert_eq!(split_boundary_at_char(&["ab"], 0), None);
         assert_eq!(split_boundary_at_char::<&str>(&[], 0), None);
+    }
+
+    /// 19 个汉字 + `Tra`，后面贴着 `nsformer`：贴前的词缝不是词界，溢出也不在
+    /// 这里断，整个词跟着上一条，下一条从后面的汉字开始。
+    fn glued_latin_words() -> Vec<Word> {
+        let mut words: Vec<Word> = "我们今天来讲一讲这个很有名的模型就是"
+            .chars()
+            .chain(std::iter::once('它'))
+            .map(String::from)
+            .chain(["Tra", "nsformer", "的", "注", "意", "力"].map(String::from))
+            .enumerate()
+            .map(|(index, text)| Word {
+                id: format!("w{index}"),
+                t0: index as f64 * 0.2,
+                t1: index as f64 * 0.2 + 0.2,
+                text,
+                sp: String::new(),
+                glue: false,
+            })
+            .collect();
+        words[20].glue = true;
+        words
+    }
+
+    #[test]
+    fn overflow_never_breaks_inside_a_glued_latin_word() {
+        let mut doc = doc_from_rows(&[]);
+        doc.words = glued_latin_words();
+        let texts: Vec<String> = derive_cues(&doc, &CueParams::default())
+            .iter()
+            .map(|cue| cue.text(&doc))
+            .collect();
+        assert!(
+            texts.iter().any(|text| text.contains("Transformer")),
+            "{texts:?}"
+        );
+        // 停顿也不在词内断。
+        let mut paused = glued_latin_words();
+        for word in &mut paused[20..] {
+            word.t0 += 1.0;
+            word.t1 += 1.0;
+        }
+        assert!(!auto_break(
+            &paused[19],
+            &paused[20],
+            42,
+            &CueParams::default()
+        ));
+        // 不贴前的西文词之间照常是词界。
+        paused[20].glue = false;
+        assert!(auto_break(
+            &paused[19],
+            &paused[20],
+            42,
+            &CueParams::default()
+        ));
     }
 
     #[test]

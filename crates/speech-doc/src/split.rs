@@ -10,7 +10,7 @@
 
 use crate::atomize::{
     atomize, clause_end_char, count_cps_chars, is_cjk_char, join_word_texts, normalize_chars,
-    seam_backed_by_whitespace, sentence_end, sep_len, visual_width,
+    seam_backed_by_whitespace, sentence_end, sep_len, spaced_script_letter, visual_width,
 };
 use crate::doc::{AlignMode, Correspondence, TextBasis, TransAlign, TranscriptDoc};
 use crate::seam::{SeamLintKind, cjk_midword_boundary, is_objective_blocking, lint_pieces};
@@ -881,8 +881,8 @@ fn oversize_char_cut(text: String, params: &TransParams, lang: &str) -> Vec<Stri
 
 /// 强制一对一 / 兜底切分（v0.3 §5.3）：译文按 `weights`（各源 Cue 的源文
 /// 非空白字符数）占比切段，切点吸附到 ±`snap` 非空白字符内最近的原子边界，
-/// 吸附不到则按字符位置硬切。返回恰 `weights.len()` 段（可含空段——调用方
-/// 负责把空段并进相邻片区间）。
+/// 吸附不到则按字符位置硬切（硬切会切进一串西文时改取最近的原子边界）。
+/// 返回恰 `weights.len()` 段（可含空段——调用方负责把空段并进相邻片区间）。
 pub fn split_proportional(translation: &str, weights: &[usize], snap: usize) -> Vec<String> {
     if weights.is_empty() {
         return Vec::new();
@@ -935,8 +935,23 @@ pub fn split_proportional(translation: &str, weights: &[usize], snap: usize) -> 
                 best = Some((distance, pos));
             }
         }
+        // 吸附不到时按字符位置硬切；硬切点落在一串西文中间（`Trans|former`）时
+        // 改取离它最近的原子边界，不管多远，没有边界才真的切进词里。
         let cut = best.map_or_else(
-            || ideal_char.clamp(previous_char, chars.len()),
+            || {
+                let hard = ideal_char.clamp(previous_char, chars.len());
+                let inside_word = hard > 0
+                    && hard < chars.len()
+                    && spaced_script_letter(chars[hard - 1])
+                    && spaced_script_letter(chars[hard]);
+                if !inside_word {
+                    return hard;
+                }
+                (previous_char + 1..=chars.len())
+                    .filter(|&pos| atom_boundary[pos])
+                    .min_by_key(|&pos| (pos.abs_diff(hard), pos))
+                    .unwrap_or(hard)
+            },
             |(_, pos)| pos,
         );
         cut_chars.push(cut);
@@ -1733,6 +1748,17 @@ mod tests {
         assert_eq!(latin.len(), 2);
         assert!(latin.iter().all(|p| !p.is_empty()));
         assert!(!latin[0].ends_with("char"), "{latin:?}");
+    }
+
+    #[test]
+    fn proportional_split_moves_a_whole_latin_word_rather_than_cutting_it() {
+        // 理想切点落在长词中间、±snap 内没有原子边界：整词留在一段里。
+        let pieces = split_proportional("Supercalifragilisticexpialidocious是一个词", &[10, 10], 3);
+        assert_eq!(pieces, ["Supercalifragilisticexpialidocious", "是一个词"]);
+        // 整段只有一个词时没有边界可取，才在词里硬切。
+        let lone = split_proportional("Supercalifragilisticexpialidocious", &[10, 10], 3);
+        assert_eq!(lone.len(), 2);
+        assert_eq!(lone.concat(), "Supercalifragilisticexpialidocious");
     }
 
     #[test]

@@ -48,8 +48,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::atomize::{
-    clause_end_char, count_cps_chars, is_cjk_text, join_word_texts, sentence_end, visual_width,
-    word_sep,
+    clause_end_char, count_cps_chars, glued_word_interior, is_cjk_text, join_word_texts,
+    sentence_end, visual_width, word_sep,
 };
 use crate::cue::{CueParams, auto_break, derive_cues};
 use crate::doc::{BreakOverride, TranscriptDoc, Word};
@@ -139,6 +139,7 @@ fn classify_seams(
                 match user.get(&word.id) {
                     Some(BreakOverride::Break) => Seam::Hard,
                     Some(BreakOverride::Nobreak) => Seam::Forbidden,
+                    None if glued_word_interior(&word.text, next) => Seam::Forbidden,
                     None if sentence_end(&word.text) => Seam::Hard,
                     None if english
                         && english_cue_boundary_issue(&texts[start..end], k + 1 - start)
@@ -1344,6 +1345,69 @@ mod tests {
         assert_eq!(
             crate::atomize::join_prefix_char_lens(&doc.words),
             vec![2, 4, 7]
+        );
+    }
+
+    #[test]
+    fn a_glued_latin_seam_is_never_a_cue_break() {
+        // 转写把 `Transformer` 切成两段、后一段贴前：这条缝不能断，汉字之间、
+        // 汉字与西文之间的缝照常可断。
+        let mut words: Vec<Word> = ["我", "们", "讲", "Tra", "nsformer", "模", "型"]
+            .iter()
+            .enumerate()
+            .map(|(index, text)| w(&format!("w{index}"), index as f64, index as f64 + 1.0, text))
+            .collect();
+        words[4].glue = true;
+        let seams = classify_seams(
+            &words,
+            &BTreeMap::new(),
+            &BTreeMap::new(),
+            false,
+            &CueParams::default(),
+            0.0,
+        );
+        assert_eq!(seams[3], Seam::Forbidden);
+        assert!(
+            seams[..3]
+                .iter()
+                .chain(&seams[4..6])
+                .all(|seam| *seam == Seam::Soft)
+        );
+        // 用户明确要断的照样断。
+        let user = BTreeMap::from([("w3".to_owned(), BreakOverride::Break)]);
+        let seams = classify_seams(
+            &words,
+            &user,
+            &BTreeMap::new(),
+            false,
+            &CueParams::default(),
+            0.0,
+        );
+        assert_eq!(seams[3], Seam::Hard);
+        // 均衡切条：一条放不下时整词留在一条里。
+        let words: Vec<Word> = "我们今天来讲一讲这个很有名的模型就是它"
+            .chars()
+            .map(String::from)
+            .chain(["Tra", "nsformer", "的", "注", "意", "力", "机", "制"].map(String::from))
+            .enumerate()
+            .map(|(index, text)| {
+                let mut word = w(
+                    &format!("w{index}"),
+                    index as f64 * 0.2,
+                    index as f64 * 0.2 + 0.2,
+                    &text,
+                );
+                word.glue = index == 20;
+                word
+            })
+            .collect();
+        let mut doc = doc_with_words(words);
+        apply_balanced_cues(&mut doc, &CueParams::default());
+        let texts = cue_texts(&doc);
+        assert!(texts.len() > 1, "{texts:?}");
+        assert!(
+            texts.iter().any(|text| text.contains("Transformer")),
+            "{texts:?}"
         );
     }
 

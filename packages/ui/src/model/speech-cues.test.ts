@@ -281,6 +281,34 @@ describe('读转写', () => {
     expect(deriveCues(zero.words).map((cue) => cue.text)).toEqual(['international']);
   });
 
+  it('转写把西文词切成几段（后一段贴前）：停顿、溢出都不在词内断，整词跟着上一条', () => {
+    const body = (words: unknown[]) => ({ schema: 'baocut.speech/1', timescale: 1000, words, speakers: [], sentences: null });
+    const tokens = [...'我们今天来讲一讲这个很有名的模型就是它', 'Tra', 'nsformer', ...'的注意力'];
+    const words = (pause: number) =>
+      tokens.map((text, i) => ({
+        id: `w${i}`,
+        start: i * 200 + (i >= 20 ? pause : 0),
+        end: i * 200 + 200 + (i >= 20 ? pause : 0),
+        text,
+        ...(i === 20 ? { glue: true } : {}),
+      }));
+    // 19 个汉字 + 空格 + `Tra` 正好 42 格，`nsformer` 一接上就溢出。
+    const overflow = deriveCues(readSpeechWords(body(words(0)))!.words).map((cue) => cue.text);
+    expect(overflow.some((text) => text.includes('Transformer')), overflow.join('|')).toBe(true);
+    const paused = deriveCues(readSpeechWords(body(words(700)))!.words).map((cue) => cue.text);
+    expect(paused.some((text) => text.includes('Transformer')), paused.join('|')).toBe(true);
+  });
+
+  it('没有词时间的长段按宽度切时，一串西文整串挪进下一段；只有一串西文自己就超宽时才切开它', () => {
+    const pieces = splitUntimed('我们今天要讲的是Transformer模型为什么能够理解上下文', 0, 5, 20).map((p) => p.text);
+    expect(pieces.join('')).toBe('我们今天要讲的是Transformer模型为什么能够理解上下文');
+    expect(pieces.some((piece) => piece.includes('Transformer'))).toBe(true);
+    expect(pieces.every((piece) => !/^[，。、]/.test(piece))).toBe(true);
+    const long = splitUntimed('看这个abcdefghijklmnopqrstuvwxyz词', 0, 5, 20).map((p) => p.text);
+    expect(long.join('')).toBe('看这个abcdefghijklmnopqrstuvwxyz词');
+    expect(long.every((piece) => [...piece].length <= 20)).toBe(true);
+  });
+
   const one = sequence([video('v', 0, 300, 0)]);
 
   it('隐藏的词不进字幕（cue.rs 契约）', () => {

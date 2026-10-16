@@ -88,6 +88,24 @@ pub fn spaced_script_letter(ch: char) -> bool {
         )
 }
 
+/// 两个相邻的词其实是同一个词的几段：后一个带「贴前」标记，缝两侧都是写空格
+/// 的文字（[`spaced_script_letter`]）的字母或数字，例如转写把 `Transformer`
+/// 切成 `Tra` + `nsformer`。字幕切条、断行都不在这种缝上断。
+pub fn glued_word_interior<W: JoinWord + ?Sized>(prev: &str, next: &W) -> bool {
+    next.glued()
+        && prev
+            .trim_end()
+            .chars()
+            .next_back()
+            .is_some_and(spaced_script_letter)
+        && next
+            .join_text()
+            .trim_start()
+            .chars()
+            .next()
+            .is_some_and(spaced_script_letter)
+}
+
 /// 宽度意义上的"宽字符"（记 2 格）：CJK 词字符（含谚文）+ CJK 标点/全角区 +
 /// 中文引号破折号。拼接要不要空格不看它，看 [`is_unspaced_cjk_adjacent`]。
 pub fn is_cjk_adjacent(ch: char) -> bool {

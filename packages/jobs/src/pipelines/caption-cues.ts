@@ -283,23 +283,41 @@ export function splitUntimed(
   });
 }
 
-/** 宽过 `maxChars` 的一块按显示宽度切成差不多一样宽的几段。 */
+/**
+ * 宽过 `maxChars` 的一块按显示宽度切成差不多一样宽的几段。只在全角字之间、或全角字与西文之间切：一串连着的西文
+ * （字母、数字与夹在里面的符号，如 `Transformer`、`GPT-4o`）整串挪进下一段；行首不放不能起行的标点。只有一串西文
+ * 自己就宽过 `maxChars` 时才在它中间切。
+ */
 function chopWide(chunk: string, maxChars: number): string[] {
   const width = displayWidth(chunk);
   if (width <= maxChars) return [chunk];
+  const units: string[] = [];
+  for (const char of chunk) {
+    const last = units.at(-1);
+    if (last !== undefined && (NO_SPACE_BEFORE.test(char) || (!WIDE.test(char) && !WIDE.test([...last].at(-1)!)))) {
+      units[units.length - 1] = last + char;
+    } else units.push(char);
+  }
   const parts = Math.ceil(width / maxChars);
   const target = width / parts;
   const out: string[] = [];
   let current = '';
+  let currentWidth = 0;
   let used = 0;
-  for (const char of chunk) {
-    const w = displayWidth(char);
-    if (current && used + w > target * (out.length + 1) + 1e-9 && out.length < parts - 1) {
+  const place = (piece: string, w: number) => {
+    if (current && (currentWidth + w > maxChars || (used + w > target * (out.length + 1) + 1e-9 && out.length < parts - 1))) {
       out.push(current);
       current = '';
+      currentWidth = 0;
     }
-    current += char;
+    current += piece;
+    currentWidth += w;
     used += w;
+  };
+  for (const unit of units) {
+    const w = displayWidth(unit);
+    if (w <= maxChars) place(unit, w);
+    else for (const char of unit) place(char, displayWidth(char));
   }
   if (current) out.push(current);
   return out;
@@ -329,12 +347,26 @@ function mustBreak(last: CueWord, next: CueWord, first: CueWord): boolean {
   return next.end - first.start > EXPORT_MAX_CUE_SECONDS;
 }
 
-/** 断行阶梯：句末 > 从句标点（破折号门槛更低）> 长停顿 > 溢出（下一个词收在标点上且不超余量时延长收入）。 */
+/** 写空格的文字的字母或数字：汉字、假名与泰、老挝、缅甸、高棉、藏文以外（atomize.rs `spaced_script_letter`，谚文算）。 */
+const UNSPACED_SCRIPT = /[\u{0e00}-\u{0eff}\u{0f00}-\u{0fff}\u{1000}-\u{109f}\u{1780}-\u{17ff}]/u;
+const spacedLetter = (char: string) => /[\p{L}\p{N}]/u.test(char) && (!WIDE.test(char) || HANGUL.test(char)) && !UNSPACED_SCRIPT.test(char);
+
+/** 同一个词被转写切开的几段：后一个贴前，缝两侧都是写空格的文字的字母或数字（atomize.rs `glued_word_interior`）。 */
+function gluedWordInterior(word: CueWord, next: CueWord): boolean {
+  if (next.glue !== true) return false;
+  const last = [...word.text.trim()].at(-1);
+  const first = [...next.text.trim()][0];
+  return last !== undefined && first !== undefined && spacedLetter(last) && spacedLetter(first);
+}
+
+/** 断行阶梯：句末 > 从句标点（破折号门槛更低）> 长停顿 > 溢出（同一个词的几段之间不因停顿、溢出断；下一个词收在标点上且不超余量时延长收入）。 */
 function autoBreak(word: CueWord, next: CueWord, lineWidth: number, projected: number, params: CueParams): boolean {
   const token = word.text.trim();
   if (sentenceEnd(token)) return true;
   const punct = clauseEndChar(token);
   if (punct !== null && lineWidth >= (punct === '—' || punct === '–' ? params.minDashChars : params.minClauseChars)) return true;
+  // 同一个词被切开的几段（`Tra` + `nsformer`）：停顿、溢出都不在词内断。
+  if (gluedWordInterior(word, next)) return false;
   if (next.start - word.end >= params.pauseSec && lineWidth >= params.minPauseChars) return true;
   if (projected > params.maxChars) {
     const nextToken = next.text.trim();
