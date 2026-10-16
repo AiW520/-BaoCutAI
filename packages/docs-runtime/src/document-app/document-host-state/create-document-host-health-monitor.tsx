@@ -263,7 +263,10 @@ export const DocumentPresencePerson: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const PresenceAgentSpark: ReactComponentTypes.FC<Dynamic> = ({
+export const PresenceAgentSpark: ReactComponentTypes.FC<{
+  src: string;
+  alt: string;
+}> = ({
   src: src,
   alt: alt,
 }) => {
@@ -281,7 +284,9 @@ export const PresenceAgentSpark: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const PresenceClaudeResting: ReactComponentTypes.FC<Dynamic> = ({
+export const PresenceClaudeResting: ReactComponentTypes.FC<{
+  name: string;
+}> = ({
   name: name,
 }) => {
   return (

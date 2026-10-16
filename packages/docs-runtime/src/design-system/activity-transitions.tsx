@@ -12,7 +12,14 @@ import { resolveShimmerAnimate } from "./spark";
 import { collectShimmerThen } from "./activity-status";
 import type * as ReactComponentTypes from "react";
 
-export const ShimmerFaceKey: ReactComponentTypes.FC<Dynamic> = ({
+export const ShimmerFaceKey: ReactComponentTypes.FC<{
+  faceKey: string;
+  leaving: boolean;
+  initialEnters: boolean;
+  easesBack: boolean;
+  onLeft: (key: string) => void;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   faceKey: input,
   leaving: input2,
   initialEnters: input3,
@@ -144,7 +151,13 @@ export const ShimmerFaceKey: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const ShimmerSwapKey: ReactComponentTypes.FC<Dynamic> = ({
+export const ShimmerSwapKey: ReactComponentTypes.FC<{
+  swapKey: string;
+  id?: string;
+  attrs?: ReactComponentTypes.HTMLAttributes<HTMLSpanElement>;
+  className?: string;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   swapKey: input,
   id: input2,
   attrs: input3,

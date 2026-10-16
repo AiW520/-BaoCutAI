@@ -195,7 +195,10 @@ export const WidgetSampleProblems: ReactComponentTypes.FC<Dynamic> = (
   );
 };
 
-export const UseWidgetBridgeLabelComponent: ReactComponentTypes.FC<Dynamic> = ({
+export const UseWidgetBridgeLabelComponent: ReactComponentTypes.FC<{
+  label: ReactComponentTypes.ReactNode;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   label: label,
   children: children,
 }) => {
@@ -209,7 +212,11 @@ export const UseWidgetBridgeLabelComponent: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UseWidgetBridgeIconComponent: ReactComponentTypes.FC<Dynamic> = ({
+export const UseWidgetBridgeIconComponent: ReactComponentTypes.FC<{
+  icon: string;
+  onClick?: ReactComponentTypes.MouseEventHandler<HTMLButtonElement>;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   icon: icon,
   onClick: onClick,
   children: children,

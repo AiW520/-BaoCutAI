@@ -46,6 +46,7 @@ import {
   mapPreloadDependencies,
 } from "../bootstrap";
 import type * as ReactComponentTypes from "react";
+import { useRef, useState } from "react";
 
 export const ConnectorAuthenticationDialog: ReactComponentTypes.FC<
   Readonly<Record<string, unknown>>
@@ -179,15 +180,17 @@ export const ConnectorAuthenticationDialog: ReactComponentTypes.FC<
   );
 };
 
-export const SupportCodeCopyButton: ReactComponentTypes.FC<Dynamic> = ({
+export const SupportCodeCopyButton: ReactComponentTypes.FC<{
+  code: string;
+}> = ({
   code: code,
 }) => {
   let supportCodeCopyButtonResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let [labelState, setLabelState]: Dynamic = (0, React.useState)(`idle`);
-  let elementRef: Dynamic = (0, React.useRef)(null);
-  let codePartsSliceText: Dynamic = code.split(`-`).slice(0, 3).join(`-`);
+  let [labelState, setLabelState] = useState<"idle" | "copied" | "manual">(`idle`);
+  let elementRef = useRef<HTMLElement | null>(null);
+  let codePartsSliceText: string = code.split(`-`).slice(0, 3).join(`-`);
   let addRange = async (
-    supportCodeCopyButton?: Dynamic,
+    supportCodeCopyButton?: HTMLButtonElement,
     ..._extraArguments: unknown[]
   ): Promise<undefined> => {
     if (
@@ -196,10 +199,10 @@ export const SupportCodeCopyButton: ReactComponentTypes.FC<Dynamic> = ({
       setLabelState(`copied`);
       return;
     }
-    let element: Dynamic = elementRef.current;
-    let selection: Dynamic = element?.ownerDocument.getSelection();
+    let element = elementRef.current;
+    let selection = element?.ownerDocument.getSelection();
     if (element && selection) {
-      let range: Dynamic = element.ownerDocument.createRange();
+      let range = element.ownerDocument.createRange();
       range.selectNodeContents(element);
       selection.removeAllRanges();
       selection.addRange(range);
@@ -224,7 +227,7 @@ export const SupportCodeCopyButton: ReactComponentTypes.FC<Dynamic> = ({
         variant={`ghost`}
         size={supportCodeCopyButtonResult(`sm`)}
         data-testid={`support-code-copy`}
-        onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined =>
+        onClick={(event: ReactComponentTypes.MouseEvent<HTMLButtonElement>, ..._extraArguments: unknown[]): undefined =>
           void addRange(event.currentTarget)
         }
       >
@@ -238,7 +241,11 @@ export const SupportCodeCopyButton: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const RouteErrorFallback: ReactComponentTypes.FC<Dynamic> = ({
+export const RouteErrorFallback: ReactComponentTypes.FC<{
+  message: string;
+  stack: string;
+  internal?: boolean;
+}> = ({
   message: message,
   stack: stack,
   internal: internal,

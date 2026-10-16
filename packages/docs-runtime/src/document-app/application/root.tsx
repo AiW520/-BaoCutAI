@@ -407,7 +407,10 @@ export const ApplicationRoot: ReactComponentTypes.FC<
   );
 };
 
-export const UseApplicationRootModeComponent: ReactComponentTypes.FC<Dynamic> = ({
+export const UseApplicationRootModeComponent: ReactComponentTypes.FC<{
+  mode: "light" | "dark";
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   mode: mode,
   children: children,
 }) => {

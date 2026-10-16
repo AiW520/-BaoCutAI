@@ -4,7 +4,7 @@ import { resolveUiDesignSystemValue2 } from "./dependencies";
 import { isReducedMotion } from "./presentation";
 import type * as React from "react";
 
-export const Dots: React.FC<Dynamic> = ({ className: input }) => {
+export const Dots: React.FC<{ className?: string }> = ({ className: input }) => {
   return (
     <span
       data-cds={`Dots`}

@@ -21,7 +21,9 @@ import {
 } from "../comment-session/ask-suggestions-measure";
 import type * as ReactComponentTypes from "react";
 
-export const ClaudeTypingIndicator: ReactComponentTypes.FC<Dynamic> = ({
+export const ClaudeTypingIndicator: ReactComponentTypes.FC<{
+  className?: string;
+}> = ({
   className: className,
 }) => {
   let reduceMotion: Dynamic = usePlatformSyncAndRoutingUseSyncExternalStore(

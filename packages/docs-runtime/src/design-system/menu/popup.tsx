@@ -54,7 +54,7 @@ import {
 } from "./focus";
 import type * as ReactComponentTypes from "react";
 
-export const MenuPopupsKeys: ReactComponentTypes.FC<Dynamic> = ({ keys: input }) => {
+export const MenuPopupsKeys: ReactComponentTypes.FC<{ keys: string }> = ({ keys: input }) => {
   return (
     <UiShortcutsAndSizingKeys
       keys={input}

@@ -14,8 +14,29 @@ import {
   resolveUiOverlaysAndIconsValue,
 } from "./dependencies";
 import type * as ReactComponentTypes from "react";
+import { useContext, useState } from "react";
 
-export const ShimmerContainer: ReactComponentTypes.FC<Dynamic> = ({
+export interface SkeletonGroupProps {
+  children?: ReactComponentTypes.ReactNode;
+  hold?: "delayed" | { none: string };
+  label?: string;
+  className?: string;
+  decorative?: boolean;
+  onShown?: () => void;
+  onHidden?: () => void;
+  as?: "div" | "span";
+  motion?: "wave" | "sweep" | "lockstep";
+}
+
+export interface SkeletonProps {
+  width?: ReactComponentTypes.CSSProperties["width"];
+  height?: ReactComponentTypes.CSSProperties["height"];
+  className?: string;
+  decorative?: boolean;
+  as?: "div" | "span";
+}
+
+export const ShimmerContainer: ReactComponentTypes.FC<SkeletonGroupProps> = ({
   children: input,
   hold: input7 = `delayed`,
   label: input2,
@@ -27,8 +48,8 @@ export const ShimmerContainer: ReactComponentTypes.FC<Dynamic> = ({
   motion: input9 = CommentMotionWave,
 }) => {
   let value: Dynamic = (0, React.useContext)(UiOverlaysAndIconsCreateContext);
-  let value2: Dynamic = (0, React.useContext)(UiOverlaysAndIconsCreateContext2);
-  let [value3]: Dynamic = (0, React.useState)(input6 ?? value2);
+  let value2 = useContext(UiOverlaysAndIconsCreateContext2);
+  let [value3] = useState(input6 ?? value2);
   let Value4Component: Dynamic = CommentMotionDiv[value3];
   let value5: boolean = value3 === `span`;
   let value6: Dynamic = (0, React.useContext)(UiOverlaysAndIconsCreateContext3);
@@ -325,21 +346,24 @@ export const ShimmerContainer: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SkeletonRows: ReactComponentTypes.FC<Dynamic> = ({
+export const SkeletonRows: ReactComponentTypes.FC<{
+  rows?: number | readonly number[];
+  icon?: boolean;
+}> = ({
   rows: input = 3,
   icon: input2 = true,
 }) => {
-  let ValueComponent: Dynamic =
-    CommentMotionDiv[(0, React.useContext)(UiOverlaysAndIconsCreateContext2)];
-  let value2: Dynamic = ValueComponent === `span` ? `block` : undefined;
-  let value3: Dynamic = input2 ? CommentMotionState : CommentMotionState2;
-  let filtered: Dynamic = (typeof input == `number` ? [input] : input).filter(
-    (input3?: Dynamic, ..._extraArguments: unknown[]) => input3 > 0,
+  let ValueComponent: "div" | "span" =
+    CommentMotionDiv[useContext(UiOverlaysAndIconsCreateContext2)];
+  let value2 = ValueComponent === `span` ? `block` : undefined;
+  let value3 = input2 ? CommentMotionState : CommentMotionState2;
+  let filtered = (typeof input == `number` ? [input] : input).filter(
+    (input3, ..._extraArguments: unknown[]) => input3 > 0,
   );
-  let value4: Dynamic = filtered.length > 0 ? filtered : [3];
-  let items: Dynamic = [];
+  let value4 = filtered.length > 0 ? filtered : [3];
+  let items: ReactComponentTypes.ReactNode[] = [];
   let index: number = 0;
-  for (let [value5, value6] of value4.entries() as Dynamic) {
+  for (let [value5, value6] of value4.entries()) {
     if (value5 > 0) {
       items.push(
         <ValueComponent
@@ -353,7 +377,7 @@ export const SkeletonRows: ReactComponentTypes.FC<Dynamic> = ({
         />,
       );
     }
-    for (let value7: Dynamic = index + value6; index < value7; index++)
+    for (let value7 = index + value6; index < value7; index++)
       items.push(
         <ValueComponent
           aria-hidden={index > 0 ? true : undefined}
@@ -372,21 +396,24 @@ export const SkeletonRows: ReactComponentTypes.FC<Dynamic> = ({
   return <ValueComponent className={value2}>{items}</ValueComponent>;
 };
 
-export const SkeletonLines: ReactComponentTypes.FC<Dynamic> = ({
+export const SkeletonLines: ReactComponentTypes.FC<{
+  lines?: number;
+  className?: string;
+}> = ({
   lines: input2 = 8,
   className: input,
 }) => {
-  let ValueComponent2: Dynamic =
-    CommentMotionDiv[(0, React.useContext)(UiOverlaysAndIconsCreateContext2)];
+  let ValueComponent2: "div" | "span" =
+    CommentMotionDiv[useContext(UiOverlaysAndIconsCreateContext2)];
   return (
     <ValueComponent2
       className={resolveUiDesignSystemValue2(`flex flex-col gap-sm`, input)}
     >
-      {Array.from<Dynamic, Dynamic>(
+      {Array.from(
         {
           length: input2,
         },
-        (input3?: unknown, options?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
+        (input3, options, ..._extraArguments: unknown[]) => (
           <span
             aria-hidden={options > 0 ? true : undefined}
             className={`contents`}
@@ -409,7 +436,7 @@ export const SkeletonLines: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SkeletonElement: ReactComponentTypes.FC<Dynamic> = ({
+export const SkeletonElement: ReactComponentTypes.FC<SkeletonProps> = ({
   width: input,
   height: input2,
   className: input3,
@@ -417,9 +444,9 @@ export const SkeletonElement: ReactComponentTypes.FC<Dynamic> = ({
   as: input4,
 }) => {
   let value: Dynamic = (0, React.useContext)(UiOverlaysAndIconsCreateContext);
-  let value2: Dynamic = (0, React.useContext)(UiOverlaysAndIconsCreateContext2);
-  let Value3Component: Dynamic = CommentMotionDiv[input4 ?? value2];
-  let value4: Dynamic = Value3Component === `span` ? `block` : undefined;
+  let value2: "div" | "span" = useContext(UiOverlaysAndIconsCreateContext2);
+  let Value3Component: "div" | "span" = CommentMotionDiv[input4 ?? value2];
+  let value4 = Value3Component === `span` ? `block` : undefined;
   let value5: Dynamic = resolveUiLinksAndFoundationUseContext3(`loading`, `Loading`);
   return value ? (
     <Value3Component
@@ -455,7 +482,10 @@ export const SkeletonElement: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SkeletonChip: ReactComponentTypes.FC<Dynamic> = ({
+export const SkeletonChip: ReactComponentTypes.FC<{
+  width?: ReactComponentTypes.CSSProperties["width"];
+  shape?: string;
+}> = ({
   width: input = 120,
   shape: input2 = `pill`,
 }) => {
@@ -471,14 +501,17 @@ export const SkeletonChip: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SkeletonBlock: ReactComponentTypes.FC<Dynamic> = ({
+export const SkeletonBlock: ReactComponentTypes.FC<{
+  height?: ReactComponentTypes.CSSProperties["height"];
+  className?: string;
+}> = ({
   height: input,
   className: input2,
 }) => {
   return <Skeleton className={input2} width={`100%`} height={input} />;
 };
 
-var CommentMotionDiv: Dynamic;
+var CommentMotionDiv: Record<"div" | "span", "div" | "span">;
 
 function resolveCommentMotionCdsShimmer(
   input?: Dynamic,
@@ -594,7 +627,7 @@ var CommentMotionCdsSkeletonSweep: Dynamic;
 
 var commentMotionValue20002: Dynamic;
 
-var CommentMotionWave: Dynamic;
+var CommentMotionWave: "wave";
 
 var commentMotionValue90: Dynamic;
 
@@ -669,13 +702,18 @@ function updateCommentMotionGetAnimations(
     entry + context + value6 * commentMotionValue20002 - (value.delay ?? 0);
 }
 
-var CommentMotionState: Dynamic;
+var CommentMotionState: readonly number[];
 
-var CommentMotionState2: Dynamic;
+var CommentMotionState2: readonly number[];
 
-var commentMotion921009658Values: Dynamic;
+var commentMotion921009658Values: readonly string[];
 
-var Skeleton: Dynamic;
+var Skeleton: typeof SkeletonElement & {
+  Rows: typeof SkeletonRows;
+  Chip: typeof SkeletonChip;
+  Lines: typeof SkeletonLines;
+  Block: typeof SkeletonBlock;
+};
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeSkeletonStep1(): void {
@@ -701,13 +739,13 @@ export function initializeSkeletonStep1(): void {
   commentMotionWeakMap2 = new (WeakMap as Dynamic)();
   CommentMotionState = [160, 128, 144];
   CommentMotionState2 = [120, 88, 104];
-  (SkeletonRows as Dynamic).displayName = `Skeleton.Rows`;
-  (SkeletonChip as Dynamic).displayName = `Skeleton.Chip`;
+  SkeletonRows.displayName = `Skeleton.Rows`;
+  SkeletonChip.displayName = `Skeleton.Chip`;
   commentMotion921009658Values = [`92%`, `100%`, `96%`, `58%`];
-  (SkeletonLines as Dynamic).displayName = `Skeleton.Lines`;
-  (SkeletonBlock as Dynamic).displayName = `Skeleton.Block`;
-  (SkeletonElement as Dynamic).displayName = `Skeleton`;
-  (ShimmerContainer as Dynamic).displayName = `SkeletonGroup`;
+  SkeletonLines.displayName = `Skeleton.Lines`;
+  SkeletonBlock.displayName = `Skeleton.Block`;
+  SkeletonElement.displayName = `Skeleton`;
+  ShimmerContainer.displayName = `SkeletonGroup`;
   Skeleton = Object.assign(SkeletonElement, {
     Rows: SkeletonRows,
     Chip: SkeletonChip,

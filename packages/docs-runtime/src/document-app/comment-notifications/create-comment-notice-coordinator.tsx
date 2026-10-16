@@ -21,7 +21,13 @@ import {
 } from "../dependencies";
 import type * as ReactComponentTypes from "react";
 
-export const CollaboratorAvatar: ReactComponentTypes.FC<Dynamic> = ({
+export const CollaboratorAvatar: ReactComponentTypes.FC<{
+  email?: string | null;
+  name?: string | null;
+  photoUrl?: string | null;
+  size?: number;
+  className?: string;
+}> = ({
   email: email,
   name: name,
   photoUrl: photoUrl,

@@ -137,7 +137,12 @@ export const WhoReacted: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UseCommentComposerLabelComponent: ReactComponentTypes.FC<Dynamic> = ({
+export const UseCommentComposerLabelComponent: ReactComponentTypes.FC<{
+  onClick: () => void;
+  label: string;
+  icon: ReactComponentTypes.ReactNode;
+  pinned?: boolean;
+}> = ({
   onClick: onClick,
   label: label,
   icon: icon,
@@ -150,7 +155,7 @@ export const UseCommentComposerLabelComponent: ReactComponentTypes.FC<Dynamic> =
         size={20}
         icon={icon}
         onClick={(
-          commentComposerLabel?: Dynamic,
+          commentComposerLabel: ReactComponentTypes.MouseEvent<HTMLButtonElement>,
           ..._extraArguments: unknown[]
         ): undefined => {
           commentComposerLabel.stopPropagation();
@@ -162,7 +167,11 @@ export const UseCommentComposerLabelComponent: ReactComponentTypes.FC<Dynamic> =
   );
 };
 
-export const UseCommentComposerModalComponent: ReactComponentTypes.FC<Dynamic> = ({
+export const UseCommentComposerModalComponent: ReactComponentTypes.FC<{
+  onCopyLink: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}> = ({
   onCopyLink: onCopyLink,
   onEdit: onEdit,
   onDelete: onDelete,
@@ -187,9 +196,9 @@ export const UseCommentComposerModalComponent: ReactComponentTypes.FC<Dynamic> =
                   <UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} customSize={14} />
                 }
                 onClick={(
-                  commentComposerModal?: Dynamic,
+                  commentComposerModal: ReactComponentTypes.MouseEvent<HTMLElement>,
                   ..._extraArguments: unknown[]
-                ): Dynamic => commentComposerModal.stopPropagation()}
+                ): void => commentComposerModal.stopPropagation()}
               />
             }
           />
@@ -337,7 +346,9 @@ export const ResolvedMark: ReactComponentTypes.FC<Dynamic> = ({ t: t5 }) => {
 };
 
 // BaoCut: 批注里智能体正在回复时的署名叫 Agent，不叫 Claude。
-export const UseCommentComposerTextComponent: ReactComponentTypes.FC<Dynamic> = ({
+export const UseCommentComposerTextComponent: ReactComponentTypes.FC<{
+  text: string;
+}> = ({
   text: text,
 }) => {
   return (

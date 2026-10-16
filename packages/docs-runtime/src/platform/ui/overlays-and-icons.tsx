@@ -60,7 +60,63 @@ export const UiOverlaysAndIconsActionsRef: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<Dynamic> = (
+export type IconSize =
+  | "xs"
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "xxl"
+  | "auto"
+  | "auto-sm"
+  | "auto-lg";
+
+export interface CustomSvgIcon {
+  viewBox: number;
+  paths: readonly (
+    | string
+    | {
+        d: string;
+        strokeWidth?: ReactComponentTypes.SVGAttributes<SVGPathElement>["strokeWidth"];
+      }
+  )[];
+}
+
+interface IconAppearanceProps {
+  size?: IconSize;
+  customSize?: number;
+  alt?: string;
+  bold?: boolean;
+  animated?: boolean;
+}
+
+type IconDomAttributes = ReactComponentTypes.DOMAttributes<
+  HTMLElement | SVGSVGElement
+>;
+
+export type IconProps = IconAppearanceProps &
+  IconDomAttributes &
+  (
+    | (Omit<
+        ReactComponentTypes.SVGProps<SVGSVGElement>,
+        keyof IconDomAttributes
+      > & {
+        customIcon: CustomSvgIcon;
+        name?: string;
+        icon?: { name: string };
+      })
+    | (Omit<
+        ReactComponentTypes.ComponentPropsWithRef<"span">,
+        keyof IconDomAttributes
+      > & {
+        customIcon?: undefined;
+      } & (
+          | { name: string; icon?: { name: string } }
+          | { name?: undefined; icon: { name: string } }
+        ))
+  );
+
+export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<IconProps> = (
   uiOverlaysAndIconsCustomIcon,
 ) => {
   let uiOverlaysAndIconsComfortable: string = resolveUiOverlaysAndIconsComfortable();
@@ -75,7 +131,7 @@ export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<Dynamic> = (
       icon: uiOverlaysAndIconsCustomIcon17,
       animated: uiOverlaysAndIconsCustomIcon18,
       ...uiOverlaysAndIconsCustomIcon19
-    }: Dynamic = uiOverlaysAndIconsCustomIcon;
+    } = uiOverlaysAndIconsCustomIcon;
     let px2: Dynamic =
       UiOverlaysAndIconsMaster[
         resolveUiOverlaysAndIconsAuto(
@@ -117,7 +173,7 @@ export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<Dynamic> = (
         }
       >
         {uiOverlaysAndIconsCustomIcon13.paths.map(
-          (path?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+          (path, index, ..._extraArguments: unknown[]) =>
             typeof path == `string` ? (
               <path d={path} key={index} />
             ) : (
@@ -146,8 +202,8 @@ export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<Dynamic> = (
     customSize: uiOverlaysAndIconsCustomIcon7,
     customIcon: uiOverlaysAndIconsCustomIcon8,
     ...uiOverlaysAndIconsCustomIcon9
-  }: Dynamic = uiOverlaysAndIconsCustomIcon;
-  let name: Dynamic =
+  } = uiOverlaysAndIconsCustomIcon;
+  let name =
     uiOverlaysAndIconsCustomIcon.name ?? uiOverlaysAndIconsCustomIcon.icon.name;
   let cdsOpsz: Dynamic;
   let uiOverlaysAndIconsCustomIconResult: Dynamic;
@@ -255,7 +311,9 @@ export const UiOverlaysAndIconsCustomIcon: ReactComponentTypes.FC<Dynamic> = (
   );
 };
 
-export const UiOverlaysAndIconsValue: ReactComponentTypes.FC<Dynamic> = ({
+export const UiOverlaysAndIconsValue: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   children: children,
 }) => {
   return (
@@ -271,7 +329,17 @@ export const UiOverlaysAndIconsValue: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiOverlaysAndIconsSurface: ReactComponentTypes.FC<Dynamic> = ({
+export interface SurfaceProps {
+  children?: ReactComponentTypes.ReactNode;
+  className?: string;
+  style?: ReactComponentTypes.CSSProperties;
+  surface?: string;
+  density?: "compact" | "comfortable";
+  companionModalCatcher?: boolean;
+  closeOnActivityHide?: boolean;
+}
+
+export const UiOverlaysAndIconsSurface: ReactComponentTypes.FC<SurfaceProps> = ({
   children: children,
   className: className,
   style: style,
@@ -341,7 +409,9 @@ export const UiOverlaysAndIconsSurface: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiOverlaysAndIconsIcon: ReactComponentTypes.FC<Dynamic> = ({
+export const UiOverlaysAndIconsIcon: ReactComponentTypes.FC<{
+  icon: ReactComponentTypes.ReactNode;
+}> = ({
   icon: icon,
 }) => {
   return (
@@ -464,7 +534,9 @@ function resolveUiOverlaysAndIconsValue2(
 
 var UiOverlaysAndIconsCreateContext: Dynamic;
 
-var UiOverlaysAndIconsCreateContext2: Dynamic;
+var UiOverlaysAndIconsCreateContext2: ReactComponentTypes.Context<
+  "div" | "span"
+>;
 
 var UiOverlaysAndIconsCreateContext3: Dynamic;
 
@@ -792,7 +864,7 @@ function resolveUiOverlaysAndIconsAuto(
       : uiOverlaysAndIconsAuto;
 }
 
-var UiOverlaysAndIconsMd: string;
+var UiOverlaysAndIconsMd: IconSize;
 
 function resolveUiOverlaysAndIconsComfortable(..._extraArguments: unknown[]) {
   return resolveUiProviderAndLayersUseContext2() === `comfortable`
@@ -928,7 +1000,7 @@ var UiOverlaysAndIconsXxl: Dynamic;
 function resolveUiOverlaysAndIconsValue9(
   uiOverlaysAndIconsValue9?: unknown,
   ..._extraArguments: unknown[]
-) {
+): uiOverlaysAndIconsValue9 is string {
   return typeof uiOverlaysAndIconsValue9 == `string`;
 }
 
@@ -941,7 +1013,7 @@ export function initializeUiOverlaysAndIconsStep1(): void {
     onMouseDown: resolveUiOverlaysAndIconsDetail,
   });
   (UiOverlaysAndIconsCreateContext = (0, React.createContext)(false));
-  (UiOverlaysAndIconsCreateContext2 = (0, React.createContext)(`div`));
+  (UiOverlaysAndIconsCreateContext2 = (0, React.createContext)<"div" | "span">(`div`));
   (UiOverlaysAndIconsCreateContext3 = (0, React.createContext)(null));
   (UiOverlaysAndIconsCreateContext4 = (0, React.createContext)(null));
   (UiOverlaysAndIconsHttpWwwW3Org1999Xhtml = `http://www.w3.org/1999/xhtml`);

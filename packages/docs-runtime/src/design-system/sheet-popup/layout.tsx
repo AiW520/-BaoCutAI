@@ -14,7 +14,9 @@ import {
 import { useLabeledFieldsHeight } from "./height";
 import type * as ReactComponentTypes from "react";
 
-export const SheetPopupDrawPill: ReactComponentTypes.FC<Dynamic> = ({
+export const SheetPopupDrawPill: ReactComponentTypes.FC<{
+  drawPill?: boolean;
+}> = ({
   drawPill: input = true,
 }) => {
   return (
@@ -29,7 +31,10 @@ export const SheetPopupDrawPill: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SheetPopupLeading: ReactComponentTypes.FC<Dynamic> = ({
+export const SheetPopupLeading: ReactComponentTypes.FC<{
+  leading?: ReactComponentTypes.ReactNode;
+  title?: ReactComponentTypes.ReactNode;
+}> = ({
   leading: input,
   title: input2,
 }) => {
@@ -56,7 +61,10 @@ export const SheetPopupLeading: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SheetPopupView: ReactComponentTypes.FC<Dynamic> = ({
+export const SheetPopupView: ReactComponentTypes.FC<{
+  className?: string;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   className: input,
   children: input2,
 }) => {

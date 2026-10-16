@@ -162,7 +162,10 @@ export const MenuPopupsView: ReactComponentTypes.FC<
   );
 };
 
-export const MenuPopupsLabel: ReactComponentTypes.FC<Dynamic> = ({
+export const MenuPopupsLabel: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+  className?: string;
+}> = ({
   children: input,
   className: input2,
 }) => {
@@ -188,7 +191,10 @@ export const MenuPopupsLabel: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const MenuPopupsView2: ReactComponentTypes.FC<Dynamic> = ({
+export const MenuPopupsView2: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+  className?: string;
+}> = ({
   children: input,
   className: input2,
 }) => {

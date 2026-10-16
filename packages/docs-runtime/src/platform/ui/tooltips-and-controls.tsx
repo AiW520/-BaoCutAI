@@ -487,7 +487,13 @@ export const Tooltip: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiTooltipsAndControlsDelay: ReactComponentTypes.FC<Dynamic> = ({
+export const UiTooltipsAndControlsDelay: ReactComponentTypes.FC<{
+  size?: "sm" | "md" | "lg" | "s" | "m" | "l";
+  delay?: number;
+  inheritColor?: boolean;
+  label?: ReactComponentTypes.ReactNode;
+  className?: string;
+}> = ({
   size = `sm`,
   delay = 0,
   inheritColor = false,
@@ -568,7 +574,10 @@ export const UiTooltipsAndControlsDelay: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiTooltipsAndControlsShow: ReactComponentTypes.FC<Dynamic> = ({
+export const UiTooltipsAndControlsShow: ReactComponentTypes.FC<{
+  show: boolean;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   show: show,
   children: children,
 }) => {
@@ -583,7 +592,10 @@ export const UiTooltipsAndControlsShow: ReactComponentTypes.FC<Dynamic> = ({
   return show && enabledState ? <span className={`sr-only`}>{children}</span> : null;
 };
 
-export const UiTooltipsAndControlsKeys: ReactComponentTypes.FC<Dynamic> = ({
+export const UiTooltipsAndControlsKeys: ReactComponentTypes.FC<{
+  keys: string;
+  className?: string;
+}> = ({
   keys: keys,
   className: className,
 }) => {
@@ -635,7 +647,9 @@ export const DisabledReasonTooltip: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const TooltipImplProvider: ReactComponentTypes.FC<Dynamic> = ({
+export const TooltipImplProvider: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   children: children,
 }) => {
   return (
@@ -645,7 +659,11 @@ export const TooltipImplProvider: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const TooltipGroup: ReactComponentTypes.FC<Dynamic> = ({
+export const TooltipGroup: ReactComponentTypes.FC<{
+  delay?: number;
+  closeDelay?: number;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   delay = 600,
   closeDelay = 200,
   children: children,
@@ -714,7 +732,9 @@ export const UiTooltipsAndControlsImpl2: ReactComponentTypes.FC<Dynamic> = (node
   );
 };
 
-export const UiTooltipsAndControlsIndeterminate: ReactComponentTypes.FC<Dynamic> = ({
+export const UiTooltipsAndControlsIndeterminate: ReactComponentTypes.FC<{
+  indeterminate?: boolean;
+}> = ({
   indeterminate = false,
 }) => {
   return (
@@ -729,7 +749,11 @@ export const UiTooltipsAndControlsIndeterminate: ReactComponentTypes.FC<Dynamic>
   );
 };
 
-export const UiTooltipsAndControlsChecked: ReactComponentTypes.FC<Dynamic> = ({
+export const UiTooltipsAndControlsChecked: ReactComponentTypes.FC<{
+  checked?: boolean;
+  indeterminate?: boolean;
+  className?: string;
+}> = ({
   checked: checked,
   indeterminate = false,
   className: className,

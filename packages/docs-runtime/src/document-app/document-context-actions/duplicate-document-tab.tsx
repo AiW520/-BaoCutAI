@@ -69,7 +69,7 @@ import {
 } from "../presence-and-chat";
 import type * as ReactComponentTypes from "react";
 
-export const HomeButton: ReactComponentTypes.FC<Dynamic> = ({ boxed: boxed }) => {
+export const HomeButton: ReactComponentTypes.FC<{ boxed?: boolean }> = ({ boxed: boxed }) => {
   let [, set]: Dynamic = resolveObservabilityBrowserAndOperationEventsValue48();
   return (
     <Tooltip content={`Home`}>

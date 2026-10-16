@@ -63,7 +63,10 @@ export const LanguagePickerOption: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const LanguagePickerSkeleton: ReactComponentTypes.FC<Dynamic> = ({
+export const LanguagePickerSkeleton: ReactComponentTypes.FC<{
+  count: number;
+  className?: string;
+}> = ({
   count: input,
   className: input2,
 }) => {
@@ -98,15 +101,15 @@ export const LanguagePickerSkeleton: ReactComponentTypes.FC<Dynamic> = ({
       >
         <div ref={value2} className={`p-1`}>
           <div className={LanguagePickerGridGridCols1GapXMdGapYXsSmGridCols2MdGridCols3}>
-            {Array.from<Dynamic, Dynamic>(
+            {Array.from(
               {
                 length: input,
               },
               (
-                input3?: unknown,
-                options?: Dynamic,
+                input3,
+                options,
                 ..._extraArguments: unknown[]
-              ): Dynamic => (
+              ) => (
                 <div
                   className={resolveUiDesignSystemValue2(
                     LanguagePickerPxMdPySm,

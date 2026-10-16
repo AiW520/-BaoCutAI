@@ -3,7 +3,10 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 import { loadJsxRuntime } from "../platform/index";
 import type * as React from "react";
 
-export const PropertyRow: React.FC<Dynamic> = ({ label: label, children: children }) => {
+export const PropertyRow: React.FC<{
+  label: React.ReactNode;
+  children?: React.ReactNode;
+}> = ({ label: label, children: children }) => {
   return (
     <div
       className={`gap-x-sm grid min-w-0 ${PROPERTY_ROW_HEIGHT_CLASS} grid-cols-[80px_minmax(0,1fr)] items-center py-px`}

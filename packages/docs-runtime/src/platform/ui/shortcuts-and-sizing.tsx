@@ -21,7 +21,14 @@ import {
 } from "./overlays-and-icons";
 import type * as ReactComponentTypes from "react";
 
-export const UiShortcutsAndSizingKeys: ReactComponentTypes.FC<Dynamic> = ({
+export interface ShortcutProps
+  extends ReactComponentTypes.HTMLAttributes<HTMLSpanElement> {
+  keys: string;
+  variant?: "keycap" | "text";
+  onFill?: boolean;
+}
+
+export const UiShortcutsAndSizingKeys: ReactComponentTypes.FC<ShortcutProps> = ({
   keys: keys,
   variant = `keycap`,
   onFill = false,
@@ -133,7 +140,10 @@ export const UiShortcutsAndSizingOverride: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiShortcutsAndSizingReason: ReactComponentTypes.FC<Dynamic> = ({
+export const UiShortcutsAndSizingReason: ReactComponentTypes.FC<{
+  id: string;
+  reason?: ReactComponentTypes.ReactNode;
+}> = ({
   id: id,
   reason: reason,
 }) => {
@@ -153,7 +163,9 @@ export const UiShortcutsAndSizingReason: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const UiShortcutsAndSizingDataMode: ReactComponentTypes.FC<Dynamic> = ({
+export const UiShortcutsAndSizingDataMode: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   children: children,
 }) => {
   return (

@@ -83,7 +83,7 @@ export const BadgeAndLinkStamp: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const BadgeAndLinkHidden: ReactComponentTypes.FC<Dynamic> = ({ id: input }) => {
+export const BadgeAndLinkHidden: ReactComponentTypes.FC<{ id: string }> = ({ id: input }) => {
   return (
     <span id={input} hidden={true} className={`sr-only`}>
       {resolveUiLinksAndFoundationUseContext3(`opensInNewTab`, `(opens in new tab)`)}

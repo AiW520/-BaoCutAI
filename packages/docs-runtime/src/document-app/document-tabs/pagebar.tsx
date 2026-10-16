@@ -47,7 +47,18 @@ import {
 } from "../document-selection/create-heading-normalization-plugin";
 import type * as ReactComponentTypes from "react";
 
-export const PagebarMenuSection: ReactComponentTypes.FC<Dynamic> = ({
+export interface PagebarMenuSectionProps {
+  label: string;
+  leading?: ReactComponentTypes.ReactNode;
+  children?: ReactComponentTypes.ReactNode;
+  trailing?: ReactComponentTypes.ReactNode;
+  density?: "compact" | "comfortable";
+  readOnly?: boolean;
+  rule?: boolean;
+  "data-testid"?: string;
+}
+
+export const PagebarMenuSection: ReactComponentTypes.FC<PagebarMenuSectionProps> = ({
   label: label,
   leading: leading,
   children: children,
@@ -700,17 +711,20 @@ export const Pagebar: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const PagebarImageInput: ReactComponentTypes.FC<Dynamic> = ({
+export const PagebarImageInput: ReactComponentTypes.FC<{
+  inputRef: ReactComponentTypes.RefObject<HTMLInputElement | null>;
+  focusTarget: () => void;
+}> = ({
   inputRef: inputRef,
   focusTarget: focusTarget,
 }) => {
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
       let showPicker = (
-        pagebarImageInput: Dynamic = false,
+        pagebarImageInput: boolean = false,
         ..._extraArguments: unknown[]
       ) => {
-        let input: Dynamic = inputRef.current;
+        let input = inputRef.current;
         if (input === null) return false;
         if (!pagebarImageInput) {
           input.click();
@@ -741,8 +755,8 @@ export const PagebarImageInput: ReactComponentTypes.FC<Dynamic> = ({
       multiple={true}
       hidden={true}
       data-testid={`pagebar-image-input`}
-      onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-        let items: Dynamic = [...(event.currentTarget.files ?? [])];
+      onChange={(event: ReactComponentTypes.ChangeEvent<HTMLInputElement>, ..._extraArguments: unknown[]): undefined => {
+        let items = [...(event.currentTarget.files ?? [])];
         event.currentTarget.value = ``;
         let onPick: Dynamic = DataModelSchemasDragging.getState().intercept?.onPick;
         if (!(items.length === 0 || onPick === undefined)) {

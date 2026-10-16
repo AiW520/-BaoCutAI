@@ -353,7 +353,12 @@ export const UseDocumentPreviewStatusComponent: ReactComponentTypes.FC<Dynamic> 
   );
 };
 
-export const PageLoadingFace: ReactComponentTypes.FC<Dynamic> = ({
+export const PageLoadingFace: ReactComponentTypes.FC<{
+  matchShell?: boolean;
+  caption?: string;
+  captionTestId?: string;
+  hint?: string;
+}> = ({
   matchShell: matchShell,
   caption: caption,
   captionTestId: captionTestId,

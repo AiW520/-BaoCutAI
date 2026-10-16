@@ -25,7 +25,10 @@ import {
 import { ShimmerSwapKey } from "../activity-transitions";
 import type * as ReactComponentTypes from "react";
 
-export const CommentsLabel: ReactComponentTypes.FC<Dynamic> = ({
+export const CommentsLabel: ReactComponentTypes.FC<{
+  label?: string;
+  leading?: ReactComponentTypes.ReactNode;
+}> = ({
   label: input,
   leading: input2,
 }) => {

@@ -47,7 +47,13 @@ import {
 } from "../document-recovery";
 import type * as ReactComponentTypes from "react";
 
-export const RoomDeniedScreen: ReactComponentTypes.FC<Dynamic> = ({
+export const RoomDeniedScreen: ReactComponentTypes.FC<{
+  goHome?: boolean;
+  frame?: boolean;
+  gone?: boolean;
+  tooLarge?: boolean;
+  pid?: string;
+}> = ({
   goHome: roomDeniedScreen2 = true,
   frame: roomDeniedScreen3 = false,
   gone: roomDeniedScreen4 = false,
@@ -113,7 +119,10 @@ export const RoomDeniedScreen: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const RoomSigninFace: ReactComponentTypes.FC<Dynamic> = ({
+export const RoomSigninFace: ReactComponentTypes.FC<{
+  signInHref: string;
+  supportCode?: string;
+}> = ({
   signInHref: signInHref,
   supportCode: supportCode,
 }) => {

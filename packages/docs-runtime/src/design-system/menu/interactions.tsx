@@ -9,7 +9,14 @@ import {
 import { SheetsDataCdsSheetScroll } from "../sheets/geometry";
 import type * as ReactComponentTypes from "react";
 
-export const MenuInteractionsHeader: ReactComponentTypes.FC<Dynamic> = ({
+export const MenuInteractionsHeader: ReactComponentTypes.FC<{
+  header?: ReactComponentTypes.ReactNode;
+  headerClassName?: string;
+  footer?: ReactComponentTypes.ReactNode;
+  maxVisibleItems?: number;
+  fill?: boolean;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   header: input,
   headerClassName: input2,
   footer: input3,
@@ -17,7 +24,7 @@ export const MenuInteractionsHeader: ReactComponentTypes.FC<Dynamic> = ({
   fill: input6 = false,
   children: input5,
 }) => {
-  let value: Dynamic =
+  let value =
     input4 === undefined
       ? undefined
       : `calc(${input4} * ${MenuInteractionsMessage} + 0.5rem)`;

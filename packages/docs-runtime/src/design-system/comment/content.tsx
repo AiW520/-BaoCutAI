@@ -48,7 +48,11 @@ import { CommentsBusy, CommentsValue2 } from "./edit";
 import { CommentsExpanded } from "./card";
 import type * as ReactComponentTypes from "react";
 
-export const CommentsShowMoreLabel: ReactComponentTypes.FC<Dynamic> = ({
+export const CommentsShowMoreLabel: ReactComponentTypes.FC<{
+  showMoreLabel?: ReactComponentTypes.ReactNode;
+  showLessLabel?: ReactComponentTypes.ReactNode;
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   showMoreLabel: input,
   showLessLabel: input2,
   children: input3,
@@ -119,7 +123,12 @@ export const CommentsShowMoreLabel: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const CommentsOpen: ReactComponentTypes.FC<Dynamic> = ({
+export const CommentsOpen: ReactComponentTypes.FC<{
+  open: boolean;
+  controls: string;
+  label: ReactComponentTypes.ReactNode;
+  onToggle: ReactComponentTypes.MouseEventHandler<HTMLButtonElement>;
+}> = ({
   open: input,
   controls: input2,
   label: input3,

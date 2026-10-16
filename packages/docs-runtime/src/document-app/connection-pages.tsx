@@ -156,7 +156,9 @@ export const ConnectionStatusCard: ReactComponentTypes.FC<
   );
 };
 
-export const PendingSignInInstructions: ReactComponentTypes.FC<Dynamic> = ({
+export const PendingSignInInstructions: ReactComponentTypes.FC<{
+  authorizeUrl: string;
+}> = ({
   authorizeUrl: authorizeUrl,
 }) => {
   let pendingSignInInstructionsResult: Dynamic = CommentsStoreClaude(
@@ -199,7 +201,9 @@ export const ConnectionPage: ReactComponentTypes.FC<
   );
 };
 
-export const ConnectionPageLayout: ReactComponentTypes.FC<Dynamic> = ({
+export const ConnectionPageLayout: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+}> = ({
   children: children,
 }) => {
   return (

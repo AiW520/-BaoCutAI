@@ -107,6 +107,7 @@ import {
 import { RoomTabUnbound } from "./document-states";
 import { isRoutineFeedUpdate } from "./project-data";
 import type * as ReactComponentTypes from "react";
+import { useRef } from "react";
 
 export const FilmedProsePage: ReactComponentTypes.FC<Dynamic> = ({
   room: room,
@@ -1198,12 +1199,16 @@ export const BlobFileView: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const TextFileView: ReactComponentTypes.FC<Dynamic> = ({
+export const TextFileView: ReactComponentTypes.FC<{
+  text: string;
+  mime?: string;
+  scrollKey: string;
+}> = ({
   text: text,
   mime: mime,
   scrollKey: scrollKey,
 }) => {
-  let elementRef: Dynamic = (0, React.useRef)(null);
+  let elementRef = useRef<HTMLPreElement | null>(null);
   (0, React.useLayoutEffect)(
     (..._extraArguments: unknown[]): undefined => {
       let documentScroll: Dynamic = getDocumentScroll(scrollKey);
@@ -1228,7 +1233,7 @@ export const TextFileView: ReactComponentTypes.FC<Dynamic> = ({
           ref={elementRef}
           data-testid={`text-file-view`}
           className={`text-primary p-md text-code min-h-0 flex-1 overflow-auto whitespace-pre-wrap`}
-          onScroll={(event?: Dynamic, ..._extraArguments: unknown[]) =>
+          onScroll={(event: ReactComponentTypes.UIEvent<HTMLPreElement>, ..._extraArguments: unknown[]) =>
             rememberDocumentScroll(scrollKey, event.currentTarget.scrollTop)
           }
         >

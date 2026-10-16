@@ -221,7 +221,7 @@ export const ToastCtx: ReactComponentTypes.FC<Dynamic> = ({ ctx: input }) => {
   );
 };
 
-export const ToastToasts: ReactComponentTypes.FC<Dynamic> = ({ className: input }) => {
+export const ToastToasts: ReactComponentTypes.FC<{ className?: string }> = ({ className: input }) => {
   let { toasts: value }: Dynamic = BaseToastuseToastManager();
   let value2: Dynamic = (0, React.useContext)(ToastCreateContext);
   UiDesignSystemUseLayoutEffect(
@@ -278,7 +278,12 @@ export const ToastToasts: ReactComponentTypes.FC<Dynamic> = ({ className: input 
   );
 };
 
-export const ToastProvider: ReactComponentTypes.FC<Dynamic> = ({
+export const ToastProvider: ReactComponentTypes.FC<{
+  children?: ReactComponentTypes.ReactNode;
+  timeout?: number;
+  limit?: number;
+  viewportClassName?: string;
+}> = ({
   children: input,
   timeout: input4 = toastValue6000,
   limit: input2,

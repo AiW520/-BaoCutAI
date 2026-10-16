@@ -28,8 +28,11 @@ import {
   isDocumentFocusedElsewhere,
 } from "./phone-overlays/export-progress-dialog";
 import type * as ReactComponentTypes from "react";
+import { useRef, useState } from "react";
 
-export const DocumentOpeningSkeleton: ReactComponentTypes.FC<Dynamic> = ({
+export const DocumentOpeningSkeleton: ReactComponentTypes.FC<{
+  frameChrome?: boolean;
+}> = ({
   frameChrome = false,
 }) => {
   return (
@@ -49,7 +52,7 @@ export const DocumentOpeningSkeleton: ReactComponentTypes.FC<Dynamic> = ({
         [`l7`, `h-3 w-11/12`],
         [`l8`, `h-3 w-5/6`],
         [`l9`, `h-3 w-1/2`],
-      ].map(([item, item2]: Dynamic, ..._extraArguments: unknown[]) => (
+      ].map(([item, item2], ..._extraArguments: unknown[]) => (
         <div
           className={`bg-alpha-1 ${item2} rounded motion-safe:animate-pulse`}
           key={item}
@@ -59,15 +62,19 @@ export const DocumentOpeningSkeleton: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const RecoveryCopyButton: ReactComponentTypes.FC<Dynamic> = ({
+export const RecoveryCopyButton: ReactComponentTypes.FC<{
+  text: string;
+  textRef: ReactComponentTypes.RefObject<HTMLElement | null>;
+  onManual?: () => void;
+}> = ({
   text: text,
   textRef: textRef,
   onManual: onManual,
 }) => {
   let recoveryCopyButtonResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
-  let [labelState, setLabelState]: Dynamic = (0, React.useState)(`idle`);
-  let [countState, setCountState]: Dynamic = (0, React.useState)(0);
-  let elementRef: Dynamic = (0, React.useRef)(undefined);
+  let [labelState, setLabelState] = useState<"idle" | "copied" | "manual">(`idle`);
+  let [countState, setCountState] = useState(0);
+  let elementRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic =>
       (..._extraArguments: unknown[]) =>
@@ -75,7 +82,7 @@ export const RecoveryCopyButton: ReactComponentTypes.FC<Dynamic> = ({
     [],
   );
   let setCountState2 = async (
-    recoveryCopyButton?: Dynamic,
+    recoveryCopyButton?: HTMLButtonElement,
     ..._extraArguments: unknown[]
   ): Promise<undefined> => {
     if (await loadPlatformSyncAndRoutingClipboard(text, undefined, recoveryCopyButton)) {
@@ -90,17 +97,17 @@ export const RecoveryCopyButton: ReactComponentTypes.FC<Dynamic> = ({
     onManual?.();
     setLabelState(`manual`);
     setCountState(
-      (recoveryCopyButton2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      (recoveryCopyButton2: number, ..._extraArguments: unknown[]) =>
         recoveryCopyButton2 + 1,
     );
   };
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
       if (countState === 0) return;
-      let text2: Dynamic = textRef.current;
-      let selection: Dynamic = text2?.ownerDocument.getSelection();
+      let text2 = textRef.current;
+      let selection = text2?.ownerDocument.getSelection();
       if (text2 && selection) {
-        let range: Dynamic = text2.ownerDocument.createRange();
+        let range = text2.ownerDocument.createRange();
         range.selectNodeContents(text2);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -112,7 +119,7 @@ export const RecoveryCopyButton: ReactComponentTypes.FC<Dynamic> = ({
     <Button
       variant={`secondary`}
       size={recoveryCopyButtonResult(`sm`)}
-      onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined =>
+      onClick={(event: ReactComponentTypes.MouseEvent<HTMLButtonElement>, ..._extraArguments: unknown[]): undefined =>
         void setCountState2(event.currentTarget)
       }
     >
@@ -666,7 +673,11 @@ export const SyncLossBanner: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const SyncLossReportActions: ReactComponentTypes.FC<Dynamic> = ({
+export const SyncLossReportActions: ReactComponentTypes.FC<{
+  words: ReactComponentTypes.ReactNode;
+  supportCode?: string;
+  onReport?: ReactComponentTypes.MouseEventHandler<HTMLButtonElement>;
+}> = ({
   words: words,
   supportCode: supportCode,
   onReport: onReport,
@@ -705,7 +716,11 @@ export const SyncLossReportActions: ReactComponentTypes.FC<Dynamic> = ({
   );
 };
 
-export const DocumentOpeningBanner: ReactComponentTypes.FC<Dynamic> = ({
+export const DocumentOpeningBanner: ReactComponentTypes.FC<{
+  words: ReactComponentTypes.ReactNode;
+  stage: "crowded" | "still" | "slow";
+  onReload?: ReactComponentTypes.MouseEventHandler<HTMLButtonElement>;
+}> = ({
   words: words,
   stage: stage,
   onReload: onReload,

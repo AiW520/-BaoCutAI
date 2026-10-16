@@ -172,7 +172,10 @@ export const PhoneConfirmationDialog: ReactComponentTypes.FC<Dynamic> = (
   ) : null;
 };
 
-export const ExportOutcomeAnnouncement: ReactComponentTypes.FC<Dynamic> = ({
+export const ExportOutcomeAnnouncement: ReactComponentTypes.FC<{
+  title: string | null;
+  description?: string | null;
+}> = ({
   title: title,
   description: description,
 }) => {
