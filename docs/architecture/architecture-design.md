@@ -1459,6 +1459,8 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 | `google` | Gemini Interactions API：`POST {base}/interactions`（`x-goog-api-key` 请求头，从不放在 URL 里） | `gemini-3.5-transcribe`（默认，词级时间标注）、`gemini-3.8-flash`（通用模型，按 JSON Schema 返回段） | 前者 `provider`，后者 `estimated` |
 | `custom:<名字>` | 用户给出的 OpenAI 兼容基址；密钥可选 | 用户声明（`declared`），限制取保守的默认值 | 声明为 `native` 的请求 `verbose_json`，否则 `estimated` |
 
+**转写的结果**。各块的段拼到一起按起点排序、去掉重叠，规则与 Model Worker 相同（Model Worker 协议规范 §2.5.1）：与前一段部分重叠的在重叠区中点分开；整个落在前一段里的（多人同时说话时的插话）按原时长从包住它的那段的尾巴上分出来（几段合起来至多分走那段的一半，超出时按比例缩短），排在那段之后，带 `timing-adjusted`；换算成 tick 之后没有长度的段丢弃，带 `segment-degenerate`。
+
 **生成的请求**。`synthesizeSpeech` 与 `generateImage` 的一次尝试是一次（图片按张数可以是几次）同步请求，期限 5 分钟；响应体按字节读，不超过 64 MB。参数的检查都在提交时（§6.2）：文本或提示词按 Unicode 码点计，超过模型上限直接拒绝，不截断、不切块、不改写；音色、语言、格式、尺寸、张数、语速、`instructions` 与 `seed` 不在模型描述里的都拒绝。适配器把冻结的参数换成供应商的写法，按请求的格式把输出写进 staging（`output-<n>.<扩展名>`），声明媒体类型、长度与 sha256；响应的类型或张数与请求不符是协议错误，供应商只回文字不回图片是 `PROVIDER_REJECTED`。只认响应体里的字节，不去下载响应给出的任意地址。
 
 **首批的生成适配器**。

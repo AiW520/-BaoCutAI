@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { validateAsrResult } from '@baocut/models';
 import { parseGeneralInteraction, parseTranscribeInteraction, offsetSec } from './google/google-adapter.ts';
 import { languageTagOf, parseOpenAiTranscription } from './openai/openai-transcription.ts';
-import { buildAsrResult, groupWords, joinWords, noAudioResult, type ResultContext } from './transcript.ts';
+import { buildAsrResult, groupWords, joinWords, noAudioResult, resolveOverlaps, type ResultContext } from './transcript.ts';
 
 const context = (overrides: Partial<ResultContext> = {}): ResultContext => ({
   providerId: 'openai',
@@ -68,7 +68,7 @@ describe('buildAsrResult', () => {
     });
   });
 
-  it('词超出段、段与前一段重叠：修正并记 timing-adjusted；换算之后没有长度的段丢弃并记 segment-degenerate', () => {
+  it('词超出段、段与前一段重叠：在重叠区中点分开、修正并记 timing-adjusted；换算之后没有长度的段丢弃并记 segment-degenerate', () => {
     const result = buildAsrResult({
       context: context(),
       decodedSec: 10,
@@ -94,11 +94,41 @@ describe('buildAsrResult', () => {
     });
     expect(validateAsrResult(result, { runGeneration: 1 })).toMatchObject({ ok: true });
     expect(result.segments.map((s) => [s.start, s.end])).toEqual([
-      [0, 3000],
-      [3000, 5000],
+      [0, 2750],
+      [2750, 5000],
     ]);
     expect(result.warnings.map((w) => w.code).sort()).toEqual(['segment-degenerate', 'timing-adjusted', 'timing-adjusted']);
-    expect(result.segments[1]!.words[0]).toMatchObject({ start: 3000, end: 4000, timingQuality: 'provider' });
+    expect(result.segments[1]!.words[0]).toMatchObject({ start: 2750, end: 4000, timingQuality: 'provider' });
+  });
+
+  it('整个落在前一段里的插话不丢：从包住它的那段尾巴上分出来，记 timing-adjusted', () => {
+    // 多人会议：第一位说话时第二位插了一句，第二位又在第一位说完前开口。原来插话算出来没有长度，被丢弃。
+    const result = buildAsrResult({
+      context: context({ language: { mode: 'assert', tag: 'zh-Hans' } }),
+      decodedSec: 12,
+      chunks: [
+        {
+          startSec: 0,
+          endSec: 12,
+          transcript: {
+            text: '',
+            segments: [
+              { start: 0, end: 11.5, text: '我们下周发布这个版本。' },
+              { start: 0.2, end: 5.4, text: '对，我同意。' },
+              { start: 5.5, end: 11.8, text: '测试还没跑完，可能要晚两天。' },
+            ],
+          },
+        },
+      ],
+    });
+    expect(validateAsrResult(result, { runGeneration: 1, assertedLanguage: 'zh-Hans' })).toMatchObject({ ok: true });
+    // 第一段与第三段照常在重叠区中点（8.5 秒）分开；插话至多分走第一段剩下的一半。
+    expect(result.segments.map((s) => [s.id, s.start, s.end, s.text])).toEqual([
+      ['seg-0001', 0, 4250, '我们下周发布这个版本。'],
+      ['seg-0002', 4250, 8500, '对，我同意。'],
+      ['seg-0003', 8500, 11_800, '测试还没跑完，可能要晚两天。'],
+    ]);
+    expect(result.warnings).toEqual([{ code: 'timing-adjusted', segmentId: 'seg-0002' }]);
   });
 
   it('只有词：按停顿与句末标点分段；只有文本：整块一段；什么都没有：no-speech', () => {
@@ -157,6 +187,45 @@ describe('buildAsrResult', () => {
         { start: 31, end: 32, text: 'next', confidence: null },
       ]),
     ).toHaveLength(2);
+  });
+});
+
+describe('resolveOverlaps', () => {
+  const span = (start: number, end: number, text = '') => ({ start, end, text, words: [] as { start: number; end: number; text: string; confidence: number | null }[] });
+
+  it('插话挪到包住它的那段尾巴上，词跟着平移；下一段的分法与没有插话时相同', () => {
+    const segments = [
+      span(0, 10, 'A'),
+      { ...span(2, 3, 'B'), words: [{ start: 2.2, end: 2.6, text: '对', confidence: null }] },
+      span(9.5, 15, 'C'),
+    ];
+    const moved = resolveOverlaps(segments);
+    expect(segments.map((s) => [s.start, s.end])).toEqual([
+      [0, 8.75],
+      [8.75, 9.75],
+      [9.75, 15],
+    ]);
+    expect([...moved].map((s) => s.text)).toEqual(['B']);
+    expect(segments[1]!.words[0]!.start).toBeCloseTo(8.95, 9);
+    expect(segments[1]!.words[0]!.end).toBeCloseTo(9.35, 9);
+  });
+
+  it('几段插话合起来至多分走一半；起止相同的两段照常对半分开', () => {
+    const nested = [span(0, 20), span(1, 10), span(2, 3), span(4, 25)];
+    expect(resolveOverlaps(nested).size).toBe(2);
+    expect([nested[0], nested[3]].map((s) => [s!.start, s!.end])).toEqual([
+      [0, 6],
+      [12, 25],
+    ]);
+    expect(nested[1]!.start).toBe(6);
+    expect(nested[1]!.end).toBeCloseTo(11.4, 9);
+    expect(nested[2]!.end).toBe(12);
+    const duplicate = [span(100, 105), span(100, 105)];
+    expect(resolveOverlaps(duplicate).size).toBe(0);
+    expect(duplicate.map((s) => [s.start, s.end])).toEqual([
+      [100, 102.5],
+      [102.5, 105],
+    ]);
   });
 });
 

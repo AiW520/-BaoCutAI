@@ -22,8 +22,9 @@ import { ProvidersHttp as PH } from '@baocut/protocol/messages/providers';
  * - 有段：词按中点归到所在的段（落在段外的归到最近的段）；
  * - 只有词：按停顿（> 0.8 秒）、句末标点、段长（> 30 秒）分段；
  * - 只有文本：整块一段；
- * - 段与前一段重叠时从前一段的结尾开始；换算之后没有长度的段丢弃，记 `segment-degenerate`；
- * - 词时间修正过的段记 `timing-adjusted`。
+ * - 段按起点排好后去掉重叠（与 Model Worker 相同，见 {@link resolveOverlaps}）：整个落在前一段里的插话挪到那段的尾巴上；
+ *   换算之后没有长度的段丢弃，记 `segment-degenerate`；
+ * - 挪过或词时间修正过的段记 `timing-adjusted`。
  */
 
 export interface ChunkResult {
@@ -75,6 +76,7 @@ export function buildAsrResult(input: {
   const duration = ticks(input.decodedSec);
   const warnings: AsrWarning[] = [...(input.warnings ?? [])];
   const raw = input.chunks.flatMap(chunkSegments).sort((a, b) => a.start - b.start || a.end - b.end);
+  const moved = resolveOverlaps(raw);
   const languageHint = context.language.tag ?? firstDetected(input.chunks);
 
   const segments: Segment[] = [];
@@ -104,7 +106,7 @@ export function buildAsrResult(input: {
             timingQuality: 'estimated' as const,
           }));
     const segment: Segment = { id, start, end, text: s.text, speakerId: null, words };
-    if (fixWordTimes(segment)) warnings.push({ code: 'timing-adjusted', segmentId: id });
+    if (fixWordTimes(segment) || moved.has(s)) warnings.push({ code: 'timing-adjusted', segmentId: id });
     segments.push(segment);
     previousEnd = end;
   }
@@ -122,6 +124,59 @@ export function buildAsrResult(input: {
     warnings,
     provenance: provenanceOf(context, costOf(input.chunks)),
   };
+}
+
+/**
+ * 去掉段之间的重叠（`segments` 已按起点排好，原地改写起止），规则与 Model Worker 相同（Model Worker 协议规范
+ * §2.5.1）：与前一段部分重叠的在重叠区的中点分开；整个落在前一段里的（多人同时说话时的插话）从中点分会倒挂，
+ * 改为按原时长从包住它的那段的尾巴上分出来，几段插话合起来至多分走那段的一半（超出时按比例缩短），词跟着平移。
+ * 其余段的分法与没有插话时相同。返回这样挪过的段。
+ */
+export function resolveOverlaps(segments: RawSegment[]): Set<RawSegment> {
+  const nested: Array<{ outer: RawSegment; inner: RawSegment }> = [];
+  let previous: RawSegment | undefined;
+  for (const segment of segments) {
+    if (!previous) {
+      previous = segment;
+      continue;
+    }
+    // 下一段到来之前，前一段的终点还是原来的终点。
+    if (segment.end < previous.end) {
+      nested.push({ outer: previous, inner: segment });
+      continue;
+    }
+    if (segment.start < previous.end) {
+      const middle = (segment.start + previous.end) / 2;
+      previous.end = middle;
+      segment.start = middle;
+    }
+    previous = segment;
+  }
+
+  const moved = new Set<RawSegment>();
+  for (let first = 0; first < nested.length; ) {
+    const outer = nested[first]!.outer;
+    let next = first;
+    while (next < nested.length && nested[next]!.outer === outer) next++;
+    const group = nested.slice(first, next).map((pair) => pair.inner);
+    first = next;
+    const slotEnd = outer.end;
+    const total = group.reduce((sum, inner) => sum + (inner.end - inner.start), 0);
+    const room = Math.min(total, (outer.end - outer.start) / 2);
+    const scale = total > 0 ? room / total : 0;
+    let cursor = slotEnd - room;
+    outer.end = cursor;
+    group.forEach((inner, index) => {
+      const end = index === group.length - 1 ? slotEnd : Math.min(cursor + (inner.end - inner.start) * scale, slotEnd);
+      const delta = cursor - inner.start;
+      inner.words = inner.words.map((w) => ({ ...w, start: w.start + delta, end: w.end + delta }));
+      inner.start = cursor;
+      inner.end = end;
+      cursor = end;
+      moved.add(inner);
+    });
+  }
+  return moved;
 }
 
 /** 素材没有所选音轨时的结果。 */
