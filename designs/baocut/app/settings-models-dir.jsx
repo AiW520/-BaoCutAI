@@ -83,7 +83,9 @@
     );
   }
 
-  function ModelsDirCard({models, comps, on, setOn, work}) {
+  /* `places`：下载时选了别处的条目（download-dialog.jsx）。卡片只管模型目录里的：数量、已用、移动都不算别处的，
+     更改目录时它们留在原处、照样可用，卡片上另写一句它们在哪。 */
+  function ModelsDirCard({models, comps, on: allOn, setOn: setAllOn, work, places}) {
     const app = useApp();
     const [dlg, setDlg] = useState(null);   // null | {target?: string}
     const [moving, setMoving] = useState(null);   // null | {pct, to}
@@ -93,6 +95,10 @@
 
     const env = app.prefs.modelsDirEnv || null;
     const eff = MD.effective(env, chosen);
+    const away = MD.awayIds(allOn, places, eff.path);
+    const on = MD.withoutIds(allOn, away);
+    const setOn = (next) => setAllOn(MD.keepIds(next, allOn, away));
+    const awayNote = MD.elsewhereNote(MD.elsewhere(models, allOn, places, eff.path));
     const installed = MD.installedIn(models, on);
     const used = LM.disk(models, comps, MD.withoutBundled(on));
     const free = MD.freeOf(eff.path);
@@ -162,6 +168,7 @@
             {block.hasTasks ? <Btn variant="quiet" size="s" onClick={() => app.go({r: 'tasks'})}>查看任务</Btn> : null}
           </p>
         ) : null}
+        {awayNote ? <p className="mdir__note t-detail-xs">{awayNote}</p> : null}
         <p className="mdir__note t-detail-xs">{MD.SHARE_HINT}</p>
         {dlg ? <ChangeDialog models={models} comps={comps} on={on} current={eff.path} target={dlg.target}
           onClose={() => setDlg(null)} onApply={apply} /> : null}
@@ -196,5 +203,8 @@
     ));
   }
 
-  Object.assign(window, {ModelsDirCard, ModelEnvTweaks});
+  /** 生效的模型目录（下载确认框的「存放位置」默认放这里，模型行据此判断在不在模型目录里） */
+  const modelsDirNow = (app) => MD.effective(app.prefs.modelsDirEnv || null, chosenNow);
+
+  Object.assign(window, {ModelsDirCard, ModelEnvTweaks, modelsDirNow});
 })();

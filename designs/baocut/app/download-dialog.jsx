@@ -6,13 +6,18 @@
    · 几个部分合成一次下载，按顺序下，下好一个存一个；哪一部分没下成，前面的留着，补齐时只下缺的那一部分（可以先换来源）。
    · 已在盘上的部分写「已下好 · 不动」，不计入大小；全都下好了只说一句、不给下载。
    · 不许商用的模型把许可写在框里，确认按钮写「我知道了，下载 …」（替掉原来单独弹的许可确认）。
+   · 存放位置（2026-10-15 设计稿，待确认）：默认是模型目录，「更改…」只为这一次下载换文件夹，模型目录不变；
+     下好的部分记下在哪（`places`，只活在这次会话），设置 › 本地模型的模型行与模型目录卡片写明它们在别处。
+     只管模型仓库下的部分，工具与运行库装在工具目录。环境变量锁住模型目录时不能换。判断在 BC_MODELSDIR。
    原型开关「下次下载的结果」可以让某一种来源下不成（BC_DLSRC.simulate），演示补齐。只在 App。 */
 (function () {
   const {useState, useEffect} = React;
   const DS = window.BC_DLSRC;
   const D = window.BC_DATA;
+  const MD = window.BC_MODELSDIR;
   const mb = (n) => window.BC_LOCALMODELS.mb(n);
-  const FREE = '269.5 GB';   // 演示：模型目录所在磁盘的剩余空间
+  /* 模型目录之外的存放位置：id → 下载时选的文件夹（BC_MODELSDIR.placeAfter）；和选过的模型目录一样只活在这次会话里 */
+  let places = {};
 
   const hub = {ask: null, subs: new Set()};
   const emit = () => hub.subs.forEach((f) => f());
@@ -71,6 +76,50 @@
     });
   }
 
+  /** 存放位置：路径（中间省略，留盘名与末段）+ 来源 chip + 「更改…」；选了别处时下面一句说只管这一次。
+      产品里「更改…」是系统的文件夹面板，原型就地列几个演示位置 */
+  function Where({target, choosing, onChoose, onPick, onReset, current, problem, notes}) {
+    const R = window.RSP;
+    return (
+      <div className="dldlg__where" role="group" aria-label="存放位置">
+        <div className="dldlg__wh">
+          <span className="t-detail-xs">存放位置</span>
+          <span className="dldlg__wpath t-mono" title={target.path}>
+            <Ic n="folder" className="ic--16" />
+            <span className="dldlg__wtxt">{MD.shorten(target.path, 30)}</span>
+          </span>
+          {target.source === 'default' ? <Chip>模型目录</Chip> : null}
+          {target.source === 'env' ? <Chip tone="notice">环境变量</Chip> : null}
+          {target.locked ? null : <Btn variant="secondary" size="s" onClick={onChoose}>更改…</Btn>}
+        </div>
+        {choosing ? (
+          <div className="dldlg__pick">
+            <p className="t-detail-xs">产品里这一步是系统的文件夹面板；原型用下面几个位置代替。</p>
+            <R.RadioGroup label="选择文件夹" value={target.path} onChange={onPick}>
+              {MD.targetChoices(current).map((f) => (
+                <R.Radio key={f.path} value={f.path} description={f.note}>
+                  <span className="t-mono dldlg__wopt" title={f.path}>{MD.shorten(f.path, 48)}</span>
+                </R.Radio>
+              ))}
+            </R.RadioGroup>
+          </div>
+        ) : null}
+        {problem ? (
+          <R.InlineAlert variant="negative">
+            <R.Heading>{problem.code === 'space' ? '放不下' : problem.code === 'readonly' ? '这个文件夹不可写' : '找不到这个文件夹'}</R.Heading>
+            <R.Content>{problem.text}</R.Content>
+          </R.InlineAlert>
+        ) : null}
+        {notes.length || target.source === 'picked' ? (
+          <p className="t-detail-xs dldlg__note">
+            {notes.join('')}
+            {target.source === 'picked' ? <BCAction className="tsetup__lnk dldlg__lnk" onClick={onReset}>改回模型目录</BCAction> : null}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   /** 框里的一组：种类名 + 来源选择器；下面是这一组的部分 */
   function Group({g, srcOf}) {
     return (
@@ -100,31 +149,49 @@
     const app = useApp();
     const ask = useAsk();
     const [sources, , activeOf] = window.useDlSources();
-    const [selection, setSelection] = useState({ask: null, choices: {}});
+    // 每次打开框重新起步：本次的来源选择、存放位置与是否在选文件夹，都跟着这一个 ask
+    const [selection, setSelection] = useState({ask: null, choices: {}, pick: null, choosing: false});
     if (!ask) return null;
     const plan = DS.plan(ask.parts, ask.on);
-    const choices = selection.ask === ask ? selection.choices : {};
+    const sel = selection.ask === ask ? selection : {ask, choices: {}, pick: null, choosing: false};
+    const update = (patch) => setSelection({...sel, ...patch, ask});
+    const choices = sel.choices;
     const sourceFor = (p) => DS.partSource(sources, p, choices[p.id], activeOf(DS.kindOfPart(p)));
     const srcOf = (k, p) => ask.perPart && p ? sourceFor(p).src : activeOf(k).src;
-    const choose = (p, id) => setSelection({ask, choices: {...choices, [p.id]: id}});
+    const choose = (p, id) => update({choices: {...choices, [p.id]: id}});
     const completing = plan.kept > 0;
     const lic = ask.licenses && ask.licenses.length ? ask.licenses : null;
+    // 存放位置只管模型仓库那一组；工具与运行库装在工具目录
+    const hubNeed = plan.groups.filter((g) => g.k === 'models').reduce((n, g) => n + g.need, 0);
+    const toolsNeed = plan.groups.some((g) => g.k !== 'models' && g.need > 0);
+    const dir = window.modelsDirNow ? window.modelsDirNow(app) : MD.effective(app.prefs.modelsDirEnv || null, null);
+    const target = MD.downloadTarget(app.prefs.modelsDirEnv || null, dir.path, sel.pick);
+    const problem = hubNeed > 0 ? MD.targetProblem(target.path, hubNeed) : null;
     const confirm = () => {
       const outcome = DS.simulate(plan, srcOf, app.prefs.dlFailDemo || null);
+      const hubIds = plan.groups.filter((g) => g.k === 'models').flatMap((g) => g.parts).map((p) => p.id);
+      places = MD.placeAfter(places, outcome.done.filter((id) => hubIds.indexOf(id) >= 0), target);
       closeDownload();
       ask.run(outcome, plan);
     };
     const manage = () => { closeDownload(); app.go({r: 'settings', sec: 'general'}); };
     const footer = plan.upToDate ? [<Btn key="c" variant="secondary" onClick={closeDownload}>关闭</Btn>] : [
       <Btn key="c" variant="secondary" onClick={closeDownload}>取消</Btn>,
-      <Btn key="k" variant="accent" onClick={confirm}>{lic ? `我知道了，下载 ${mb(plan.need)}` : `下载 ${mb(plan.need)}`}</Btn>,
+      <Btn key="k" variant="accent" disabled={!!problem} onClick={confirm}>{lic ? `我知道了，下载 ${mb(plan.need)}` : `下载 ${mb(plan.need)}`}</Btn>,
     ];
     return (
       <Dialog open title={completing ? `补齐「${ask.name}」` : `下载「${ask.name}」`} width={560} onClose={closeDownload} footer={footer}>
         {plan.upToDate ? <p className="t-body">都已经下好了，不用再下载。</p> : (
           <div className="dldlg">
-            <p className="dldlg__lead"><b>共 {mb(plan.need)}</b><span className="t-detail"> · 磁盘还剩 {FREE}</span></p>
+            <p className="dldlg__lead"><b>共 {mb(plan.need)}</b><span className="t-detail"> · 磁盘还剩 {mb(MD.freeOf(target.path))}</span></p>
             {completing ? <p className="t-detail">已下好的部分不动，只下缺的。</p> : null}
+            {hubNeed > 0 ? (
+              <Where target={target} current={dir.path} choosing={sel.choosing} problem={problem}
+                notes={MD.targetNotes(target, toolsNeed)}
+                onChoose={() => update({choosing: !sel.choosing})}
+                onPick={(path) => update({pick: path, choosing: false})}
+                onReset={() => update({pick: null, choosing: false})} />
+            ) : null}
             {ask.perPart ? (
               <ul className="dldlg__items" aria-label="下载内容与来源">
                 {plan.groups.flatMap((g) => g.parts).map((p) => {
@@ -172,5 +239,6 @@
     );
   }
 
-  Object.assign(window, {ModelDownloadDialog, askModelDownload, BC_DLASK: {open: openDownload, close: closeDownload}});
+  Object.assign(window, {ModelDownloadDialog, askModelDownload,
+    BC_DLASK: {open: openDownload, close: closeDownload, places: () => places}});
 })();

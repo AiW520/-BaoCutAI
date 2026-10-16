@@ -1,7 +1,8 @@
 /* 设置 › 本地模型 › 模型目录的纯模型 —— architecture-design §6.3（本地模型管理）、§5.10（设置键）。
    目录由三个来源决定，优先级：环境变量 BAOCUT_MODELS_DIR（只读锁定）> 设置里选的文件夹 > 默认 `<BAOCUT_HOME>/models`。
    这里只放判断：生效目录、长路径的中间省略、选定文件夹的检查（不存在 / 不可写 / 里面已有的模型）、
-   更改时有哪几个分支、移动是否放得下、哪些任务让更改暂时不可用。体积一律 MB（与 BC_LOCALMODELS.mb 一致）。
+   更改时有哪几个分支、移动是否放得下、哪些任务让更改暂时不可用，以及下载确认框里「存放位置」的判断（只为一次下载换文件夹）。
+   体积一律 MB（与 BC_LOCALMODELS.mb 一致）。
    不碰 React、不碰 DOM。演示用的「系统文件夹选择器」里的几个文件夹也在这里（原型没有真文件系统）。 */
 (function () {
   const DEFAULT_DIR = '~/Library/Application Support/BaoCut/models';
@@ -148,8 +149,89 @@
 
   const SHARE_HINT = '多个程序共用同一个文件夹时，在这里删除模型会删掉文件夹里的文件，别的程序也会找不到它。';
 
+  /* ---- 下载确认框的「存放位置」（2026-10-15 设计稿，待确认）：默认放进模型目录，也可以只为这一次下载换一个文件夹，
+     模型目录本身不变。只管模型仓库下的部分；工具与运行库装在 Runtime Home 的工具目录，不随它变。
+     `places` 是 id → 下载时选的别处文件夹（模型与组件都记；放进模型目录的不记）。 ---- */
+
+  /** 某个路径的盘上状态：演示文件夹里没有的（环境变量给的、默认位置）按可写、默认那块盘算 */
+  const folderAt = (path) => findFolder(path) || {path, exists: true, writable: true, freeMB: HOME.freeMB, models: []};
+
+  /**
+   * 这次下载放在哪。`current` 是生效的模型目录（effective().path），`pick` 是框里选的文件夹。
+   * 环境变量锁住时只能放进它指定的目录；没选或选的就是模型目录时 source 'default'；否则 'picked'。
+   */
+  function downloadTarget(env, current, pick) {
+    if (env) return {path: env, source: 'env', locked: true};
+    const dir = current || DEFAULT_DIR;
+    if (pick && pick !== dir) return {path: pick, source: 'picked', locked: false};
+    return {path: dir, source: 'default', locked: false};
+  }
+
+  /** 原型里「更改…」的候选（产品里是系统的文件夹面板）：模型目录排第一，再是演示文件夹 */
+  function targetChoices(current) {
+    const dir = current || DEFAULT_DIR;
+    const rest = FOLDERS.concat([HOME]).filter((f) => f.path !== dir);
+    return [Object.assign({}, folderAt(dir), {note: '模型目录'})].concat(rest);
+  }
+
+  /** 这次能不能放进去：文件夹的问题，或这一次要下的（`needMB`，只算模型仓库的部分）放不下；null 表示可以 */
+  function targetProblem(path, needMB) {
+    const folder = folderAt(path);
+    const bad = problem(folder);
+    if (bad) return bad;
+    if (needMB > folder.freeMB) {
+      return {code: 'space', text: `这次要下载 ${size(needMB)}，这个磁盘只有 ${size(folder.freeMB)} 可用，还差 ${size(needMB - folder.freeMB)}，放不下。`};
+    }
+    return null;
+  }
+
+  /** 位置下面的说明：选了别处时说只管这一次；这次还要下工具与运行库时说它们不放这里；环境变量锁住时说怎么改 */
+  function targetNotes(target, hasTools) {
+    const notes = [];
+    if (target.source === 'env') notes.push(sourceNote('env'));
+    if (target.source === 'picked') notes.push('只用于这次下载，模型目录不变。');
+    if (hasTools) notes.push('工具与运行库装在 BaoCut 的工具目录，不放在这里。');
+    return notes;
+  }
+
+  /** 下载完后记下各部分在哪：选了别处的记路径，放进模型目录的抹掉旧记录 */
+  function placeAfter(places, ids, target) {
+    const next = Object.assign({}, places);
+    (ids || []).forEach((id) => { if (target.source === 'picked') next[id] = target.path; else delete next[id]; });
+    return next;
+  }
+
+  /** 装着、但不在模型目录 `dir` 里的 id（模型与组件） */
+  const awayIds = (on, places, dir) => Object.keys(places || {}).filter((id) => on[id] && places[id] !== dir);
+
+  /** 不在模型目录里的模型按文件夹分组（附带模型不算）：卡片上那一句与模型行上的位置都从这里来 */
+  function elsewhere(models, on, places, dir) {
+    const ids = awayIds(on, places, dir);
+    const groups = [];
+    (models || []).forEach((m) => {
+      if (ids.indexOf(m.id) < 0 || BUNDLED.indexOf(m.id) >= 0) return;
+      let g = groups.find((x) => x.path === places[m.id]);
+      if (!g) { g = {path: places[m.id], list: []}; groups.push(g); }
+      g.list.push(m);
+    });
+    return groups;
+  }
+
+  /** 卡片上那一句：另有几个模型在别处、各在哪；更改模型目录时它们不跟着动 */
+  function elsewhereNote(groups) {
+    const n = groups.reduce((k, g) => k + g.list.length, 0);
+    if (!n) return '';
+    const where = groups.map((g) => `${g.list.map((m) => m.name).join('、')}（${shorten(g.path, 36)}）`).join('；');
+    return `另有 ${n} 个模型存放在其他位置：${where}。更改模型目录时${n === 1 ? '它' : '它们'}不跟着移动。`;
+  }
+
+  /** 卡片只管模型目录里的：先把别处的从安装表里拿掉，写回时再按原表放回 */
+  const withoutIds = (on, ids) => { const t = Object.assign({}, on); ids.forEach((id) => { t[id] = false; }); return t; };
+  const keepIds = (next, from, ids) => { const t = Object.assign({}, next); ids.forEach((id) => { t[id] = !!from[id]; }); return t; };
+
   const BC_MODELSDIR = {DEFAULT_DIR, ENV_NAME, BUNDLED, installedIn, withoutBundled, FOLDERS, HOME, freeOf, SHARE_HINT, effective, isDefault, shorten, findFolder,
-    problem, found, moveCheck, plan, installedAfter, usesLocalModel, blocker, stats, sourceNote};
+    problem, found, moveCheck, plan, installedAfter, usesLocalModel, blocker, stats, sourceNote,
+    folderAt, downloadTarget, targetChoices, targetProblem, targetNotes, placeAfter, awayIds, elsewhere, elsewhereNote, withoutIds, keepIds};
   if (typeof window !== 'undefined') Object.assign(window, {BC_MODELSDIR});
   if (typeof module !== 'undefined') module.exports = BC_MODELSDIR;
 })();

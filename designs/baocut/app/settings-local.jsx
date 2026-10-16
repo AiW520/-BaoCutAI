@@ -14,6 +14,7 @@
   const LM = window.BC_LOCALMODELS;
   const TTS = window.BC_TTS;
   const CK = window.BC_LOCALCHECK;
+  const MD = window.BC_MODELSDIR;
   const mb = LM.mb;
 
   /* 组件 / 权重的一行状态：✓ 已装 或 ⚠ 缺 · 体积 */
@@ -56,7 +57,8 @@
     );
   }
 
-  function ModelRow({row, cat, on, comps, dflt, pct, fail, onDownload, onRemove, onWork}) {
+  /* away：权重下载时放在了模型目录之外的文件夹（下载确认框的「存放位置」），没有时 null */
+  function ModelRow({row, cat, on, comps, dflt, pct, fail, away, onDownload, onRemove, onWork}) {
     const app = useApp();
     const {m, own, common} = row;
     const cmap = {};
@@ -159,6 +161,7 @@
               </>
             ) : <span className="t-detail-xs">{m.note ? m.note + ' · ' : ''}{mb(m.size)}</span>}
             {lic ? <span className="t-detail-xs">{window.ttsLicenseBrief(lic)}</span> : null}
+            {away ? <span className="t-detail-xs lmrow__away" title={away}>存放在 {MD.shorten(away, 44)} · 不在模型目录</span> : null}
           </span>
           {pct >= 0 ? <div className="lmrow__pg"><Progress value={pct} /></div> : (
             <>
@@ -388,6 +391,10 @@
       }, 120);
     };
     const askDownload = (m) => window.askModelDownload(app, m.id, (outcome) => startDownload(m, outcome), {on});
+    // 下载时选了别处的条目（download-dialog.jsx）；在不在模型目录里按生效的模型目录算
+    const places = window.BC_DLASK ? window.BC_DLASK.places() : {};
+    const dirNow = window.modelsDirNow(app).path;
+    const awayOf = (id) => (on[id] && places[id] && places[id] !== dirNow ? places[id] : null);
     const remove = (m) => {
       const r = LM.removal(m, models, comps, on);
       app.confirm({
@@ -406,7 +413,7 @@
 
     return (
       <>
-        <window.ModelsDirCard models={models} comps={comps} on={on} setOn={setOn} work={work} />
+        <window.ModelsDirCard models={models} comps={comps} on={on} setOn={setOn} work={work} places={places} />
         {hideDefault ? null : cat !== 'vision' ? (
           <Row label="默认模型" desc={view.cloud ? '默认是 API 提供方的模型；选一只本机模型会改用它。' : LM.DEFAULT_DESC[cat]}>
             <Picker size="s" value={view.label}
@@ -433,7 +440,7 @@
           {group.rows.length ? <div className="lmlist">
             {group.rows.map((row) => <ModelRow key={row.m.id} row={row} cat={cat} on={on} comps={comps}
               dflt={row.m.id === view.checked && LM.ready(row.m, comps, on)} pct={dl[row.m.id] ?? -1}
-              fail={fails[row.m.id] || null} onDownload={askDownload} onRemove={remove} onWork={onWork} />)}
+              fail={fails[row.m.id] || null} away={awayOf(row.m.id)} onDownload={askDownload} onRemove={remove} onWork={onWork} />)}
           </div> : <p className="t-detail">{group.id === 'installed' ? '还没有安装模型，从下面选择一个下载。' : '这一类的模型已全部安装。'}</p>}
         </section>)}
         {lay.shared.length > 0 && <ModelDisclosure label="公共组件"

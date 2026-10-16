@@ -112,3 +112,52 @@ test('环境变量锁定的说明点名变量', () => {
   assert.match(X.sourceNote('env'), /BAOCUT_MODELS_DIR/);
   assert.strictEqual(X.sourceNote('default'), '');
 });
+
+test('下载的存放位置：默认是模型目录；只为这次选别处；环境变量锁住', () => {
+  const cur = '/Volumes/ExtremeSSD/BaoCut/models';
+  assert.deepStrictEqual(X.downloadTarget(null, cur, null), {path: cur, source: 'default', locked: false});
+  assert.strictEqual(X.downloadTarget(null, cur, cur).source, 'default', '选回模型目录等于默认');
+  assert.deepStrictEqual(X.downloadTarget(null, cur, '~/Models/Shared'), {path: '~/Models/Shared', source: 'picked', locked: false});
+  assert.deepStrictEqual(X.downloadTarget('/env', cur, '~/Models/Shared'), {path: '/env', source: 'env', locked: true});
+  assert.strictEqual(X.downloadTarget(null, null, null).path, X.DEFAULT_DIR);
+  const ch = X.targetChoices(cur);
+  assert.strictEqual(ch[0].path, cur, '模型目录排第一');
+  assert.strictEqual(ch.filter((f) => f.path === cur).length, 1, '不重复列出');
+  assert.ok(ch.some((f) => f.path === X.DEFAULT_DIR), '模型目录改过时默认位置也在候选里');
+});
+
+test('存放位置放不放得下：不存在、不可写、空间不够如实说；工具与运行库另说', () => {
+  assert.strictEqual(X.targetProblem(X.DEFAULT_DIR, 1900), null);
+  assert.strictEqual(X.targetProblem('/Volumes/OldDisk/models', 10).code, 'missing');
+  assert.strictEqual(X.targetProblem('/Volumes/Archive/models', 10).code, 'readonly');
+  const sp = X.targetProblem('/Volumes/Backup/BaoCut/models', 4 * 1024);
+  assert.strictEqual(sp.code, 'space');
+  assert.match(sp.text, /还差 614\.5 MB/);
+  assert.strictEqual(X.targetProblem('/not/in/demo', 10), null, '不认识的路径按默认那块盘算');
+  assert.deepStrictEqual(X.targetNotes({source: 'default'}, false), []);
+  assert.match(X.targetNotes({source: 'picked'}, false)[0], /只用于这次下载/);
+  assert.match(X.targetNotes({source: 'picked'}, true)[1], /工具目录/);
+  assert.match(X.targetNotes({source: 'env'}, false)[0], /BAOCUT_MODELS_DIR/);
+});
+
+test('别处的模型：下载后记位置，卡片只管模型目录里的，更改目录时别处的不跟着动', () => {
+  const ms = [{id: 'a', name: 'A'}, {id: 'b', name: 'B'}, {id: 'vision-person', name: 'P'}];
+  const picked = {path: '/ssd', source: 'picked'};
+  let places = X.placeAfter({}, ['a', 'c1'], picked);
+  assert.deepStrictEqual(places, {a: '/ssd', c1: '/ssd'});
+  places = X.placeAfter(places, ['c1'], {path: '/dir', source: 'default'});
+  assert.deepStrictEqual(places, {a: '/ssd'}, '放回模型目录的抹掉记录');
+  const on = {a: true, b: true, c1: true};
+  assert.deepStrictEqual(X.awayIds(on, {a: '/ssd', b: '/dir'}, '/dir'), ['a']);
+  assert.deepStrictEqual(X.awayIds({a: false}, {a: '/ssd'}, '/dir'), [], '没装着的不算');
+  const groups = X.elsewhere(ms, on, {a: '/ssd', b: '/ssd'}, '/dir');
+  assert.deepStrictEqual(groups.map((g) => [g.path, g.list.map((m) => m.id)]), [['/ssd', ['a', 'b']]]);
+  assert.deepStrictEqual(X.elsewhere(ms, on, {a: '/ssd'}, '/ssd'), [], '模型目录改到那里后就不算别处');
+  assert.match(X.elsewhereNote(groups), /另有 2 个模型存放在其他位置：A、B（\/ssd）/);
+  assert.strictEqual(X.elsewhereNote([]), '');
+  assert.match(X.elsewhereNote([{path: '/ssd', list: [ms[0]]}]), /时它不跟着移动/);
+  assert.match(X.elsewhereNote(groups), /时它们不跟着移动/);
+  const here = X.withoutIds(on, ['a']);
+  assert.deepStrictEqual(here, {a: false, b: true, c1: true});
+  assert.deepStrictEqual(X.keepIds({a: false, b: false, c1: false}, on, ['a']), {a: true, b: false, c1: false});
+});
