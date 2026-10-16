@@ -45,11 +45,11 @@ export function lockFile(home: string): string {
   return path.join(home, 'runtime.lock');
 }
 
-/** 实例锁的持有者还活着（锁文件不在或读不了时 false）。 */
+/** 实例锁的持有者还活着（锁文件不在或读不了时 false；上一次开机留下的锁也是 false，见 `isRecordedProcessAlive`）。 */
 export function lockHolderAlive(home: string): boolean {
   try {
-    const { pid } = JSON.parse(fs.readFileSync(lockFile(home), 'utf8')) as { pid?: unknown };
-    return typeof pid === 'number' && isProcessAlive(pid);
+    const { pid, acquiredAt } = JSON.parse(fs.readFileSync(lockFile(home), 'utf8')) as { pid?: unknown; acquiredAt?: unknown };
+    return typeof pid === 'number' && isRecordedProcessAlive(pid, typeof acquiredAt === 'string' ? acquiredAt : '');
   } catch {
     return false;
   }
@@ -76,10 +76,23 @@ export function isProcessAlive(pid: number): boolean {
   }
 }
 
-/** 正在跑的 Runtime 的发现信息；没有发现文件或进程已经不在时 null。 */
+/** 记录时间早于这次开机多少才算上一次开机留下的：墙上时钟在开机后可能被校准。 */
+const BOOT_SLACK_MS = 60_000;
+
+/**
+ * 发现文件或实例锁里记下的进程还在吗（与 `@baocut/runtime-storage` 的同名函数一致）。开机后 PID 重新分配，重启前没来得及
+ * 清理的记录里的 PID 多半已经是别的进程：记录写于这次开机之前的一律当作不在。
+ */
+export function isRecordedProcessAlive(pid: number, recordedAt: string, now = Date.now()): boolean {
+  const at = Date.parse(recordedAt);
+  if (Number.isFinite(at) && at < now - os.uptime() * 1000 - BOOT_SLACK_MS) return false;
+  return isProcessAlive(pid);
+}
+
+/** 正在跑的 Runtime 的发现信息；没有发现文件、进程已经不在或是上一次开机留下的时 null。 */
 export function findRuntime(home: string): RuntimeDiscovery | null {
   const discovery = readDiscovery(home);
-  return discovery && isProcessAlive(discovery.pid) ? discovery : null;
+  return discovery && isRecordedProcessAlive(discovery.pid, discovery.startedAt) ? discovery : null;
 }
 
 /** 怎么启动 Runtime。 */
@@ -363,7 +376,7 @@ async function openSession({ discovery, started }: { discovery: RuntimeDiscovery
 
 /** 这个 Runtime 已经不在，或正在退出（发现文件不再指向它）。 */
 export function withdrawn(home: string, discovery: RuntimeDiscovery): boolean {
-  return !isProcessAlive(discovery.pid) || readDiscovery(home)?.instanceId !== discovery.instanceId;
+  return !isRecordedProcessAlive(discovery.pid, discovery.startedAt) || readDiscovery(home)?.instanceId !== discovery.instanceId;
 }
 
 /** 接口版本门（§5.6）：说明哪一边要更新。 */

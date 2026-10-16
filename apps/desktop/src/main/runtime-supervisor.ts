@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import readline from 'node:readline';
 import type { RuntimeDiscovery } from '@baocut/protocol';
-import { isProcessAlive, readDiscovery, type RuntimeHome } from '@baocut/runtime-storage';
+import { isDiscoveryLive, readDiscovery, type RuntimeHome } from '@baocut/runtime-storage';
 import { M } from './main-copy.ts';
 import { packagedResourceEnv, type PackagedResources } from './packaged-resources.ts';
 import { stopChild } from './stop-child.ts';
@@ -50,7 +50,9 @@ const READY_TIMEOUT_MS = 20_000;
 /**
  * 找到或启动 Runtime（架构设计 §2.2）。
  *
- * 先读发现文件；进程活着就直接用。否则用 Electron 自带的 Node 起一个，等它报告就绪后再读发现文件。
+ * 先读发现文件；它指向的 Runtime 还在服务就直接用。PID 还在不算数：重启后旧 PID 常被别的进程复用，只认 PID 会把一个
+ * 早已不在的端点一直交给界面，界面就停在「正在重连」（`isDiscoveryLive`）。否则用 Electron 自带的 Node 起一个，等它报告
+ * 就绪后再读发现文件。
  * 令牌只经发现文件与 IPC 传给渲染进程，不进 URL、不进命令行参数。
  */
 export class RuntimeSupervisor {
@@ -89,7 +91,7 @@ export class RuntimeSupervisor {
 
   async #discover(): Promise<ConnectionTarget | null> {
     const discovery: RuntimeDiscovery | null = await readDiscovery(this.#options.home).catch(() => null);
-    if (!discovery || !isProcessAlive(discovery.pid)) return null;
+    if (!discovery || !(await isDiscoveryLive(discovery))) return null;
     return { endpoint: discovery.endpoint, token: discovery.token };
   }
 

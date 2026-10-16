@@ -7,6 +7,8 @@ import { CliError, EXIT, exitCodeFor } from '../envelope.ts';
 import {
   checkInterfaceVersion,
   ensureRuntime,
+  findRuntime,
+  lockHolderAlive,
   packagedApps,
   packagedResourceEnv,
   resolveAgentSkillsDir,
@@ -74,6 +76,28 @@ describe('Runtime 的入口与版本门', () => {
       expect(error).toBeInstanceOf(CliError);
       expect((error as CliError).code).toBe('RUNTIME_UNAVAILABLE');
       expect(fs.existsSync(path.join(home, 'logs'))).toBe(false);
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('上一次开机留下的发现文件与实例锁（架构设计 §2.2）', () => {
+  it('PID 现在有进程也不算 Runtime 还在', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-cli-stale-'));
+    try {
+      const beforeBoot = new Date(Date.now() - os.uptime() * 1000 - 10 * 60_000).toISOString();
+      const now = new Date().toISOString();
+      const write = (at: string) => {
+        fs.writeFileSync(path.join(home, 'runtime.json'), JSON.stringify({ instanceId: 'rt_old', pid: process.pid, startedAt: at, endpoint: 'ws://127.0.0.1:1' }));
+        fs.writeFileSync(path.join(home, 'runtime.lock'), JSON.stringify({ pid: process.pid, instanceId: 'rt_old', acquiredAt: at }));
+      };
+      write(now);
+      expect(findRuntime(home)?.instanceId).toBe('rt_old');
+      expect(lockHolderAlive(home)).toBe(true);
+      write(beforeBoot);
+      expect(findRuntime(home)).toBeNull();
+      expect(lockHolderAlive(home)).toBe(false);
     } finally {
       fs.rmSync(home, { recursive: true, force: true });
     }

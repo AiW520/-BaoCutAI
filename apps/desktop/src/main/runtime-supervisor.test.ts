@@ -2,19 +2,22 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import path from 'node:path';
 import os from 'node:os';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { M } from './main-copy.ts';
 import { RuntimeSupervisor } from './runtime-supervisor.ts';
 import { STOP_MESSAGE } from './stop-child.ts';
 
-const mocks = vi.hoisted(() => ({ spawn: vi.fn(), readDiscovery: vi.fn() }));
+const mocks = vi.hoisted(() => ({ spawn: vi.fn(), readDiscovery: vi.fn(), isDiscoveryLive: vi.fn() }));
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
 vi.mock('@baocut/runtime-storage', async (original) => ({
   ...(await original<typeof import('@baocut/runtime-storage')>()),
   readDiscovery: mocks.readDiscovery,
-  isProcessAlive: () => true,
+  isDiscoveryLive: mocks.isDiscoveryLive,
 }));
+beforeEach(() => {
+  mocks.isDiscoveryLive.mockResolvedValue(true);
+});
 afterEach(() => {
   vi.resetAllMocks();
   vi.unstubAllEnvs();
@@ -77,6 +80,32 @@ it.each([true, false].flatMap((enabled) => [
   expect(options.env.BAOCUT_PROJECTS_DIR).toBe(home.projectsDir);
   expect(resolveRuntimeHome(options.env).projectsDir).toBe(home.projectsDir);
   expect(options.env.BAOCUT_LEGACY_AUTO_DETECT).toBe(enabled ? '1' : '');
+});
+
+it('starts a new Runtime when the discovery file points at one that is gone', async () => {
+  const home = resolveRuntimeHome({ BAOCUT_HOME: path.join(os.tmpdir(), 'desktop-stale-home') });
+  // 重启前留下的发现文件：PID 被别的进程复用，端点没有人监听。
+  const stale = { pid: 898, endpoint: 'ws://127.0.0.1:2', token: 'stale-token' };
+  mocks.readDiscovery.mockResolvedValueOnce(stale).mockResolvedValue(DISCOVERY);
+  mocks.isDiscoveryLive.mockImplementation(async (discovery: { pid: number }) => discovery.pid !== stale.pid);
+  mocks.spawn.mockImplementation(() => fakeRuntime().child);
+  const supervisor = supervisorFor(home);
+  await expect(supervisor.connection()).resolves.toEqual({ endpoint: DISCOVERY.endpoint, token: DISCOVERY.token });
+  expect(mocks.spawn).toHaveBeenCalledTimes(1);
+});
+
+it('reports a failure instead of returning a dead endpoint when the new Runtime defers to it', async () => {
+  const home = resolveRuntimeHome({ BAOCUT_HOME: path.join(os.tmpdir(), 'desktop-stale-home') });
+  const stale = { pid: 898, endpoint: 'ws://127.0.0.1:2', token: 'stale-token' };
+  mocks.readDiscovery.mockResolvedValue(stale);
+  mocks.isDiscoveryLive.mockResolvedValue(false);
+  // 退出码 3：新 Runtime 认为实例锁还被占着。
+  mocks.spawn.mockImplementation(() => {
+    const child = Object.assign(new EventEmitter(), { stdout: new PassThrough() });
+    setImmediate(() => child.emit('exit', 3, null));
+    return child;
+  });
+  await expect(supervisorFor(home).connection()).rejects.toThrow(M.runtimeNoDiscovery);
 });
 
 it('does not start another Runtime once quitting has begun', async () => {
