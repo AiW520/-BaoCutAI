@@ -320,7 +320,7 @@ export const de: ModelsMessages = {
   voices: {
     title: "Meine Stimmen",
     lede:
-      "Eine Referenzaufnahme als Stimme speichern und bei Spracherzeugung oder übersetzter Vertonung nach Namen auswählen; die Aufnahme bleibt auf diesem Computer. Für eine Cloud-Engine (ElevenLabs) zuerst hier hochladen und einen Klon erstellen. Jederzeit löschbar.",
+      "Eine Referenzaufnahme als Stimme speichern und bei Spracherzeugung oder übersetzter Vertonung nach Namen auswählen; die Aufnahme bleibt auf diesem Computer. Für eine Cloud-Engine (ElevenLabs, Google Gemini) zuerst hier hochladen und einen Klon erstellen. Jederzeit löschbar.",
     emptyTitle: "Noch keine Stimmen",
     emptyBody: "Eine 5–12 Sekunden lange Referenzaufnahme auswählen oder ein exportiertes Stimmpaket importieren. Nach dem Speichern überall auswählbar.",
   },

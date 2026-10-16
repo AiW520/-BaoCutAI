@@ -52,7 +52,7 @@ const en = {
   noClone: "This voice has no clone on this provider",
   remoteCloneNotDeleted: (p: { label: string; reason: string }) =>
     `The clone on ${p.label} wasn't deleted, so the record was kept: ${p.reason}`,
-  cloneUnsupported: (p: { providerId: string }) => `${p.providerId} has no voice cloning API (only ElevenLabs offers one for now)`,
+  cloneUnsupported: (p: { providerId: string }) => `${p.providerId} has no voice cloning API`,
   cloneVersionGone: 'The voice version to clone no longer exists',
   oldCloneNotDeleted: (p: { voiceId: string; label: string; reason: string }) =>
     `The replaced old clone (${p.voiceId}) wasn't deleted from ${p.label}: ${p.reason}`,

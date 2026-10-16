@@ -71,6 +71,21 @@ describe('分组', () => {
     expect(groups.find((g) => g.id === 'other')!.items.map((i) => i.key)).toEqual(['custom']);
   });
 
+  it('报了 voiceClone、要授权声明录音的服务商（Gemini）：我的声音按克隆状态可选，没有「临时用一段」', () => {
+    const gemini = {
+      ...option(speechModel('gemini-3.8-flash-tts', ['Kore'], { voiceModes: ['preset', 'custom'] }), 'google', 'Google Gemini'),
+      voiceClone: { requiresConsentClip: true },
+    };
+    const onGemini = voice('g', { name: '宝玉', clones: [{ providerId: 'google', state: 'valid' }] });
+    const groups = voicePickerGroups(gemini, [onGemini, fresh]);
+    expect(groups.find((g) => g.id === 'mine')!.items.slice(0, 2)).toEqual([
+      { key: 'library:g', label: '宝玉', description: '已克隆到 Google Gemini · 用这家的克隆合成', disabled: false },
+      { key: 'library:b', label: '新录的', description: '还没在 Google Gemini 上克隆 · 去我的声音里上传一次', disabled: true },
+    ]);
+    expect(groups.find((g) => g.id === 'other')!.items.map((i) => i.key)).toEqual(['custom']);
+    expect(pickerSelection({ voice: 'library:g' }, gemini, [onGemini])).toBe('library:g');
+  });
+
   it('还没读到我的声音：那一组写「正在读取」，克隆新音色照样能点', () => {
     const mine = voicePickerGroups(eleven, null).find((g) => g.id === 'mine')!;
     expect(mine.items.map((i) => [i.key, i.disabled])).toEqual([

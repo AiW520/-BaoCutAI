@@ -31,7 +31,7 @@ export const zhHant: RcLibraryMessages = {
   clonePurpose: (p) => `克隆音色「${p.name}」`,
   noClone: '這個音色在這個供應商上沒有克隆',
   remoteCloneNotDeleted: (p) => `${p.label} 上的克隆未刪除，因此保留了記錄：${p.reason}`,
-  cloneUnsupported: (p) => `${p.providerId} 沒有音色克隆 API（目前只有 ElevenLabs 提供）`,
+  cloneUnsupported: (p) => `${p.providerId} 沒有音色克隆 API`,
   cloneVersionGone: '要克隆的音色版本已不存在',
   oldCloneNotDeleted: (p) => `被取代的舊克隆（${p.voiceId}）未從 ${p.label} 刪除：${p.reason}`,
 };

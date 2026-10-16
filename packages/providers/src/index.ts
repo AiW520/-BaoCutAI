@@ -69,6 +69,7 @@ export {
 } from './openai-compatible/compatible-media.ts';
 export { ElevenLabsAdapter, ELEVENLABS_DEFAULT_BASE_URL } from './elevenlabs/elevenlabs-adapter.ts';
 export { ElevenLabsVoiceCloneAdapter } from './elevenlabs/elevenlabs-voice-clone.ts';
+export { GoogleVoiceCloneAdapter } from './google/google-voice-clone.ts';
 export { GoogleImageAdapter, parseImageInteraction } from './google/google-image.ts';
 export { GoogleSpeechAdapter, parseSpeechInteraction } from './google/google-speech.ts';
 export {

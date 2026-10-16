@@ -983,7 +983,7 @@ interface ErrorBody {
 | `VOICE_CLONE_REQUIRED` | `voice: 'library:<id>'` 在所选 Provider 上没有可用的克隆（`details.reason`：`missing` 没有建立过，`stale` 参考录音已更换或条目已删除；另有 `details.id`、`details.providerId`） | 先为这个 Provider 建立克隆（`library.createVoiceClone`），或换一个音色；不换成别的声音 |
 | `VOICE_NOT_FOUND` | 翻译配音里说话人绑定的 `library:<id>` 音色在库里已经删了（`details.library: 'voices'`、`details.reason: 'removed'`） | 那位说话人的句子不合成、逐句报告；在视频里换一个音色，或删掉这条绑定后重试 |
 | `APPLY_FAILED` | 结果已发布，但写入视频的事务被拒绝（转写写文档、生成导入素材、翻译流程写译文文档；`details.cause`；触碰任务保护时 `details.reason` 是 `TASK_PROTECTED`，带 `details.protections`） | 产物保留在 `result` 里；不自动重试。转写与生成由用户 `jobs.reconcile apply` 重新应用（先按上次的 `commandId` 查回执），固定流程用 `pipelines.retry` |
-| `VOICE_CLONE_UNSUPPORTED` | `library.createVoiceClone` 的 Provider 没有克隆接口（首版只有 ElevenLabs；`details.providerId`） | 换一个 Provider |
+| `VOICE_CLONE_UNSUPPORTED` | `library.createVoiceClone` 的 Provider 没有克隆接口（能力视图没有 `voiceClone`，现在只有 ElevenLabs 与 Google Gemini 有；`details.providerId`） | 换一个 Provider |
 | `VOICE_CONSENT_CLIP_REQUIRED` | `library.createVoiceClone` 的 Provider 要求说话人本人念授权声明（`voiceClone.requiresConsentClip`），音色没有授权声明录音 `consentClip`（`details.id`、`details.providerId`）；执行时适配器才要求的，是任务的 `error.code` | 由说话人在音色库里录授权声明（`library.put` 的 `consentClip` 与 `consentSource`）后再克隆；不绕过 |
 | `VOICE_CLONE_EXISTS` | 这个音色在这个 Provider 上已经有参考录音没变的有效克隆（`details.id`、`details.providerId`） | 直接用 `library:<id>`；要重建先 `library.removeVoiceClone` |
 | `LIBRARY_ENTRY_GONE` | 克隆任务开始时，提交时冻结的音色版本已经不在了（条目被删或版本已清理） | 重新提交 |

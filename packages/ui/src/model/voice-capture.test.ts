@@ -132,6 +132,29 @@ describe('克隆去哪些模型', () => {
     expect(cloneTargets(null)).toEqual([]);
   });
 
+  it('云端能不能克隆看 Runtime 报的 voiceClone（Gemini 要授权声明）；旧版 Runtime 不报时 ElevenLabs 照列，别家不列', () => {
+    const v = view();
+    const google = {
+      providerId: 'google',
+      kind: 'online' as const,
+      label: 'Google Gemini',
+      config: null,
+      available: true,
+      models: [speechModel('gemini-3.8-flash-tts', ['Kore'], { voiceModes: ['preset', 'custom'] })],
+      voiceClone: { requiresConsentClip: true },
+    };
+    const providers = [
+      ...v.synthesizeSpeech.providers.filter((p) => p.providerId !== 'consent-co').map((p) => (p.providerId === 'elevenlabs' ? { ...p, voiceClone: undefined } : p)),
+      google,
+    ];
+    const targets = cloneTargets({ ...v, synthesizeSpeech: { ...v.synthesizeSpeech, providers } });
+    expect(targets.filter((t) => t.kind === 'cloud').map((t) => [t.id, t.name, t.consent])).toEqual([
+      ['elevenlabs', 'ElevenLabs', false],
+      ['google', 'Google Gemini', true],
+    ]);
+    expect(cloneSteps(targets).find((s) => s.key === 'consent')!.needed).toEqual(['Google Gemini']);
+  });
+
   it('默认选上本机全部与连着的云端；从模型页过来时加上那一只', () => {
     const targets = cloneTargets(view());
     expect(defaultPicked(targets, null)).toEqual(['qwen3-tts-0.6b-base', 'gpt-sovits-v2', 'consent-co']);

@@ -18,6 +18,6 @@ export const ptBR: RcLibraryMessages = {
   clonerNotConfigured: (p) => `Não é possível clonar vozes em ${p.label}: o provedor está desativado ou não tem chave`,
   cloneExists: (p) => `A voz “${p.name}” já tem clone válido em ${p.label}`, clonePurpose: (p) => `Clonar voz “${p.name}”`, noClone: 'Esta voz não tem clone neste provedor',
   remoteCloneNotDeleted: (p) => `O clone em ${p.label} não foi excluído, então o registro foi mantido: ${p.reason}`,
-  cloneUnsupported: (p) => `${p.providerId} não tem API de clonagem de voz (somente ElevenLabs oferece uma por enquanto)`, cloneVersionGone: 'A versão da voz a clonar não existe mais',
+  cloneUnsupported: (p) => `${p.providerId} não tem API de clonagem de voz`, cloneVersionGone: 'A versão da voz a clonar não existe mais',
   oldCloneNotDeleted: (p) => `O clone antigo substituído (${p.voiceId}) não foi excluído de ${p.label}: ${p.reason}`,
 };

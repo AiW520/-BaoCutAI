@@ -36,7 +36,7 @@ export const nl: RcLibraryMessages = {
   noClone: "Deze stem heeft geen kloon bij deze aanbieder",
   remoteCloneNotDeleted: (p: { label: string; reason: string }) =>
     `De kloon bij ${p.label} is niet verwijderd, dus de registratie is behouden: ${p.reason}`,
-  cloneUnsupported: (p: { providerId: string }) => `${p.providerId} heeft geen API voor stemklonen (alleen ElevenLabs biedt die momenteel)`,
+  cloneUnsupported: (p: { providerId: string }) => `${p.providerId} heeft geen API voor stemklonen`,
   cloneVersionGone: "De stemversie om te klonen bestaat niet meer",
   oldCloneNotDeleted: (p: { voiceId: string; label: string; reason: string }) =>
     `De vervangen oude kloon (${p.voiceId}) is niet verwijderd bij ${p.label}: ${p.reason}`,

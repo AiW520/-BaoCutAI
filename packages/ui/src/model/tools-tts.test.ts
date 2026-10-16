@@ -27,6 +27,7 @@ import {
   ttsStatus,
   libraryIdOf,
   libraryVoiceBlock,
+  speechCanClone,
   voiceKeyFor,
   voiceLabel,
   voiceOptions,
@@ -289,6 +290,41 @@ describe('我的声音', () => {
     expect(libraryVoiceBlock(cloned, option(rich))).toBe('OpenAI 不能克隆 · 用它的预置音色');
     const presetOnly = option(speechModel('tts-1', ['nova'], { voiceModes: ['preset'] }));
     expect(libraryVoiceBlock(cloned, presetOnly)).toBe('tts-1 只收预置音色，用不了我的声音');
+  });
+
+  it('Runtime 报了 voiceClone 的云端（Gemini）按克隆状态判断；没报的照旧说不能克隆，旧版 Runtime 下 ElevenLabs 照旧能克隆', () => {
+    const gemini = option(speechModel('gemini-3.8-flash-tts', ['Kore'], { voiceModes: ['preset', 'custom'] }), {
+      key: 'google/gemini-3.8-flash-tts',
+      providerId: 'google',
+      provider: 'Google Gemini',
+      voiceClone: { requiresConsentClip: true },
+    });
+    expect(speechCanClone(gemini)).toBe(true);
+    expect(libraryVoiceBlock(voice('g1'), gemini)).toBe('还没在 Google Gemini 上克隆 · 去我的声音里上传一次');
+    expect(libraryVoiceBlock(voice('g2', { clones: [{ providerId: 'google', state: 'valid' }] }), gemini)).toBeNull();
+    const { voiceClone: _, ...unreported } = gemini;
+    expect(speechCanClone(unreported)).toBe(false);
+    expect(libraryVoiceBlock(voice('g1'), unreported)).toBe('Google Gemini 不能克隆 · 用它的预置音色');
+    expect(eleven.voiceClone).toBeUndefined();
+    expect(speechCanClone(eleven)).toBe(true);
+  });
+
+  it('模型选项带上服务商报的 voiceClone：Gemini 生成语音能选我的声音里在它上面建过克隆的那只', () => {
+    const view = fixtureView();
+    view.synthesizeSpeech.providers.push({
+      providerId: 'google',
+      kind: 'online',
+      label: 'Google Gemini',
+      config: { enabled: true, enabledAt: '2026-10-01T00:00:00.000Z', credential: 'set' },
+      models: [speechModel('gemini-3.8-flash-tts', ['Kore'], { voiceModes: ['preset', 'custom'] })],
+      available: true,
+      voiceClone: { requiresConsentClip: true },
+    });
+    const options = cloudModelOptions(view, 'synthesizeSpeech');
+    const gemini = options.find((o) => o.providerId === 'google')!;
+    expect(gemini.voiceClone).toEqual({ requiresConsentClip: true });
+    expect(options.find((o) => o.providerId === 'openai')!.voiceClone).toBeUndefined();
+    expect(libraryVoiceBlock(voice('g3', { clones: [{ providerId: 'google', state: 'valid' }] }), gemini)).toBeNull();
   });
 
   it('本机能克隆的模型直接用参考录音：不要克隆、不看本人声明；只有自带说话人的本机模型用不了', () => {

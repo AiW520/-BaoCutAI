@@ -280,7 +280,7 @@ export const vi: ModelsMessages = {
   },
   voices: {
     title: "Giọng của tôi",
-    lede: "Lưu bản ghi tham chiếu thành giọng rồi chọn theo tên khi tạo giọng nói hoặc lồng tiếng bản dịch; bản ghi tham chiếu ở lại máy tính này. Để bộ máy đám mây (ElevenLabs) nói bằng giọng này, trước tiên tải bản ghi lên tại đây để tạo bản sao giọng. Bạn có thể xóa bất cứ lúc nào.",
+    lede: "Lưu bản ghi tham chiếu thành giọng rồi chọn theo tên khi tạo giọng nói hoặc lồng tiếng bản dịch; bản ghi tham chiếu ở lại máy tính này. Để bộ máy đám mây (ElevenLabs, Google Gemini) nói bằng giọng này, trước tiên tải bản ghi lên tại đây để tạo bản sao giọng. Bạn có thể xóa bất cứ lúc nào.",
     emptyTitle: "Chưa có giọng",
     emptyBody: "Chọn bản ghi tham chiếu 5–12 giây hoặc nhập gói giọng người khác đã xuất. Sau khi lưu, bạn có thể chọn ở mọi nơi.",
   },

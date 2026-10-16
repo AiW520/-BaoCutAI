@@ -342,7 +342,7 @@ const en = {
   voices: {
     title: 'My voices',
     lede:
-      'Save a reference recording as a voice, then pick it by name when generating speech or translated voice-overs; the reference recording stays on this computer. To have a cloud engine (ElevenLabs) speak with this voice, first upload the reference recording here to create a clone. You can delete it at any time.',
+      'Save a reference recording as a voice, then pick it by name when generating speech or translated voice-overs; the reference recording stays on this computer. To have a cloud engine (ElevenLabs, Google Gemini) speak with this voice, first upload the reference recording here to create a clone. You can delete it at any time.',
     emptyTitle: 'No voices yet',
     emptyBody: 'Choose a 5–12 second reference recording, or import a voice pack someone exported. Once saved, you can pick it anywhere.',
   },

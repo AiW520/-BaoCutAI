@@ -179,6 +179,11 @@ export function libraryIdOf(key: string): string | null {
   return key.startsWith(LIBRARY_PREFIX) ? key.slice(LIBRARY_PREFIX.length) : null;
 }
 
+/** 这家能不能克隆音色：看 Runtime 报的 `voiceClone`；旧版 Runtime 不报，按当时能克隆的几家（`VOICE_CLONE_PROVIDERS`）。 */
+export function speechCanClone(option: Pick<SpeechOption, 'providerId' | 'voiceClone'>): boolean {
+  return !!option.voiceClone || VOICE_CLONE_PROVIDERS.includes(option.providerId);
+}
+
 /**
  * 我的声音里的一只在这只模型上用不用得了：用得了为 null，否则一句原因。本机能克隆的模型直接用它的参考录音（不出本机，
  * 不用先建克隆，也不看本人声明）；云端 Runtime 只用这家的有效克隆、并且要有本人声明，否则以 `VOICE_CLONE_REQUIRED` /
@@ -186,12 +191,12 @@ export function libraryIdOf(key: string): string | null {
  */
 export function libraryVoiceBlock(
   voice: Pick<LibraryEntrySummary, 'consentDeclared' | 'clones'>,
-  option: Pick<SpeechOption, 'providerId' | 'provider' | 'modelId' | 'info'>,
+  option: Pick<SpeechOption, 'providerId' | 'provider' | 'modelId' | 'info' | 'voiceClone'>,
 ): string | null {
   if (!libraryVoiceAllowed(option.info)) return M.presetOnly(option.modelId);
   if (option.info.local) return null;
   const clone = voice.clones?.find((c) => c.providerId === option.providerId);
-  if (!clone && !VOICE_CLONE_PROVIDERS.includes(option.providerId)) return M.cannotClone(option.provider);
+  if (!clone && !speechCanClone(option)) return M.cannotClone(option.provider);
   if (!voice.consentDeclared) return M.noConsent;
   if (clone?.state === 'valid') return null;
   if (clone?.state === 'stale') return M.cloneStale(option.provider);

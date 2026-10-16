@@ -305,11 +305,28 @@ export function googleSpeechReply(audio: Buffer = wavFixture()): FakeReply {
   };
 }
 
-/** 假 Gemini：Interactions（转写模型回词级标注，通用模型回结构化的段；生图；语音合成），与文本的 `generateContent`。 */
+/**
+ * 假 Gemini：Interactions（转写模型回词级标注，通用模型回结构化的段；生图；语音合成）、文本的 `generateContent`，
+ * 与 Voices 的复刻音色（`POST /voices` 回 `voice_test…`，`DELETE /voices/<id>` 只认它建过的）。
+ */
 export function fakeGoogleHandler(text = 'hello world'): FakeHandler {
+  const voices = new Set<string>();
+  let created = 0;
   return (request) => {
-    if (request.method === 'GET' && new URL(request.path, 'http://fake').pathname.endsWith('/models')) {
+    const pathname = new URL(request.path, 'http://fake').pathname;
+    if (request.method === 'GET' && pathname.endsWith('/models')) {
       return { status: 200, json: { models: [] } };
+    }
+    if (request.method === 'POST' && pathname.endsWith('/voices')) {
+      const id = `voice_test${++created}`;
+      voices.add(id);
+      return { status: 200, json: { id, type: 'replicated', model: 'gemini-3.8-flash-tts', expire_time: '2027-10-15T00:00:00Z' } };
+    }
+    const voice = /\/voices\/([^/]+)$/.exec(pathname);
+    if (request.method === 'DELETE' && voice) {
+      const id = decodeURIComponent(voice[1]!);
+      if (!voices.delete(id)) return { status: 404, json: { error: { code: 404, message: `Voice ${id} not found`, status: 'NOT_FOUND' } } };
+      return { status: 200, json: {} };
     }
     if (request.method === 'POST' && request.path.endsWith(':generateContent')) return geminiTextReply(request, text);
     if (request.method !== 'POST' || !request.path.endsWith('/interactions'))

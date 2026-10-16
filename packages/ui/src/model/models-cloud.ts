@@ -134,6 +134,8 @@ export interface CloudProviderCard {
   detail?: string;
   /** 最近一次「刷新」（`models.refreshProvider`）的结果；从没刷新过时没有。 */
   refreshed?: ProviderRefreshStatus;
+  /** 语音合成档：这家能克隆音色（Runtime 报的 `voiceClone`）；不能或旧版 Runtime 不报时没有。 */
+  voiceClone?: { requiresConsentClip: boolean };
 }
 
 function onlineProviders(view: ModelCapabilitiesView, capability: OnlineCapability): ProviderCapabilityView[] {
@@ -182,6 +184,7 @@ export function cloudProviders(view: ModelCapabilitiesView, capability: OnlineCa
     if (!card.available && reason) card.unavailableReason = reason;
     if (!card.available && detail) card.detail = detail;
     if (p.config?.refreshed) card.refreshed = p.config.refreshed;
+    if (entry?.voiceClone) card.voiceClone = entry.voiceClone;
     return card;
   });
   return [...cards.filter((c) => c.connected), ...cards.filter((c) => !c.connected)];

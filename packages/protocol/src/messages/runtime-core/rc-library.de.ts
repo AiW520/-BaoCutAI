@@ -36,7 +36,7 @@ export const de: RcLibraryMessages = {
   noClone: "Diese Stimme hat keinen Klon bei diesem Anbieter",
   remoteCloneNotDeleted: (p: { label: string; reason: string }) =>
     `Der Klon bei ${p.label} wurde nicht gelöscht; der Datensatz wurde beibehalten: ${p.reason}`,
-  cloneUnsupported: (p: { providerId: string }) => `${p.providerId} hat keine API zum Stimmklonen (derzeit bietet nur ElevenLabs eine an)`,
+  cloneUnsupported: (p: { providerId: string }) => `${p.providerId} hat keine API zum Stimmklonen`,
   cloneVersionGone: "Die zu klonende Stimmversion ist nicht mehr vorhanden",
   oldCloneNotDeleted: (p: { voiceId: string; label: string; reason: string }) =>
     `Der ersetzte alte Klon (${p.voiceId}) wurde nicht gelöscht bei ${p.label}: ${p.reason}`,

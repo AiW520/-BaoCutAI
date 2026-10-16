@@ -4,6 +4,7 @@ import {
   libraryIdOf,
   libraryVoiceBlock,
   libraryVoiceKey,
+  speechCanClone,
   voiceKeyFor,
   type MyVoices,
   type SpeechOption,
@@ -24,7 +25,6 @@ import { ru } from './voice-picker.ru.ts';
 import { pl } from './voice-picker.pl.ts';
 import { tr } from './voice-picker.tr.ts';
 import { vi } from './voice-picker.vi.ts';
-import { VOICE_CLONE_PROVIDERS } from './voices-library.ts';
 
 /** 音色选择器的文案（译文在 `voice-picker.<语言>.ts`）。「我的声音」是设置里那一页的名字。 */
 const en = {
@@ -54,7 +54,8 @@ const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es,
 /**
  * 共享音色选择器的分组（设计稿 voice-picker.jsx、model-cloud-tts.js `pickerGroups` / `valueLine`）：云端模型下是
  * 默认 · 我的声音（按这家的克隆状态置灰，末尾「克隆新音色…」）· 这家的音色 · 手填音色 ID · 临时用一段。
- * 「克隆新音色…」只是去 设置 › 模型 › 语音合成 › 我的声音（克隆在那里建）；「临时用一段」这一版的合成接口不收临时参考音频，置灰写原因。
+ * 「克隆新音色…」只是去 设置 › 模型 › 语音合成 › 我的声音（克隆在那里建）；「临时用一段」这一版的合成接口不收临时参考音频，置灰写原因；
+ * 要授权声明录音的（Gemini）没有这一项：一段录音建不了，得先在我的声音里录样本与授权声明。
  */
 
 /** 不是音色、是动作的两项。 */
@@ -78,11 +79,6 @@ export interface VoicePickerGroup {
 
 function presetName(option: SpeechOption, voiceId: string): string {
   return option.info.voices.find((v) => v.voiceId === voiceId)?.label ?? voiceId;
-}
-
-/** 这家能不能克隆：Runtime 现在只有 ElevenLabs 有克隆接口。 */
-function canClone(option: Pick<SpeechOption, 'providerId'>): boolean {
-  return VOICE_CLONE_PROVIDERS.includes(option.providerId);
 }
 
 /** 我的声音里一只的说明：用得了时说怎么用（本机用参考录音、云端用哪家的克隆），用不了时就是原因。 */
@@ -119,7 +115,7 @@ export function voicePickerGroups(option: SpeechOption, voices: MyVoices): Voice
   }
   const other: VoicePickerItem[] = [];
   if (customVoiceAllowed(info)) other.push({ key: 'custom', label: M.customVoice, description: M.customVoiceHint, disabled: false });
-  if (canClone(option)) {
+  if (speechCanClone(option) && !option.voiceClone?.requiresConsentClip) {
     other.push({ key: TEMP_REFERENCE, label: M.tempReference, description: M.tempReferenceHint, disabled: true });
   }
   if (other.length) groups.push({ id: 'other', title: M.other, items: other });

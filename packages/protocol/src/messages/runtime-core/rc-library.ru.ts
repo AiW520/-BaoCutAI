@@ -29,7 +29,7 @@ export const ru: RcLibraryMessages = {
   clonePurpose: (p) => `Клонировать голос «${p.name}"`,
   noClone: "У этого голоса нет клона у этого поставщика",
   remoteCloneNotDeleted: (p) => `Клон у поставщика ${p.label} не удалён, запись сохранена: ${p.reason}`,
-  cloneUnsupported: (p) => `${p.providerId} не имеет API клонирования голосов (пока есть только у ElevenLabs)`,
+  cloneUnsupported: (p) => `${p.providerId} не имеет API клонирования голосов`,
   cloneVersionGone: "Версия голоса для клонирования больше не существует",
   oldCloneNotDeleted: (p) => `Заменённый старый клон (${p.voiceId}) не удалён у поставщика ${p.label}: ${p.reason}`,
 };

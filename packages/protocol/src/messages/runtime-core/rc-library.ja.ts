@@ -33,7 +33,7 @@ export const ja: RcLibraryMessages = {
   clonePurpose: (p) => `声「${p.name}」をクローン`,
   noClone: 'この声にはこのプロバイダ上のクローンがありません',
   remoteCloneNotDeleted: (p) => `${p.label} 上のクローンを削除できなかったため、記録を残しました：${p.reason}`,
-  cloneUnsupported: (p) => `${p.providerId} には声のクローン API がありません（現在提供しているのは ElevenLabs のみ）`,
+  cloneUnsupported: (p) => `${p.providerId} には声のクローン API がありません`,
   cloneVersionGone: 'クローンする声のバージョンはもう存在しません',
   oldCloneNotDeleted: (p) => `置き換えた古いクローン（${p.voiceId}）を ${p.label} から削除できませんでした：${p.reason}`,
 };

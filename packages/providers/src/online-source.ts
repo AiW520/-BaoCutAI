@@ -51,6 +51,7 @@ import { GOOGLE_DEFAULT_BASE_URL, GoogleAdapter } from './google/google-adapter.
 import { GoogleImageAdapter } from './google/google-image.ts';
 import { GoogleSpeechAdapter } from './google/google-speech.ts';
 import { GoogleTextAdapter } from './google/google-text.ts';
+import { GoogleVoiceCloneAdapter } from './google/google-voice-clone.ts';
 import { redact } from './http/provider-fetch.ts';
 import { OnlineGenerator } from './online-generator.ts';
 import { OnlineTextProvider } from './online-text.ts';
@@ -200,6 +201,7 @@ const BUILTINS: Record<BuiltinId, BuiltinEntry> = {
         text,
         validator: transcribe,
         lister: text,
+        clone: new GoogleVoiceCloneAdapter(),
       };
     },
   },
@@ -358,7 +360,7 @@ export class OnlineProviderSource implements ProviderSource {
   }
 
   /**
-   * 一个 Provider 的音色克隆（§5.9）：没有克隆接口的供应商（`openai`、`google`、自定义端点）返回 null。
+   * 一个 Provider 的音色克隆（§5.9）：没有克隆接口的供应商（`openai`、豆包语音、自定义端点）返回 null。
    * 执行时再读一次配置：没有启用或没有密钥时以 `unavailable` 失败，不发出请求。
    */
   voiceCloner(providerId: string): VoiceCloner | null {

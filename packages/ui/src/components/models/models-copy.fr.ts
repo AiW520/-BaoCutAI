@@ -321,7 +321,7 @@ export const fr: ModelsMessages = {
   voices: {
     title: "Mes voix",
     lede:
-      "Enregistrez une référence comme voix, puis choisissez-la par nom pour synthèse ou doublage ; enregistrement conservé localement. Pour un moteur cloud (ElevenLabs), envoyez d’abord la référence ici pour créer un clone. Supprimable à tout moment.",
+      "Enregistrez une référence comme voix, puis choisissez-la par nom pour synthèse ou doublage ; enregistrement conservé localement. Pour un moteur cloud (ElevenLabs, Google Gemini), envoyez d’abord la référence ici pour créer un clone. Supprimable à tout moment.",
     emptyTitle: "Aucune voix",
     emptyBody: "Choisissez une référence de 5–12 secondes ou importez un pack exporté. Une fois enregistrée, elle sera sélectionnable partout.",
   },

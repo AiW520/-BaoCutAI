@@ -4,10 +4,11 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ModelServiceStore, ProviderFailure, freezeImageInput, type GenerationRun, type ImageParameters, type SpeechParameters } from '@baocut/models';
 import { FileCredentialStore } from '@baocut/runtime-storage';
-import type { AdapterConfig, ImageAdapter, ImageInputBytes, SpeechAdapter } from './adapter.ts';
+import type { AdapterConfig, ImageAdapter, ImageInputBytes, SpeechAdapter, VoiceCloneConsentClip, VoiceCloneRequest } from './adapter.ts';
 import { ElevenLabsAdapter } from './elevenlabs/elevenlabs-adapter.ts';
 import { GoogleImageAdapter, parseImageInteraction } from './google/google-image.ts';
 import { GoogleSpeechAdapter, parseSpeechInteraction } from './google/google-speech.ts';
+import { GoogleVoiceCloneAdapter } from './google/google-voice-clone.ts';
 import { ProviderAborted } from './http/provider-fetch.ts';
 import { OnlineGenerator } from './online-generator.ts';
 import { OnlineProviderSource } from './online-source.ts';
@@ -355,6 +356,101 @@ describe('Google 语音', () => {
   });
 });
 
+describe('Google 复刻音色', () => {
+  let dir: string | undefined;
+  afterEach(async () => {
+    if (dir) await fs.rm(dir, { recursive: true, force: true });
+    dir = undefined;
+  });
+
+  /** 参考录音是 WAV，授权声明录音是 MP3：两段各自带自己的 mime_type。 */
+  async function cloneRequest(
+    cfg: AdapterConfig,
+    clip: Partial<VoiceCloneConsentClip> | null = {},
+    overrides: Partial<VoiceCloneRequest> = {},
+  ): Promise<VoiceCloneRequest> {
+    dir ??= await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-gclone-'));
+    const reference = path.join(dir, 'reference.wav');
+    const consent = path.join(dir, 'consent.mp3');
+    await fs.writeFile(reference, wavFixture());
+    await fs.writeFile(consent, mp3Fixture());
+    return {
+      config: cfg,
+      name: '我的声音',
+      file: reference,
+      fileName: 'reference.wav',
+      mediaType: 'audio/wav',
+      description: null,
+      ...(clip ? { consentClip: { file: consent, fileName: 'consent.mp3', mediaType: 'audio/mpeg', language: 'en-US', text: null, ...clip } } : {}),
+      signal: new AbortController().signal,
+      http,
+      ...overrides,
+    };
+  }
+
+  it('POST /voices：store 为 true，两段录音 base64 内联，授权声明的语言写进 language_code；取响应的 id', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler());
+    const cfg = config(`${server.origin}/v1beta`, GOOGLE_KEY);
+    const adapter = new GoogleVoiceCloneAdapter();
+    expect(adapter.requiresConsentClip).toBe(true);
+    const created = await adapter.createVoiceClone(await cloneRequest(cfg, {}, { description: 'BaoCut 我的声音' }));
+    expect(created).toEqual({ voiceId: 'voice_test1' });
+    const [request] = server.requests;
+    expect(request).toMatchObject({ method: 'POST', path: '/v1beta/voices' });
+    expect(request!.headers['x-goog-api-key']).toBe(GOOGLE_KEY);
+    expect(request!.headers['content-type']).toMatch(/application\/json/);
+    expect(request!.json).toEqual({
+      store: true,
+      voice: {
+        type: 'replicated',
+        display_name: '我的声音',
+        description: 'BaoCut 我的声音',
+        language_code: 'en-US',
+        replicated: {
+          source_audio: { mime_type: 'audio/wav', data: wavFixture().toString('base64') },
+          consent_audio: { mime_type: 'audio/mpeg', data: mp3Fixture().toString('base64') },
+        },
+      },
+    });
+
+    // 自定义的一句不是官方语言：不给 language_code；没有说明时不给 description。
+    await adapter.createVoiceClone(await cloneRequest(cfg, { language: 'custom', text: 'This is my voice.' }));
+    const second = server.requests[1]!.json as { voice: Record<string, unknown> };
+    expect(second.voice).not.toHaveProperty('language_code');
+    expect(second.voice).not.toHaveProperty('description');
+  });
+
+  it('没有授权声明录音时不发请求；5xx 不重发；响应没有 id 是协议错误；错误里没有密钥', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler());
+    const cfg = config(`${server.origin}/v1beta`, GOOGLE_KEY);
+    const adapter = new GoogleVoiceCloneAdapter();
+    const missing = await failure(adapter.createVoiceClone(await cloneRequest(cfg, null)));
+    expect(missing.details.code).toBe('VOICE_CONSENT_CLIP_REQUIRED');
+    expect(server.requests).toHaveLength(0);
+
+    server.handler = () => ({ status: 503, json: { error: { code: 503, message: 'overloaded', status: 'UNAVAILABLE' } } });
+    const busy = await failure(adapter.createVoiceClone(await cloneRequest(cfg)));
+    expect(server.requests).toHaveLength(1);
+    expect(busy.message).not.toContain(GOOGLE_KEY);
+
+    server.handler = () => ({ status: 200, json: { type: 'replicated', key: 'voicekey_abc' } });
+    const noId = await failure(adapter.createVoiceClone(await cloneRequest(cfg)));
+    expect(noId.kind).toBe('protocol');
+  });
+
+  it('DELETE /voices/<id>：删掉为 deleted，远端已经没有（404）为 not-found', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler());
+    const cfg = config(`${server.origin}/v1beta`, GOOGLE_KEY);
+    const adapter = new GoogleVoiceCloneAdapter();
+    const { voiceId } = await adapter.createVoiceClone(await cloneRequest(cfg));
+    const remove = () => adapter.deleteVoiceClone({ config: cfg, voiceId, signal: new AbortController().signal, http });
+    await expect(remove()).resolves.toBe('deleted');
+    expect(server.requests[1]).toMatchObject({ method: 'DELETE', path: `/v1beta/voices/${voiceId}` });
+    expect(server.requests[1]!.headers['x-goog-api-key']).toBe(GOOGLE_KEY);
+    await expect(remove()).resolves.toBe('not-found');
+  });
+});
+
 describe('豆包语音', () => {
   it('X-Api-Key 与资源 ID；mp3 把分片拼起来，结束包的用量原样带回；语速换算成 speech_rate，风格放进 additions', async () => {
     server = await startFakeProviderServer(fakeVolcengineSpeechHandler(VOLC_KEY));
@@ -669,11 +765,14 @@ describe('OnlineProviderSource 的生成能力', () => {
       expect(views.moonshot!.vendor?.regionBaseUrls).toEqual({ global: 'https://api.moonshot.ai/v1', cn: 'https://api.moonshot.cn/v1' });
       expect(Object.keys(views.elevenlabs!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(views.elevenlabs!.capabilities.synthesizeSpeech!.available).toBe(true);
-      // 能克隆的 Provider 在合成能力上带 voiceClone；ElevenLabs 不要求授权声明录音，没有克隆接口的不带。
+      // 能克隆的 Provider 在合成能力上带 voiceClone：ElevenLabs 不要求授权声明录音，Google 要；没有克隆接口的不带。
       expect(views.elevenlabs!.capabilities.synthesizeSpeech!.voiceClone).toEqual({ requiresConsentClip: false });
+      expect(views.google!.capabilities.synthesizeSpeech!.voiceClone).toEqual({ requiresConsentClip: true });
       expect(views.openai!.capabilities.synthesizeSpeech!.voiceClone).toBeUndefined();
+      expect(views['volcengine-speech']!.capabilities.synthesizeSpeech!.voiceClone).toBeUndefined();
       expect(source.voiceCloner('elevenlabs')!.requiresConsentClip).toBe(false);
-      expect(source.voiceCloner('google')).toBeNull();
+      expect(source.voiceCloner('google')!.requiresConsentClip).toBe(true);
+      expect(source.voiceCloner('openai')).toBeNull();
       expect(views.openai!.capabilities.synthesizeSpeech).toMatchObject({ available: false, unavailableReason: 'not-configured' });
       expect(Object.keys(views['custom:studio']!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(views['custom:studio']!.capabilities.synthesizeSpeech).toMatchObject({ available: true });

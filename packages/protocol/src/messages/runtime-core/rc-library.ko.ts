@@ -31,7 +31,7 @@ export const ko: RcLibraryMessages = {
   clonePurpose: (p) => `목소리 “${p.name}” 복제`,
   noClone: '이 목소리에는 이 공급자의 복제가 없습니다',
   remoteCloneNotDeleted: (p) => `${p.label}의 복제를 삭제하지 못해 기록을 유지했습니다: ${p.reason}`,
-  cloneUnsupported: (p) => `${p.providerId}에는 목소리 복제 API가 없습니다(현재는 ElevenLabs만 제공)`,
+  cloneUnsupported: (p) => `${p.providerId}에는 목소리 복제 API가 없습니다`,
   cloneVersionGone: '복제할 목소리 버전이 더 이상 없습니다',
   oldCloneNotDeleted: (p) => `교체된 이전 복제(${p.voiceId})를 ${p.label}에서 삭제하지 못했습니다: ${p.reason}`,
 };

@@ -281,7 +281,7 @@ export const pl: ModelsMessages = {
   },
   voices: {
     title: "Moje głosy",
-    lede: "Zapisz nagranie wzorcowe jako głos i wybieraj go po nazwie przy mowie lub tłumaczonym lektorze; nagranie zostaje na tym komputerze. Dla silnika chmurowego (ElevenLabs) najpierw prześlij je tutaj, aby utworzyć klon. Możesz go usunąć w dowolnej chwili.",
+    lede: "Zapisz nagranie wzorcowe jako głos i wybieraj go po nazwie przy mowie lub tłumaczonym lektorze; nagranie zostaje na tym komputerze. Dla silnika chmurowego (ElevenLabs, Google Gemini) najpierw prześlij je tutaj, aby utworzyć klon. Możesz go usunąć w dowolnej chwili.",
     emptyTitle: "Brak głosów",
     emptyBody: "Wybierz nagranie wzorcowe 5–12 sekund lub zaimportuj wyeksportowany pakiet głosów. Po zapisaniu można go wybierać wszędzie.",
   },

@@ -18,6 +18,6 @@ export const it: RcLibraryMessages = {
   clonerNotConfigured: (p) => `Impossibile clonare voci su ${p.label}: il provider è disattivato o non ha una chiave`,
   cloneExists: (p) => `La voce «${p.name}» ha già un clone valido su ${p.label}`, clonePurpose: (p) => `Clona voce «${p.name}»`, noClone: 'Questa voce non ha un clone su questo provider',
   remoteCloneNotDeleted: (p) => `Il clone su ${p.label} non è stato eliminato, quindi il record è stato conservato: ${p.reason}`,
-  cloneUnsupported: (p) => `${p.providerId} non ha un’API di clonazione vocale (per ora la offre solo ElevenLabs)`, cloneVersionGone: 'La versione della voce da clonare non esiste più',
+  cloneUnsupported: (p) => `${p.providerId} non ha un’API di clonazione vocale`, cloneVersionGone: 'La versione della voce da clonare non esiste più',
   oldCloneNotDeleted: (p) => `Il vecchio clone sostituito (${p.voiceId}) non è stato eliminato da ${p.label}: ${p.reason}`,
 };
