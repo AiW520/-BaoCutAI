@@ -1,7 +1,27 @@
 import path from 'node:path';
 import { PipelineStepError, libraryVoice, type DubSpeech, type DubVoice, type JobLibrary, type PipelineDefinition } from '@baocut/jobs';
-import { ProviderFailure, speechParameters, type GenerationSelection, type ModelServices } from '@baocut/models';
-import { RpcError, estimateCallCost, refOf, type Localized, type GrantDataKind, type JobSubmitter, type SpeechFormat } from '@baocut/protocol';
+import {
+  ProviderFailure,
+  builtinReferenceFile,
+  checkReferenceTranscript,
+  freezeReferenceFile,
+  planLocalVoice,
+  speechParameters,
+  type GenerationSelection,
+  type LocalSpeechFreeze,
+  type ModelServices,
+  type SpeechParameters,
+} from '@baocut/models';
+import {
+  RpcError,
+  estimateCallCost,
+  refOf,
+  type Localized,
+  type GrantDataKind,
+  type JobSubmitter,
+  type SpeechFormat,
+  type SynthesizeSpeechRequest,
+} from '@baocut/protocol';
 import type { GrantService } from '../grants/grant-service.ts';
 import { RcModels } from '@baocut/protocol/messages/runtime-core';
 import { localizedOf } from '../localized.ts';
@@ -13,6 +33,7 @@ import { localizedOf } from '../localized.ts';
  * - 启动时选定 Provider 与模型（§6.2），按模型检查音色、语言与格式（与 `models.synthesizeSpeech` 同一份 `speechParameters`）；
  *   格式优先 WAV（对齐按采样数算，不受 MP3 编码延迟的影响）；
  * - `library:<id>` 每次调用都重新换成这个 Provider 上的有效克隆（克隆在两次调用之间可能过期或被删）；
+ * - 本地克隆模型的内置音色：随应用分发的录音启动时读出摘要（读不出时拒绝），合成时每个音色冻结一次，逐句共用（§6.1）；
  * - 每次调用（含重发）各预留一次授权与预算、结束时结算；外发的是译文（`transcript`）。本机与节点的 Provider 不经授权；
  * - Provider 的失败换成任务的错误码（与生成任务相同）。
  */
@@ -31,20 +52,33 @@ export function dubSpeech(options: { services: ModelServices; grants: GrantServi
       ...(provider !== undefined ? { provider } : {}),
       ...(model !== undefined ? { model } : {}),
     });
+  /** 本地模型的声音（`voice` 已经冻结过的照用）；`DubVoice` 第一次合成时冻结，之后逐句共用。 */
+  const frozenVoices = new WeakMap<DubVoice, Promise<LocalSpeechFreeze>>();
   /** 冻结一次调用的参数；`library:<id>` 换成克隆的 voiceId。 */
-  const parameters = (
+  const parameters = async (
     selection: GenerationSelection<'synthesizeSpeech'>,
     voice: DubVoice | null,
     request: { text: string; voice?: string; language: string; format?: SpeechFormat; seed?: number },
-  ) => {
+  ): Promise<{ parameters: SpeechParameters; local: Promise<LocalSpeechFreeze> | null }> => {
     const resolved = voiceFromLibrary(library, request.voice, selection.providerId);
-    return speechParameters(selection, {
+    const speech: SynthesizeSpeechRequest = {
       text: request.text,
       language: request.language,
       ...(resolved ? { voice: resolved.voiceId } : request.voice !== undefined ? { voice: request.voice } : {}),
       ...(voice ? { format: voice.format } : request.format ? { format: request.format } : {}),
       ...(request.seed !== undefined ? { seed: request.seed } : {}),
-    });
+    };
+    if (!selection.model.local) return { parameters: speechParameters(selection, speech), local: null };
+    let local = voice ? frozenVoices.get(voice) : undefined;
+    if (!local) {
+      local = freezeLocalVoice(selection, speech);
+      // 冻结失败（录音读不出）不留下：装好之后重试时重新读。
+      if (voice) {
+        frozenVoices.set(voice, local);
+        local.catch(() => frozenVoices.delete(voice));
+      }
+    }
+    return { parameters: speechParameters(selection, speech, await local), local };
   };
 
   return {
@@ -53,21 +87,23 @@ export function dubSpeech(options: { services: ModelServices; grants: GrantServi
       const model = selection.model;
       const format = FORMAT_PREFERENCE.find((f) => model.formats.includes(f));
       if (!format) throw new RpcError('invalid-request', RcModels.noAlignableFormat({ modelId: selection.modelId }), { formats: model.formats });
-      // 用一句占位的文本检查音色、语言与格式（文本本身逐句检查）。
-      const checked = parameters(selection, null, {
+      // 用一句占位的文本检查音色、语言与格式（文本本身逐句检查）；本地模型的参考录音在这里读出摘要，读不出时拒绝。
+      const checked = await parameters(selection, null, {
         text: '.',
         language: target.language,
         format,
         ...(target.voice !== undefined ? { voice: target.voice } : {}),
       });
-      return {
+      const voice: DubVoice = {
         providerId: selection.providerId,
         modelId: selection.modelId,
-        voice: target.voice ?? checked.voice,
+        voice: target.voice ?? checked.parameters.voice,
         format,
         maxInputChars: model.maxInputChars,
         acceptsSeed: model.acceptsSeed,
       };
+      if (checked.local) frozenVoices.set(voice, checked.local);
+      return voice;
     },
 
     async synthesize(request) {
@@ -78,7 +114,7 @@ export function dubSpeech(options: { services: ModelServices; grants: GrantServi
         selection = await select(voice.providerId, voice.modelId);
         // 种子（句级重配）：冻结时已经按模型检查过；模型后来不接受了时不传（`speechParameters` 会拒绝）。
         const seed = request.seed !== undefined && selection.model.acceptsSeed ? { seed: request.seed } : {};
-        frozen = parameters(selection, voice, { text: request.text, voice: voice.voice, language: request.language, ...seed });
+        frozen = (await parameters(selection, voice, { text: request.text, voice: voice.voice, language: request.language, ...seed })).parameters;
       } catch (error) {
         throw stepError(error, voice.providerId);
       }
@@ -177,6 +213,20 @@ function localizedStepError(code: string, message: Localized): PipelineStepError
   return Object.assign(new PipelineStepError(code, message.text), { messageRef: refOf(message) });
 }
 
+/**
+ * 本地模型的声音按 `models.synthesizeSpeech` 的规则冻结（架构设计 §6.1）：克隆模型的内置音色是随应用分发的录音，读出摘要与长度；
+ * 读不出时 `APP_FILE_MISSING`（安装不完整）。执行前由本地 Provider 按摘要再核对，变了或读不出时这句失败，不换声音。
+ * `library:<id>` 在这之前已经按克隆换算（本地没有克隆，以 `VOICE_CLONE_REQUIRED` 拒绝），到不了这里。
+ */
+async function freezeLocalVoice(selection: GenerationSelection<'synthesizeSpeech'>, request: SynthesizeSpeechRequest): Promise<LocalSpeechFreeze> {
+  const plan = planLocalVoice(selection, request);
+  const builtin = builtinReferenceFile(selection.model, plan);
+  const withTranscript = selection.model.local?.reference?.acceptsTranscript ?? false;
+  const reference = builtin ? await freezeReferenceFile({ ...builtin, transcript: withTranscript ? builtin.transcript : null }) : null;
+  checkReferenceTranscript(selection.model, reference?.transcript);
+  return { plan, reference };
+}
+
 /** `library:<id>` 换成克隆；库里删了的音色报 `VOICE_NOT_FOUND`（配音按说话人逐句报告时要与别的失败分开）。 */
 function voiceFromLibrary(library: JobLibrary | undefined, voice: string | undefined, providerId: string) {
   try {
@@ -203,6 +253,9 @@ function stepError(error: unknown, providerId: string): unknown {
         return new PipelineStepError('MODEL_OUTPUT_INVALID', error.message, { ...details, providerId });
       case 'output-unwritable':
         return new PipelineStepError('STAGING_WRITE_FAILED', error.message, { ...details, providerId });
+      case 'input-unreadable':
+        // 冻结的参考录音执行前读不出或变了；随应用分发的（内置音色的录音）读不出来是安装不完整。
+        return new PipelineStepError(code === 'APP_FILE_MISSING' ? 'APP_FILE_MISSING' : 'ASSET_MISSING', error.message, { ...details, providerId });
       case 'unavailable':
       case 'load-failed':
         return new PipelineStepError(typeof code === 'string' ? code : 'MODEL_LOAD_FAILED', error.message, { ...details, providerId });

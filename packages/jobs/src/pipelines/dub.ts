@@ -492,6 +492,8 @@ const TERMINAL = new Set([
   'VOICE_NOT_FOUND',
   'MODEL_LOAD_FAILED',
   'MEDIA_TOOL_UNAVAILABLE',
+  // 内置音色的录音读不出（安装不完整）：本地克隆模型的每句都用它。
+  'APP_FILE_MISSING',
 ]);
 const TRANSIENT = new Set(['PROVIDER_UNAVAILABLE', 'PROVIDER_TIMEOUT', 'PROVIDER_RATE_LIMITED', 'MODEL_OUTPUT_INVALID']);
 /** 说话人绑定的音色在合成途中变得不可用：这位说话人余下的句子不合成、逐句报告（参数与默认的音色照旧停下整步）。 */
