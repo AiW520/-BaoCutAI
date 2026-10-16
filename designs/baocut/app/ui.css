@@ -889,6 +889,8 @@ body { font-size: 14px; }
 .task__t { font-size: 14px; font-weight: 700; color: var(--gray-900); }
 .task__s { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
 .task__pg { margin-top: 8px; max-width: 320px; }
+/* Agent 安装与升级的命令输出（page-tasks.jsx SetupLog；框本身是 settings-agent.css 的 .agset-run__log） */
+.agset-run__log.task-setup-log { margin-top: 16px; max-width: 720px; }
 /* 任务详情的来源卡（视频 / 路径 / 项目）与已转录内容（§17.3，BC_TASK_FACTS） */
 .tsrc { padding: 0 14px; margin-top: 8px; }
 .tsrc__row { display: flex; align-items: center; gap: 12px; padding: 12px 0; }

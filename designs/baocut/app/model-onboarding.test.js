@@ -164,11 +164,29 @@ test('Agent 一步：主列表每家一行，能用 / 停用的可勾（启用�
 
 test('Agent 一行下面那一句：版本与账号、问题、订阅；勾上要装的写怎么装和怎么登录', () => {
   const rows = OB.agentRows(agents, AS);
-  assert.equal(OB.agentLine(rows[0], true, AS), '本机已安装 · v2.2.0 · Claude Pro 订阅');
-  assert.equal(OB.agentLine(rows[1], false, AS), '未安装 · 装好后用你已有的 ChatGPT Plus 或 Pro 订阅登录');
-  assert.equal(OB.agentLine(rows[1], true, AS), '用 Homebrew 在后台安装（brew install codex）· 装好后在终端里运行 codex 登录');
-  assert.equal(OB.agentLine(rows[2], false, AS), '只能在终端里按官方说明安装 · 说明在 设置 › Agent 提供方');
-  assert.equal(OB.agentLine(rows[3], false, AS), 'OpenCode 需要重新登录 · 在 设置 › Agent 提供方 里处理');
+  assert.equal(OB.agentLine(rows[0], {picked: true}, AS), '本机已安装 · v2.2.0 · Claude Pro 订阅');
+  assert.equal(OB.agentLine(rows[1], {picked: false}, AS), '未安装 · 装好后用你已有的 ChatGPT Plus 或 Pro 订阅登录');
+  assert.equal(OB.agentLine(rows[1], {picked: true}, AS), '用 Homebrew 在后台安装（brew install codex）· 装好后在终端里运行 codex 登录');
+  assert.equal(OB.agentLine(rows[2], {picked: false}, AS), '只能在终端里按官方说明安装 · 说明在 设置 › Agent 提供方');
+  assert.equal(OB.agentLine(rows[3], {picked: false}, AS), 'OpenCode 需要重新登录 · 在 设置 › Agent 提供方 里处理');
+});
+
+test('Agent 一行在装与没装成：在装（含排队）写「正在用…」；没装成又没再勾上写去后台任务看，再勾上写这次怎么装', () => {
+  const rows = OB.agentRows(agents, AS);
+  assert.equal(OB.agentLine(rows[1], {picked: true, running: true}, AS), '正在用 Homebrew 在后台安装 · 装好后在终端里运行 codex 登录');
+  assert.equal(OB.agentLine(rows[1], {picked: false, failed: true}, AS), '没装成 · 详情在后台任务里');
+  assert.equal(OB.agentLine(rows[1], {picked: true, failed: true}, AS), '用 Homebrew 在后台安装（brew install codex）· 装好后在终端里运行 codex 登录');
+});
+
+test('排着队的一家走到哪了：没轮到、在装算在跑，装好 done，没装成与被停止都是 error', () => {
+  const tasks = [{id: 'a1', status: 'running'}, {id: 'a2', status: 'done'}, {id: 'a3', status: 'error'},
+    {id: 'a4', status: 'error', canceled: true}];
+  assert.equal(OB.agentJobStatus({tid: null, failed: false}, tasks), 'running');
+  assert.equal(OB.agentJobStatus({tid: 'a1', failed: false}, tasks), 'running');
+  assert.equal(OB.agentJobStatus({tid: 'a2', failed: false}, tasks), 'done');
+  assert.equal(OB.agentJobStatus({tid: 'a3', failed: false}, tasks), 'error');
+  assert.equal(OB.agentJobStatus({tid: 'a4', failed: false}, tasks), 'error');
+  assert.equal(OB.agentJobStatus({tid: null, failed: true}, tasks), 'error');
 });
 
 test('Agent 一步的主按钮：勾了要装的写「后台安装 N 个并继续」，否则下一步', () => {
@@ -176,18 +194,19 @@ test('Agent 一步的主按钮：勾了要装的写「后台安装 N 个并继�
   assert.deepEqual(OB.agentPrimary(0), {kind: 'next', label: '下一步'});
 });
 
-test('底部那一行：只有一件在跑时写名字与百分比，几件同时在跑只写个数，跑完的、没成的只计数；Agent 写「安装」', () => {
+test('底部那一行：只有一件在跑时写名字与百分比（Agent 没有百分比），几件同时在跑只写个数，跑完的、没成的只计数；Agent 写「安装」', () => {
   assert.equal(OB.bgLine([]), null);
   assert.equal(OB.bgLine([{name: 'MOSS Transcribe', pct: 31.4, status: 'running'}, {name: '语义搜索', pct: 100, status: 'done'}]),
     '后台在下载 MOSS Transcribe 31% · 1 个已下完');
   assert.equal(OB.bgLine([{name: 'A', pct: 10, status: 'running'}, {name: 'B', pct: 20, status: 'running'}]), '后台在下载 2 个');
   assert.equal(OB.bgLine([{name: 'A', pct: 100, status: 'done'}, {name: 'B', pct: 40, status: 'error'}]),
     '后台下载 · 1 个已下完 · 1 个没下成');
-  assert.equal(OB.bgLine([{name: 'Codex', pct: 40, status: 'running', agent: true}, {name: 'A', pct: 100, status: 'done'}]),
-    '后台在安装 Codex 40% · 1 个已下完');
+  // 装 Agent 给不出进度（pct 为 null）：只写名字，不写百分比
+  assert.equal(OB.bgLine([{name: 'Codex', pct: null, status: 'running', agent: true}, {name: 'A', pct: 100, status: 'done'}]),
+    '后台在安装 Codex · 1 个已下完');
   assert.equal(OB.bgLine([{name: 'A', pct: 10, status: 'running'}, {name: 'B', pct: 20, status: 'running'},
-    {name: 'Codex', pct: 100, status: 'done', agent: true}, {name: 'C', pct: 100, status: 'done'}]), '后台在下载 2 个 · 2 个已完成');
-  assert.equal(OB.bgLine([{name: 'Codex', pct: 100, status: 'done', agent: true}]), '后台安装 · 1 个已装好');
-  assert.equal(OB.bgLine([{name: 'Codex', pct: 10, status: 'running', agent: true}, {name: 'A', pct: 20, status: 'running'}]),
+    {name: 'Codex', pct: null, status: 'done', agent: true}, {name: 'C', pct: 100, status: 'done'}]), '后台在下载 2 个 · 2 个已完成');
+  assert.equal(OB.bgLine([{name: 'Codex', pct: null, status: 'done', agent: true}]), '后台安装 · 1 个已装好');
+  assert.equal(OB.bgLine([{name: 'Codex', pct: null, status: 'running', agent: true}, {name: 'A', pct: 20, status: 'running'}]),
     '后台在下载和安装 2 个');
 });

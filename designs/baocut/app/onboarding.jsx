@@ -6,8 +6,11 @@
    - 语音识别、语音合成、图像生成、音乐生成：多选（2026-10-16 用户要求），默认至少勾一只；写清这次要下多少、连带哪些组件，
      以及在工具里哪儿用。已装好的、正在下的显示成勾上、不能改。
    - 语义搜索：一个包（文字模型 + 多模态模型 + 运行时）。
-   要下载的都先过同一个下载确认框（download-dialog.jsx：来源、存放位置、许可）；确认后每只模型成为一条后台任务，
-   引导立刻翻到下一步，不等下完。Agent 安装同样落成后台任务。底部一行写这次开始的下载与安装在后台走到哪了。
+   要下载的都先过同一个下载确认框（download-dialog.jsx：来源、存放位置、许可；不许商用的模型把许可写在框里、确认按钮写
+   「我知道了，下载 …」，与实现的 BatchInstallDialog 同一套）；确认后每只模型成为一条后台任务，引导立刻翻到下一步，不等下完。
+   勾上要装的几家 Agent 按顺序一家一家装（同实现 OnboardingHost 的队列；Homebrew 同一时间只能跑一个），轮到哪家才落一条后台任务
+   （`agent-install`：没有百分比，能停止，详情里是命令输出）；npm / brew 给不出进度，行上与底部那一行都不写百分比，排着队的与在装的一样只转圈。
+   底部一行写这次开始的下载与安装在后台走到哪了；有这一行、主按钮文字又长时，S2 的 ButtonGroup 会自己换到下一行（原生行为，实现里一样）。
    每一步都可以「跳过」；左下角「退出引导」与 Esc 随时退出（不用右上角的 ×：S2 的可关闭对话框会藏掉 ButtonGroup，同 space-viewer.jsx）。
    任何一种关掉都写一条记录（偏好 `onboarding`），以后启动不再弹。 */
 (function () {
@@ -77,8 +80,9 @@
 
   /** 第一步：这台电脑上的 Agent，主列表每家一行、都能勾（行怎么分、下面那句怎么写在 model-onboarding.js）。
       装好的勾选框就是 设置 › Agent 提供方 里那个启用开关，改了立刻生效；没装的勾上记在 `picks`，按「后台安装」时才装；
-      这次引导里已经在装的勾上且不能改，右边写进度 */
-  function AgentStep({app, ov, rows, picks, onPick, progress}) {
+      这次引导里已经在装（或排在队里）的勾上且不能改，右边是不定进度；没装成的可以再勾上重装。
+      `jobStatus(hid)`：这一家在引导队列里的状态（running / done / error），不在队列里是 null */
+  function AgentStep({app, ov, rows, picks, onPick, jobStatus}) {
     const ok = ov.state === 'ready';
     const status = ov.state === 'missing'
       ? {title: ov.title, body: '勾上想用的，BaoCut 在后台安装；装好后用你已有的账号登录一次就能用。'}
@@ -93,10 +97,11 @@
         <div className="onb-models" role="group" aria-label="这台电脑上的 Agent"><div>
           {rows.map((r) => {
             const {h, kind} = r;
-            const pct = progress(h.id);
-            const busy = pct >= 0;
+            const now = jobStatus(h.id);
+            const busy = now === 'running';
             const can = !busy && (kind === 'use' || kind === 'install');
             const on = busy || (kind === 'use' ? h.enabled : kind === 'install' && picks.indexOf(h.id) >= 0);
+            const planned = on && kind === 'install' && !busy;
             const toggle = (v) => {
               if (!can) return;
               if (kind === 'use') app.setHarnessOn(h.id, v);
@@ -110,11 +115,11 @@
                 <span className="onb-model__hd">
                   <Checkbox on={on} disabled={!can} onChange={toggle} label={label} aria-label={h.name} />
                   <span className="grow" />
-                  {busy ? <span className="onb-model__pg"><Progress value={pct} thin label={`正在安装 ${h.name}`} /><span className="t-detail-xs t-mono">{Math.round(pct)}%</span></span>
+                  {busy ? <span className="onb-model__pg"><Progress indeterminate thin label={`正在安装 ${h.name}`} /></span>
                     : <Chip tone={badge.tone}>{badge.label}</Chip>}
                 </span>
-                <span className={on && kind === 'install' ? 'onb-model__plan' : 'onb-model__desc'}>
-                  {busy ? `用 ${r.method ? r.method.label : '命令行'} 在后台安装 · 装好后在终端里运行 ${AS.loginCmd(h)} 登录` : OB.agentLine(r, on, AS)}
+                <span className={planned ? 'onb-model__plan' : 'onb-model__desc'}>
+                  {OB.agentLine(r, {picked: on, running: busy, failed: now === 'error'}, AS)}
                 </span>
               </div>
             );
@@ -125,20 +130,60 @@
     );
   }
 
-  /* Agent 的安装：同语义搜索包，不在引导组件里跑，落一条后台任务；跑完写进探测补丁（同 设置 › Agent 提供方 的就地安装：
-     找到了、还要登录一次）。正式版跑的是 method.cmd 的子进程。 */
-  function runAgentInstall(app, h, method) {
-    const tid = app.addTask({kind: 'agent-install', title: `安装 ${h.name}`, sub: method.label, phase: '安装中', cancellable: false});
-    let pct = 0;
+  /* Agent 的安装队列（同实现 OnboardingHost，product-design §7.6）：不在引导组件里跑（引导关掉也得接着装），在模块里排队，
+     一家跑完（装好、没装成或被停止）才起下一家。轮到哪家才落一条后台任务（同实现 agent-setup-task.ts 的那一行）：
+     「安装 Agent · 名字」，在哪写实际运行的命令；没有百分比，在跑时写「正在运行」、任务页能直接停止（store.cancelTask 不问，
+     停了交给 `stopped` 起下一家）；输出一拍一行记在任务的 `log` 里，由 BC_AGENT_SETUP.demoRun 编（同 设置 › Agent 提供方 的就地运行），
+     正式版是 method.cmd 子进程的输出。装好写进探测补丁（找到了、还要登录一次）。
+     `jobs`：[{id, name, h, method, tid, failed}]，tid 是开始运行后那条任务；`live`：在跑那一家的 {tid, timer}。 */
+  const RUN_TICK = 380;   // 一拍出一行输出（同 settings-agent-provider.jsx useCmdRun）
+  const runs = {jobs: [], live: null, app: null};
+  const runFailed = (code) => `没有成功（退出码 ${code}）。上面的输出里写了原因；如果需要输入密码，请在终端里运行。`;
+
+  function startNextAgent() {
+    const app = runs.app;
+    const job = !runs.live && app ? runs.jobs.find((j) => !j.tid && !j.failed) : null;
+    if (!job) return;
+    const {h, method} = job;
+    const out = AS.demoRun(method, h, false, false);
+    const tid = app.addTask({kind: 'agent-install', title: `安装 Agent · ${h.name}`, sub: `${method.cmd} · 本机`,
+      phase: '正在运行', pct: null, cancellable: true, log: ['$ ' + method.cmd]});
+    job.tid = tid;
+    let i = 0;
     const timer = setInterval(() => {
-      pct = Math.min(100, pct + 8);
-      if (pct < 100) { app.patchTask(tid, {pct}); return; }
+      if (i < out.lines.length) {
+        const line = out.lines[i++];
+        app.patchTask(tid, (t) => ({log: AS.appendLog(t.log, [line])}));
+        return;
+      }
       clearInterval(timer);
-      app.patchTask(tid, {pct: 100, status: 'done', phase: null});
-      app.patchHarness(h.id, {found: true, loggedIn: false});
-      app.toast(`已装好 ${h.name} · 还需要在终端里运行 ${AS.loginCmd(h)} 登录一次`, 'positive');
-    }, 250);
-    return tid;
+      runs.live = null;
+      if (out.code === 0) {
+        app.patchTask(tid, {status: 'done', outcome: 'done', phase: null});
+        app.patchHarness(h.id, {found: true, loggedIn: false});
+        app.toast(`已装好 ${h.name} · 还需要在终端里运行 ${AS.loginCmd(h)} 登录一次`, 'positive');
+      } else {
+        app.patchTask(tid, {status: 'error', outcome: 'error', phase: null, error: runFailed(out.code)});
+      }
+      startNextAgent();
+    }, RUN_TICK);
+    runs.live = {tid, timer};
+  }
+
+  /** 勾上的几家排进队（没装成的再勾上是重新排队：去掉上一次的那一条）；前面没有在跑的就立刻起第一家 */
+  function enqueueAgents(app, rows) {
+    runs.app = app;
+    runs.jobs = runs.jobs.filter((j) => !rows.some((r) => r.h.id === j.id))
+      .concat(rows.map((r) => ({id: r.h.id, name: r.h.name, h: r.h, method: r.method, tid: null, failed: false})));
+    startNextAgent();
+  }
+
+  /** 任务页停掉了一条 Agent 安装（记录已由 store.cancelTask 改成已取消）：是队列里在跑的那家就收掉定时器，起下一家 */
+  function agentRunStopped(tid) {
+    if (!runs.live || runs.live.tid !== tid) return;
+    clearInterval(runs.live.timer);
+    runs.live = null;
+    startNextAgent();
   }
 
   /* 语义搜索包的下载：不在引导组件里跑（引导关掉也得接着走），落一条后台任务，走完把状态改成装好 */
@@ -179,13 +224,14 @@
     const ov = AS.overview(app.harnessList, app.harness && app.harness.id);
     const taskOf = (q) => (app.tasks || []).find((t) => t.id === q.tid);
     const agentRows = OB.agentRows(app.harnessList, AS);
-    // 这次引导里在装的那一家：任务还在跑时给进度，跑完（或没有这条）给 -1
-    const agentPct = (hid) => {
-      const q = queued.find((x) => x.agent && x.id === hid);
-      const t = q && taskOf(q);
-      return t && t.status === 'running' ? (t.pct || 0) : -1;
+    // 一家在引导队列里的状态：排着队与在装都是 running；不在队列里是 null
+    const agentStatus = (hid) => {
+      const job = runs.jobs.find((j) => j.id === hid);
+      return job ? OB.agentJobStatus(job, app.tasks) : null;
     };
-    const toInstall = agentRows.filter((r) => r.kind === 'install' && agentPicks.indexOf(r.h.id) >= 0 && agentPct(r.h.id) < 0);
+    // 这次引导里开始的一件现在的状态：Agent 看队列，模型看它的任务（还没有任务算在跑）
+    const statusOf = (q) => { if (q.agent) return agentStatus(q.id); const t = taskOf(q); return t ? t.status : 'running'; };
+    const toInstall = agentRows.filter((r) => r.kind === 'install' && agentPicks.indexOf(r.h.id) >= 0 && agentStatus(r.h.id) !== 'running');
     const pickAgent = (hid, v) => setAgentPicks((p) => (v ? p.concat([hid]) : p.filter((x) => x !== hid)));
 
     const pkg = ((D.semantic || {}).packages || [])[0];
@@ -206,7 +252,7 @@
       const extra = started || [];
       const models = queued.filter((q) => !q.agent);
       app.closeOnboarding(OB.record(how, k, models.map((q) => q.id).concat(extra)));
-      const running = (list) => list.filter((q) => { const t = taskOf(q); return !t || t.status === 'running'; }).length;
+      const running = (list) => list.filter((q) => statusOf(q) === 'running').length;
       const live = running(models) + extra.length;
       const agents = running(queued.filter((q) => q.agent));
       const bits = (live ? [`${live} 个模型在后台下载`] : []).concat(agents ? [`${agents} 个 Agent 在后台安装`] : []);
@@ -234,7 +280,9 @@
       });
     };
     const installAgents = () => {
-      setQueued((q) => q.concat(toInstall.map((r) => ({id: r.h.id, name: r.h.name, tid: runAgentInstall(app, r.h, r.method), agent: true}))));
+      enqueueAgents(app, toInstall);
+      setQueued((q) => q.filter((x) => !(x.agent && toInstall.some((r) => r.h.id === x.id)))
+        .concat(toInstall.map((r) => ({id: r.h.id, name: r.h.name, agent: true}))));
       setAgentPicks([]);
       next();
     };
@@ -260,9 +308,10 @@
       }, {on});
     };
 
+    // Agent 安装给不出进度：pct 是 null，那一行只写名字
     const bg = OB.bgLine(queued.map((q) => {
-      const t = taskOf(q);
-      return {name: q.name, pct: t ? t.pct : 0, status: t ? t.status : 'running', agent: !!q.agent};
+      const t = q.agent ? null : taskOf(q);
+      return {name: q.name, pct: q.agent ? null : t ? t.pct : 0, status: statusOf(q), agent: !!q.agent};
     }));
 
     const cards = list.map((c) => {
@@ -282,7 +331,7 @@
           <S.Content>
             <Steps items={OB.STEPS} cur={step} label="引导步骤" className="onb-steps" />
 
-            {k === 'agent' ? <AgentStep app={app} ov={ov} rows={agentRows} picks={agentPicks} onPick={pickAgent} progress={agentPct} /> : null}
+            {k === 'agent' ? <AgentStep app={app} ov={ov} rows={agentRows} picks={agentPicks} onPick={pickAgent} jobStatus={agentStatus} /> : null}
 
             {s.cat ? (
               <div className="onb-pick">
@@ -359,5 +408,5 @@
     );
   }
 
-  Object.assign(window, {OnboardingDialog, OnboardingTweaks});
+  Object.assign(window, {OnboardingDialog, OnboardingTweaks, BC_AGENT_RUNS: {stopped: agentRunStopped}});
 })();

@@ -5,6 +5,7 @@
    模型勾上就下载；模型每一步默认至少勾一只（这一类已经装了的算勾上）。
    每一步都不是必须的：有「跳过」，「退出引导」与 Esc 随时退出整个引导。任何一种关掉都记下，以后启动不再弹，也没有再打开的入口。
    下载照旧先过同一个下载确认框（download-dialog.jsx）；确认后下载成为一条后台任务，引导立刻翻到下一步，不等下完。
+   勾上要装的几家 Agent 按顺序一家一家装（product-design §7.6；Homebrew 同一时间只能跑一个），装 Agent 没有百分比。
    人声分离、视觉分析不进引导：体积小，用到的地方会先提出下载。
    Web 入口不加载：浏览器里不能安装本地模型（product-design §7.6「本地模型由用户安装」），也不连本机的 Agent。
 
@@ -164,14 +165,33 @@
     });
   }
 
-  /** 一行下面那一句：装好的写版本与账号；要处理的写问题；没装的写用什么订阅，勾上后写这次怎么装、装好后怎么登录 */
-  function agentLine(row, picked, AS) {
+  /**
+   * 一行下面那一句（同实现 model/onboarding.ts agentLine）。`st`：{picked, running, failed}——
+   * 在装（排在队里等前一家装完的也算）写用什么装、装好后怎么登录；装好的写版本与账号；要处理的写问题；
+   * 没装的写用什么订阅，勾上后写这次怎么装；上一次没装成、没再勾上的写去后台任务里看。
+   */
+  function agentLine(row, st, AS) {
     const {h, kind, method} = row;
+    const s = st || {};
+    if (s.running) return `正在用 ${method ? method.label : h.cmd} 在后台安装 · 装好后在终端里运行 ${AS.loginCmd(h)} 登录`;
     if (kind === 'use') return `本机已安装 · v${h.ver} · ${String(h.account || '').split(' · ')[0]}`;
     if (kind === 'fix') { const p = AS.problem(h); return p ? `${p.title} · 在 设置 › Agent 提供方 里处理` : ''; }
     if (kind === 'manual') return `只能在终端里按官方说明安装 · 说明在 设置 › Agent 提供方`;
-    if (!picked) return `未安装 · 装好后用你已有的 ${h.plan}登录`;
-    return `用 ${method.label} 在后台安装（${method.cmd}）· 装好后在终端里运行 ${AS.loginCmd(h)} 登录`;
+    if (s.picked && method) return `用 ${method.label} 在后台安装（${method.cmd}）· 装好后在终端里运行 ${AS.loginCmd(h)} 登录`;
+    if (s.failed) return '没装成 · 详情在后台任务里';
+    return `未安装 · 装好后用你已有的 ${h.plan}登录`;
+  }
+
+  /**
+   * 排着队的一家走到哪了（同实现 agentJobStatus）：还没轮到（还没有任务）、正在装都算在跑；装好是 done；
+   * 没装成、被停止都算 error。job：{tid, failed}；tasks：后台任务表。
+   */
+  function agentJobStatus(job, tasks) {
+    if (job.failed) return 'error';
+    if (!job.tid) return 'running';
+    const t = (tasks || []).find((x) => x.id === job.tid);
+    if (!t || t.status === 'running' || t.status === 'queued') return 'running';
+    return t.status === 'done' ? 'done' : 'error';
   }
 
   /** Agent 一步的主按钮：勾了要装的就「后台安装 2 个并继续」，否则往下走 */
@@ -180,9 +200,10 @@
   }
 
   /**
-   * 对话框底部那一行（和按钮挤一排，要短）：这次引导里开始的下载与 Agent 安装，只有一件在跑时写名字与百分比，
-   * 几件同时在跑只写个数（各自的进度在后台任务里），跑完的、没成的只计数。
+   * 对话框底部那一行（和按钮挤一排，要短）：这次引导里开始的下载与 Agent 安装，只有一件在跑时写名字与百分比
+   * （Agent 安装给不出进度，`pct` 是 null，只写名字），几件同时在跑只写个数（各自的进度在后台任务里），跑完的、没成的只计数。
    * items：[{name, pct, status, agent?}]（status 是后台任务的状态；agent 为真是安装 Agent，其余是下载模型）；一个都没有时 null。
+   * 底部有这一行、按钮文字又长时，S2 的 ButtonGroup 会自己换到下一行（原生行为，实现里一样），不另外缩短。
    */
   function bgLine(items) {
     const list = items || [];
@@ -196,7 +217,8 @@
     const live = list.filter((x) => x.status === 'running');
     const failed = list.filter((x) => x.status === 'error');
     const done = list.filter((x) => x.status !== 'running' && x.status !== 'error');
-    const bits = [live.length === 1 ? `后台在${words(live).verb} ${live[0].name} ${Math.round(live[0].pct || 0)}%`
+    const pct = (x) => (x.pct == null ? '' : ` ${Math.round(x.pct)}%`);
+    const bits = [live.length === 1 ? `后台在${words(live).verb} ${live[0].name}${pct(live[0])}`
       : live.length ? `后台在${words(live).verb} ${live.length} 个` : `后台${words(list).verb}`];
     if (done.length) bits.push(`${done.length} 个${words(done).done}`);
     if (failed.length) bits.push(`${failed.length} 个${words(failed).fail}`);
@@ -205,7 +227,7 @@
 
   const api = {STEPS, RECOMMENDED, TTS_HIGHLIGHTS, BUNDLED, stepOf, isLast, decided, shouldShow, demoLaunch, demoFresh,
     record, recordText, choices, nonCommercial, installTable, freshInstalled, initialPicks, plan, planLine, pkgPlan, primary,
-    agentRows, agentLine, agentPrimary, bgLine};
+    agentRows, agentLine, agentJobStatus, agentPrimary, bgLine};
   if (typeof window !== 'undefined') window.BC_ONBOARDING = api;
   if (typeof module !== 'undefined') module.exports = api;
 })();

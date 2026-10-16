@@ -708,6 +708,16 @@
     const cancelTask = useCallback((t, opts) => {
       const task = typeof t === 'string' ? tasks.find((x) => x.id === t) : t;
       if (!task || (task.status !== 'running' && task.status !== 'queued')) return;
+      /* Agent 的安装与升级（product-design §7.6）：直接停、不问（BC_EXPORT.stopsDirectly），输出末尾记一行 ^C；
+         引导队列里在跑的那家交给 onboarding.jsx 收掉定时器、起下一家 */
+      if (window.BC_EXPORT.stopsDirectly(task.kind)) {
+        setTasks((ts) => ts.map((x) => (x.id === task.id
+          ? {...x, status: 'error', outcome: 'canceled', phase: null, error: '已取消', canceled: true, endedAt: Date.now(),
+             log: (x.log || []).concat(['^C'])} : x)));
+        if (window.BC_AGENT_RUNS) window.BC_AGENT_RUNS.stopped(task.id);
+        if (opts && opts.after) opts.after();
+        return;
+      }
       const copy = window.BC_EXPORT.cancelCopy(task.kind);
       const done = () => {
         setTasks((ts) => ts.map((x) => (x.id === task.id
