@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { AgentSetupRun, Id, JobReconcileDecision, JobRecord, TaskSummary } from '@baocut/protocol';
+import { live, type AgentSetupRun, type Id, type JobReconcileDecision, type JobRecord, type TaskSummary } from '@baocut/protocol';
 import { ActionButton, Button, Content, Heading, IllustratedMessage, ProgressBar, Text, ToastQueue } from '@react-spectrum/s2';
 import AlertTriangle from '@react-spectrum/s2/icons/AlertTriangle';
 import ChevronLeft from '@react-spectrum/s2/icons/ChevronLeft';
@@ -235,11 +235,11 @@ function TaskDetailBody({
   );
 }
 
-const RECONCILE_LABEL: Record<JobReconcileDecision, string> = {
+const RECONCILE_LABEL = live((): Record<JobReconcileDecision, string> => ({
   retry: TASK_VIEW_COPY.reconcileRetry,
   discard: TASK_VIEW_COPY.reconcileDiscard,
   apply: TASK_VIEW_COPY.reconcileApply,
-};
+}));
 
 /** 对账的几个决定（`jobs.reconcile`，架构设计 §7.5）：每个一行，按钮旁写清后果。结果经 `jobs` 主题回来。 */
 function ReconcileActions({ job }: { job: JobRecord }) {

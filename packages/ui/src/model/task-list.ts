@@ -1,4 +1,4 @@
-import { localizeText, type Conversation, type Id, type JobKind, type JobRecord, type Project, type TaskSummary } from '@baocut/protocol';
+import { live, localizeText, type Conversation, type Id, type JobKind, type JobRecord, type Project, type TaskSummary } from '@baocut/protocol';
 import { JOB_PHASE_LABEL, TASK_KIND_LABEL, TASK_STATUS_LABEL, TASK_VIEW_COPY, VIDEO_CARD_COPY } from '../copy.ts';
 import { exportPhaseLabel, exportTitle } from './export-job.ts';
 import { shortenPath } from './format.ts';
@@ -192,7 +192,8 @@ export function jobLive(job: Pick<JobRecord, 'state' | 'endedAt'>): boolean {
   return job.state === 'queued' || job.state === 'running' || jobRetrying(job);
 }
 
-const JOB_ENDED: Record<Exclude<JobRecord['state'], 'queued' | 'running'>, { label: string; tone: TaskTone }> = {
+// 字在读的时候按当前语言取：模块加载时读进来的字符串，换语言后还念旧的。
+const JOB_ENDED = live((): Record<Exclude<JobRecord['state'], 'queued' | 'running'>, { label: string; tone: TaskTone }> => ({
   completed: { label: TASK_VIEW_COPY.completed, tone: 'positive' },
   failed: { label: TASK_VIEW_COPY.failed, tone: 'negative' },
   // 取消不叫失败：失败是链路坏了，取消是用户自己停的（原型 page-tasks.jsx 第 120 轮）。
@@ -201,7 +202,7 @@ const JOB_ENDED: Record<Exclude<JobRecord['state'], 'queued' | 'running'>, { lab
   interrupted: { label: TASK_VIEW_COPY.interrupted, tone: 'neutral' },
   // 结果不明：Runtime 重启时外发调用还没回音，可能已经计费，不自动重发（§7.5），等用户决定。
   'needs-reconciliation': { label: TASK_VIEW_COPY.needsReconciliation, tone: 'notice' },
-};
+}));
 
 export function jobRow(job: JobRecord, ctx: TaskContext): TaskRow {
   const video = ctx.video && job.videoId === ctx.video.videoId ? ctx.video : null;
