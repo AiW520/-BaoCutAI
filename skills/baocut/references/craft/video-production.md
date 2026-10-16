@@ -32,7 +32,7 @@
 - **素材是画面（空镜、产品、场景、录屏）且不少时**：分镜要用到它们时按 baocut 主 skill 的做法给这些素材建画面索引（`baocut space index-build`，`channel` `visual`，装了能读图的模型包时），之后每一镜按卡上的画面描述用 `baocut videos match-frames` 或 `baocut space search-v2`（`channels` 给 `["visual"]`）挑候选，取帧看过再用；没有画面索引时用 `baocut videos shots` 按镜头取帧挑。
 - **主动找网上素材**：片子讲的是真实的地点、事件、人物、产品或年代，而用户素材不够时，不等用户提供，规划分镜时就用 `baocut assets search` 找真实画面（检索词用英文，按卡上的画面描述写），`preview: true` 看缩略图接触表挑。Commons 与 Internet Archive 的结果许可清楚，用 `baocut assets download` 下载进视频；YouTube 的结果（`downloadWith` 是 `download`）用 `baocut download` 给 `url`（候选的 `pageUrl`）与 `video` 下载，它和 YouTube 检索都按设置 › 视频下载的网站登录带浏览器 Cookie。检索或下载报 `LINK_LOGIN_REQUIRED` / `LINK_COOKIES_UNAVAILABLE` 时停下来提醒用户：在浏览器里登录 YouTube，再到设置 › 视频下载勾选那个浏览器（用返回的设置链接），弄好后重试；不要自己找 Cookie 或换别的下载办法。YouTube 的视频许可多半没写（`license.class` 为 `unknown`，版权归上传者）：下载前把要用的几条（标题、频道、链接）告诉用户，由用户决定能不能用。每条用上的素材记下 `attribution`，交付时列进署名（第 7 节）。
 
-- **能力盘点**：规划之前用 `baocut models capabilities` 看语音合成、图片生成、音乐生成（generateMusic）与转写能不能用。BaoCut 目前**没有**视频生成与音效生成；配乐生成只在这台机器装了音乐模型包（且引擎可用）时才有，看 generateMusic 下有没有可用的模型、时长上限（maxDurationSec）与编排选项。所以每个镜头的画面有四种来源：用户素材、网上素材、生成图片、代码画面（第 5 节）；盘点结果决定第 3 节每张卡的画面来源与第 5 节配乐的做法。哪些要求因此降级（例如没有语音合成时旁白改由字幕承担），在复述简报时就告诉用户。
+- **能力盘点**：规划之前用 `baocut models capabilities` 看语音合成、图片生成、音乐生成（generateMusic）与转写能不能用。BaoCut 目前**没有**视频生成；音效由 `baocut assets sfx` 的内置配方在本机合成，总是可用；配乐生成只在这台机器装了音乐模型包（且引擎可用）时才有，看 generateMusic 下有没有可用的模型、时长上限（maxDurationSec）与编排选项。所以每个镜头的画面有四种来源：用户素材、网上素材、生成图片、代码画面（第 5 节）；盘点结果决定第 3 节每张卡的画面来源与第 5 节配乐的做法。哪些要求因此降级（例如没有语音合成时旁白改由字幕承担），在复述简报时就告诉用户。
 
 ## 2. 全局定义（只写文字，不出图）
 
@@ -115,13 +115,13 @@
 | 用户素材 | 导入（`baocut assets import`）后在时间线上裁到这一镜的范围 | 原文件不动，范围在时间线上选 |
 | 网上素材 | 第 1 节「主动找网上素材」：`baocut assets search` 挑，`baocut assets download` 或 `baocut download` 下载进视频，在时间线上裁到这一镜 | 只取真实画面里用得上的几秒；YouTube 的先经用户同意；比例对不上时选铺满裁切或留边 |
 | 生成图片 | 按卡出首帧图：风格说明（简写）、场景、构图（景别、角度、镜头感）、可见内容、主体外观与服装，结尾同样写不要文字水印；尺寸按简报的画幅，模型不收尺寸时在提示词里写明横竖 | 静图本身不动；时间线上没有给片段设运动关键帧的操作，推拉摇移要在代码里把静图渲染成视频片段，做不了时静帧配转场、镜头取短 |
-| 代码画面 | 动态图形、排版、图表与数据动画：读 [`references/craft/motion-graphics.md`](motion-graphics.md)，按它写一个自包含的 HTML 画面（时间的纯函数），打包成代码包导入后放上时间线；它的骨架、语法与自检规则都在那份做法里。整镜整段由代码画的场景（逐句配画面、角色小动画、Canvas 或 SVG），包括它的创意方向、按整帧分段、图层、字体与光效，读本页的附录「代码场景：整镜整段用 Canvas 或 SVG 画」 | 叠在素材上的图形用透明根；整镜的图形当作一个镜头；三维、物理或需要外部库的画面超出它的范围时如实说明，改用素材或生成图片 |
+| 代码画面 | 动态图形、排版、图表与数据动画：读 [`references/craft/motion-graphics.md`](motion-graphics.md)，按它写一个自包含的 HTML 画面（时间的纯函数），打包成代码包导入后放上时间线；它的骨架、语法与自检规则都在那份做法里。整镜整段由代码画的场景（逐句配画面、角色小动画、Canvas 或 SVG），包括它的创意方向、按整帧分段、跟拍、图层、字体、光效、提示表 `cues.json` 与后期效果，读本页的附录「代码场景：整镜整段用 Canvas 或 SVG 画」 | 叠在素材上的图形用透明根；整镜的图形当作一个镜头；三维、物理或需要外部库的画面超出它的范围时如实说明，改用素材或生成图片 |
 
 - **图片与代码一起用**：几种来源常常叠在一起：生成的角色、物件与场景底图放进代码画面里动起来，要读的字与数由代码叠在图上。只用代码画几何图形和字，画面容易单薄；有图片生成时，规划分镜就考虑哪些镜头用生成的贴图、底图或插画，做法见 附录「画面：风格、版式、效果与画面来源」 第 7 节。
 - **首帧复用**：卡上标了复用的，等上一镜做完再做这一镜，用 `baocut videos frames` 取上一镜结束前的那一帧（结束时刻减一帧；正好在结束时刻取到的是下一镜或空）当首帧。取到的是最上层片段的素材画面，不含叠加的文字与元素；要连续的是画面本身，叠加的东西在这一镜里另放。代码画面的连续镜头直接让上一镜的结束状态成为下一镜的开始状态，不必取帧。按复用串起来的镜头顺序做，不并行。
 - **对白与演唱**：画面里的人开口说话、唱歌做不到（需要口型同步的视频生成）：改成画外的旁白或对白，或把台词做成字幕与画面文字，并告诉用户。画外的多角色对白可以用 `baocut speak` 按角色轮次分别合成，每个角色固定一个音色。
 - **旁白**：开始配旁白前读 [`references/craft/narration.md`](narration.md)，照它做：每段旁白（覆盖一镜或几镜，段落大小）提交一次 `baocut speak`，不逐句提交；全片同一音色、同一套语气说明、固定 seed。量每段时长对照预算，超了按那份做法改稿重配，不变速；再用 `baocut transcribe` 拿字时间，供字幕与切点用。用户自己录旁白时按那份做法里「用户自己录」一条做，时长以录音为准。
-- **音效**：没有音效生成。简单的提示音（点击、转场的呼声）可以用代码合成成音频文件导入；其余跳过并说明。
+- **音效**：用 `baocut assets sfx` 按卡上的音效合成（配方怎么选、时刻怎么对、音量多少：读 [baocut-catalog-music](../catalog/music.md) 的「音效」一节），单独一条音效轨；代码画面里的事件时刻从代码包的 `cues.json` 读，与画面同一份时间。卡上没写音效的镜头不加。
 - **配乐**：单独配乐时，读 [baocut-catalog-music](../catalog/music.md)（生成、风格描述、铺满与分段、放上配乐轨与闪避都在那一页），按顺序取第一个做得到的。**用户提供了有授权的配乐**时用用户的。**有音乐生成时**（盘点里 generateMusic 有可用模型）用 `baocut music` 生成纯音乐（mode 用 instrumental）：style 把第 2 节的全局属性（风格、速度、调性、核心乐器、氛围、音质）译成一行英文短语，再加一个短语写配乐情绪弧表的整体走向（例如 `starts sparse, builds in the middle, gentle resolution`），不写时间戳；targetDurationSec 等于成片时长，等旁白量好、各镜时长定了再提交。成片比模型上限长时默认循环铺满；弧表里情绪明显分段时，也可以按弧表的行分段生成，接缝放在镜间切换上，各段锁住曲风、速度与音质，做法都按那一页。它很慢（几分钟到十几分钟），提交一次用 `baocut jobs wait` 等，不重复提交；模型只许非商业用途时在交付里写明。**没有音乐生成时**，用代码合成一段简单配乐：按全局属性定速度、调性与乐器，按配乐情绪弧表一行一段地编排，总长等于成片时长，导出成音频文件导入。都做不到就跳过，在交付里说明。
 - **将来有视频生成时**，视频提示词要包括：风格（简写）、节奏、卡上的过渡描述（原样）、主体的外观、场景，以及声音（画面内的对白或演唱带说话人、语言与语气，音效带声源，内嵌配乐带风格、速度与乐器）；配乐是单独或无时，结尾写明不要背景音乐。
 
@@ -130,7 +130,7 @@
 ## 6. 混音与成片
 
 - **叠加，不替换**：素材原声、旁白、对白、音效、配乐各在自己的轨上叠加；不要某一段原声时用 setAudioMix 调低或静音那一段，不删掉别的轨来腾位置。
-- **旁白清晰、全片一致**：旁白轨各段同一音量；配乐用 setDucking 在旁白下压低，触发选旁白所在的轨道或片段（按说话触发的写法这一版还不压低）；导出成片时做响度标准化。
+- **旁白清晰、全片一致**：旁白轨各段同一音量；配乐用 setDucking 在旁白下压低，触发选旁白所在的轨道或片段（合成的旁白没有转写，按文稿触发的 speech 压不下来）；导出成片时做响度标准化。
 - **字幕**按旁白稿分行，用对齐得到的字时间，做法见 `narration`；画面文字与字幕留在安全区内，避开平台控件会遮挡的边缘。
 - **署名**：片尾署名逐字照用户给的。第一帧照主 skill 的「成片的第一帧就是封面」做。
 - **画幅**只用简报定的 16:9、9:16 或 1:1，所有画面素材按同一画幅出；比例对不上的素材明确选铺满裁切还是留边（setStyle 的 fit），不让它随缺省。
@@ -142,7 +142,7 @@
 - 对照说明书的三条底线与简报：**忠实**（画面与旁白里的事实都来自简报与材料）、**可看**（画面变化跟着信息走，字幕可读，配乐在旁白之下）、**合要求**（画幅、时长、语言、交付物按简报）。
 - 读回：`baocut videos inspect` 逐镜核对实际时长与卡上的目标时长、画布尺寸、轨道上该有的旁白与配乐；总时长与简报对得上，差额说明原因，不靠重复镜头或变速凑（配乐循环铺满不算）。
 - 重复元素在各镜里像不像同一个：取帧对照参考图看过的写「看过」，没看的写没看。
-- 报告分三栏：**量出来的**（各镜与总时长、旁白每段的时长与预算、画布尺寸）、**看过的**（取过帧的镜头、预览里看到的字幕位置）、**要人听的**（旁白音色是否一致、配乐音量与情绪、剪点）。用了网上素材时另列**署名**：每条的 `attribution`（`baocut videos inspect` 里素材的 `credit` 读得回来），YouTube 的注明版权归上传者、经用户同意使用；cc-by-sa 的提醒成片要用同样的许可发布。另列**降级清单**：哪些要求因缺能力改了做法（没有视频生成或音效生成，没装音乐模型包时配乐改为代码合成或跳过，所用的图片模型不收输入图），配上哪项能力后可以补。
+- 报告分三栏：**量出来的**（各镜与总时长、旁白每段的时长与预算、画布尺寸）、**看过的**（取过帧的镜头、预览里看到的字幕位置）、**要人听的**（旁白音色是否一致、配乐音量与情绪、剪点）。用了网上素材时另列**署名**：每条的 `attribution`（`baocut videos inspect` 里素材的 `credit` 读得回来），YouTube 的注明版权归上传者、经用户同意使用；cc-by-sa 的提醒成片要用同样的许可发布。另列**降级清单**：哪些要求因缺能力改了做法（没有视频生成，没装音乐模型包时配乐改为代码合成或跳过，所用的图片模型不收输入图），配上哪项能力后可以补。
 
 ## 8. 修改意见
 
@@ -178,7 +178,7 @@
 - **整首歌按整帧分段**：帧率取视频的帧率。每段记起始帧（含）与帧数，结束帧不含，下一段的起始帧 = 这一段的起始帧 + 帧数；从第 0 帧一直排到 `ceil(歌长 × 帧率)`，每一帧恰好属于一段，前奏和结尾都在里面。没有字的地方（前奏、换气、间奏、尾奏）也是段，不是空隙。
 - **每段一个代码包**，包的时长正好是这一段的帧数。导入后用 `baocut videos inspect` 核对各段首尾相接、没有空隙也不重叠，总长等于歌长。歌在时间线上始终是一整段音频，不切开、不拼接、不变速。
 - `baocut documents read` 读转写（已按原文写回的那份），把每句的起止时间与文字写成包里的一个数据文件（例如 `lines.js`），画面按它排：每句一个画面窗口。一句的画面不越过所在段落的结尾：前一段的最后一句不能拖进下一段的间奏或高潮。
-- **跟拍**：入场、换姿势、闪光落在真实唱出的字与重拍上。有命令行环境时，先把音频的响度包络（每帧一个值）和起音点算成数据文件，让光、缩放、闪烁跟着动；自动测出的拍点只作参考，按转写的字时间和试听核对，变速或不规则的段落尤其要核对。
+- **跟拍**：入场、换姿势、闪光落在真实唱出的字与重拍上。歌导入后用 `baocut assets analyze` 分析它，把它写出的 JSON 拷进每个包：`frames` 里每帧有响度、低中高三段频带与起音强度，`onsets` 是起音时刻，`beats` 有拍、小节与段落。包里的时间 t 先换成歌的源文件时间（加上这个包在时间线上的开始，减去歌在时间线上的开始，再加歌的源起点），帧号 = `floor((源文件时间 − source.offset) × fps)`。让脉动跟 `bass`、闪动跟 `onset`、整体亮度跟 `level`。自动测出的拍点只作参考，按转写的字时间和试听核对，变速或不规则的段落尤其要核对。
 - 用户要「剪个 15 秒左右」这类节选时，起止落在完整的一句或一段歌词上，不按要求的秒数把最后一句截断。
 
 ### 4. 确定性
@@ -196,7 +196,13 @@
 - **字体**：从本机已装的字体里选定几款，只把选中的 TTF 或 OTF 文件带进包里，留着它的授权说明。字体集合（`.ttc`）要拆出单个字面再用，不把扩展名改成 `.ttf` 冒充。全片渲染前先用有代表性的歌词画一帧样张：标点、数字和成片里每一种文字都要有字形，缺字会落到别的字体上，例如 `♥` 会被画成彩色 emoji。想要的字体没有时先和用户定换哪款，不悄悄替换。
 - **角色动画**：在几个姿势之间切换，加上位移、旋转、挤压与抖动；不逐帧生成。
 - **场景底图**：铺满裁切、慢慢推拉、压暗；字幕所在的那一条保持暗、干净。
-- **光效与冲击**：闪白、发光、震动、推近写成一张提示表（时刻、种类、长度、强度），时刻取起音点、切换与唱到的字。闪白之后再起发光，不同时起，免得整屏发白；不让两个闪白意外挨在一起；颗粒感只加一层；有意留下的安静画面不加效果。
+- **光效与冲击**：闪白、发光、震动、推近、故障写进包里的提示表 `cues.json`（见下一节），时刻取起音点、切换与唱到的字。闪白之后再起发光，不同时起，免得整屏发白；不让两个闪白意外挨在一起；颗粒感只加一层；有意留下的安静画面不加效果。
+
+### 5.1 提示表 `cues.json` 与后期效果
+
+- 每个包一份 `cues.json`：`[{ "t": 3.2, "kind": "flash", "dur": 0.25, "strength": 0.8, "sfx": "boom" }]`。`t` 是包内的秒（与 `renderAt(time)` 同一个时间），`kind` 取 `flash`、`glow`、`shake`、`zoom`、`glitch`，`dur` 是效果的长度，`strength` 是 0..1。画面与音效读同一份表，事件只记一次。
+- `sfx` 可选，是 `baocut assets sfx` 的配方名：导入包之后，按表里带 `sfx` 的每一条，在「包在时间线上的开始 + t」处用 `baocut assets sfx` 放到音效轨（`place.at`；`riser` 让末尾对准 t，放在 t 减去它的长度处）。改了表就同步改音效，不让画面和声音各走各的。
+- 后期效果：读本页的附录「后期效果」，把其中的代码原样存成包里的 `post-fx.js` 引入。`PostFX.cuesAt(cues, t)` 把表合成这一刻各种效果的强度，再按它画震动、推近、发光、色散、暗角、颗粒、闪白，文件开头有 `renderAt` 的写法。都由 t 决定，不破坏确定性。色散逐像素处理，只在故障那几帧开。
 
 ### 6. 字幕、封面与署名
 
@@ -207,7 +213,7 @@
 ### 7. 自检
 
 - 先画一帧风格样张给用户看，定下再写全片。**开头样段要带上第一次高潮**（副歌或第一个爆点）：风格撑不撑得住在高潮上才看得出来，留到最后才发现要返工。
-- `baocut compositions preview` 一次最多取 24 个时刻：每句、每个段落交界各取一帧拼起来看，查文字重叠、画面空、上一句残留到下一段、元素出画。改完只重看改到的时刻。
+- `baocut compositions preview` 一次最多取 24 个时刻：每句、每个段落交界各取一帧，加 `sheet: true` 拼成一张接触表一次看完（格子里不写时刻，按结果的 `sheet.cells` 对照），查文字重叠、画面空、上一句残留到下一段、元素出画。改完只重看改到的时刻。
 - 拼起来的帧只看得出排版，看不出动作：入场、换姿势这类动作，在那一下前后约 2 秒里密集地取满 24 帧看连贯不连贯，再导出预览按正常速度看、听画面跟不跟拍。
 - **全片导入或渲染前先冒烟**：每个包的开头、中点、结尾各用 `baocut compositions preview` 取一帧。删掉的辅助函数、拼错的变量这类运行时错误，在这一步就会报出是哪个包、哪个时刻，不等烘焙或渲染到一半才发现。
 - 改一段或插入一段只重做那一个包（`replace: { itemId }`，插入时新建一个包放进去、把后面的段往后挪），没改的包不重新导入。
@@ -218,6 +224,193 @@
 
 - 改角色（换造型、加角色）出一个新版本的设定图与姿势，旧版本和用了它的段落保留；只重做用到新版本的段落（`replace: { itemId }`），姿势变了要重新量裁切边界与摆放位置。
 - 按意见重做某一段时，保留分镜里这一段有意义的动作（例如「睡不着躺在床上」），用户没要求改编就不换成另一个好看但意思不同的动作。
+
+## 附录：后期效果
+
+代码画面的后期效果（Canvas2D）：震动、推近、发光、色散、暗角、颗粒与闪白，按包里的 `cues.json` 取强度。把下面的代码原样存成代码包里的 `post-fx.js`，在 `index.html` 里用 `<script src="./post-fx.js"></script>` 引入，得到全局的 `PostFX`；开头的注释是 `renderAt(time)` 里的写法与叠加顺序。每个效果只由时间与参数决定，不破坏确定性。
+
+```js
+// post-fx.js — 代码画面的后期效果（Canvas2D），给 `baocut/1` 代码包用。
+// 拷进代码包，用 <script src="./post-fx.js"></script> 引入，得到全局的 PostFX。
+// 每个效果只由时间 t 与参数决定：不用 Math.random、Date.now，也不逐帧累加，同一时刻两次取帧一致。
+//
+// 典型的 renderAt(t)：
+//   const fx = PostFX.cuesAt(cues, t);              // cues 读自包里的 cues.json
+//   const s = PostFX.shake(t, fx.shake * 24);        // 先算震动与推近，画正片前套上
+//   ctx.save(); ctx.translate(s.x, s.y); PostFX.zoom(ctx, w, h, 1 + fx.zoom * 0.08);
+//   drawScene(ctx, t);
+//   ctx.restore();
+//   PostFX.glow(ctx, fx.glow * 0.8);                 // 再按顺序叠：发光 → 色散 → 暗角 → 颗粒 → 闪白
+//   PostFX.chroma(ctx, fx.glitch * 6);
+//   PostFX.vignette(ctx, 0.35);
+//   PostFX.grain(ctx, t, 30, 0.06);
+//   PostFX.flash(ctx, fx.flash);
+(function () {
+  'use strict';
+
+  /** 整数编号 → [0, 1) 的固定值；同一个编号永远是同一个值。 */
+  function hash(n) {
+    let x = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b);
+    x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+    x ^= x >>> 16;
+    return (x >>> 0) / 4294967296;
+  }
+
+  /** 一条提示在 t 时的强度：起 30 ms 线性升到 strength，之后在 dur 内平方衰减到 0。 */
+  function envelope(cue, t) {
+    const dur = cue.dur > 0 ? cue.dur : 0.25;
+    const local = t - cue.t;
+    if (local < 0 || local >= dur) return 0;
+    const strength = cue.strength === undefined ? 1 : cue.strength;
+    const attack = Math.min(0.03, dur / 4);
+    if (local < attack) return strength * (local / attack);
+    const p = (local - attack) / (dur - attack);
+    return strength * (1 - p) * (1 - p);
+  }
+
+  /** 把 t 时所有生效的提示按种类合成一个 { flash, glow, shake, zoom, glitch, … }（同种取最大）。 */
+  function cuesAt(cues, t) {
+    const out = { flash: 0, glow: 0, shake: 0, zoom: 0, glitch: 0 };
+    for (const cue of cues) {
+      const v = envelope(cue, t);
+      if (v > 0) out[cue.kind] = Math.max(out[cue.kind] || 0, v);
+    }
+    return out;
+  }
+
+  /** 平滑的确定性抖动：返回 { x, y } 像素位移，amount 是最大位移。 */
+  function shake(t, amount, seed) {
+    if (!(amount > 0)) return { x: 0, y: 0 };
+    const base = (seed | 0) * 7919;
+    const noise = (channel) => {
+      const u = t * 28;
+      const i = Math.floor(u);
+      const f = u - i;
+      const s = f * f * (3 - 2 * f);
+      const a = hash(base + channel * 104729 + i) * 2 - 1;
+      const b = hash(base + channel * 104729 + i + 1) * 2 - 1;
+      return a + (b - a) * s;
+    };
+    return { x: noise(1) * amount, y: noise(2) * amount };
+  }
+
+  /** 以画面中心推近；在画正片之前、ctx.save() 之后调用。 */
+  function zoom(ctx, w, h, scale) {
+    if (scale === 1) return;
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(scale, scale);
+    ctx.translate(-w / 2, -h / 2);
+  }
+
+  function flash(ctx, amount, color) {
+    if (!(amount > 0)) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, amount);
+    ctx.fillStyle = color || '#ffffff';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.restore();
+  }
+
+  function vignette(ctx, strength) {
+    if (!(strength > 0)) return;
+    const { width: w, height: h } = ctx.canvas;
+    const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.hypot(w, h) / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, `rgba(0,0,0,${Math.min(1, strength)})`);
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  const scratch = new Map();
+  function canvasFor(key, w, h) {
+    let c = scratch.get(key);
+    if (!c || c.width !== w || c.height !== h) {
+      c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      scratch.set(key, c);
+    }
+    return c;
+  }
+
+  /** 发光：缩小到 1/4 再放大回来（相当于模糊），用 screen 叠回去。 */
+  function glow(ctx, amount) {
+    if (!(amount > 0)) return;
+    const { width: w, height: h } = ctx.canvas;
+    const small = canvasFor('glow', Math.max(1, Math.round(w / 4)), Math.max(1, Math.round(h / 4)));
+    const sctx = small.getContext('2d');
+    sctx.clearRect(0, 0, small.width, small.height);
+    sctx.imageSmoothingQuality = 'high';
+    sctx.drawImage(ctx.canvas, 0, 0, small.width, small.height);
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = Math.min(1, amount);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(small, 0, 0, w, h);
+    ctx.restore();
+  }
+
+  /** 色散：红通道往左、蓝通道往右各挪 px 像素。逐像素处理，只在要用的那几帧调用。 */
+  function chroma(ctx, px) {
+    const shift = Math.round(px);
+    if (!(shift > 0)) return;
+    const { width: w, height: h } = ctx.canvas;
+    const image = ctx.getImageData(0, 0, w, h);
+    const src = new Uint8ClampedArray(image.data);
+    const dst = image.data;
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      for (let x = 0; x < w; x++) {
+        const i = (row + x) * 4;
+        dst[i] = src[(row + Math.min(w - 1, x + shift)) * 4];
+        dst[i + 2] = src[(row + Math.max(0, x - shift)) * 4 + 2];
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+  }
+
+  /** 胶片颗粒：4 张预先算好的噪点图按帧号轮换，overlay 叠上去。 */
+  const GRAIN_SIZE = 256;
+  const grainTiles = [];
+  function grainTile(index) {
+    if (!grainTiles[index]) {
+      const c = document.createElement('canvas');
+      c.width = GRAIN_SIZE;
+      c.height = GRAIN_SIZE;
+      const g = c.getContext('2d');
+      const image = g.createImageData(GRAIN_SIZE, GRAIN_SIZE);
+      for (let p = 0; p < GRAIN_SIZE * GRAIN_SIZE; p++) {
+        const v = Math.round(hash(index * 65536 + p) * 255);
+        image.data[p * 4] = v;
+        image.data[p * 4 + 1] = v;
+        image.data[p * 4 + 2] = v;
+        image.data[p * 4 + 3] = 255;
+      }
+      g.putImageData(image, 0, 0);
+      grainTiles[index] = c;
+    }
+    return grainTiles[index];
+  }
+
+  function grain(ctx, t, fps, amount) {
+    if (!(amount > 0)) return;
+    const frame = Math.floor(t * (fps || 30) + 1e-6);
+    const tile = grainTile(frame % 4);
+    ctx.save();
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = Math.min(1, amount);
+    ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+    // 每帧把噪点图挪一个固定的偏移，免得四张图轮换看出格子。
+    ctx.translate(-Math.floor(hash(frame) * GRAIN_SIZE), -Math.floor(hash(frame + 1) * GRAIN_SIZE));
+    ctx.fillRect(0, 0, ctx.canvas.width + GRAIN_SIZE, ctx.canvas.height + GRAIN_SIZE);
+    ctx.restore();
+  }
+
+  globalThis.PostFX = { hash, envelope, cuesAt, shake, zoom, flash, vignette, glow, chroma, grain };
+})();
+```
 
 ## 附录：分镜卡、过渡描述与运镜检查
 
