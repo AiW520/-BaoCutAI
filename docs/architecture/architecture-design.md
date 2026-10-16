@@ -601,6 +601,8 @@ interface DriverStatus {
 }
 ```
 
+Claude 的兜底模型表只保留 `opus`、`fable`、`sonnet`、`haiku` 别名，不替账号决定默认模型；其中 `fable` 仅在 Claude Code 2.1.257 及以上列出（[官方模型配置](https://code.claude.com/docs/en/model-config)）。成功读取的动态模型表保持 CLI 的型号、强度与默认标记，不套用兜底表。
+
 - **探测只读**。探测执行 Driver 自带的版本与状态命令，读取它的机器协议，不读取它的凭据文件，不解析终端屏幕。ACP 的 Driver 起一个临时进程做 `initialize` 与 `session/new`（不连工具、不调模型），从应答里读模型表；`session/new` 回「需要登录」（-32000）时记为 `signed-out`。Claude Code 的模型表要起一个不发消息的 Query 问 `supportedModels()`，比版本与登录状态两个短命令重得多：Driver 按可执行文件、版本与 `settings.json` 的修改时间在内存里记住它，不设时效，同一个 claude 在一个 Runtime 里只问一次，升级或改了设置后的下一次探测才重问；问不到时退回内置的精简表，失败不记。
 - **结果按 Driver 缓存，没有时效**。每个 Driver 最近一次探测的本机事实（状态、版本、可执行文件与真实位置、账号、模型表、配置里的模型、最新版本、问题描述、探测时间，以及探测时用的用户指定可执行文件）存在 Runtime Home 的 `store/agent-probes.json`；名字、命令、最低版本、安装方式、`verified`、`tested`、能力这些 Driver 这一版的常量不存，读回来时由 Driver 补上（ACP 的能力来自 `initialize` 应答，读回来时先是保守值，后台探测完换成真实的）。Runtime 启动时先用上次的结果，同时在后台把每个 Driver 重新探测一遍。每个 Driver 独立探测、各自完成各自生效：完成一个就写进缓存、落盘，并在 `agents` 主题上推送新视图，慢的（ACP 智能体的冷启动可达十几秒）不拖累快的；探测失败记为这个 Driver 的 `error`，不影响别的；刷新期间旧结果照常显示。文件损坏、Driver 没有注册、条目的可执行文件与当前设置不一致时，那部分缓存作废。
 - **什么时候重新探测**。只在这些时候，不做周期性刷新：Runtime 启动（后台一轮）；`agents.detect`（「重新检测」，强制，Driver 自己的模型表与登录缓存也不用）；用户改了某个 Driver 的可执行文件（只探那一个，旧结果立即丢掉）；应用内的安装或升级命令结束（只探那一个，§12.9）；运行中出了说明缓存过时的错——会话开始或回合以 `AGENT_AUTH_REQUIRED`、`AGENT_NOT_INSTALLED`、`AGENT_OUTDATED`、`AGENT_MODEL_UNAVAILABLE` 失败，或原生会话起不来（`driver-unavailable`）——以及缓存说不可用、回合却跑通了：Harness 在后台强制探测那个 Driver，不直接改写缓存里的状态，探测是唯一的事实来源。另有一条便宜的纠正：`agents.list` 与 `conversations.create` 时，Driver 结果不是 `ready` 且超过 60 秒没探过的，后台再探一次（探测要拉起智能体进程的不做：ACP、Pi、OpenCode，Driver 以 `slowProbe` 声明）；桌面界面在窗口重新获得焦点时拉一次 `agents.list`，用户去终端登录或安装后回来就能触发它。同一个 Driver 同时到来的探测共用一次；强制探测顶替进行中的普通探测，被顶替的结果丢掉。
@@ -1497,8 +1499,8 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 | Provider | 端点 | 模型 | 要点 |
 | --- | --- | --- | --- |
 | `openai` | Chat Completions：`POST {base}/chat/completions`（JSON，Bearer） | `gpt-6.1-sol`（默认）、`gpt-6-astra`、`gpt-6-luna` | 输出上限用 `max_completion_tokens`，推理强度是 `reasoning_effort`；结构化输出发 `json_schema` 且 `strict: false`（严格模式只接受 schema 的子集，校验由 Runtime 做）；不接受 `temperature` 与 `seed` |
-| `google` | `POST {base}/models/{model}:generateContent`（`x-goog-api-key` 请求头） | `gemini-3.8-flash`（默认）、`gemini-3.7-flash`、`gemini-3.6-flash`、`gemini-3.5-flash`、`gemini-3.5-flash-lite`、`gemini-3.1-flash-lite` | 系统消息进 `systemInstruction`；结构化输出用 `responseMimeType: 'application/json'` 与 `responseJsonSchema`；推理强度是 `thinkingConfig.thinkingLevel`；不取 `thought` 的部分；接受 `temperature` 与 `seed` |
-| `anthropic` | Messages：`POST {base}/v1/messages`（`x-api-key` 与 `anthropic-version` 请求头） | 目录的内置模型表 | 系统消息放进顶层的 `system`；输出上限 `max_tokens` 必须给出（不给时取模型的上限）；结构化输出与推理强度按模型描述声明，不支持的按上面的规则拒绝或换档 |
+| `google` | `POST {base}/models/{model}:generateContent`（`x-goog-api-key` 请求头） | `gemini-3.8-flash`（默认）、`gemini-4-argon`、`gemini-3.7-flash`、`gemini-3.6-flash`、`gemini-3.5-flash`、`gemini-3.5-flash-lite`、`gemini-3.1-flash-lite` | 系统消息进 `systemInstruction`；结构化输出用 `responseMimeType: 'application/json'` 与 `responseJsonSchema`；推理强度是 `thinkingConfig.thinkingLevel`；不取 `thought` 的部分；3.x 接受 `temperature` 与 `seed`，Argon 不声明采样参数，统一上下文窗口 1,048,576 token，同步输出上限 65,536，不启用 long decode |
+| `anthropic` | Messages：`POST {base}/v1/messages`（`x-api-key` 与 `anthropic-version` 请求头） | `claude-sonnet-5-5`（默认）、`claude-opus-5-5`、`claude-haiku-5-5`、`claude-fable-5-1` | 系统消息放进顶层的 `system`；输出上限 `max_tokens` 必须给出（不给时取模型的上限）；均为 1M 上下文，非流式请求保守声明 64K 输出；均不接受采样参数；低／中／高推理强度原样发送，Opus 与 Haiku 默认中，其余默认高 |
 | 兼容的文本提供方（`deepseek`、`moonshot`、`qwen`、`zhipu`、`minimax`、`volcengine`、`xai`、`mistral`、`groq`、`openrouter`、`siliconflow`） | 与 `custom:<名字>` 相同的端点，基址取目录 | 目录的内置模型表 | 限制按内置模型表；结构化输出、`temperature`、`seed` 与推理强度只在模型描述声明支持时发出 |
 | `custom:<名字>` | 与 `openai` 相同的端点，输出上限用 `max_tokens` | 用户声明 `capability` 为 `generateText` 的模型 | 限制按声明，没声明的取保守值：上下文 32768、单次输出 4096 token |
 
