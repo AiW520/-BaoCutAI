@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, MouseEventHandler, ReactNode } from "react";
+import type { ReactNode } from "react";
+import type { MenuItemProps } from "../../design-system/menu/items";
 import { Menu, Tooltip } from "../dependencies";
 import type * as React from "react";
 
@@ -25,11 +26,11 @@ export const DisabledMenuItem: React.FC<DisabledMenuItemProps> = ({
 };
 
 type DisabledMenuItemProps = Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
+  MenuItemProps,
   "onSelect" | "disabled"
 > & {
   disabled?: boolean;
   reason: ReactNode;
-  onSelect?: MouseEventHandler<HTMLButtonElement>;
+  onSelect?: MenuItemProps["onClick"];
   icon?: ReactNode;
 };

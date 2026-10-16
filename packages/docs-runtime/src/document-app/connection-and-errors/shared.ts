@@ -8,7 +8,7 @@ import {
   resolvePlatformLoadingAndStatusCatch,
 } from "../dependencies";
 
-var loadBottomSheetModule: Dynamic;
+var loadBottomSheetModule: () => Promise<typeof import("../../design-system/sheets/bottom-sheet")>;
 
 var REACT_FORWARD_REF_SYMBOL: symbol;
 
@@ -19,7 +19,7 @@ export function initializeConnectionAndErrorsShared2Step1(): void {
   (loadBottomSheetModule = resolvePlatformLoadingAndStatusCatch(
     (..._extraArguments: unknown[]): Dynamic =>
       preloadModule(
-        (..._extraArguments: unknown[]): Dynamic => import("../../design-system/sheets/bottom-sheet"),
+        (..._extraArguments: unknown[]) => import("../../design-system/sheets/bottom-sheet"),
         mapPreloadDependencies([11, 1, 0, 2, 3]),
         import.meta.url,
       ),

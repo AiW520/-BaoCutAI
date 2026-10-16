@@ -53,6 +53,8 @@ import {
   resolveMenuPopupsCell,
 } from "./focus";
 import type * as ReactComponentTypes from "react";
+import { useRef } from "react";
+import type { ContextMenuRootChangeEventDetails } from "@base-ui/react/context-menu";
 import type {
   MenuPopupProps as BaseMenuPopupProps,
   MenuPositionerProps,
@@ -127,18 +129,18 @@ function isMenuPopupsCancelOpen(
   );
 }
 
-function useMenuPopupsTriggerRef(
-  input?: Dynamic,
-  options: Dynamic = false,
+function useMenuPopupsTriggerRef<Details extends ContextMenuRootChangeEventDetails>(
+  input?: (open: boolean, details: Details) => void,
+  options: boolean = false,
   ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = (0, React.useRef)(null);
+): { triggerRef: ReactComponentTypes.RefObject<Element | null>; onOpenChange: (open: boolean, details: Details) => void } {
+  let value = useRef<Element | null>(null);
   return {
     triggerRef: value,
     onOpenChange: useUiOverlaysAndIconsUseInsertionEffect2(
       (
-        input2?: Dynamic,
-        options2?: Dynamic,
+        input2: boolean,
+        options2: Details,
         ..._extraArguments: unknown[]
       ): undefined => {
         if (!input2 && options && isMenuPopupsCancelOpen(options2)) {

@@ -18,12 +18,59 @@ import {
   PHONE_TOUCH_TARGET_CLASS as SHEET_CONTROL_CLASS,
 } from "../../document-app/index";
 import type * as ReactComponentTypes from "react";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback, forwardRef } from "react";
 import type {
   DialogPopupProps,
   DialogRootChangeEventDetails,
 } from "@base-ui/react/dialog";
-import type { ConfirmationDialogProps } from "../../platform/ui/dialogs";
+import type {
+  ConfirmationDialogProps,
+  DialogPopupProps as PlatformDialogPopupProps,
+  DialogPopupComponent,
+} from "../../platform/ui/dialogs";
+
+import type { Dialog } from "@base-ui/react/dialog";
+
+export interface PhoneDialogPopupProps extends PlatformDialogPopupProps {
+  kind?: "dialog" | "alert";
+  touchActions?: boolean;
+}
+export type PhoneDialogPopupComponent =
+  ReactComponentTypes.ForwardRefExoticComponent<
+    Omit<PhoneDialogPopupProps, "ref"> &
+      ReactComponentTypes.RefAttributes<HTMLDivElement>
+  >;
+export interface PhonePopupNamespace {
+  Popup: DialogPopupComponent;
+  Close: typeof Dialog.Close;
+}
+export interface PhonePopupContentProps {
+  Ns: PhonePopupNamespace;
+  popupRef?: ReactComponentTypes.ForwardedRef<HTMLDivElement>;
+  portalClassName?: string;
+  backdropClassName?: string;
+  touchActions?: boolean;
+  rest: Omit<
+    PlatformDialogPopupProps,
+    | "size"
+    | "fullHeight"
+    | "className"
+    | "portalClassName"
+    | "backdropClassName"
+    | "children"
+  >;
+  children?: ReactComponentTypes.ReactNode;
+}
+type SheetDragHandlers = Required<
+  Pick<
+    ReactComponentTypes.DOMAttributes<HTMLDivElement>,
+    | "onPointerDown"
+    | "onPointerMove"
+    | "onPointerUp"
+    | "onPointerCancel"
+    | "onLostPointerCapture"
+  >
+>;
 
 export type BottomSheetCloseReason = "backdrop" | "escape" | "close" | "swipe";
 export interface BottomSheetProps {
@@ -288,7 +335,7 @@ export const BottomSheet: ReactComponentTypes.FC<BottomSheetProps> = ({
   );
 };
 
-export const PhonePopupContent: ReactComponentTypes.FC<Dynamic> = ({
+export const PhonePopupContent: ReactComponentTypes.FC<PhonePopupContentProps> = ({
   Ns: Ns,
   popupRef: popupRef,
   portalClassName: portalClassName,
@@ -297,20 +344,20 @@ export const PhonePopupContent: ReactComponentTypes.FC<Dynamic> = ({
   rest: rest,
   children: children,
 }) => {
-  let popupRef2: Dynamic = (0, React.useRef)(null);
-  let [popupElement, setPopupElement]: Dynamic = (0, React.useState)(null);
+  let popupRef2 = useRef<HTMLDivElement | null>(null);
+  let [popupElement, setPopupElement] = useState<HTMLDivElement | null>(null);
   useSheetClearance(popupElement, 0, true);
   usePreventFocusScroll(popupElement);
-  let closeButtonRef: Dynamic = (0, React.useRef)(null);
-  let dragHandlers: Dynamic = useSwipeToClose(
+  let closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  let dragHandlers = useSwipeToClose(
     popupRef2,
-    (0, React.useCallback)(
+    useCallback(
       (..._extraArguments: unknown[]): boolean => (closeButtonRef.current?.click(), true),
       [],
     ),
   );
-  let setPopupRef: Dynamic = (0, React.useCallback)(
-    (phonePopupContent?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let setPopupRef = useCallback(
+    (phonePopupContent: HTMLDivElement | null, ..._extraArguments: unknown[]): undefined => {
       popupRef2.current = phonePopupContent;
       setPopupElement(phonePopupContent);
       if (typeof popupRef == `function`) {
@@ -747,13 +794,13 @@ function usePreventFocusScroll(
     [element],
   );
 }
-var PhoneDialogPopup: Dynamic = (0, React.forwardRef)(function (
-  { kind = `dialog`, touchActions = true, ...phoneDialogPopup }: Dynamic,
-  options?: Dynamic,
+var PhoneDialogPopup: PhoneDialogPopupComponent = forwardRef<HTMLDivElement, PhoneDialogPopupProps>(function (
+  { kind = `dialog`, touchActions = true, ...phoneDialogPopup }: PhoneDialogPopupProps,
+  options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
   ..._extraArguments: unknown[]
-): Dynamic {
+) {
   let phoneDialogPopupResult: Dynamic = resolvePlatformSyncAndRoutingValue10();
-  let phoneDialogPopupResult2: Dynamic =
+  let phoneDialogPopupResult2: PhonePopupNamespace =
     kind === `alert` ? UiDialogsRoot2 : UiDialogsRoot;
   if (!phoneDialogPopupResult)
     return (
@@ -767,7 +814,7 @@ var PhoneDialogPopup: Dynamic = (0, React.forwardRef)(function (
     backdropClassName: phoneDialogPopup6,
     children: phoneDialogPopup7,
     ...phoneDialogPopup8
-  }: Dynamic = phoneDialogPopup;
+  } = phoneDialogPopup;
   return (
     <PhonePopupContent
       Ns={phoneDialogPopupResult2}
@@ -787,10 +834,10 @@ var SWIPE_START_PX: number = 16;
 var SWIPE_SPEED_PX_PER_MS: number = 0.5;
 var SWIPE_SPEED_WINDOW_MS: number = 30;
 function useSwipeToClose(
-  popupRef?: Dynamic,
-  close?: Dynamic,
+  popupRef: ReactComponentTypes.RefObject<HTMLElement | null>,
+  close: (reason: "swipe") => unknown,
   ..._extraArguments: unknown[]
-): Dynamic {
+): SheetDragHandlers {
   let dragStateRef: Dynamic = (0, React.useRef)(null);
   let resetDrag: Dynamic = (0, React.useCallback)(
     (swipe?: Dynamic, ..._extraArguments: unknown[]): undefined => {

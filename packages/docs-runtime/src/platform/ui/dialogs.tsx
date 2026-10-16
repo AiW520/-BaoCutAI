@@ -43,12 +43,42 @@ import {
   useUiTooltipsAndControlsTop,
 } from "./tooltips-and-controls";
 import type * as ReactComponentTypes from "react";
-import type { DialogRootProps, DialogRootActions } from "@base-ui/react/dialog";
+import type {
+  DialogRootProps,
+  DialogRootActions,
+  DialogPopupProps as BaseDialogPopupProps,
+  DialogPopupState,
+} from "@base-ui/react/dialog";
 import type {
   AlertDialogRootProps,
   AlertDialogRootActions,
 } from "@base-ui/react/alert-dialog";
 import type { ButtonVariant } from "./tooltips-and-controls";
+
+import type { ComponentRenderFn, HTMLProps } from "@base-ui/react/types";
+
+export interface DialogPopupProps
+  extends Omit<BaseDialogPopupProps, "className" | "render"> {
+  render?:
+    | ReactComponentTypes.ReactElement
+    | ComponentRenderFn<HTMLProps<HTMLDivElement>, DialogPopupState>;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+  fullHeight?: boolean;
+  unstyled?: boolean;
+  surface?: string;
+  backdropClassName?: string;
+  backdropStyle?: ReactComponentTypes.CSSProperties;
+  portalClassName?: string;
+  className?: string;
+}
+export type DialogPopupComponent =
+  ReactComponentTypes.ForwardRefExoticComponent<
+    Omit<DialogPopupProps, "ref"> &
+      ReactComponentTypes.RefAttributes<HTMLDivElement>
+  >;
+type DialogPopupInnerProps = BaseDialogPopupProps & {
+  fitVisualViewport?: boolean;
+};
 
 export interface ConfirmationDialogProps {
   open: boolean;
@@ -781,11 +811,11 @@ function useUiDialogsPreventScroll(
   );
 }
 
-var Dialog_PopupInner: Dynamic;
+var Dialog_PopupInner: ReactComponentTypes.ForwardRefExoticComponent<Omit<DialogPopupInnerProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLDivElement>>;
 
-var ConfirmationDialog_PopupInner: Dynamic;
+var ConfirmationDialog_PopupInner: ReactComponentTypes.ForwardRefExoticComponent<Omit<BaseDialogPopupProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLDivElement>>;
 
-var Dialog_Popup: Dynamic;
+var Dialog_Popup: DialogPopupComponent;
 
 var Dialog_Title: Dynamic;
 
@@ -856,8 +886,8 @@ export function initializeUiDialogsStep1(): void {
         fitVisualViewport: fitVisualViewport,
         children: children,
         ...dialogPopupInner
-      }: Dynamic,
-      options?: Dynamic,
+      }: DialogPopupInnerProps,
+      options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
       ..._extraArguments: unknown[]
     ) => {
       let useContext: Dynamic = (0, React.useContext)(UiDialogsCreateContext);
@@ -885,8 +915,8 @@ export function initializeUiDialogsStep1(): void {
   Dialog_PopupInner.displayName = `Dialog.PopupInner`;
   (ConfirmationDialog_PopupInner = (0, React.forwardRef)(
     (
-      { children: children, ...confirmationDialogPopupInner }: Dynamic,
-      options?: Dynamic,
+      { children: children, ...confirmationDialogPopupInner }: BaseDialogPopupProps,
+      options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
       ..._extraArguments: unknown[]
     ) => {
       let uiOverlaysAndIconsValue4: Dynamic = resolveUiOverlaysAndIconsValue4(
@@ -914,10 +944,10 @@ export function initializeUiDialogsStep1(): void {
         className: className,
         children: children,
         ...dialogPopup
-      }: Dynamic,
-      options?: Dynamic,
+      }: DialogPopupProps,
+      options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
       ..._extraArguments: unknown[]
-    ): Dynamic => {
+    ) => {
       let label: string = unstyled
         ? ``
         : `${UiDialogsPopover} ${UiDialogsStyles2} ${UiDialogsStyles5} ${UiDialogs2xl[size]} ${fullHeight ? `h-dvh` : ``}`;

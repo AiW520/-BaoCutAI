@@ -55,6 +55,16 @@ import {
 } from "./root";
 import type * as ReactComponentTypes from "react";
 import type { MenuPopupProps } from "./popup";
+import type { MenubarProps, MenubarState } from "@base-ui/react/menubar";
+
+import type { ComponentRenderFn, HTMLProps } from "@base-ui/react/types";
+
+interface MenuBarProps extends Omit<MenubarProps, "className" | "render"> {
+  className?: string;
+  render?:
+    | ReactComponentTypes.ReactElement
+    | ComponentRenderFn<HTMLProps<HTMLDivElement>, MenubarState>;
+}
 
 export interface SearchMenuProps
   extends Omit<MenuPopupProps, "children" | "header"> {
@@ -637,9 +647,24 @@ function useMenuPopupsPreventScroll(
   );
 }
 
-var MenuPopupsValue2: Dynamic;
+var MenuPopupsValue2: ReactComponentTypes.ForwardRefExoticComponent<Omit<MenuBarProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLDivElement>>;
 
-var Menu: Dynamic;
+var Menu: typeof MenuPopupsTriggerRef & {
+  Root: typeof MenuPopupsSheetTitle;
+  Bar: typeof MenuPopupsValue2;
+  Trigger: typeof BaseMenuTrigger;
+  TriggerButton: typeof MenuPopupsDisabled;
+  Popup: typeof MenuPopupsAlign;
+  Item: typeof MenuPopupsIcon;
+  Separator: typeof MenuPopupsView;
+  Group: typeof BaseMenuGroup;
+  GroupLabel: typeof MenuPopupsView2;
+  Header: typeof MenuPopupsLabel;
+  Submenu: typeof MenuPopupsActionsRef;
+  SubmenuTrigger: typeof MenuPopupsIcon2;
+  SearchablePopup: typeof MenuPopupsSearchLabel;
+  PendingList: typeof MenuPopupsPending2;
+};
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeMenuSearchStep1(): void {
@@ -652,8 +677,8 @@ export function initializeMenuSearchStep1(): void {
   MenuPopupsStyles3 = `[data-highlighted][tabindex="0"]`;
   (MenuPopupsPending2 as Dynamic).displayName = `Menu.PendingList`;
   MenuPopupsValue2 = (0, React.forwardRef)(function (
-    { className: input, ...input2 }: Dynamic,
-    options?: Dynamic,
+    { className: input, ...input2 }: MenuBarProps,
+    options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
     ..._extraArguments: unknown[]
   ): Dynamic {
     return (

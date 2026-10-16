@@ -95,6 +95,7 @@ import {
   ReactionNames,
 } from "./comment-anchors/see-more-pill";
 import type * as ReactComponentTypes from "react";
+import type { MenuEntry } from "../design-system/menu/root";
 
 export const WhoReacted: ReactComponentTypes.FC<Dynamic> = ({
   reactions: reactions,
@@ -215,22 +216,24 @@ export const UseCommentComposerModalComponent: ReactComponentTypes.FC<{
           ): Dynamic => commentComposerModal.stopPropagation()}
         >
           {renderMenuItems(
-            [
-              {
-                label: `Copy link`,
-                onSelect: onCopyLink,
-              },
-              onEdit && {
-                label: `Edit`,
-                onSelect: onEdit,
-              },
-              onDelete && {
-                label: resolveEditorExtensionsDelete(`comment`),
-                variant: `danger`,
-                separatorBefore: true,
-                onSelect: onDelete,
-              },
-            ].filter(Boolean),
+            (
+              [
+                {
+                  label: `Copy link`,
+                  onSelect: onCopyLink,
+                },
+                onEdit && {
+                  label: `Edit`,
+                  onSelect: onEdit,
+                },
+                onDelete && {
+                  label: resolveEditorExtensionsDelete(`comment`),
+                  variant: `danger`,
+                  separatorBefore: true,
+                  onSelect: onDelete,
+                },
+              ] satisfies (MenuEntry | undefined)[]
+            ).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)),
           )}
         </Menu.Popup>
       }

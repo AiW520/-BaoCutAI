@@ -49,7 +49,131 @@ import {
   MenuPopupsView,
 } from "./items";
 import type * as ReactComponentTypes from "react";
-import type { MenuRootProps } from "@base-ui/react/menu";
+import type {
+  MenuRootProps,
+  MenuRootActions,
+  MenuTriggerState,
+  MenuPortalProps,
+} from "@base-ui/react/menu";
+
+import type {
+  ContextMenuRootProps,
+  ContextMenuRootChangeEventDetails,
+} from "@base-ui/react/context-menu";
+import type {
+  ButtonVariant,
+  TooltipProps,
+} from "../../platform/ui/tooltips-and-controls";
+import type { MenuPopupProps } from "./popup";
+import type { MenuItemProps } from "./items";
+
+import type { ComponentRenderFn, HTMLProps } from "@base-ui/react/types";
+
+export interface MenuItemDefinition
+  extends Pick<
+    MenuItemProps,
+    | "icon"
+    | "shortcut"
+    | "variant"
+    | "disabled"
+    | "checked"
+    | "checkedRole"
+    | "indicator"
+    | "indeterminate"
+    | "hint"
+    | "description"
+    | "disabledReason"
+    | "keepOpen"
+    | "leading"
+    | "trailing"
+    | "href"
+    | "routerOptions"
+    | "target"
+  > {
+  label?: ReactComponentTypes.ReactNode;
+  items?: MenuItems;
+  separatorBefore?: boolean;
+  onSelect?: MenuItemProps["onClick"];
+}
+export type MenuEntry = "separator" | MenuItemDefinition;
+// An array in this API is a list of descriptors, rather than a list of JSX children.
+export type MenuItems =
+  | readonly MenuEntry[]
+  | Exclude<
+      ReactComponentTypes.ReactNode,
+      Iterable<ReactComponentTypes.ReactNode>
+    >
+  | string;
+
+export interface MenuTriggerProps
+  extends Pick<
+    MenuPopupProps,
+    "side" | "align" | "sideOffset" | "collisionPadding" | "finalFocus"
+  > {
+  items?: MenuItems;
+  children?: ReactComponentTypes.ReactNode;
+  trigger?: "context-menu" | "click";
+  open?: boolean;
+  onOpenChange?: ContextMenuRootProps["onOpenChange"];
+  onOpenChangeComplete?: (open: boolean) => void;
+  disabled?: boolean;
+  className?: string;
+  style?: ReactComponentTypes.CSSProperties;
+  "data-cds"?: string;
+  "aria-label"?: string;
+  sheetTitle?: ReactComponentTypes.ReactNode;
+  backLabel?: string;
+  closeLabel?: string;
+  renderTrigger?:
+    | ReactComponentTypes.ReactElement
+    | ComponentRenderFn<HTMLProps<HTMLElement>, MenuTriggerState>;
+  iconOnly?: boolean;
+  icon?: ReactComponentTypes.ReactNode;
+  iconPosition?: "start" | "end";
+  tooltip?: string | boolean;
+  variant?: ButtonVariant;
+  size?: "xs" | "sm" | "md" | "lg";
+  pressed?: boolean;
+  label?: ReactComponentTypes.ReactNode;
+  disabledReason?: ReactComponentTypes.ReactNode;
+  disabledReasonSide?: TooltipProps["side"];
+}
+
+export interface MenuTriggerButtonProps
+  extends ReactComponentTypes.ButtonHTMLAttributes<HTMLElement>,
+    Pick<
+      MenuTriggerProps,
+      | "variant"
+      | "size"
+      | "icon"
+      | "iconOnly"
+      | "iconPosition"
+      | "tooltip"
+      | "pressed"
+      | "disabledReason"
+      | "disabledReasonSide"
+    > {
+  busy?: boolean;
+  busyLabel?: ReactComponentTypes.ReactNode;
+  tooltipSide?: TooltipProps["side"];
+  indicator?: ReactComponentTypes.ReactNode;
+  shortcut?: string;
+  flush?: boolean | "start" | "end" | "both";
+  render?:
+    | ReactComponentTypes.ReactElement
+    | ((
+        props: ReactComponentTypes.HTMLAttributes<HTMLElement>,
+      ) => ReactComponentTypes.ReactElement);
+}
+interface MenuTriggerContext {
+  triggerRef: ReactComponentTypes.RefObject<Element | null>;
+  actionsRef: ReactComponentTypes.RefObject<MenuRootActions | null>;
+  onOpenChange: NonNullable<ContextMenuRootProps["onOpenChange"]>;
+  contextMenuOnOpenChange?: ContextMenuRootProps["onOpenChange"];
+  onOpenChangeComplete?: (open: boolean) => void;
+  sheetCapable?: boolean;
+  inMenuBar?: boolean;
+}
 
 type MenuRenderProps<Payload> = Parameters<
   Exclude<MenuRootProps<Payload>["children"], ReactComponentTypes.ReactNode>
@@ -69,13 +193,13 @@ interface SheetMenuRootComponent {
   displayName?: string;
 }
 
-export const MenuPopupsTriggerRef: ReactComponentTypes.FC<Dynamic> = (input) => {
+export const MenuPopupsTriggerRef: ReactComponentTypes.FC<MenuTriggerProps> = (input) => {
   let value: Dynamic = resolveSheetsUseContext4();
   let value2: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
-  let value3: Dynamic = useMenuInteractionsCurrent();
-  let onOpenChange: Dynamic = input.onOpenChange;
-  let { onOpenChange: value4, triggerRef: value5 }: Dynamic = useMenuPopupsTriggerRef(
-    (input2?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let value3: ReactComponentTypes.RefObject<MenuRootActions | null> = useMenuInteractionsCurrent();
+  let onOpenChange = input.onOpenChange;
+  let { onOpenChange: value4, triggerRef: value5 } = useMenuPopupsTriggerRef(
+    (input2: boolean, options: ContextMenuRootChangeEventDetails, ..._extraArguments: unknown[]): undefined => {
       onOpenChange?.(input2, options);
       updateMenuInteractionsIsCanceled(value3, input2, options);
     },
@@ -95,13 +219,13 @@ export const MenuPopupsTriggerRef: ReactComponentTypes.FC<Dynamic> = (input) => 
   );
 };
 
-export const MenuPopupsOpen: ReactComponentTypes.FC<Dynamic> = (input) => {
+export const MenuPopupsOpen: ReactComponentTypes.FC<MenuTriggerProps> = (input) => {
   let {
     open: value,
     sheetTitle: value2,
     backLabel: value3,
     closeLabel: value4,
-  }: Dynamic = input;
+  } = input;
   let value5: Dynamic = (0, React.useMemo)(
     (..._extraArguments: unknown[]): Dynamic => ({
       sheetTitle: value2,
@@ -112,7 +236,7 @@ export const MenuPopupsOpen: ReactComponentTypes.FC<Dynamic> = (input) => {
   );
   let value6: Dynamic = resolveUiProviderAndLayersUseContext9();
   let value7: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext4);
-  let { onOpenChange: value8, triggerRef: value9 }: Dynamic = useMenuPopupsTriggerRef(
+  let { onOpenChange: value8, triggerRef: value9 } = useMenuPopupsTriggerRef(
     input.onOpenChange,
     value7,
   );
@@ -127,7 +251,7 @@ export const MenuPopupsOpen: ReactComponentTypes.FC<Dynamic> = (input) => {
     closable: !(value !== undefined && input.onOpenChange === undefined),
     refuseClose: resolveMenuPopupsValue9,
   });
-  let value12: Dynamic = MenuPopupsItems(input, value6, {
+  let value12 = MenuPopupsItems(input, value6, {
     triggerRef: value9,
     onOpenChange: value11.onOpenChange,
     onOpenChangeComplete: value11.onOpenChangeComplete,
@@ -261,7 +385,12 @@ export const MenuPopupsPart: ReactComponentTypes.FC<{
   );
 };
 
-export const MenuPopupsSide2: ReactComponentTypes.FC<Dynamic> = ({
+export const MenuPopupsSide2: ReactComponentTypes.FC<
+  Pick<
+    MenuPopupProps,
+    "side" | "align" | "sideOffset" | "collisionPadding" | "finalFocus"
+  > & { dataCds?: string; items?: MenuItems }
+> = ({
   side: input,
   align: input2,
   sideOffset: input3,
@@ -285,23 +414,23 @@ export const MenuPopupsSide2: ReactComponentTypes.FC<Dynamic> = ({
 };
 
 function resolveMenuPopupsValue7(
-  input?: Dynamic,
+  input?: MenuItems,
   ..._extraArguments: unknown[]
-): boolean {
+): input is readonly MenuEntry[] {
   return Array.isArray(input);
 }
 
 function renderMenuItems(
-  input?: Dynamic,
+  input?: MenuItems,
   ..._extraArguments: unknown[]
-): Dynamic {
+): ReactComponentTypes.ReactNode {
   return resolveMenuPopupsValue7(input)
     ? input.map(
         (
-          event?: Dynamic,
-          options?: Dynamic,
+          event,
+          options,
           ..._extraArguments: unknown[]
-        ): Dynamic =>
+        ) =>
           event === `separator` ? (
             <MenuPopupsView key={options} />
           ) : event.label === undefined ||
@@ -353,11 +482,11 @@ function resolveMenuPopupsValue8(
 }
 
 function MenuPopupsItems(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  input: MenuTriggerProps,
+  options: MenuPortalProps["container"],
+  context: MenuTriggerContext,
   ..._extraArguments: unknown[]
-): Dynamic {
+): ReactComponentTypes.JSX.Element {
   let {
     items: value,
     side: value2,
@@ -370,7 +499,7 @@ function MenuPopupsItems(
     className: value9,
     style: value10,
     "data-cds": value11,
-  }: Dynamic = input;
+  } = input;
   if (input.trigger === `context-menu`)
     return value8 ? (
       <div data-disabled={``} className={value9}>
@@ -432,7 +561,7 @@ function MenuPopupsItems(
         </BaseContextMenuRoot>
       </UiOverlaysAndIconsActionsRef>
     );
-  let value12: Dynamic;
+  let value12: ReactComponentTypes.ReactNode;
   if (input.renderTrigger !== undefined)
     value12 = (
       <BaseMenuTrigger
@@ -443,13 +572,13 @@ function MenuPopupsItems(
       />
     );
   else if (input.iconOnly) {
-    let value13: Dynamic =
+    let value13 =
       input.tooltip === false
         ? undefined
         : typeof input.tooltip == `string`
           ? input.tooltip
           : input[`aria-label`];
-    let value14: Dynamic = (
+    let value14 = (
       <BaseMenuTrigger
         disabled={value8}
         render={
@@ -467,7 +596,7 @@ function MenuPopupsItems(
         }
       />
     );
-    let value15: Dynamic = value13 ? (
+    let value15 = value13 ? (
       <Tooltip content={value13}>{value14}</Tooltip>
     ) : (
       value14
@@ -544,15 +673,15 @@ function resolveMenuPopupsValue9(
   return isMenuPopupsReason(false, input, options);
 }
 
-var MenuPopupsDisabled: Dynamic;
+var MenuPopupsDisabled: ReactComponentTypes.ForwardRefExoticComponent<MenuTriggerButtonProps & ReactComponentTypes.RefAttributes<HTMLElement>>;
 
 // BaoCut: called by cds-initialize in the recovered source order.
 export function initializeMenuRootStep1(): void {
-  (MenuPopupsTriggerRef as Dynamic).displayName = `Menu`;
+  MenuPopupsTriggerRef.displayName = `Menu`;
   MenuPopupsSheetTitle.displayName = `Menu.Root`;
   MenuPopupsDisabled = (0, React.forwardRef)(function (
-    { children: input, id: input2, ...input3 }: Dynamic,
-    options?: Dynamic,
+    { children: input, id: input2, ...input3 }: MenuTriggerButtonProps,
+    options: ReactComponentTypes.ForwardedRef<HTMLElement>,
     ..._extraArguments: unknown[]
   ): Dynamic {
     return (

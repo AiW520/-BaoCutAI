@@ -30,15 +30,26 @@ import {
   REACT_MEMO_SYMBOL,
 } from "../connection-and-errors/shared";
 import type * as ReactComponentTypes from "react";
-import type { BottomSheetProps } from "../../design-system/sheets/bottom-sheet";
+import type {
+  BottomSheetProps,
+  PhoneDialogPopupProps,
+  PhoneDialogPopupComponent,
+} from "../../design-system/sheets/bottom-sheet";
 import type { ConfirmationDialogProps } from "../../platform/ui/dialogs";
 
+import { useRef, useState, forwardRef } from "react";
+
+export type BottomSheetModule = Pick<
+  typeof import("../../design-system/sheets/bottom-sheet"),
+  "BottomSheet" | "PhoneDialogPopup" | "PhoneConfirmationDialog"
+>;
+
 export const BottomSheet: ReactComponentTypes.FC<BottomSheetProps> = (bottomSheet) => {
-  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
+  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 } =
     useBottomSheetModule(true);
-  let shouldCloseRef: Dynamic = (0, React.useRef)(bottomSheet.shouldClose);
+  let shouldCloseRef = useRef(bottomSheet.shouldClose);
   shouldCloseRef.current = bottomSheet.shouldClose;
-  let onCloseRef: Dynamic = (0, React.useRef)(bottomSheet.onClose);
+  let onCloseRef = useRef(bottomSheet.onClose);
   onCloseRef.current = bottomSheet.onClose;
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): undefined => {
@@ -164,7 +175,7 @@ export const PhoneConfirmationDialog: ReactComponentTypes.FC<ConfirmationDialogP
   phoneConfirmationDialog,
 ) => {
   let phoneConfirmationDialogResult: Dynamic = resolvePlatformSyncAndRoutingValue10();
-  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
+  let { m: useBottomSheetModule2, failed: useBottomSheetModule3 } =
     useBottomSheetModule(phoneConfirmationDialogResult);
   return !phoneConfirmationDialogResult ||
     (!useBottomSheetModule2 && useBottomSheetModule3) ? (
@@ -206,14 +217,14 @@ function isReactComponent(
 }
 
 function validateBottomSheetModule(
-  validateBottomSheetModule2?: Dynamic,
+  validateBottomSheetModule2: BottomSheetModule,
   ..._extraArguments: unknown[]
-): Dynamic {
+): BottomSheetModule {
   let {
     BottomSheet: BottomSheet2,
     PhoneDialogPopup: PhoneDialogPopup2,
     PhoneConfirmationDialog: PhoneConfirmationDialog2,
-  }: Dynamic = validateBottomSheetModule2;
+  } = validateBottomSheetModule2;
   if (
     !isReactComponent(BottomSheet2) ||
     !isReactComponent(PhoneDialogPopup2) ||
@@ -228,20 +239,20 @@ function validateBottomSheetModule(
 }
 
 function useBottomSheetModule(
-  bottomSheetModule?: Dynamic,
+  bottomSheetModule?: boolean,
   ..._extraArguments: unknown[]
-): Dynamic {
-  let [loadedBottomSheetModuleState, setLoadedBottomSheetModuleState]: Dynamic =
-    (0, React.useState)(
-      (..._extraArguments: unknown[]): Dynamic => loadedBottomSheetModule,
+): { m: BottomSheetModule | undefined; failed: boolean } {
+  let [loadedBottomSheetModuleState, setLoadedBottomSheetModuleState] =
+    useState(
+      (..._extraArguments: unknown[]) => loadedBottomSheetModule,
     );
-  let [failed, setFailed]: Dynamic = (0, React.useState)(false);
+  let [failed, setFailed] = useState(false);
   (0, React.useEffect)(
     (..._extraArguments: unknown[]): Dynamic => {
       if (loadedBottomSheetModuleState || !bottomSheetModule) return;
       let enabled = true;
       ensureBottomSheetLoaded().then(
-        (result?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (result: BottomSheetModule, ..._extraArguments: unknown[]): undefined => {
           if (enabled) {
             setLoadedBottomSheetModuleState(result);
           }
@@ -271,21 +282,21 @@ function preloadBottomSheet(..._extraArguments: unknown[]): undefined {
   );
 }
 
-var DesktopDialogPopup: Dynamic;
+var DesktopDialogPopup: PhoneDialogPopupComponent;
 
-var PhoneDialogPopup: Dynamic;
+var PhoneDialogPopup: PhoneDialogPopupComponent;
 
 var isDocumentFocusedElsewhere: Dynamic;
 
 // BaoCut: called by docs-app-initialize in the recovered source order.
 export function initializePhoneOverlaysExportProgressDialogStep1(): void {
-  (DesktopDialogPopup = (0, React.forwardRef)(function (
+  (DesktopDialogPopup = forwardRef<HTMLDivElement, PhoneDialogPopupProps>(function (
     {
       kind = `dialog`,
       touchActions: touchActions,
       ...desktopDialogPopup
-    }: Dynamic,
-    options?: Dynamic,
+    }: PhoneDialogPopupProps,
+    options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
     ..._extraArguments: unknown[]
   ) {
     return renderReactJsx((kind === `alert` ? UiDialogsRoot2 : UiDialogsRoot).Popup, {
@@ -293,13 +304,13 @@ export function initializePhoneOverlaysExportProgressDialogStep1(): void {
   ...desktopDialogPopup
 });
   }));
-  (PhoneDialogPopup = (0, React.forwardRef)(function (
-    phoneDialogPopup?: Dynamic,
-    options?: Dynamic,
+  (PhoneDialogPopup = forwardRef<HTMLDivElement, PhoneDialogPopupProps>(function (
+    phoneDialogPopup: PhoneDialogPopupProps,
+    options: ReactComponentTypes.ForwardedRef<HTMLDivElement>,
     ..._extraArguments: unknown[]
   ) {
     let phoneDialogPopupResult: Dynamic = resolvePlatformSyncAndRoutingValue10();
-    let { m: useBottomSheetModule2, failed: useBottomSheetModule3 }: Dynamic =
+    let { m: useBottomSheetModule2, failed: useBottomSheetModule3 } =
       useBottomSheetModule(phoneDialogPopupResult);
     return !phoneDialogPopupResult ||
       (!useBottomSheetModule2 && useBottomSheetModule3) ? (

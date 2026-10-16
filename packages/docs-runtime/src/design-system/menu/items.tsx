@@ -49,9 +49,58 @@ import {
 } from "./popup";
 import type * as ReactComponentTypes from "react";
 import type {
+  MenuItemProps as BaseMenuItemProps,
+  MenuItemState,
+  MenuSubmenuTriggerState,
+  MenuSubmenuTriggerProps,
   MenuSubmenuRootProps,
   MenuSubmenuRootChangeEventDetails,
 } from "@base-ui/react/menu";
+
+import type { ComponentRenderFn, HTMLProps } from "@base-ui/react/types";
+import type { navigate } from "wouter/use-browser-location";
+
+export type MenuNavigationOptions = Parameters<typeof navigate<unknown>>[1];
+
+export interface MenuItemProps
+  extends Omit<BaseMenuItemProps, "className" | "render"> {
+  render?:
+    | ReactComponentTypes.ReactElement
+    | ComponentRenderFn<HTMLProps<HTMLElement>, MenuItemState>;
+  variant?: "default" | "danger";
+  icon?: ReactComponentTypes.ReactNode;
+  shortcut?: string;
+  checked?: boolean;
+  checkedRole?: "checkbox" | "radio";
+  checkPosition?: "leading" | "trailing";
+  indicator?: "check" | "checkbox";
+  indeterminate?: boolean;
+  hint?: ReactComponentTypes.ReactNode;
+  description?: ReactComponentTypes.ReactNode;
+  disabledReason?: ReactComponentTypes.ReactNode;
+  href?: string;
+  routerOptions?: MenuNavigationOptions;
+  target?: ReactComponentTypes.HTMLAttributeAnchorTarget;
+  rel?: string;
+  download?: string | boolean;
+  keepOpen?: boolean;
+  focusesNothing?: boolean;
+  leading?: ReactComponentTypes.ReactNode;
+  trailing?: ReactComponentTypes.ReactNode;
+  className?: string;
+}
+
+export interface SubmenuTriggerProps
+  extends Omit<MenuSubmenuTriggerProps, "className" | "render"> {
+  render?:
+    | ReactComponentTypes.ReactElement
+    | ComponentRenderFn<HTMLProps<HTMLElement>, MenuSubmenuTriggerState>;
+  icon?: ReactComponentTypes.ReactNode;
+  leading?: ReactComponentTypes.ReactNode;
+  hint?: ReactComponentTypes.ReactNode;
+  trailing?: ReactComponentTypes.ReactNode;
+  className?: string;
+}
 
 export const MenuPopupsActionsRef: ReactComponentTypes.FC<MenuSubmenuRootProps> = ({
   actionsRef: input,
@@ -212,9 +261,9 @@ export const MenuPopupsView2: ReactComponentTypes.FC<{
   );
 };
 
-var MenuPopupsIcon: Dynamic;
+var MenuPopupsIcon: ReactComponentTypes.ForwardRefExoticComponent<Omit<MenuItemProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLElement>>;
 
-var MenuPopupsIcon2: Dynamic;
+var MenuPopupsIcon2: ReactComponentTypes.ForwardRefExoticComponent<Omit<SubmenuTriggerProps, "ref"> & ReactComponentTypes.RefAttributes<HTMLElement>>;
 
 var MenuPopupsCompactPx2ComfortablePx25Py1TextFootnoteFontMediumTextMuted: Dynamic;
 
@@ -246,8 +295,8 @@ export function initializeMenuItemsStep1(): void {
         className: input20,
         children: input21,
         ...input22
-      }: Dynamic,
-      options?: Dynamic,
+      }: MenuItemProps,
+      options: ReactComponentTypes.ForwardedRef<HTMLElement>,
       ..._extraArguments: unknown[]
     ): Dynamic => {
       let value: boolean = input23 === `checkbox`;
@@ -458,8 +507,8 @@ export function initializeMenuItemsStep1(): void {
         children: input6,
         openOnHover: input7,
         ...input8
-      }: Dynamic,
-      options?: Dynamic,
+      }: SubmenuTriggerProps,
+      options: ReactComponentTypes.ForwardedRef<HTMLElement>,
       ..._extraArguments: unknown[]
     ): Dynamic => {
       let value: Dynamic = (0, React.useContext)(MenuInteractionsCreateContext);
