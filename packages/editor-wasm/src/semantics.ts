@@ -236,6 +236,8 @@ export interface SourceChapter {
   start: number;
   end?: number;
   title: string;
+  /** 来源只给了分界、没给标题：`title` 是 yt-dlp 填的占位名（`<Untitled Chapter N>`，清洗后去掉尖括号），不能当标题写进章节。 */
+  untitled?: true;
 }
 
 /** 吸附的结果：同一秒窗里恰一个候选（`matched`）、多个同层候选（`ambiguous`，缺省取最近的）、放宽窗里的段落或句起点（`snapped`）、附近没有结构起点（`unanchored`，保留原时间）。 */
@@ -267,6 +269,8 @@ export interface SourceChapterRow {
   start: number;
   end: number;
   status: SourceChapterStatus;
+  /** 这一章来自占位名（同 `SourceChapter.untitled`）。 */
+  untitled?: true;
 }
 
 /** `sourceChapters` 的输入。时间都是素材（源）时间。 */
