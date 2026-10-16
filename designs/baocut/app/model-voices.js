@@ -122,6 +122,15 @@
   }
   /** 种子：本地引擎没有 voice id，靠「同一段参考 + 同一颗种子」让每次生成都是同一个人 */
   const randomSeed = () => 1 + Math.floor(Math.random() * 2147483646);
+  /** 新音色的默认名字：「我的声音」，重名时依次加「 2」「 3」…，用户可以再改 */
+  function defaultVoiceName(voices, base) {
+    const b = base || '我的声音';
+    const taken = new Set((voices || []).map((v) => String(v.name).trim()));
+    if (!taken.has(b)) return b;
+    let n = 2;
+    while (taken.has(`${b} ${n}`)) n++;
+    return `${b} ${n}`;
+  }
 
   /* ---------- 音色档 ---------- */
 
@@ -455,7 +464,7 @@
 
   const BC_VOICES = {
     REC, WINDOW, takeProblem, makeVoice, DEMO, fmtTime, sourceLine, metaLine, idLine, bindings, seedFor, voicesBoundTo, CONSENT, consentLabel,
-    SAMPLE, CONSENT_REC, CONSENT_PHRASES, CONSENT_COMMON, consentPhrase, phraseLabel, consentMore, sampleVerdict, consentProblem, sampleScript, referenceFromSample, cloneTargets, cloneSteps, randomSeed,
+    SAMPLE, CONSENT_REC, CONSENT_PHRASES, CONSENT_COMMON, consentPhrase, phraseLabel, consentMore, sampleVerdict, consentProblem, sampleScript, referenceFromSample, cloneTargets, cloneSteps, randomSeed, defaultVoiceName,
     profileFor, engineChips, cloudChips, CLONE_MODELS, auditionModel, RUN_LINE,
     ISSUES, issueLabel, windowIssues, analyze, speakerLine, candidateLine, voicesFromPicks, saveLabel, STEPS,
     pickerGroups, valueLabel, valueOfForm, applyToForm, exportBundle, bundleName,

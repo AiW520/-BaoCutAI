@@ -38,6 +38,7 @@ import {
   consentTooShort,
   defaultPicked,
   defaultScriptLanguage,
+  defaultVoiceName,
   downmix,
   encodeWav,
   initialSeeds,
@@ -51,6 +52,7 @@ import {
 } from '../../model/voice-capture.ts';
 import { rpcErrorText, voiceConsentStatement, VOICE_NAME_MAX, type VoiceEntry } from '../../model/voices-library.ts';
 import { useRuntime } from '../../runtime/context.tsx';
+import { useVoices } from '../../state/voices-store.ts';
 import { createCapturedVoice, saveConsentClip } from './voice-actions.ts';
 import { CAPTURE_COPY as CC } from './voices-copy.ts';
 
@@ -663,7 +665,9 @@ export function VoiceCapture({
   onSaved: (voiceId: string) => void;
 }) {
   const runtime = useRuntime();
-  const [picked, setPicked] = useState<string[]>(() => defaultPicked(targets, preselect));
+  // 只记用户点过的；其余按当下的 targets 现算，晚到的模型（含从模型页过来的那一只）也照默认选上。
+  const [toggled, setToggled] = useState<Record<string, boolean>>({});
+  const picked = useMemo(() => defaultPicked(targets, preselect, toggled), [targets, preselect, toggled]);
   const chosen = useMemo(() => targets.filter((t) => picked.includes(t.id)), [targets, picked]);
   const steps = cloneSteps(chosen);
   const [cur, setCur] = useState(0);
@@ -671,9 +675,21 @@ export function VoiceCapture({
   const [sample, setSample] = useState<Clip | null>(null);
   const [consentDraft, setConsentDraft] = useState<ConsentDraft>({ language: CONSENT_DEFAULT, custom: '' });
   const [consentClip, setConsentClip] = useState<Clip | null>(null);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() =>
+    defaultVoiceName(
+      CC.namePlaceholder,
+      useVoices.getState().voices.map((v) => v.name),
+    ),
+  );
   const [consent, setConsent] = useState(false);
   const [seeds, setSeeds] = useState<Record<string, number>>(() => initialSeeds(targets));
+  // 晚到的引擎也给一颗种子；已有的不动。
+  useEffect(() => {
+    setSeeds((s) => {
+      const missing = targets.filter((t) => s[t.id] === undefined);
+      return missing.some((t) => t.kind === 'local' && t.acceptsSeed) ? { ...initialSeeds(missing), ...s } : s;
+    });
+  }, [targets]);
   const [saving, setSaving] = useState(false);
 
   const index = Math.min(cur, steps.length - 1);
@@ -754,7 +770,7 @@ export function VoiceCapture({
         <ModelsStep
           targets={targets}
           picked={picked}
-          onToggle={(id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))}
+          onToggle={(id) => setToggled((m) => ({ ...m, [id]: !picked.includes(id) }))}
         />
       ) : null}
       {step.key === 'sample' ? (

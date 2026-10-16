@@ -230,9 +230,25 @@ export function cloneTargets(view: ModelCapabilitiesView | null): CloneTarget[] 
   return [...local, ...cloud];
 }
 
-/** 默认选上：全部本机引擎 + 连着的云端；从模型页过来时再加上那一只。 */
-export function defaultPicked(targets: readonly CloneTarget[], handoffTarget: string | null): string[] {
-  return targets.filter((t) => t.kind === 'local' || t.connected || t.id === handoffTarget).map((t) => t.id);
+/**
+ * 选上了哪些：用户点过的（`toggled`）以点的为准；没点过的默认选上——全部本机引擎 + 连着的云端，从模型页过来时再加上那一只。
+ * 每次按当下的 `targets` 算，不在打开时拍快照：能力视图晚一步才报上来的模型（刚装好、刚连上）也照默认选上。
+ */
+export function defaultPicked(
+  targets: readonly CloneTarget[],
+  handoffTarget: string | null,
+  toggled: Readonly<Record<string, boolean>> = {},
+): string[] {
+  return targets.filter((t) => toggled[t.id] ?? (t.kind === 'local' || t.connected || t.id === handoffTarget)).map((t) => t.id);
+}
+
+/** 新音色的默认名字：`base`（「我的声音」），重名时依次加「 2」「 3」…，用户可以再改。 */
+export function defaultVoiceName(base: string, taken: readonly string[]): string {
+  const names = new Set(taken.map((n) => n.trim()));
+  if (!names.has(base)) return base;
+  let n = 2;
+  while (names.has(`${base} ${n}`)) n++;
+  return `${base} ${n}`;
 }
 
 export type CloneStepKey = 'models' | 'sample' | 'consent' | 'save';

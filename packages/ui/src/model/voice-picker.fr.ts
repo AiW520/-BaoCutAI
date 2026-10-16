@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const fr: VoicePickerMessages = {
   clonedOn: (provider) => `Cloné sur ${provider} · synthèse avec ce clone`, defaultVoice: 'Voix par défaut', providerPreset: (provider, name) => `${name} de ${provider}`,
+  localReference: 'Synthétisée sur cet ordinateur à partir de l’enregistrement de référence de cette voix · rien n’est envoyé',
   loadingMine: 'Chargement de Mes voix…', cloneNew: 'Cloner une nouvelle voix…',
   cloneNewHint: 'Enregistrez une voix ou importez un fichier dans Réglages › Modèles › Synthèse vocale › Mes voix', myVoices: 'Mes voix',
   providerVoices: (provider) => `Voix de ${provider}`, customVoice: 'Saisir un ID de voix…', customVoiceHint: 'Un ID de voix de votre compte fournisseur',

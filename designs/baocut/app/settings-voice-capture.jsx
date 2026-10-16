@@ -312,7 +312,7 @@
     const [phraseLang, setPhraseLang] = useState('en-US');
     const [custom, setCustom] = useState('');
     const [consentClip, setConsentClip] = useState(null);
-    const [name, setName] = useState('我自己');
+    const [name, setName] = useState(() => V.defaultVoiceName(app.voices));
     const [consent, setConsent] = useState(false);
     const [seeds, setSeeds] = useState(() => { const o = {}; targets.filter((t) => t.kind === 'local').forEach((t) => { o[t.id] = V.randomSeed(); }); return o; });
     const providers = chosen.filter((t) => t.kind === 'cloud').map((t) => allProviders.find((p) => p.id === t.id)).filter(Boolean);

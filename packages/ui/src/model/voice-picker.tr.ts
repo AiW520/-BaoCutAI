@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const tr: VoicePickerMessages = {
 clonedOn: (provider) => `${provider} sağlayıcısında klonlandı · bu klonla sentezlenir`,
+localReference: 'Bu sesin referans kaydıyla bu bilgisayarda sentezlenir · hiçbir şey yüklenmez',
 defaultVoice: 'Varsayılan ses',
 providerPreset: (provider, name) => `${provider} sağlayıcısındaki ${name}`,
 loadingMine: 'Seslerim yükleniyor…',

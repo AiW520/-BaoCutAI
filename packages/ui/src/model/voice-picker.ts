@@ -29,6 +29,7 @@ import { VOICE_CLONE_PROVIDERS } from './voices-library.ts';
 /** 音色选择器的文案（译文在 `voice-picker.<语言>.ts`）。「我的声音」是设置里那一页的名字。 */
 const en = {
   clonedOn: (provider: string) => `Cloned on ${provider} · synthesized with this clone`,
+  localReference: 'Synthesized on this computer from this voice’s reference recording · nothing is uploaded',
   defaultVoice: 'Default voice',
   providerPreset: (provider: string, name: string) => `${provider}’s ${name}`,
   loadingMine: 'Loading My voices…',
@@ -84,10 +85,11 @@ function canClone(option: Pick<SpeechOption, 'providerId'>): boolean {
   return VOICE_CLONE_PROVIDERS.includes(option.providerId);
 }
 
-/** 我的声音里一只的说明：用得了时说用哪家的克隆，用不了时就是原因。 */
+/** 我的声音里一只的说明：用得了时说怎么用（本机用参考录音、云端用哪家的克隆），用不了时就是原因。 */
 export function libraryVoiceLine(voice: LibraryEntrySummary, option: SpeechOption): { ok: boolean; line: string } {
   const block = libraryVoiceBlock(voice, option);
-  return block ? { ok: false, line: block } : { ok: true, line: M.clonedOn(option.provider) };
+  if (block) return { ok: false, line: block };
+  return { ok: true, line: option.info.local ? M.localReference : M.clonedOn(option.provider) };
 }
 
 /** 选择器的分组。`voices` 为 null（还没读到我的声音）时那一组只留「克隆新音色…」并写「正在读取」。 */

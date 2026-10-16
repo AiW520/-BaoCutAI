@@ -150,6 +150,11 @@ export function customVoiceAllowed(info: Pick<SpeechModelInfo, 'voiceModes'>): b
   return info.voiceModes.includes('custom');
 }
 
+/** 这只模型收不收我的声音：本机模型能克隆（`clone`）就直接用参考录音，云端要收手填音色 ID（`custom`）才能换成克隆。 */
+export function libraryVoiceAllowed(info: Pick<SpeechModelInfo, 'voiceModes' | 'local'>): boolean {
+  return info.local ? info.voiceModes.includes('clone') : customVoiceAllowed(info);
+}
+
 function presetLabel(info: SpeechModelInfo, voiceId: string): string {
   return info.voices.find((v) => v.voiceId === voiceId)?.label ?? voiceId;
 }
@@ -175,14 +180,16 @@ export function libraryIdOf(key: string): string | null {
 }
 
 /**
- * 我的声音里的一只在这只模型上用不用得了：用得了为 null，否则一句原因。Runtime 只用这家的有效克隆、
- * 并且要有本人声明，否则以 `VOICE_CLONE_REQUIRED` / `VOICE_CONSENT_REQUIRED` 拒绝；克隆在 模型 › 语音合成 › 我的声音 里建。
+ * 我的声音里的一只在这只模型上用不用得了：用得了为 null，否则一句原因。本机能克隆的模型直接用它的参考录音（不出本机，
+ * 不用先建克隆，也不看本人声明）；云端 Runtime 只用这家的有效克隆、并且要有本人声明，否则以 `VOICE_CLONE_REQUIRED` /
+ * `VOICE_CONSENT_REQUIRED` 拒绝；克隆在 模型 › 语音合成 › 我的声音 里建。
  */
 export function libraryVoiceBlock(
   voice: Pick<LibraryEntrySummary, 'consentDeclared' | 'clones'>,
   option: Pick<SpeechOption, 'providerId' | 'provider' | 'modelId' | 'info'>,
 ): string | null {
-  if (!customVoiceAllowed(option.info)) return M.presetOnly(option.modelId);
+  if (!libraryVoiceAllowed(option.info)) return M.presetOnly(option.modelId);
+  if (option.info.local) return null;
   const clone = voice.clones?.find((c) => c.providerId === option.providerId);
   if (!clone && !VOICE_CLONE_PROVIDERS.includes(option.providerId)) return M.cannotClone(option.provider);
   if (!voice.consentDeclared) return M.noConsent;
@@ -254,7 +261,7 @@ function languageProblem(draft: TtsDraft, option: SpeechOption): string | null {
 
 /** 我的声音那一只的问题：删了、在这只模型上用不了。还没读到我的声音时只看模型收不收（其余交给 Runtime 核对）。 */
 function libraryProblem(id: string, option: SpeechOption, voices: MyVoices): string | null {
-  if (!voices) return customVoiceAllowed(option.info) ? null : M.presetOnly(option.modelId);
+  if (!voices) return libraryVoiceAllowed(option.info) ? null : M.presetOnly(option.modelId);
   const voice = voices.find((v) => v.id === id);
   return voice ? libraryVoiceBlock(voice, option) : M.voiceDeleted;
 }

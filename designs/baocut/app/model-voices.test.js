@@ -248,3 +248,9 @@ test('model-tts 那边认 my: 来源：refSources 把我的声音排在默认之
   assert.match(f.refText, /BaoCut/);
   assert.equal(TTS.refSourceOf(f.ref), 'my:v-me');
 });
+
+test('新音色的默认名字：重名时依次加编号', () => {
+  assert.equal(V.defaultVoiceName([]), '我的声音');
+  assert.equal(V.defaultVoiceName([{name: '主持人'}, {name: '我的声音'}]), '我的声音 2');
+  assert.equal(V.defaultVoiceName([{name: '我的声音'}, {name: '我的声音 2'}]), '我的声音 3');
+});

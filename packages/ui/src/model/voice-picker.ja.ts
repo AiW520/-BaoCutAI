@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const ja: VoicePickerMessages = {
   clonedOn: (provider) => `${provider} でクローン済み · このクローンで合成`,
+  localReference: 'この声の参照録音を使ってこのコンピュータで合成 · アップロードしません',
   defaultVoice: '既定の声',
   providerPreset: (provider, name) => `${provider} の ${name}`,
   loadingMine: 'マイボイスを読み込み中…',

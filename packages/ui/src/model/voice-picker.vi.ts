@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const vi: VoicePickerMessages = {
 clonedOn: (provider) => `Đã nhân bản trên ${provider} · tổng hợp bằng bản này`,
+localReference: 'Tổng hợp trên máy tính này từ bản ghi tham chiếu của giọng này · không tải lên gì',
 defaultVoice: 'Giọng mặc định',
 providerPreset: (provider, name) => `${name} của ${provider}`,
 loadingMine: 'Đang tải Giọng của tôi…',

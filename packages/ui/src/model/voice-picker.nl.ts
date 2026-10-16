@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const nl: VoicePickerMessages = {
   clonedOn: (provider: string) => `Gekloond bij ${provider} · gesynthetiseerd met deze kloon`,
+  localReference: 'Gesynthetiseerd op deze computer met de referentieopname van deze stem · er wordt niets geüpload',
   defaultVoice: "Standaardstem",
   providerPreset: (provider: string, name: string) => `${provider}: ${name}`,
   loadingMine: "Mijn stemmen laden…",

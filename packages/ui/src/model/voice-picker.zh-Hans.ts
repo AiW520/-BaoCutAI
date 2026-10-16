@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const zhHans: VoicePickerMessages = {
   clonedOn: (provider) => `已克隆到 ${provider} · 用这家的克隆合成`,
+  localReference: '用这只音色的参考录音在本机合成 · 不上传',
   defaultVoice: '默认音色',
   providerPreset: (provider, name) => `${provider} 的 ${name}`,
   loadingMine: '正在读取我的声音…',

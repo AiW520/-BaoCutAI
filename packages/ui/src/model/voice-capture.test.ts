@@ -14,6 +14,7 @@ import {
   consentTooShort,
   defaultPicked,
   defaultScriptLanguage,
+  defaultVoiceName,
   downmix,
   encodeWav,
   initialSeeds,
@@ -135,6 +136,21 @@ describe('克隆去哪些模型', () => {
     const targets = cloneTargets(view());
     expect(defaultPicked(targets, null)).toEqual(['qwen3-tts-0.6b-base', 'gpt-sovits-v2', 'consent-co']);
     expect(defaultPicked(targets, 'elevenlabs')).toContain('elevenlabs');
+  });
+
+  it('选法按当下的模型现算：点过的以点的为准，晚到的模型照默认选上', () => {
+    const targets = cloneTargets(view());
+    const late = [...targets, { ...targets[0]!, id: 'qwen3-tts-1.7b-base', name: 'Qwen3-TTS 1.7B Base' }];
+    expect(defaultPicked(late, 'qwen3-tts-1.7b-base')).toContain('qwen3-tts-1.7b-base');
+    const toggled = { 'gpt-sovits-v2': false, elevenlabs: true };
+    expect(defaultPicked(late, null, toggled)).toEqual(['qwen3-tts-0.6b-base', 'elevenlabs', 'consent-co', 'qwen3-tts-1.7b-base']);
+    expect(defaultPicked(late, 'qwen3-tts-1.7b-base', { 'qwen3-tts-1.7b-base': false })).not.toContain('qwen3-tts-1.7b-base');
+  });
+
+  it('新音色的默认名字：重名时依次加编号', () => {
+    expect(defaultVoiceName('我的声音', [])).toBe('我的声音');
+    expect(defaultVoiceName('我的声音', ['千问', '我的声音'])).toBe('我的声音 2');
+    expect(defaultVoiceName('我的声音', ['我的声音', '我的声音 2', '我的声音 3 '])).toBe('我的声音 4');
   });
 
   it('步骤：选中的里有要授权声明录音的才有那一步，点名谁要', () => {

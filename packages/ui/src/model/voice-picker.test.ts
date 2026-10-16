@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LibraryEntrySummary, SpeechModelInfo } from '@baocut/protocol';
 import { speechModel } from './models-test-fixtures.ts';
 import type { SpeechOption } from './tools-tts.ts';
+import { QWEN_BASE } from './tts-test-fixtures.ts';
 import { CLONE_NEW, TEMP_REFERENCE, cloneVoiceKey, pickerSelection, voicePickerGroups, voiceValueLine } from './voice-picker.ts';
 
 function option(info: SpeechModelInfo, providerId: string, provider: string): SpeechOption {
@@ -98,6 +99,13 @@ describe('选中与说明', () => {
     expect(voiceValueLine({ voice: 'library:a' }, eleven, [cloned])).toBe('已克隆到 ElevenLabs · 用这家的克隆合成');
     expect(voiceValueLine({ voice: 'library:b' }, eleven, [fresh])).toBe('还没在 ElevenLabs 上克隆 · 去我的声音里上传一次');
     expect(voiceValueLine({ voice: 'library:gone' }, eleven, [])).toBe('这只音色已经删了 · 换一只，或退回默认');
+  });
+
+  it('本机能克隆的模型：我的声音不置灰，说明是用参考录音在本机合成', () => {
+    const local = option(QWEN_BASE, 'local', '本机');
+    const mine = voicePickerGroups(local, [fresh]).find((g) => g.id === 'mine')!;
+    expect(mine.items[0]).toMatchObject({ key: 'library:b', disabled: false, description: '用这只音色的参考录音在本机合成 · 不上传' });
+    expect(pickerSelection({ voice: 'library:b' }, local, [fresh])).toBe('library:b');
   });
 
   it('「克隆声音」先选哪只：已是我的声音就留着，否则这家用得了的第一只', () => {

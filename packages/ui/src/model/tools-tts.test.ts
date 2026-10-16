@@ -3,6 +3,7 @@ import type { LibraryEntrySummary, SpeechModelInfo } from '@baocut/protocol';
 import { fixtureView, speechModel } from './models-test-fixtures.ts';
 import { cloudModelOptions } from './tools-models.ts';
 import { AUDIO_OUT, toolJob } from './tools-test-fixtures.ts';
+import { QWEN_BASE, QWEN_CUSTOM } from './tts-test-fixtures.ts';
 import {
   BLANK_TTS,
   emptyText,
@@ -288,6 +289,19 @@ describe('我的声音', () => {
     expect(libraryVoiceBlock(cloned, option(rich))).toBe('OpenAI 不能克隆 · 用它的预置音色');
     const presetOnly = option(speechModel('tts-1', ['nova'], { voiceModes: ['preset'] }));
     expect(libraryVoiceBlock(cloned, presetOnly)).toBe('tts-1 只收预置音色，用不了我的声音');
+  });
+
+  it('本机能克隆的模型直接用参考录音：不要克隆、不看本人声明；只有自带说话人的本机模型用不了', () => {
+    const here = { providerId: 'local', provider: '本机' };
+    const base = option(QWEN_BASE, { ...here, key: `local/${QWEN_BASE.modelId}` });
+    const custom = option(QWEN_CUSTOM, { ...here, key: `local/${QWEN_CUSTOM.modelId}` });
+    const plain = voice('v4', { consentDeclared: false });
+    expect(libraryVoiceBlock(plain, base)).toBeNull();
+    expect(libraryVoiceBlock(plain, custom)).toBe(`${QWEN_CUSTOM.modelId} 只收预置音色，用不了我的声音`);
+    const local = draft({ text: '你好', model: base.key, voice: 'library:v4' });
+    expect(ttsProblems(local, base, [plain])).toEqual([]);
+    expect(ttsProblems(local, base, null)).toEqual([]);
+    expect(ttsProblems({ ...local, model: custom.key }, custom, null)).toEqual([`${QWEN_CUSTOM.modelId} 只收预置音色，用不了我的声音`]);
   });
 
   it('校验与状态句：删了、用不了的说清楚；还没读到我的声音时不拦', () => {

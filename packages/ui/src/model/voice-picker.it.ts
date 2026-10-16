@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const it: VoicePickerMessages = {
   clonedOn: (provider) => `Clonata su ${provider} · sintetizzata con questo clone`,
+  localReference: 'Sintetizzata su questo computer dalla registrazione di riferimento di questa voce · non viene caricato nulla',
   defaultVoice: 'Voce predefinita',
   providerPreset: (provider, name) => `${name} di ${provider}`,
   loadingMine: 'Caricamento di «Le mie voci»…',

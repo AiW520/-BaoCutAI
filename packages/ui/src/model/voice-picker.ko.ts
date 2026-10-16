@@ -2,6 +2,7 @@ import type { VoicePickerMessages } from './voice-picker.ts';
 
 export const ko: VoicePickerMessages = {
   clonedOn: (provider) => `${provider}에 복제됨 · 이 복제로 합성`,
+  localReference: '이 목소리의 참조 녹음으로 이 컴퓨터에서 합성 · 업로드하지 않음',
   defaultVoice: '기본 목소리',
   providerPreset: (provider, name) => `${provider}의 ${name}`,
   loadingMine: '내 목소리 불러오는 중…',
