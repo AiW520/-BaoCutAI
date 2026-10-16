@@ -714,6 +714,12 @@ fn lottie_embedded_images_are_drawn_and_external_ones_are_missing() {
         (error.items[0].scope, error.items[0].reason.as_str()),
         ("asset", "lottie-asset-missing")
     );
+    // 说明带消息引用，界面按自己的语言显示；英文是缺省。
+    assert!(error.items[0].message.starts_with("The Lottie asset can’t be parsed: "));
+    assert_eq!(
+        serde_json::to_value(&error.items[0]).unwrap()["messageRef"]["key"],
+        "frameRender.lottieUnparsable"
+    );
     assert_eq!(
         frame_render::lottie_problem(&serde_json::to_vec(&external).unwrap()).unwrap().0,
         "lottie-asset-missing"
@@ -989,6 +995,10 @@ fn brand_logos_not_copied_into_the_video_are_refused() {
     assert_eq!(
         (error.items[0].reason.as_str(), error.items[0].scope),
         ("template-logo-asset-missing", "asset")
+    );
+    assert_eq!(
+        serde_json::to_value(&error.items[0]).unwrap()["messageRef"],
+        json!({ "key": "frameRender.templateLogoUnreadable", "params": { "asset": "a_new" } })
     );
 }
 

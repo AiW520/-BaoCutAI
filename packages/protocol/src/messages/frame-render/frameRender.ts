@@ -50,6 +50,20 @@ const en = {
   captionStyleUnknown: (p: P<'schema'>) => `Subtitle style ${p.schema} isn’t recognized (export doesn’t substitute styles)`,
   captionStyleNoSchema: 'The subtitle style isn’t recognized (it has no schema; export doesn’t substitute styles)',
   captionSceneInvalid: (p: P<'detail'>) => `This clip’s subtitle style settings are invalid: ${p.detail}`,
+  assetNotFrozen: (p: P<'asset'>) => `The file for asset ${p.asset} isn’t available`,
+  assetNoPicture: (p: P<'asset'>) => `Asset ${p.asset} has no picture (no video stream)`,
+  assetUndecodable: (p: P<'asset' | 'detail'>) => `Asset ${p.asset} can’t be decoded: ${p.detail}`,
+  imageUnreadable: (p: P<'kind' | 'asset'>) => `${p.kind} image ${p.asset} can’t be read`,
+  imageUndecodable: (p: P<'kind' | 'asset'>) => `${p.kind} image ${p.asset} can’t be decoded`,
+  imageUndecodableDetail: (p: P<'kind' | 'asset' | 'detail'>) => `${p.kind} image ${p.asset} can’t be decoded: ${p.detail}`,
+  templateLogoUnreadable: (p: P<'asset'>) => `Template logo image ${p.asset} can’t be read`,
+  templateLogoUndecodable: (p: P<'asset'>) => `Template logo image ${p.asset} can’t be decoded`,
+  templateLogoUndecodableDetail: (p: P<'asset' | 'detail'>) => `Template logo image ${p.asset} can’t be decoded: ${p.detail}`,
+  lottieNoAsset: 'This Lottie sticker has no asset',
+  lottieUnreadable: 'The Lottie asset can’t be read',
+  lottieUnreadableDetail: (p: P<'detail'>) => `The Lottie asset can’t be read: ${p.detail}`,
+  lottieUnparsable: (p: P<'detail'>) => `The Lottie asset can’t be parsed: ${p.detail}`,
+  captionResourceInvalid: (p: P<'detail'>) => `This subtitle style’s resources can’t be loaded: ${p.detail}`,
 };
 
 export type FrameRenderMessages = typeof en;

@@ -69,6 +69,103 @@ impl UnsupportedItem {
             message_ref: message.message_ref,
         }
     }
+
+    /// 素材解不出画面的一项（整层不画）。
+    pub fn asset(layer: &VisualLayer, kind: Option<String>, reason: &str, message: impl Into<Text>) -> UnsupportedItem {
+        UnsupportedItem {
+            scope: "asset",
+            ..UnsupportedItem::layer(layer, kind, reason, message)
+        }
+    }
+}
+
+/// 素材画不出来的说明，合成与预检共用。`kind` 是格式名（SVG、GIF），`detail` 是解码器或系统的原话，都不翻译。
+pub mod asset_text {
+    use message_ref::{Text, msg};
+
+    pub fn not_frozen(asset: &str) -> Text {
+        msg!("frameRender.assetNotFrozen", "The file for asset {asset} isn’t available", asset)
+    }
+
+    pub fn no_picture(asset: &str) -> Text {
+        msg!(
+            "frameRender.assetNoPicture",
+            "Asset {asset} has no picture (no video stream)",
+            asset
+        )
+    }
+
+    pub fn undecodable(asset: &str, detail: &str) -> Text {
+        msg!(
+            "frameRender.assetUndecodable",
+            "Asset {asset} can’t be decoded: {detail}",
+            asset,
+            detail
+        )
+    }
+
+    pub fn image_unreadable(kind: &str, asset: &str) -> Text {
+        msg!("frameRender.imageUnreadable", "{kind} image {asset} can’t be read", kind, asset)
+    }
+
+    pub fn image_undecodable(kind: &str, asset: &str) -> Text {
+        msg!("frameRender.imageUndecodable", "{kind} image {asset} can’t be decoded", kind, asset)
+    }
+
+    pub fn image_undecodable_detail(kind: &str, asset: &str, detail: &str) -> Text {
+        msg!(
+            "frameRender.imageUndecodableDetail",
+            "{kind} image {asset} can’t be decoded: {detail}",
+            kind,
+            asset,
+            detail
+        )
+    }
+
+    pub fn template_logo_unreadable(asset: &str) -> Text {
+        msg!(
+            "frameRender.templateLogoUnreadable",
+            "Template logo image {asset} can’t be read",
+            asset
+        )
+    }
+
+    pub fn template_logo_undecodable(asset: &str) -> Text {
+        msg!(
+            "frameRender.templateLogoUndecodable",
+            "Template logo image {asset} can’t be decoded",
+            asset
+        )
+    }
+
+    pub fn template_logo_undecodable_detail(asset: &str, detail: &str) -> Text {
+        msg!(
+            "frameRender.templateLogoUndecodableDetail",
+            "Template logo image {asset} can’t be decoded: {detail}",
+            asset,
+            detail
+        )
+    }
+
+    pub fn lottie_no_asset() -> Text {
+        msg!("frameRender.lottieNoAsset", "This Lottie sticker has no asset")
+    }
+
+    pub fn lottie_unreadable() -> Text {
+        msg!("frameRender.lottieUnreadable", "The Lottie asset can’t be read")
+    }
+
+    pub fn lottie_unreadable_detail(detail: &str) -> Text {
+        msg!(
+            "frameRender.lottieUnreadableDetail",
+            "The Lottie asset can’t be read: {detail}",
+            detail
+        )
+    }
+
+    pub fn lottie_unparsable(detail: &str) -> Text {
+        msg!("frameRender.lottieUnparsable", "The Lottie asset can’t be parsed: {detail}", detail)
+    }
 }
 
 pub fn kind_name(kind: LayerKind) -> &'static str {
@@ -150,15 +247,20 @@ pub fn transition_problem(kind: &str, unsupported: Option<&str>) -> Option<Strin
     }
 }
 
+/// 转场画不出来的说明（按硬切画），合成与预检共用。
+pub fn transition_text(kind: &str) -> Text {
+    msg!(
+        "frameRender.transitionUnsupported",
+        "Transition {kind} can’t be drawn; using a hard cut",
+        kind
+    )
+}
+
 /// 层的转场画不出来时的一项（按硬切画）。
 pub fn check_transition(layer: &VisualLayer) -> Option<UnsupportedItem> {
     let transition = layer.transition.as_ref()?;
     let reason = transition_problem(&transition.kind, transition.unsupported.as_deref())?;
-    let message = msg!(
-        "frameRender.transitionUnsupported",
-        "Transition {kind} can’t be drawn; using a hard cut",
-        kind = transition.kind
-    );
+    let message = transition_text(&transition.kind);
     Some(UnsupportedItem {
         item_id: layer.item_id.clone(),
         scope: "transition",

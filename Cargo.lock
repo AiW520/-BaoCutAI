@@ -1078,6 +1078,7 @@ dependencies = [
  "frame-render",
  "media-core",
  "media-native",
+ "message-ref",
  "render-graph",
  "serde",
  "serde_json",

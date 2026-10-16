@@ -15,6 +15,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
+use message_ref::{Text, msg};
 use render_graph::audio_plan::AudioSegment;
 use render_graph::{FramePlan, LayerContent, LayerKind, TransitionRole, VideoView, VisualLayer};
 use render_raster::TextEngine;
@@ -32,7 +33,7 @@ use crate::documents::Documents;
 use crate::effects::{apply_to_layer, apply_to_source, hex_rgba, needs_layer_pass};
 use crate::element::{source_id, visual_element};
 use crate::spectrum::{self, Route, SpeakerActivity};
-use crate::support::{CaptionProblem, UnsupportedItem, caption_problem, check_layer, check_layer_with, check_transition, kind_name};
+use crate::support::{CaptionProblem, UnsupportedItem, asset_text, caption_problem, check_layer, check_layer_with, check_transition};
 use crate::template::TemplateScenes;
 use crate::text_measure::{TextBox, measure_text_element};
 use crate::transition::{BoxGeom, compose, effective_progress};
@@ -767,7 +768,7 @@ impl FrameRenderer {
     ) -> Result<Option<Arc<Lottie>>, RenderError> {
         let asset: Option<VersionRef> = parameters.get("asset").cloned().and_then(|v| serde_json::from_value(v).ok());
         let Some(asset) = asset else {
-            self.refuse_or_skip(vec![asset_item(layer, "lottie-asset-missing", "Lottie 贴纸没有素材".into())])?;
+            self.refuse_or_skip(vec![asset_item(layer, "lottie-asset-missing", asset_text::lottie_no_asset())])?;
             return Ok(None);
         };
         let mut key = format!("{}@{}", asset.id, asset.revision);
@@ -782,13 +783,13 @@ impl FrameRenderer {
                 Some(Ok(lottie)) => Some(lottie),
                 Some(Err((reason, why))) => {
                     self.lotties.insert(key.clone(), None);
-                    self.refuse_or_skip(vec![asset_item(layer, reason, format!("Lottie 素材读不出来：{why}"))])?;
+                    self.refuse_or_skip(vec![asset_item(layer, reason, asset_text::lottie_unparsable(&why))])?;
                     return Ok(None);
                 }
                 None => None,
             };
             if entry.is_none() {
-                self.refuse_or_skip(vec![asset_item(layer, "lottie-asset-missing", "Lottie 素材读不到".into())])?;
+                self.refuse_or_skip(vec![asset_item(layer, "lottie-asset-missing", asset_text::lottie_unreadable())])?;
                 return Ok(None);
             }
             self.lotties.insert(key.clone(), entry);
@@ -811,7 +812,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "template-logo-asset-missing",
-                    format!("模板台标的图片 {} 读不到", asset.id),
+                    asset_text::template_logo_unreadable(&asset.id),
                 )])?;
                 return Ok(None);
             };
@@ -829,7 +830,7 @@ impl FrameRenderer {
                     self.refuse_or_skip(vec![asset_item(
                         layer,
                         "asset-undecodable",
-                        format!("模板台标的图片解不开：{error:#}"),
+                        asset_text::template_logo_undecodable_detail(&asset.id, &format!("{error:#}")),
                     )])?;
                     return Ok(None);
                 }
@@ -841,7 +842,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    format!("模板台标的图片 {} 解不开", asset.id),
+                    asset_text::template_logo_undecodable(&asset.id),
                 )])?;
                 Ok(None)
             }
@@ -868,7 +869,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    format!("SVG 图片 {} 读不到", asset.id),
+                    asset_text::image_unreadable("SVG", &asset.id),
                 )])?;
                 return Ok(None);
             };
@@ -893,7 +894,11 @@ impl FrameRenderer {
                 }
                 Err(error) => {
                     self.svgs.insert(key.clone(), None);
-                    self.refuse_or_skip(vec![asset_item(layer, "asset-undecodable", format!("SVG 图片解不开：{error:#}"))])?;
+                    self.refuse_or_skip(vec![asset_item(
+                        layer,
+                        "asset-undecodable",
+                        asset_text::image_undecodable_detail("SVG", &asset.id, &format!("{error:#}")),
+                    )])?;
                     return Ok(None);
                 }
             }
@@ -904,7 +909,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    format!("SVG 图片 {} 解不开", asset.id),
+                    asset_text::image_undecodable("SVG", &asset.id),
                 )])?;
                 Ok(None)
             }
@@ -921,7 +926,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    format!("GIF 图片 {} 读不到", asset.id),
+                    asset_text::image_unreadable("GIF", &asset.id),
                 )])?;
                 return Ok(None);
             };
@@ -934,7 +939,11 @@ impl FrameRenderer {
                 }
                 Err(error) => {
                     self.gifs.insert(key.clone(), None);
-                    self.refuse_or_skip(vec![asset_item(layer, "asset-undecodable", format!("GIF 图片解不开：{error:#}"))])?;
+                    self.refuse_or_skip(vec![asset_item(
+                        layer,
+                        "asset-undecodable",
+                        asset_text::image_undecodable_detail("GIF", &asset.id, &format!("{error:#}")),
+                    )])?;
                     return Ok(None);
                 }
             }
@@ -945,7 +954,7 @@ impl FrameRenderer {
                 self.refuse_or_skip(vec![asset_item(
                     layer,
                     "asset-undecodable",
-                    format!("GIF 图片 {} 解不开", asset.id),
+                    asset_text::image_undecodable("GIF", &asset.id),
                 )])?;
                 Ok(None)
             }
@@ -1251,7 +1260,11 @@ impl FrameRenderer {
                     first,
                     Some(caption_scene::STYLE_SCHEMA.into()),
                     "caption-resource-invalid",
-                    error.to_string(),
+                    msg!(
+                        "frameRender.captionResourceInvalid",
+                        "This subtitle style’s resources can’t be loaded: {detail}",
+                        detail = error.to_string()
+                    ),
                 )])?;
                 return Ok(());
             }
@@ -1357,7 +1370,7 @@ impl FrameRenderer {
         if !self.options.skip_unsupported {
             return Err(RenderError {
                 code: "EXPORT_UNSUPPORTED_CONTENT".into(),
-                message: items.iter().map(|i| i.message.clone()).collect::<Vec<_>>().join("；"),
+                message: items.iter().map(|i| i.message.clone()).collect::<Vec<_>>().join("; "),
                 items,
             });
         }
@@ -1530,18 +1543,8 @@ fn caption_group<'a>(layer: &'a VisualLayer, documents: &Documents) -> &'a str {
     }
 }
 
-fn asset_item(layer: &VisualLayer, reason: &str, message: String) -> UnsupportedItem {
-    UnsupportedItem {
-        item_id: layer.item_id.clone(),
-        scope: "asset",
-        layer_kind: kind_name(layer.kind),
-        effect_id: None,
-        transition_id: None,
-        kind: None,
-        reason: reason.into(),
-        message,
-        message_ref: None,
-    }
+fn asset_item(layer: &VisualLayer, reason: &str, message: Text) -> UnsupportedItem {
+    UnsupportedItem::asset(layer, None, reason, message)
 }
 
 /// Lottie 在实例里过了 `elapsed` 秒时取的时刻（`sticker.loop`，格式规范 §3.7）：`loop`（缺省）对时长取模，
