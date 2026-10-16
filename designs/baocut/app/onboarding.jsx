@@ -199,7 +199,7 @@
     const launch = (fresh) => { if (onLaunch) onLaunch(); app.launchOnboarding(fresh); };
     return (
       <div className="tweaks__sec">
-        <div className="tweaks__lb">首次启动引导<em>只在第一次启动弹，关掉后记下、以后不再弹。地址带 ?onboarding=1（全新安装）或 ?onboarding=installed（已有模型）打开即模拟一次第一次启动；「模拟」会先清掉记录，全新安装还会把本机模型都改成没装。当前记录：{OB.recordText(app.prefs.onboarding)}</em></div>
+        <div className="tweaks__lb">首次启动引导<em>只在第一次启动弹，关掉就记下、不再弹。「模拟」先清掉记录（全新安装还把本机模型改成没装）；地址带 ?onboarding=1 或 =installed 也能模拟，但有记录时不弹。当前记录：{OB.recordText(app.prefs.onboarding)}</em></div>
         <div className="tweaks__rad">
           <BCAction className="tweaks__opt" onClick={() => launch(true)}>模拟 · 全新安装</BCAction>
           <BCAction className="tweaks__opt" onClick={() => launch(false)}>模拟 · 已有模型</BCAction>
