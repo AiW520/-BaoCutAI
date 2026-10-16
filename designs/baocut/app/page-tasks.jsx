@@ -327,6 +327,7 @@
     const k = KIND[t.kind] || KIND.transcribe;
     const proj = app.projById(t.project);
     const setup = X.stopsDirectly(t.kind);
+    const miss = F.installFailure(t, (id) => window.BC_LOCALMODELS.catOf(D.setModels.find((m) => m.id === id) || {}));
     return (
       <Page>
         <Btn variant="quiet" size="s" icon="back" onClick={() => app.go({r: 'tasks'})}
@@ -386,7 +387,20 @@
               </div>
             </Card>
           : null}
-        {t.status === 'error' && !t.canceled && !t.tool && !(window.BC_TASK_OUTPUTS && window.BC_TASK_OUTPUTS.retry(t))
+        {/* 模型下载没下完：下好的留着，去设置里补齐（BC_TASK_FACTS.installFailure）；不走下面那张「配置问题」卡 */}
+        {miss
+          ? <Card style={{padding: 14, marginTop: 16, boxShadow: 'inset 0 0 0 1px var(--red-300)', background: 'var(--red-100)'}}>
+              <div className="row gap8">
+                <Ic n="alert" className="ic--16" style={{color: 'var(--red-900)'}} />
+                <span className="t-title-sm t-negative grow">{t.error}</span>
+              </div>
+              <div className="t-detail" style={{marginTop: 6}}>{miss.body}</div>
+              <div className="row gap8" style={{marginTop: 12}}>
+                <Btn variant="accent" size="s" onClick={() => app.go(miss.go)}>{miss.label}</Btn>
+              </div>
+            </Card>
+          : null}
+        {t.status === 'error' && !t.canceled && !t.tool && !miss && !(window.BC_TASK_OUTPUTS && window.BC_TASK_OUTPUTS.retry(t))
           ? <Card style={{padding: 14, marginTop: 16, boxShadow: 'inset 0 0 0 1px var(--red-300)', background: 'var(--red-100)'}}>
               <div className="row gap8">
                 <Ic n="alert" className="ic--16" style={{color: 'var(--red-900)'}} />

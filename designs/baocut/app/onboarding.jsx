@@ -186,20 +186,6 @@
     startNextAgent();
   }
 
-  /* 语义搜索包的下载：不在引导组件里跑（引导关掉也得接着走），落一条后台任务，走完把状态改成装好 */
-  function runSemInstall(app, pkg) {
-    const tid = app.addTask({kind: 'model-install', title: `下载「${pkg.name}」`, sub: '本机模型', phase: '下载中', cancellable: false});
-    let pct = 0;
-    const timer = setInterval(() => {
-      pct = Math.min(100, pct + 9);
-      if (pct < 100) { app.patchTask(tid, {pct}); return; }
-      clearInterval(timer);
-      app.patchTask(tid, {pct: 100, status: 'done', phase: null});
-      window.BC_SEMSTATE.set({install: 'full', index: 'stale', half: null});
-    }, 200);
-    return tid;
-  }
-
   function OnboardingAsk({app}) {
     const fresh = !!app.onboarding.fresh;
     const models = D.setModels;
@@ -268,13 +254,15 @@
         run: (outcome) => {
           const failed = outcome && outcome.failed;
           if (failed) {
+            const kept = semHave.length > 0 || outcome.done.length > 0;
             app.addTask({kind: 'model-install', title: `下载「${pkg.name}」`, sub: '本机模型', status: 'error', pct: null,
-              error: `${failed.name}没下成，可以在 设置 › 语义索引 里补齐`});
+              semPkg: pkg.id, kept, error: `${failed.name}没下成，可以在 设置 › 语义索引 里${kept ? '补齐' : '换个来源再下'}`});
             app.toast(`「${pkg.name}」没下完：${failed.name}没下成`, 'negative');
             next();
             return;
           }
-          setQueued((q) => q.concat([{id: pkg.id, name: pkg.name, tid: runSemInstall(app, pkg)}]));
+          // 不在引导组件里跑（引导关掉也得接着走）：与设置 › 语义索引同一个安装，落一条后台任务
+          setQueued((q) => q.concat([{id: pkg.id, name: pkg.name, tid: window.BC_SEMSTATE.install(app, pkg)}]));
           next([pkg.id]);
         },
       });
@@ -295,8 +283,10 @@
           // 下好的部分留着（与设置里同一种「缺部分组件」）；没下成的落一条失败的后台任务，补齐在设置里
           setGot((g) => g.concat(outcome.done));
           want.forEach((m) => { if (outcome.done.indexOf(m.id) >= 0) app.setModelInstalled(m.id, true); });
+          // `model`：任务页「去补齐」按它去那一类的设置页（同一步的模型都是同一类）
+          const kept = outcome.done.length > 0;
           app.addTask({kind: 'model-install', title: `下载「${want.map((m) => m.name).join('、')}」`, sub: '本机模型', status: 'error', pct: null,
-            error: `${failed.name}没下成，可以在设置里补齐`});
+            model: want[0].id, kept, error: `${failed.name}没下成，可以在设置里${kept ? '补齐' : '换个来源再下'}`});
           app.toast(`没下完：${failed.name}没下成，详情在后台任务里`, 'negative');
           next();
           return;
