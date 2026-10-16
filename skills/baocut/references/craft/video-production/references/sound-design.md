@@ -34,5 +34,8 @@
 
 1. 用 `baocut export` 导出时间线的音频：`kind: audio`、`format: wav`，不给 range。文件里的秒就是时间线的秒。
 2. `baocut assets analyze` 按 `path` 分析这个文件，`cues` 填要对上的时间线时刻：`baocut videos shots` 的 `cuts[].at`、揭晓与 Logo 的时刻、放音效的位置。
-3. 看 `sync`：`hitRate` 要明显高于 `chance` 才算对上了。`misses` 里的 `near` 按 `delta` 挪（正的是声音晚到，把音效往前挪 `delta` 秒），`none` 的按第 1 节判断要不要补。
+3. 看 `sync`，设计过的时刻与一般切点分开判断：
+   - 揭晓、Logo、放音效的位置应当几乎全是 `ok`。只核对这些时刻时，`hitRate` 要明显高于 `chance`。
+   - 一般切点在配乐够密时命中率接近 `chance` 是正常的（见第 1 节），不用追求更高；只看其中关键切点的结果。
+   - `misses` 里的 `near` 按 `delta` 挪（正的是声音晚到，把音效往前挪 `delta` 秒）；关键时刻是 `none` 的，按第 1 节判断要不要补。
 4. 关键段落加 `sheet: true` 画一张听音表（每张最长 120 秒，长片按 `range` 分段），用看图的工具看：开头有没有声、结尾有没有落地、重音是否落在关键时刻、有没有意外的空白。
