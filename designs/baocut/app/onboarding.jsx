@@ -1,12 +1,13 @@
 /* 首次启动引导（2026-10-16 用户要求；步骤、记录与算法在 model-onboarding.js）。只在 App 入口挂（main.jsx），Web 不加载。
    一个 S2 对话框，顶上是步骤条，六步：
-   - 连接 Agent：一句欢迎，然后是这台电脑上的 Agent，每家一张 设置 › Agent 提供方 的卡（settings-agent-provider.jsx），
-     安装、登录、排查都在卡里就地做，不用离开引导。
-   - 语音识别：单选一只转录模型（推荐 MOSS Transcribe）。
-   - 语音合成、图像生成、音乐生成：多选，写清这次要下多少、连带哪些组件，以及在工具里哪儿用。
+   - 连接 Agent：一句欢迎，然后是 设置 › Agent 提供方 主列表那六家，每家一行、都能勾（2026-10-16 用户要求：一家不够）。
+     装好的勾上就是启用（立刻生效）；没装、能用 Homebrew / npm 装的勾上就在后台安装，装好后在它自己的终端里登录一次；
+     要先处理的（登录过期、版本过旧、跑不起来）与只有官方脚本的不给勾，处理与安装说明在设置里。
+   - 语音识别、语音合成、图像生成、音乐生成：多选（2026-10-16 用户要求），默认至少勾一只；写清这次要下多少、连带哪些组件，
+     以及在工具里哪儿用。已装好的、正在下的显示成勾上、不能改。
    - 语义搜索：一个包（文字模型 + 多模态模型 + 运行时）。
    要下载的都先过同一个下载确认框（download-dialog.jsx：来源、存放位置、许可）；确认后每只模型成为一条后台任务，
-   引导立刻翻到下一步，不等下完。底部一行写这次开始的下载在后台走到哪了。
+   引导立刻翻到下一步，不等下完。Agent 安装同样落成后台任务。底部一行写这次开始的下载与安装在后台走到哪了。
    每一步都可以「跳过」；左下角「退出引导」与 Esc 随时退出（不用右上角的 ×：S2 的可关闭对话框会藏掉 ButtonGroup，同 space-viewer.jsx）。
    任何一种关掉都写一条记录（偏好 `onboarding`），以后启动不再弹。 */
 (function () {
@@ -51,16 +52,16 @@
     );
   }
 
-  /** 一张模型卡：单选（转录）或多选；右边是状态（已安装 / 进度 / 要下多少），下面一句说明，选中时再写这次一起下哪几件 */
-  function ModelCard({m, mode, sel, recommended, note, ready, half, total, pct, line, onToggle}) {
-    // 点在勾选框 / 单选钮自己的 label 上时交给它，不然点一下会切两次；已经在下的不再切
-    const click = (e) => { if (pct < 0 && !e.target.closest('label')) onToggle(); };
+  /** 一张模型卡（多选）：右边是状态（已安装 / 进度 / 要下多少），下面一句说明，选中时再写这次一起下哪几件。
+      已装好的、正在下的勾上且不能改 */
+  function ModelCard({m, sel, recommended, note, ready, half, total, pct, line, onToggle}) {
+    const fixed = ready || pct >= 0;
+    // 点在勾选框自己的 label 上时交给它，不然点一下会切两次
+    const click = (e) => { if (!fixed && !e.target.closest('label')) onToggle(); };
     return (
-      <div className={cx('onb-model', sel && 'is-on')} onClick={click}>
+      <div className={cx('onb-model', sel && !fixed && 'is-on', fixed && 'is-fixed')} onClick={click}>
         <span className="onb-model__hd">
-          {mode === 'one' ? <S.Radio value={m.id}>{m.name}</S.Radio>
-            : pct >= 0 ? <span className="onb-model__nm">{m.name}</span>
-            : <Checkbox on={sel} onChange={onToggle} label={m.name} />}
+          <Checkbox on={sel || fixed} disabled={fixed} onChange={onToggle} label={m.name} />
           {recommended ? <Chip tone="accent">推荐</Chip> : null}
           {OB.nonCommercial(m) ? <Chip tone="notice">仅限非商用</Chip> : null}
           <span className="grow" />
@@ -74,38 +75,70 @@
     );
   }
 
-  /** 第一步：这台电脑上的 Agent。状态一句话 + 每家一张卡（安装 / 登录 / 排查都在卡里）。
-      已经有能用的时，没装的几家先收起来，免得一屏都是「未安装」 */
-  function AgentStep({app, ov}) {
-    const [open, setOpen] = useState(null);
+  /** 第一步：这台电脑上的 Agent，主列表每家一行、都能勾（行怎么分、下面那句怎么写在 model-onboarding.js）。
+      装好的勾选框就是 设置 › Agent 提供方 里那个启用开关，改了立刻生效；没装的勾上记在 `picks`，按「后台安装」时才装；
+      这次引导里已经在装的勾上且不能改，右边写进度 */
+  function AgentStep({app, ov, rows, picks, onPick, progress}) {
     const ok = ov.state === 'ready';
-    const [all, setAll] = useState(!ok);
-    const main = AS.groups(app.harnessList).main;
-    const shown = all ? main : main.filter((h) => h.found);
-    const hidden = main.length - shown.length;
+    const status = ov.state === 'missing'
+      ? {title: ov.title, body: '勾上想用的，BaoCut 在后台安装；装好后用你已有的账号登录一次就能用。'}
+      : {title: ok ? `已连接 ${ov.harness.name}` : ov.title, body: ok ? `新会话默认用 ${ov.harness.name} · ${AS.modelLabel(ov.harness, app.prefs.agentModels)}。` : ov.body};
     return (
       <div className="onb-agent">
-        <p className="onb-lead">说出想做的视频，Agent 帮你转录、加字幕、翻译、配音和剪辑。BaoCut 调用这台电脑上已经装好的 Agent（比如 Claude Code、Codex），用你自己的账号，不另外收费。</p>
+        <p className="onb-lead">说出想做的视频，Agent 帮你转录、加字幕、翻译、配音和剪辑。BaoCut 调用这台电脑上的 Agent（比如 Claude Code、Codex），用你自己的账号，不另外收费。</p>
         <div className={cx('onb-status', ok && 'is-ok')} role="status">
           <Ic n={ok ? 'ok' : ov.state === 'missing' ? 'info' : 'alert'} className="ic--16" />
-          <div>
-            <b>{ok ? `已连接 ${ov.harness.name}` : ov.title}</b>
-            <p>{ok ? `新会话默认用 ${ov.harness.name} · ${AS.modelLabel(ov.harness, app.prefs.agentModels)}。` : ov.body}</p>
-          </div>
+          <div><b>{status.title}</b><p>{status.body}</p></div>
         </div>
-        <Card layer className="agset-providers onb-agents">
-          {shown.map((h) => (
-            <window.AgentProviderCard key={h.id} h={h} isDefault={!!ov.harness && ov.harness.id === h.id && ok}
-              open={open === h.id} onToggle={() => setOpen(open === h.id ? null : h.id)}
-              onRefreshModels={() => {}} failRun={false} onRemove={null} />
-          ))}
-        </Card>
-        <p className="onb-note">
-          有一个能用就够；以后在 设置 › Agent 提供方 里换默认、装更多。
-          {hidden ? <Btn size="s" variant="quiet" onClick={() => setAll(true)}>{`还有 ${hidden} 个可以装`}</Btn> : null}
-        </p>
+        <div className="onb-models" role="group" aria-label="这台电脑上的 Agent"><div>
+          {rows.map((r) => {
+            const {h, kind} = r;
+            const pct = progress(h.id);
+            const busy = pct >= 0;
+            const can = !busy && (kind === 'use' || kind === 'install');
+            const on = busy || (kind === 'use' ? h.enabled : kind === 'install' && picks.indexOf(h.id) >= 0);
+            const toggle = (v) => {
+              if (!can) return;
+              if (kind === 'use') app.setHarnessOn(h.id, v);
+              else onPick(h.id, v);
+            };
+            const badge = AS.badge(h);
+            const label = <span className="onb-agent__nm"><window.AgentIcon h={h} />{h.name}</span>;
+            return (
+              <div key={h.id} className={cx('onb-model', on && can && 'is-on', !can && 'is-fixed')}
+                onClick={(e) => { if (can && !e.target.closest('label')) toggle(!on); }}>
+                <span className="onb-model__hd">
+                  <Checkbox on={on} disabled={!can} onChange={toggle} label={label} aria-label={h.name} />
+                  <span className="grow" />
+                  {busy ? <span className="onb-model__pg"><Progress value={pct} thin label={`正在安装 ${h.name}`} /><span className="t-detail-xs t-mono">{Math.round(pct)}%</span></span>
+                    : <Chip tone={badge.tone}>{badge.label}</Chip>}
+                </span>
+                <span className={on && kind === 'install' ? 'onb-model__plan' : 'onb-model__desc'}>
+                  {busy ? `用 ${r.method ? r.method.label : '命令行'} 在后台安装 · 装好后在终端里运行 ${AS.loginCmd(h)} 登录` : OB.agentLine(r, on, AS)}
+                </span>
+              </div>
+            );
+          })}
+        </div></div>
+        <p className="onb-note">勾上的都会出现在新会话的 Agent 菜单里；安装在后台进行，不用等装完。默认用哪一个、装更多，在 设置 › Agent 提供方 里改。</p>
       </div>
     );
+  }
+
+  /* Agent 的安装：同语义搜索包，不在引导组件里跑，落一条后台任务；跑完写进探测补丁（同 设置 › Agent 提供方 的就地安装：
+     找到了、还要登录一次）。正式版跑的是 method.cmd 的子进程。 */
+  function runAgentInstall(app, h, method) {
+    const tid = app.addTask({kind: 'agent-install', title: `安装 ${h.name}`, sub: method.label, phase: '安装中', cancellable: false});
+    let pct = 0;
+    const timer = setInterval(() => {
+      pct = Math.min(100, pct + 8);
+      if (pct < 100) { app.patchTask(tid, {pct}); return; }
+      clearInterval(timer);
+      app.patchTask(tid, {pct: 100, status: 'done', phase: null});
+      app.patchHarness(h.id, {found: true, loggedIn: false});
+      app.toast(`已装好 ${h.name} · 还需要在终端里运行 ${AS.loginCmd(h)} 登录一次`, 'positive');
+    }, 250);
+    return tid;
   }
 
   /* 语义搜索包的下载：不在引导组件里跑（引导关掉也得接着走），落一条后台任务，走完把状态改成装好 */
@@ -129,7 +162,8 @@
     const [semSt] = window.BC_SEMSTATE.useSemantic();
     const [step, setStep] = useState(0);
     const [got, setGot] = useState([]);       // 这次引导里下好或正在下的组件（安装表用，后面几步不重复算）
-    const [queued, setQueued] = useState([]); // 这次引导里开始的下载：[{id, name, tid}]
+    const [queued, setQueued] = useState([]); // 这次引导里开始的下载与 Agent 安装：[{id, name, tid, agent?}]
+    const [agentPicks, setAgentPicks] = useState([]); // Agent 一步勾上、等按「后台安装」的那几家（没装的默认不勾：要用的是自己的订阅）
     const [picks, setPicks] = useState({});   // 每一步的勾选：第一次翻到时按默认值起，之后记住
     const [semPick, setSemPick] = useState(true);
     const speakers = {};
@@ -140,9 +174,19 @@
     const list = OB.choices(k, models, speakers);
     const cur = picks[k] || OB.initialPicks(k, list, comps, on);
     const setCur = (ids) => setPicks((p) => ({...p, [k]: ids}));
-    const toggle = (id) => (s.pick === 'one' ? setCur([id]) : setCur(cur.indexOf(id) >= 0 ? cur.filter((x) => x !== id) : cur.concat([id])));
+    const toggle = (id) => setCur(cur.indexOf(id) >= 0 ? cur.filter((x) => x !== id) : cur.concat([id]));
     const pctOf = (id) => (app.modelDl && id in app.modelDl ? app.modelDl[id] : -1);
     const ov = AS.overview(app.harnessList, app.harness && app.harness.id);
+    const taskOf = (q) => (app.tasks || []).find((t) => t.id === q.tid);
+    const agentRows = OB.agentRows(app.harnessList, AS);
+    // 这次引导里在装的那一家：任务还在跑时给进度，跑完（或没有这条）给 -1
+    const agentPct = (hid) => {
+      const q = queued.find((x) => x.agent && x.id === hid);
+      const t = q && taskOf(q);
+      return t && t.status === 'running' ? (t.pct || 0) : -1;
+    };
+    const toInstall = agentRows.filter((r) => r.kind === 'install' && agentPicks.indexOf(r.h.id) >= 0 && agentPct(r.h.id) < 0);
+    const pickAgent = (hid, v) => setAgentPicks((p) => (v ? p.concat([hid]) : p.filter((x) => x !== hid)));
 
     const pkg = ((D.semantic || {}).packages || [])[0];
     const semUnsupported = semSt.platform === 'unsupported';
@@ -156,14 +200,17 @@
     // 这一步要下什么：勾上的、还没装好、也不在下的
     const want = list.filter((c) => cur.indexOf(c.m.id) >= 0 && pctOf(c.m.id) < 0 && !LM.ready(c.m, comps, on)).map((c) => c.m);
     const plan = k === 'semantic' ? (semPick ? semNeed : {parts: [], total: 0}) : OB.plan(want, comps, on);
-    const primary = OB.primary(k, plan);
+    const primary = k === 'agent' ? OB.agentPrimary(toInstall.length) : OB.primary(k, plan);
 
-    const taskOf = (q) => (app.tasks || []).find((t) => t.id === q.tid);
     const close = (how, started) => {
       const extra = started || [];
-      app.closeOnboarding(OB.record(how, k, queued.map((q) => q.id).concat(extra)));
-      const live = queued.filter((q) => { const t = taskOf(q); return !t || t.status === 'running'; }).length + extra.length;
-      if (live) app.toast(`${live} 个模型在后台下载，下完就能用`, 'positive', {label: '查看后台任务', run: () => app.go({r: 'tasks'})});
+      const models = queued.filter((q) => !q.agent);
+      app.closeOnboarding(OB.record(how, k, models.map((q) => q.id).concat(extra)));
+      const running = (list) => list.filter((q) => { const t = taskOf(q); return !t || t.status === 'running'; }).length;
+      const live = running(models) + extra.length;
+      const agents = running(queued.filter((q) => q.agent));
+      const bits = (live ? [`${live} 个模型在后台下载`] : []).concat(agents ? [`${agents} 个 Agent 在后台安装`] : []);
+      if (bits.length) app.toast(`${bits.join('，')}，完成后就能用`, 'positive', {label: '查看后台任务', run: () => app.go({r: 'tasks'})});
     };
     const next = (started) => { if (OB.isLast(k)) close('done', started); else setStep(step + 1); };
 
@@ -185,6 +232,11 @@
           next([pkg.id]);
         },
       });
+    };
+    const installAgents = () => {
+      setQueued((q) => q.concat(toInstall.map((r) => ({id: r.h.id, name: r.h.name, tid: runAgentInstall(app, r.h, r.method), agent: true}))));
+      setAgentPicks([]);
+      next();
     };
     const download = () => {
       if (k === 'semantic') { downloadSem(); return; }
@@ -210,14 +262,14 @@
 
     const bg = OB.bgLine(queued.map((q) => {
       const t = taskOf(q);
-      return {name: q.name, pct: t ? t.pct : 0, status: t ? t.status : 'running'};
+      return {name: q.name, pct: t ? t.pct : 0, status: t ? t.status : 'running', agent: !!q.agent};
     }));
 
     const cards = list.map((c) => {
       const sel = cur.indexOf(c.m.id) >= 0;
       const p = OB.plan([c.m], comps, on);
       const pct = pctOf(c.m.id);
-      return <ModelCard key={c.m.id} m={c.m} mode={s.pick} sel={sel} recommended={c.recommended} note={c.note}
+      return <ModelCard key={c.m.id} m={c.m} sel={sel} recommended={c.recommended} note={c.note}
         ready={LM.ready(c.m, comps, on)} half={LM.half(c.m, comps, on)} total={p.total} pct={pct}
         line={sel && pct < 0 ? OB.planLine(p) : null} onToggle={() => toggle(c.m.id)} />;
     });
@@ -230,17 +282,13 @@
           <S.Content>
             <Steps items={OB.STEPS} cur={step} label="引导步骤" className="onb-steps" />
 
-            {k === 'agent' ? <AgentStep app={app} ov={ov} /> : null}
+            {k === 'agent' ? <AgentStep app={app} ov={ov} rows={agentRows} picks={agentPicks} onPick={pickAgent} progress={agentPct} /> : null}
 
             {s.cat ? (
               <div className="onb-pick">
                 <p className="onb-lead">{LEAD[k]}</p>
                 {!list.length ? unsupported(s.label)
-                  : s.pick === 'one' ? (
-                    <S.RadioGroup aria-label={HEAD[k]} value={cur[0] || ''} onChange={(id) => setCur([id])} UNSAFE_className="onb-models">
-                      {cards}
-                    </S.RadioGroup>
-                  ) : <div className="onb-models" role="group" aria-label={HEAD[k]}><div>{cards}</div></div>}
+                  : <div className="onb-models" role="group" aria-label={HEAD[k]}><div>{cards}</div></div>}
                 {WHERE[k] && list.length ? <Where w={WHERE[k]} /> : null}
                 {list.length ? <p className="onb-note">{BG_NOTE}</p> : null}
                 {k === 'asr' ? <p className="onb-note onb-alt">不想下载？也可以以后在 设置 › API 提供方 里添加云端识别。</p> : null}
@@ -252,11 +300,10 @@
                 <p className="onb-lead">{LEAD.semantic}</p>
                 {semUnsupported ? unsupported('语义搜索') : <>
                   <div className="onb-models"><div>
-                    <div className={cx('onb-model', semPick && !semInstalled && !semQueued && 'is-on')}
+                    <div className={cx('onb-model', semPick && !semInstalled && !semQueued && 'is-on', (semInstalled || semQueued) && 'is-fixed')}
                       onClick={(e) => { if (!semInstalled && !semQueued && !e.target.closest('label')) setSemPick(!semPick); }}>
                       <span className="onb-model__hd">
-                        {semInstalled || semQueued ? <span className="onb-model__nm">{pkg.name}</span>
-                          : <Checkbox on={semPick} onChange={setSemPick} label={pkg.name} />}
+                        <Checkbox on={semPick || semInstalled || semQueued} disabled={semInstalled || semQueued} onChange={setSemPick} label={pkg.name} />
                         <Chip tone="accent">推荐</Chip>
                         <span className="grow" />
                         {semInstalled ? <span className="onb-model__ok"><Ic n="ok" className="ic--14" />已安装</span>
@@ -280,12 +327,9 @@
             </div>
           </S.Footer>
           <S.ButtonGroup>
-            {k === 'agent'
-              ? <Btn variant={ov.state === 'ready' ? 'accent' : 'secondary'} autoFocus onClick={() => next()}>{ov.state === 'ready' ? '下一步' : '跳过'}</Btn>
-              : <>
-                {primary.kind === 'download' ? <Btn variant="secondary" onClick={() => next()}>跳过</Btn> : null}
-                <Btn variant="accent" autoFocus onClick={() => (primary.kind === 'download' ? download() : next())}>{primary.label}</Btn>
-              </>}
+            {primary.kind !== 'next' ? <Btn variant="secondary" onClick={() => next()}>跳过</Btn> : null}
+            <Btn variant="accent" autoFocus
+              onClick={() => (primary.kind === 'download' ? download() : primary.kind === 'install' ? installAgents() : next())}>{primary.label}</Btn>
           </S.ButtonGroup>
         </S.Dialog>
       </S.DialogContainer>

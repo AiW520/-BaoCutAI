@@ -9,7 +9,7 @@
 .onb-note .ic--14 { flex: none; color: var(--gray-600); }
 .onb-alt { margin-top: 4px; gap: 4px; }
 
-/* 连接 Agent：状态一句话（同 设置 › Agent 顶上的概览，配色收敛成两档）+ 每家一张提供方卡 */
+/* 连接 Agent：状态一句话（同 设置 › Agent 顶上的概览，配色收敛成两档）+ 每家一行（与模型卡同一种多选卡） */
 .onb-status {
   display: flex; align-items: flex-start; gap: 12px; margin-top: 12px; padding: 12px;
   border-radius: 10px; background: var(--gray-100);
@@ -19,12 +19,10 @@
 .onb-status.is-ok .ic--16 { color: var(--green-900); }
 .onb-status b { font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--gray-900); }
 .onb-status p { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
-.onb-agents { margin-top: 12px; }
-/* 对话框比设置页窄：卡头收紧一点，按钮不许被挤成竖排 */
-.onb-agents .agset-provider__head { padding: 12px 16px; }
-.onb-agents .agset-provider__head > :not(.grow) { flex: none; }
+.onb-agent__nm { display: inline-flex; align-items: center; gap: 8px; }
+.onb-agent__nm svg[role="img"] { flex: none; width: var(--bc-icon-primary); height: var(--bc-icon-primary); }
 
-/* 模型卡：语音识别单选，其余多选（同翻译配音的取向卡 .prio，前缀自成一家免得串样式） */
+/* 模型卡：多选（同翻译配音的取向卡 .prio，前缀自成一家免得串样式）；已装好、正在下、不能勾的是 is-fixed */
 .onb-models { margin-top: 12px; }
 .onb-models > div { display: flex; flex-direction: column; gap: 8px; }
 .onb-model {
@@ -34,9 +32,9 @@
 }
 .onb-model:hover { background: var(--gray-75); }
 .onb-model.is-on { background: var(--blue-100); box-shadow: inset 0 0 0 2px var(--blue-800); }
+.onb-model.is-fixed { cursor: default; }
+.onb-model.is-fixed:hover { background: var(--gray-50); }
 .onb-model__hd { display: flex; align-items: center; gap: 8px; min-height: 24px; }
-/* 已装好或在下的那只不再给勾选框：名字与勾选框的文字对齐 */
-.onb-model__nm { padding-left: 28px; font-size: 14px; color: var(--gray-900); }
 .onb-model__desc { padding-left: 28px; font-size: 12px; line-height: 1.5; color: var(--gray-700); }
 .onb-model__plan { padding-left: 28px; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
 .onb-model__ok { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--green-900); }

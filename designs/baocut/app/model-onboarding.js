@@ -1,24 +1,26 @@
 /* 首次启动引导（2026-10-16 用户要求，参考 voice-ink 原型的 onboarding.jsx；规格待补，见交付说明）。
    第一次打开 App 时弹一次（从没有引导的旧版升级上来的老用户也弹一次，2026-10-16 用户确认）。六步：
    连接 Agent → 语音识别 → 语音合成 → 语义搜索 → 图像生成 → 音乐生成。
+   每一步都是一张多选列表（2026-10-16 用户要求：Agent 一家不够、模型也可以下好几只）：Agent 勾上就启用或在后台安装，
+   模型勾上就下载；模型每一步默认至少勾一只（这一类已经装了的算勾上）。
    每一步都不是必须的：有「跳过」，「退出引导」与 Esc 随时退出整个引导。任何一种关掉都记下，以后启动不再弹，也没有再打开的入口。
    下载照旧先过同一个下载确认框（download-dialog.jsx）；确认后下载成为一条后台任务，引导立刻翻到下一步，不等下完。
    人声分离、视觉分析不进引导：体积小，用到的地方会先提出下载。
    Web 入口不加载：浏览器里不能安装本地模型（product-design §7.6「本地模型由用户安装」），也不连本机的 Agent。
 
-   这一层只算：步骤表、要不要弹、落成什么记录、每一步的候选与默认勾选、这次要下多少（经 BC_LOCALMODELS，
-   与下载确认框同一张安装表）、主按钮怎么写、后台在下的那一行。不碰 DOM。 */
+   这一层只算：步骤表、要不要弹、落成什么记录、Agent 每一行能不能勾与勾上意味着什么、每一步的候选与默认勾选、
+   这次要下多少（经 BC_LOCALMODELS，与下载确认框同一张安装表）、主按钮怎么写、后台在下的那一行。不碰 DOM。 */
 (function () {
   const LM = () => window.BC_LOCALMODELS;
 
-  /* `pick`：'one' 单选（转录有一只就够），'many' 多选；语义搜索是一个包（`pkg`），Agent 一步不下载 */
+  /* `cat`：这一步列哪一类本机模型；语义搜索是一个包（`pkg`）；Agent 一步列这台电脑上的 Agent */
   const STEPS = [
     {k: 'agent', label: '连接 Agent'},
-    {k: 'asr', label: '语音识别', cat: 'asr', pick: 'one'},
-    {k: 'tts', label: '语音合成', cat: 'tts', pick: 'many'},
+    {k: 'asr', label: '语音识别', cat: 'asr'},
+    {k: 'tts', label: '语音合成', cat: 'tts'},
     {k: 'semantic', label: '语义搜索', pkg: true},
-    {k: 'image', label: '图像生成', cat: 'image', pick: 'many'},
-    {k: 'music', label: '音乐生成', cat: 'music', pick: 'many'},
+    {k: 'image', label: '图像生成', cat: 'image'},
+    {k: 'music', label: '音乐生成', cat: 'music'},
   ];
   const stepOf = (k) => STEPS.find((s) => s.k === k) || STEPS[0];
   const isLast = (k) => STEPS[STEPS.length - 1].k === k;
@@ -29,8 +31,6 @@
      · 语音合成：CustomVoice 有 9 个预设音色，不用参考录音就能念，最容易上手；
      · 图像生成：Turbo 是本地生图的首选（data.js：蒸馏版，比基础版快 2 倍多）。 */
   const RECOMMENDED = {asr: 'moss-transcribe', tts: 'qwen3-tts-1.7b-customvoice', image: 'qwen-image-2.1-turbo'};
-  /* 打开这一步时默认勾上推荐的那只（这一类一只都没装时）：转录与语音合成。图像、音乐很大、只许非商业用途，默认不勾 */
-  const PRESELECT = ['asr', 'tts'];
   /* 语音合成那一步列的三只：三种出声方式各一只（预设音色 / 克隆 / 多语言），都可商用；其余在设置里下 */
   const TTS_HIGHLIGHTS = ['qwen3-tts-1.7b-customvoice', 'qwen3-tts-0.6b-base', 'voxcpm2'];
   /* 随应用附带、全新安装也在盘上的模型（data.js 的人物定位：体积小到进安装包） */
@@ -98,19 +98,13 @@
   const freshInstalled = (id) => BUNDLED.indexOf(id) >= 0;
 
   /**
-   * 打开这一步时默认勾哪几只：
-   * · 单选（转录）：已经能用的第一只（老用户升级上来就是它），没有就选推荐的；
-   * · 多选：这一类一只都没装、且这一步默认要勾时勾推荐的；其余一只不勾。
+   * 打开这一步时默认勾哪几只（2026-10-16 用户要求「默认至少选择一个模型」）：这一类已经有装好的，它就显示成勾上的，
+   * 不再替人多勾；一只都没装时勾推荐的那只，没有推荐的勾第一只。
    */
   function initialPicks(stepK, list, comps, on) {
-    const s = stepOf(stepK);
-    const ready = (list || []).filter((c) => LM().ready(c.m, comps, on));
-    const rec = (list || []).find((c) => c.recommended);
-    if (s.pick === 'one') {
-      if (ready.length) return [ready[0].m.id];
-      return rec ? [rec.m.id] : ((list || [])[0] ? [list[0].m.id] : []);
-    }
-    if (ready.length || PRESELECT.indexOf(stepK) < 0 || !rec) return [];
+    const all = list || [];
+    if (!all.length || all.some((c) => LM().ready(c.m, comps, on))) return [];
+    const rec = all.find((c) => c.recommended) || all[0];
     return [rec.m.id];
   }
 
@@ -144,35 +138,74 @@
   }
 
   /**
-   * 一步的主按钮：有要下的就「下载 1.7 GB 并继续」（确认框之后立刻翻页，下载在后台；最后一步是「并完成」）；
-   * 没有要下的就往下走，最后一步是「完成」。Agent 一步另算（视图里按连没连上写）。
+   * 一步的主按钮：有要下的就「后台下载 1.7 GB 并继续」（确认框之后立刻翻页，下载在后台；最后一步是「并完成」）；
+   * 没有要下的就往下走，最后一步是「完成」。Agent 一步见 agentPrimary。
    */
   function primary(stepK, p) {
     const last = isLast(stepK);
-    if (p && p.parts.length) return {kind: 'download', label: `下载 ${LM().mb(p.total)} 并${last ? '完成' : '继续'}`};
+    if (p && p.parts.length) return {kind: 'download', label: `后台下载 ${LM().mb(p.total)} 并${last ? '完成' : '继续'}`};
     return {kind: 'next', label: last ? '完成' : '下一步'};
   }
 
   /**
-   * 对话框底部那一行（和按钮挤一排，要短）：这次引导里开始的下载，只有一只在下时写名字与百分比，
-   * 几只同时在下只写个数（各自的进度在后台任务里），下完的、没下成的只计数。
-   * items：[{name, pct, status}]（status 是后台任务的状态）；一个都没有时 null。
+   * Agent 一步的每一行（主列表那六家，同 设置 › Agent 提供方；`AS` 是 BC_AGENT_SETUP）。`kind` 决定勾选框：
+   * · 'use'：装好、能用或停用着——勾上 = 在 BaoCut 里启用（就是设置里那个开关，改了立刻生效）；
+   * · 'fix'：装了但要先处理（需要登录、版本过旧、跑不起来）——不给勾，写出问题，处理在设置里；
+   * · 'install'：没装、BaoCut 能在后台装（Homebrew / npm）——勾上 = 后台安装，装好后还要在它自己的终端里登录一次；
+   * · 'manual'：没装、只有官方脚本——BaoCut 不替你运行来自网络的脚本，不给勾，安装说明在设置里。
+   * `method`：'install' 时用哪一种（方式表里第一种能就地运行的，同 settings-agent-provider.jsx 的就地运行）。
+   */
+  function agentRows(list, AS) {
+    return AS.groups(list).main.map((h) => {
+      const st = AS.health(h);
+      if (h.found) return {h, kind: st === 'ready' || st === 'off' ? 'use' : 'fix', method: null};
+      const method = AS.installMethods(h, false).find(AS.runnable) || null;
+      return {h, kind: method ? 'install' : 'manual', method};
+    });
+  }
+
+  /** 一行下面那一句：装好的写版本与账号；要处理的写问题；没装的写用什么订阅，勾上后写这次怎么装、装好后怎么登录 */
+  function agentLine(row, picked, AS) {
+    const {h, kind, method} = row;
+    if (kind === 'use') return `本机已安装 · v${h.ver} · ${String(h.account || '').split(' · ')[0]}`;
+    if (kind === 'fix') { const p = AS.problem(h); return p ? `${p.title} · 在 设置 › Agent 提供方 里处理` : ''; }
+    if (kind === 'manual') return `只能在终端里按官方说明安装 · 说明在 设置 › Agent 提供方`;
+    if (!picked) return `未安装 · 装好后用你已有的 ${h.plan}登录`;
+    return `用 ${method.label} 在后台安装（${method.cmd}）· 装好后在终端里运行 ${AS.loginCmd(h)} 登录`;
+  }
+
+  /** Agent 一步的主按钮：勾了要装的就「后台安装 2 个并继续」，否则往下走 */
+  function agentPrimary(n) {
+    return n ? {kind: 'install', label: `后台安装 ${n} 个并继续`} : {kind: 'next', label: '下一步'};
+  }
+
+  /**
+   * 对话框底部那一行（和按钮挤一排，要短）：这次引导里开始的下载与 Agent 安装，只有一件在跑时写名字与百分比，
+   * 几件同时在跑只写个数（各自的进度在后台任务里），跑完的、没成的只计数。
+   * items：[{name, pct, status, agent?}]（status 是后台任务的状态；agent 为真是安装 Agent，其余是下载模型）；一个都没有时 null。
    */
   function bgLine(items) {
     const list = items || [];
     if (!list.length) return null;
+    // 用词跟着那几件走：全是 Agent 写「安装」，全是模型写「下载」，混在一起写个笼统的
+    const words = (xs) => {
+      const n = xs.filter((x) => x.agent).length;
+      return n === xs.length ? {verb: '安装', done: '已装好', fail: '没装成'}
+        : n ? {verb: '下载和安装', done: '已完成', fail: '没成功'} : {verb: '下载', done: '已下完', fail: '没下成'};
+    };
     const live = list.filter((x) => x.status === 'running');
-    const failed = list.filter((x) => x.status === 'error').length;
-    const done = list.length - live.length - failed;
-    const bits = [live.length === 1 ? `后台在下载 ${live[0].name} ${Math.round(live[0].pct || 0)}%`
-      : live.length ? `后台在下载 ${live.length} 个` : '后台下载'];
-    if (done) bits.push(`${done} 个已下完`);
-    if (failed) bits.push(`${failed} 个没下成`);
+    const failed = list.filter((x) => x.status === 'error');
+    const done = list.filter((x) => x.status !== 'running' && x.status !== 'error');
+    const bits = [live.length === 1 ? `后台在${words(live).verb} ${live[0].name} ${Math.round(live[0].pct || 0)}%`
+      : live.length ? `后台在${words(live).verb} ${live.length} 个` : `后台${words(list).verb}`];
+    if (done.length) bits.push(`${done.length} 个${words(done).done}`);
+    if (failed.length) bits.push(`${failed.length} 个${words(failed).fail}`);
     return bits.join(' · ');
   }
 
-  const api = {STEPS, RECOMMENDED, PRESELECT, TTS_HIGHLIGHTS, BUNDLED, stepOf, isLast, decided, shouldShow, demoLaunch, demoFresh,
-    record, recordText, choices, nonCommercial, installTable, freshInstalled, initialPicks, plan, planLine, pkgPlan, primary, bgLine};
+  const api = {STEPS, RECOMMENDED, TTS_HIGHLIGHTS, BUNDLED, stepOf, isLast, decided, shouldShow, demoLaunch, demoFresh,
+    record, recordText, choices, nonCommercial, installTable, freshInstalled, initialPicks, plan, planLine, pkgPlan, primary,
+    agentRows, agentLine, agentPrimary, bgLine};
   if (typeof window !== 'undefined') window.BC_ONBOARDING = api;
   if (typeof module !== 'undefined') module.exports = api;
 })();
