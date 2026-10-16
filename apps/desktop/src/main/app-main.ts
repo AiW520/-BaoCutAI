@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { BrowserWindow, Menu, app, dialog, ipcMain, nativeTheme, powerMonitor, session, shell, type MessageBoxOptions } from 'electron';
+import { BrowserWindow, Menu, app, dialog, ipcMain, nativeTheme, powerMonitor, session, shell } from 'electron';
 import { onLocaleChange, setLocale } from '@baocut/protocol';
 import { resolveRuntimeHome } from '@baocut/runtime-storage';
 import { appMenuTemplate } from './app-menu.ts';
@@ -10,8 +10,7 @@ import { M } from './main-copy.ts';
 import { messageFileProperties, messageFiles } from './message-files.ts';
 import { localeFromRenderer, startupLocale } from './main-locale.ts';
 import { packagedResources } from './packaged-resources.ts';
-import { quitChoice, quitPrompt, updateChoice, updatePrompt, type QuitChoice } from './quit-prompt.ts';
-import { createInstallGate } from './update-install-gate.ts';
+import { quitChoice, quitPrompt, type QuitChoice } from './quit-prompt.ts';
 import { RuntimeSupervisor } from './runtime-supervisor.ts';
 import { installWebTabs } from './web-tabs.ts';
 import { openLocalFile } from './open-local-file.ts';
@@ -286,8 +285,6 @@ export function startDesktopApp(): void {
         quitWithoutAsking = true;
         app.quit();
       },
-      // 「重启并更新」先看自己起的 Runtime 手上的活：有活时问等任务结束后安装、现在停止并安装或取消。
-      install: (request) => installGate.request(request),
     });
     // 系统关机、重启或注销（macOS、Linux）：退出对话框会挡住系统，不问，照常停。Windows 上这时不发 `before-quit`，用不着。
     powerMonitor.on('shutdown', () => {
@@ -307,16 +304,6 @@ export function startDesktopApp(): void {
 
   /** `asking`：退出对话框开着；`stopping`：在停 Runtime，之后的退出（再按一次退出，或最后的 `app.quit`）直接放行。 */
   let quitState: 'idle' | 'asking' | 'stopping' = 'idle';
-  const installGate = createInstallGate({
-    activeWork: () => supervisor.activeWork(),
-    ask: async (work) => updateChoice(await showBusyPrompt(updatePrompt(work)!)),
-    ready: () => updates?.snapshot().state.k === 'ready',
-    quitting: () => quitState !== 'idle',
-    schedule: (run, ms) => {
-      const timer = setTimeout(run, ms);
-      return () => clearTimeout(timer);
-    },
-  });
   /** 这次退出不问手上的活：换包程序已在等应用退出，或系统在关机。 */
   let quitWithoutAsking = false;
   app.on('before-quit', (event) => {
@@ -334,8 +321,6 @@ export function startDesktopApp(): void {
         return;
       }
       quitState = 'stopping';
-      // 选过「等任务结束后安装」的不再等：留在后台的 Runtime 还在用旧包里的文件，停下的这次退出由下面的退出即安装接手。
-      installGate.cancel();
       if (choice === 'background') await supervisor.detach();
       await supervisor.stop().catch(() => {});
       // 退出即安装（架构设计 §2.6）：Runtime 停下之后把已下载、已就位的更新交给换包程序，换完不重新打开。有时限、不抛；
@@ -354,15 +339,10 @@ export function startDesktopApp(): void {
   async function confirmQuit(): Promise<QuitChoice> {
     const options = quitPrompt(await supervisor.activeWork());
     if (!options) return 'stop';
-    return quitChoice(await showBusyPrompt(options));
-  }
-
-  /** 退出与「重启并更新」的对话框：挂在当前窗口上（最小化了先还原），没有窗口时单独弹。返回按下的按钮。 */
-  async function showBusyPrompt(options: MessageBoxOptions): Promise<number> {
     const parent = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
     if (parent?.isMinimized()) parent.restore();
     const { response } = parent ? await dialog.showMessageBox(parent, options) : await dialog.showMessageBox(options);
-    return response;
+    return quitChoice(response);
   }
 }
 

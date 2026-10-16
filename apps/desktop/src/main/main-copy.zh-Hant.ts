@@ -58,9 +58,6 @@ export const zhHant: MainMessages = {
   remoteHeading: '以下呼叫已經送出，停止不會在對方那邊取消，仍可能計費：',
   remoteMore: (count: number) => `還有 ${count} 項`,
   callKind: { agent: 'Agent 任務', task: '任務', transcribe: '轉錄', synthesizeSpeech: '生成語音', generateImage: '生成圖片', generateMusic: '生成音樂', generateText: '生成文字', modelTest: '檢查模型', voiceClone: '克隆音色', agentTranslate: '翻譯' },
-  updateBusyDetail: '現在重新啟動會中斷這些任務。也可以等它們完成後再安裝更新，屆時 BaoCut 會自動重新啟動。',
-  updateWait: '等任務結束後安裝',
-  updateNow: '現在停止並安裝',
 
   webCreateNotWindow: '只有應用程式視窗可以建立網頁分頁',
   webTooManyTabs: '開啟的網頁分頁太多',

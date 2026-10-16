@@ -182,8 +182,8 @@ export class RuntimeSupervisor {
   }
 
   /**
-   * 退出与「重启并更新」前问自己起的 Runtime 手上的活（经 IPC 通道发 `{ type: 'status' }`）。连上的是别人的 Runtime
-   * （退出不停它）、它已经退出或问不到时 null。
+   * 退出前问自己起的 Runtime 手上的活（经 IPC 通道发 `{ type: 'status' }`）。连上的是别人的 Runtime（退出不停它）、它已经
+   * 退出或问不到时 null。
    */
   async activeWork(timeoutMs = ASK_TIMEOUT_MS): Promise<ActiveWork | null> {
     const reply = await this.#ask({ type: 'status' }, 'status', timeoutMs);

@@ -60,9 +60,6 @@ export const fr: MainMessages = {
   remoteHeading: 'Ces appels ont déjà été envoyés. Les arrêter ne les annule pas chez le fournisseur, et ils peuvent encore être facturés :',
   remoteMore: (count: number) => pluralForm('fr', count, { one: `et ${count} autre`, other: `et ${count} autres` }),
   callKind: { agent: 'Tâche de l’Agent', task: 'Tâche', transcribe: 'Transcrire', synthesizeSpeech: 'Générer la parole', generateImage: 'Générer une image', generateMusic: 'Générer de la musique', generateText: 'Générer du texte', modelTest: 'Vérifier le modèle', voiceClone: 'Cloner la voix', agentTranslate: 'Traduire' },
-  updateBusyDetail: 'Si vous redémarrez maintenant, elles seront interrompues. Vous pouvez aussi installer la mise à jour une fois qu’elles seront terminées ; BaoCut redémarrera alors de lui-même.',
-  updateWait: 'Installer à la fin des tâches',
-  updateNow: 'Arrêter et installer maintenant',
 
   webCreateNotWindow: "Seules les fenêtres de l’application peuvent créer des onglets web",
   webTooManyTabs: "Trop d’onglets web ouverts",

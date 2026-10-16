@@ -31,7 +31,6 @@ import {
   type AppUpdateService,
   type ByteSource,
 } from './app-update-service.ts';
-import type { InstallRequest } from './update-install-gate.ts';
 
 /*
  * 应用自动更新的 Electron 接线（架构设计 §2.6）：探测这次运行的环境、把真实的网络 / 命令 / 访达 / 退出交给服务，
@@ -209,8 +208,6 @@ function broadcast(channel: string, payload: unknown): void {
 export interface InstallAppUpdatesOptions {
   /** 换包程序起好之后怎么退出应用（缺省 `app.quit()`）：主进程据此知道这次退出不能取消。 */
   quit?: () => void;
-  /** 「重启并更新」怎样开始安装（缺省直接装）：主进程先过停止屏障，看 Runtime 手上的活（update-install-gate.ts）。 */
-  install?: (request: InstallRequest) => Promise<void>;
 }
 
 export function installAppUpdates(options: InstallAppUpdatesOptions = {}): AppUpdateService {
@@ -248,12 +245,6 @@ export function installAppUpdates(options: InstallAppUpdatesOptions = {}): AppUp
     setTimeout(() => void discardStaleDownloads(cacheDir, started), INSTALLER_CLEANUP_DELAY_MS).unref();
   }
 
-  const canAutoInstall = async () => {
-    if (!packaged) return false;
-    if (macos) return macCanAutoInstall(mac);
-    return platform === 'win32' && (await windowsInstalledCopy());
-  };
-
   const service = createAppUpdateService({
     unsupported,
     target,
@@ -269,7 +260,11 @@ export function installAppUpdates(options: InstallAppUpdatesOptions = {}): AppUp
     cacheDir,
     fetchText,
     openRemote,
-    canAutoInstall,
+    canAutoInstall: async () => {
+      if (!packaged) return false;
+      if (macos) return macCanAutoInstall(mac);
+      return platform === 'win32' && (await windowsInstalledCopy());
+    },
     // macOS 下载完就解开、验签（Windows 的安装器只核对摘要，在下载时已经做过）；开发构建从不自动换包，也不就位。
     prepare: async (info, archive, signal) => (packaged && macos ? prepareMac(info, archive, mac, signal) : { type: 'none' }),
     installPackage: async (info, archive, { staged, relaunch }) => {
@@ -298,9 +293,7 @@ export function installAppUpdates(options: InstallAppUpdatesOptions = {}): AppUp
   ipcMain.handle('baocut:updates-check', () => service.check('manual'));
   ipcMain.handle('baocut:updates-download', () => service.download());
   ipcMain.handle('baocut:updates-cancel', () => service.cancel());
-  ipcMain.handle('baocut:updates-install', () =>
-    options.install ? options.install({ install: () => service.install(), willRestart: canAutoInstall }) : service.install(),
-  );
+  ipcMain.handle('baocut:updates-install', () => service.install());
   ipcMain.handle('baocut:updates-open-download-page', () => service.openDownloadPage());
   ipcMain.on('baocut:updates-configure', (_event, raw: unknown) => {
     const prefs = (raw ?? {}) as { autoCheck?: unknown; autoDownload?: unknown };

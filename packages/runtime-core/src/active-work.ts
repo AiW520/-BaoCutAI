@@ -2,7 +2,7 @@ import type { Id, JobKind, JobRecord, MessageRef, ModelCapabilitiesView } from '
 
 /**
  * 已经交给在线或智能体 Provider 的一次调用（架构设计 §2.2 退出）：数据已经交出，停下 Runtime 也可能还在那边执行或计费。
- * 桌面端退出与「重启并更新」前列给用户看。
+ * 桌面端退出前列给用户看。
  */
 export interface RemoteCall {
   /** 发起调用的任务的种类；进程内、没有任务记录的调用为 null。 */

@@ -15,7 +15,7 @@ import { tr } from './main-copy.tr.ts';
 import { vi } from './main-copy.vi.ts';
 
 /**
- * 桌面端主进程的文案：应用菜单、打开 / 存储对话框、退出与「重启并更新」的确认、Runtime 起不来与网页标签的错误。英文是键与类型的来源，译文在
+ * 桌面端主进程的文案：应用菜单、打开 / 存储对话框、退出确认、Runtime 起不来与网页标签的错误。英文是键与类型的来源，译文在
  * `main-copy.<语言>.ts`。菜单项沿用各平台的固定说法（Electron 缺省菜单的英文）；界面语言变了主进程重建菜单（index.ts）。
  */
 const en = {
@@ -78,7 +78,7 @@ const en = {
   quitKeepRunning: 'Keep Running in Background',
   quitStop: 'Stop and Quit',
   cancel: 'Cancel',
-  // 已经交给 Provider 的调用：停下 Runtime 也不会在那边取消（退出与「重启并更新」的对话框里列出）。
+  // 已经交给 Provider 的调用：停下 Runtime 也不会在那边取消（退出对话框里列出）。
   remoteHeading: 'Already sent out. Stopping won’t cancel these at the provider, and they may still be billed:',
   remoteMore: (count: number) => `and ${count} more`,
   /** 调用出自哪种任务（同界面任务列表的叫法）；没有任务记录的是 Agent 任务，别的种类叫「任务」。 */
@@ -94,11 +94,6 @@ const en = {
     voiceClone: 'Clone voice',
     agentTranslate: 'Translate',
   },
-
-  // ---- 「重启并更新」时自己起的 Runtime 还有活（update-install-gate.ts，架构设计 §2.6）----
-  updateBusyDetail: 'Restarting now interrupts them. You can install the update after they finish instead; BaoCut then restarts by itself.',
-  updateWait: 'Install When Finished',
-  updateNow: 'Stop and Install Now',
 
   // ---- 网页标签（web-tabs.ts）----
   webCreateNotWindow: 'Only app windows can create web tabs',

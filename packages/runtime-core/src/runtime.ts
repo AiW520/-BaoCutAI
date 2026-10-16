@@ -278,8 +278,8 @@ export interface RunningRuntime {
   fonts: FontService;
   log: Logger;
   /**
-   * 手上的活（§2.2，桌面端退出与「重启并更新」前问）：排队或运行中的 Job（含历史版本迁移），还没结束的 Agent 任务，以及已经交给
-   * 在线或智能体 Provider、停下 Runtime 也可能还在那边执行或计费的调用。停下 Runtime 会中断前两种。
+   * 手上的活（§2.2，桌面端退出前问）：排队或运行中的 Job（含历史版本迁移），还没结束的 Agent 任务，以及已经交给在线或智能体
+   * Provider、停下 Runtime 也可能还在那边执行或计费的调用。停下 Runtime 会中断前两种。
    */
   activeWork(): ActiveWork;
   /**
