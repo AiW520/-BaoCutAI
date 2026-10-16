@@ -43,4 +43,12 @@ export const nl: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Het Lottie-asset kan niet worden gelezen: ${p.detail}`,
   lottieUnparsable: (p) => `Het Lottie-asset kan niet worden geparsed: ${p.detail}`,
   captionResourceInvalid: (p) => `De bronnen van deze ondertitelstijl kunnen niet worden geladen: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `Lettertype "${p.family}" staat niet in de lettertypebibliotheek; ${p.fallback} wordt gebruikt`,
+  svgNotUtf8: 'Deze SVG-sticker is geen UTF-8-tekst, dus de kleuren kunnen niet worden gewijzigd; hij wordt in de oorspronkelijke kleuren getekend',
+  speakerNoTranscript: (p) => `Deze video heeft geen transcriptie, dus het is onbekend wanneer ${p.speaker} spreekt; de golfvorm wordt stil getekend`,
+  speakerNotInSequence: (p) => `De transcriptie bevat in deze sequentie geen spraak van ${p.speaker}; de golfvorm wordt stil getekend`,
+  spectrumMissing: (p) => `Geen spectrum voor asset ${p.asset}`,
+  spectrumUnreadable: (p) => `Het spectrum van asset ${p.asset} kan niet worden gelezen: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `Deze GIF is te groot, dus alleen het eerste frame wordt getekend: ${p.detail}`,
 };

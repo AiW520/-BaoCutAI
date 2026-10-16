@@ -1140,7 +1140,7 @@ fn gifs_that_cannot_animate_draw_their_first_frame() {
     // 帧数超过上限：按第一帧画，并提示。
     let (gif, note) = frame_render::load_gif("big", &tiny_gif(frame_render::GIF_BUDGET.max_frames + 1, 1)).unwrap();
     assert!(matches!(gif, frame_render::Gif::Still(_)));
-    assert!(note.unwrap().contains("只画第一帧"));
+    assert!(note.unwrap().text.contains("only its first frame is drawn"));
     assert!(matches!(
         frame_render::load_gif("small", &tiny_gif(3, 1)).unwrap(),
         (frame_render::Gif::Animated(_), None)
@@ -1153,7 +1153,16 @@ fn gifs_that_cannot_animate_draw_their_first_frame() {
     let mut renderer = renderer(false, frame_render::Documents::default());
     let pixels = render_with(&mut renderer, &gif_sticker("loop"), 0.5, &mut media);
     near(px(&pixels, 80, 45), RED, 2);
-    assert!(renderer.warnings().iter().any(|w| w.detail.starts_with("st：GIF 太大")));
+    let note = renderer
+        .warnings()
+        .iter()
+        .find(|w| w.detail.starts_with("st: This GIF is too large"))
+        .unwrap();
+    // 提示带引用：实例在外，说明是嵌套的引用。
+    let detail_ref = serde_json::to_value(note).unwrap()["detailRef"].clone();
+    assert_eq!(detail_ref["key"], "frameRender.itemNote");
+    assert_eq!(detail_ref["params"]["item"], "st");
+    assert_eq!(detail_ref["params"]["note"]["key"], "frameRender.gifFirstFrameOnly");
 }
 
 #[test]
@@ -1181,7 +1190,7 @@ fn unreadable_gifs_are_refused() {
 #[test]
 fn text_in_a_missing_family_is_reported_on_every_frame_until_its_font_arrives() {
     let video = marker_title();
-    let note = "title：字体 \"Permanent Marker\" 在当前字体库中不可用，将使用 Noto Sans SC fallback";
+    let note = "title: Font \"Permanent Marker\" isn’t in the font library; using Noto Sans SC instead";
     let mut renderer = fallback_only_renderer();
     let fallback = render_with(&mut renderer, &video, 0.5, &mut Media::default());
     assert_eq!(renderer.missing_fonts(), vec!["Permanent Marker".to_string()]);

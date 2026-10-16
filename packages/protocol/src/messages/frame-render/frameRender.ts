@@ -64,6 +64,14 @@ const en = {
   lottieUnreadableDetail: (p: P<'detail'>) => `The Lottie asset can’t be read: ${p.detail}`,
   lottieUnparsable: (p: P<'detail'>) => `The Lottie asset can’t be parsed: ${p.detail}`,
   captionResourceInvalid: (p: P<'detail'>) => `This subtitle style’s resources can’t be loaded: ${p.detail}`,
+  itemNote: (p: P<'item' | 'note'>) => `${p.item}: ${p.note}`,
+  missingFont: (p: P<'family' | 'fallback'>) => `Font "${p.family}" isn’t in the font library; using ${p.fallback} instead`,
+  svgNotUtf8: 'This SVG sticker isn’t UTF-8 text, so its colors can’t be changed; drawing its original colors',
+  speakerNoTranscript: (p: P<'speaker'>) => `This video has no transcript, so it’s unknown when speaker ${p.speaker} talks; the waveform is drawn silent`,
+  speakerNotInSequence: (p: P<'speaker'>) => `The transcript has no speech from speaker ${p.speaker} in this sequence; the waveform is drawn silent`,
+  spectrumMissing: (p: P<'asset'>) => `No spectrum for asset ${p.asset}`,
+  spectrumUnreadable: (p: P<'asset' | 'detail'>) => `The spectrum of asset ${p.asset} can’t be read: ${p.detail}`,
+  gifFirstFrameOnly: (p: P<'detail'>) => `This GIF is too large, so only its first frame is drawn: ${p.detail}`,
 };
 
 export type FrameRenderMessages = typeof en;

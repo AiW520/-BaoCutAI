@@ -43,4 +43,12 @@ export const ja: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Lottie 素材を読み込めません：${p.detail}`,
   lottieUnparsable: (p) => `Lottie 素材を解析できません：${p.detail}`,
   captionResourceInvalid: (p) => `この字幕スタイルのリソースを読み込めません：${p.detail}`,
+  itemNote: (p) => `${p.item}：${p.note}`,
+  missingFont: (p) => `フォント「${p.family}」はフォントライブラリにありません。${p.fallback} で代用します`,
+  svgNotUtf8: 'この SVG ステッカーは UTF-8 テキストではないため色を変更できません。元の色で描画します',
+  speakerNoTranscript: (p) => `この動画には文字起こしがないため、話者 ${p.speaker} がいつ話すか分かりません。波形は無音として描画します`,
+  speakerNotInSequence: (p) => `文字起こしにはこのシーケンスでの話者 ${p.speaker} の発話がありません。波形は無音として描画します`,
+  spectrumMissing: (p) => `素材 ${p.asset} のスペクトルがありません`,
+  spectrumUnreadable: (p) => `素材 ${p.asset} のスペクトルを読み込めません：${p.detail}`,
+  gifFirstFrameOnly: (p) => `この GIF は大きすぎるため、最初のフレームだけを描画します：${p.detail}`,
 };

@@ -56,7 +56,9 @@ export interface FrozenDocument {
 /** 渲染内核的提示（字体替换、缺字、没有频谱的声波等），画面照常出。 */
 export interface RenderWarning {
   code: string;
+  /** 英文说明；界面按 `detailRef` 用当前语言显示（`localizeText`，内核转述的原话嵌在引用里）。 */
   detail: string;
+  detailRef?: MessageRef;
 }
 
 /** 这一帧没画的东西（`frame_render::UnsupportedItem`）：整层不画、跳过一个效果、转场按硬切，或素材解不出来。 */

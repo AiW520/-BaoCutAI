@@ -43,4 +43,12 @@ export const tr: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Lottie varlığı okunamıyor: ${p.detail}`,
   lottieUnparsable: (p) => `Lottie varlığı ayrıştırılamıyor: ${p.detail}`,
   captionResourceInvalid: (p) => `Bu altyazı stilinin kaynakları yüklenemiyor: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `"${p.family}" yazı tipi yazı tipi kitaplığında yok; yerine ${p.fallback} kullanılıyor`,
+  svgNotUtf8: 'Bu SVG çıkartması UTF-8 metin değil, bu yüzden renkleri değiştirilemiyor; özgün renkleriyle çiziliyor',
+  speakerNoTranscript: (p) => `Bu videonun transkripti yok, bu yüzden ${p.speaker} konuşmacısının ne zaman konuştuğu bilinmiyor; dalga formu sessiz çiziliyor`,
+  speakerNotInSequence: (p) => `Transkriptte bu sekansta ${p.speaker} konuşmacısına ait konuşma yok; dalga formu sessiz çiziliyor`,
+  spectrumMissing: (p) => `${p.asset} varlığı için spektrum yok`,
+  spectrumUnreadable: (p) => `${p.asset} varlığının spektrumu okunamıyor: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `Bu GIF çok büyük, bu yüzden yalnızca ilk karesi çiziliyor: ${p.detail}`,
 };

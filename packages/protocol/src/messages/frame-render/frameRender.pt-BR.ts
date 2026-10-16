@@ -43,4 +43,12 @@ export const ptBR: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Não é possível ler o recurso Lottie: ${p.detail}`,
   lottieUnparsable: (p) => `Não é possível analisar o recurso Lottie: ${p.detail}`,
   captionResourceInvalid: (p) => `Não é possível carregar os recursos deste estilo de legenda: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `A fonte "${p.family}" não está na biblioteca de fontes; usando ${p.fallback} no lugar`,
+  svgNotUtf8: 'Este adesivo SVG não é texto UTF-8, então as cores não podem ser alteradas; ele é desenhado com as cores originais',
+  speakerNoTranscript: (p) => `Este vídeo não tem transcrição, então não se sabe quando ${p.speaker} fala; a forma de onda é desenhada em silêncio`,
+  speakerNotInSequence: (p) => `A transcrição não tem falas de ${p.speaker} nesta sequência; a forma de onda é desenhada em silêncio`,
+  spectrumMissing: (p) => `Não há espectro para o recurso ${p.asset}`,
+  spectrumUnreadable: (p) => `Não é possível ler o espectro do recurso ${p.asset}: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `Este GIF é grande demais, então só o primeiro quadro é desenhado: ${p.detail}`,
 };

@@ -1,4 +1,4 @@
-import type { AssetRecord, DocumentRecord, FontFaceQuery, Id, Revision, Sequence, VersionRef } from '@baocut/protocol';
+import { localizeText, type AssetRecord, type DocumentRecord, type FontFaceQuery, type Id, type Revision, type Sequence, type VersionRef } from '@baocut/protocol';
 import { durationSeconds, videoSlots } from '../../model/editor.ts';
 import { LIVE_CAPTION_ITEM_ID, liveCaptionCues, liveCaptionDocuments, withLiveCaption, type LiveCue } from '../../model/live-caption.ts';
 import { captionView, type CaptionMode } from '../../model/player.ts';
@@ -7,6 +7,7 @@ import { SPECTRUM_MAX_BYTES, spectrumDecoder } from '../../render/audio-spectrum
 import { isMediaLayer, type FramePlan, type MediaLayer, type VisualLayer } from '../../render/frame-plan.ts';
 import type { FontSource, LoadedFace } from '../../render/local-fonts.ts';
 import { paintSize } from '../../render/playback-quality.ts';
+import { isSpeakerNote, missingFontFamily, renderNote } from '../../render/render-notes.ts';
 import { loadRenderPlanner } from '../../render/preview-wasm.ts';
 import {
   PlanFailure,
@@ -163,9 +164,6 @@ const MAX_RATE = 16;
 /** 有层还在定位时先不画（留着上一帧），最多等这么久，之后照画，免得一直停在旧画面上。 */
 const HOLD_PLAYING_MS = 250;
 const HOLD_PAUSED_MS = 1000;
-/** 写了 `speaker` 的声波在没有转写、转写里没有这位说话人时的提示（内核报的，见 frame-render）。 */
-// i18n-ignore: 匹配渲染内核报来的提示原文（frame-render），内核文案改了这里跟着改
-const SPEAKER_NOTE = /：(视频里没有转写，听不出说话人|转写里没有说话人) /;
 /**
  * 停着定位之后这么久没再定位才算停下。这之间还在定位的视频先用它上一张画面（不等定位落地）；接连定位（拖动播放头、
  * 按住逐帧）按播放的分辨率画。两样都不是精确的那一帧，停下再按原尺寸画。
@@ -900,19 +898,17 @@ export class PreviewEngine {
       sample(this.#stats.frames, plan.frame);
     }
     this.#stats.size = { width, height };
-    // 还在取本机字体的族不报缺字体（取不到时下一帧照报，与导出一致）。
-    // i18n-ignore: 匹配渲染内核报来的缺字体提示原文
-    const loadingFonts = [...this.#fontsLoading.keys()].map((family) => `字体 ${JSON.stringify(family)} `);
     const problems = [
       ...new Set([
-        ...rendered.skipped.filter((item) => !pending.has(item.itemId)).map((item) => item.message),
-        // 内核的提示以「实例 ID：」开头；还在取频谱的声波不报。
+        ...rendered.skipped.filter((item) => !pending.has(item.itemId)).map((item) => localizeText(item.message, item.messageRef) ?? item.message),
+        // 内核的提示按引用认（`frameRender.itemNote` 写着实例）：还在取频谱的声波不报。
         ...rendered.warnings
-          .filter((warning) => !pending.has(warning.detail.split('：')[0]!)) // i18n-ignore: 内核提示的「实例 ID：」分隔符
-          .filter((warning) => !loadingFonts.some((prefix) => warning.detail.includes(prefix)))
+          .filter((warning) => !pending.has(renderNote(warning.detailRef)?.item ?? ''))
+          // 还在取本机字体的族不报缺字体（取不到时下一帧照报，与导出一致）。
+          .filter((warning) => !this.#fontsLoading.has(missingFontFamily(warning.detailRef) ?? ''))
           // 转写还在取：先别说没有转写。
-          .filter((warning) => !(this.#speechLoading && SPEAKER_NOTE.test(warning.detail)))
-          .map((warning) => warning.detail),
+          .filter((warning) => !(this.#speechLoading && isSpeakerNote(warning.detailRef)))
+          .map((warning) => localizeText(warning.detail, warning.detailRef) ?? warning.detail),
         ...notes,
       ]),
     ];

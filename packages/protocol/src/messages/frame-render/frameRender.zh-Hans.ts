@@ -43,4 +43,12 @@ export const zhHans: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Lottie 素材读不到：${p.detail}`,
   lottieUnparsable: (p) => `Lottie 素材读不出来：${p.detail}`,
   captionResourceInvalid: (p) => `字幕样式用到的资源载入不了：${p.detail}`,
+  itemNote: (p) => `${p.item}：${p.note}`,
+  missingFont: (p) => `字体 "${p.family}" 在当前字体库中不可用，将使用 ${p.fallback} 代替`,
+  svgNotUtf8: 'SVG 贴纸不是 UTF-8 文本，换不了色，按原色画',
+  speakerNoTranscript: (p) => `视频里没有转写，听不出说话人 ${p.speaker} 什么时候说话，声波按无声画`,
+  speakerNotInSequence: (p) => `转写里没有说话人 ${p.speaker} 在这条序列上说的话，声波按无声画`,
+  spectrumMissing: (p) => `没有素材 ${p.asset} 的频谱`,
+  spectrumUnreadable: (p) => `素材 ${p.asset} 的频谱读不懂：${p.detail}`,
+  gifFirstFrameOnly: (p) => `GIF 太大，只画第一帧：${p.detail}`,
 };

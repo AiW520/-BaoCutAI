@@ -43,4 +43,12 @@ export const de: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Das Lottie-Asset kann nicht gelesen werden: ${p.detail}`,
   lottieUnparsable: (p) => `Das Lottie-Asset kann nicht geparst werden: ${p.detail}`,
   captionResourceInvalid: (p) => `Die Ressourcen dieses Untertitelstils können nicht geladen werden: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `Die Schrift „${p.family}“ ist nicht in der Schriftbibliothek; stattdessen wird ${p.fallback} verwendet`,
+  svgNotUtf8: 'Dieser SVG-Sticker ist kein UTF-8-Text, daher lassen sich seine Farben nicht ändern; er wird in den Originalfarben gezeichnet',
+  speakerNoTranscript: (p) => `Dieses Video hat kein Transkript, daher ist unbekannt, wann ${p.speaker} spricht; die Wellenform wird stumm gezeichnet`,
+  speakerNotInSequence: (p) => `Das Transkript enthält in dieser Sequenz keine Rede von ${p.speaker}; die Wellenform wird stumm gezeichnet`,
+  spectrumMissing: (p) => `Kein Spektrum für das Asset ${p.asset}`,
+  spectrumUnreadable: (p) => `Das Spektrum des Assets ${p.asset} kann nicht gelesen werden: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `Dieses GIF ist zu groß, daher wird nur das erste Bild gezeichnet: ${p.detail}`,
 };

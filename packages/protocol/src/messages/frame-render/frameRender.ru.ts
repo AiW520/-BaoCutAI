@@ -43,4 +43,12 @@ export const ru: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Не удаётся прочитать ресурс Lottie: ${p.detail}`,
   lottieUnparsable: (p) => `Не удаётся разобрать ресурс Lottie: ${p.detail}`,
   captionResourceInvalid: (p) => `Не удаётся загрузить ресурсы этого стиля субтитров: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `Шрифта «${p.family}» нет в библиотеке шрифтов; вместо него используется ${p.fallback}`,
+  svgNotUtf8: 'Этот SVG-стикер не является текстом UTF-8, поэтому его цвета нельзя изменить; он рисуется в исходных цветах',
+  speakerNoTranscript: (p) => `У этого видео нет расшифровки, поэтому неизвестно, когда говорит ${p.speaker}; волна рисуется беззвучной`,
+  speakerNotInSequence: (p) => `В расшифровке нет речи ${p.speaker} в этой последовательности; волна рисуется беззвучной`,
+  spectrumMissing: (p) => `Нет спектра для ресурса ${p.asset}`,
+  spectrumUnreadable: (p) => `Не удаётся прочитать спектр ресурса ${p.asset}: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `Этот GIF слишком большой, поэтому рисуется только первый кадр: ${p.detail}`,
 };

@@ -4,6 +4,11 @@ import type { LoadedFace, LocalFont } from '../../render/local-fonts.ts';
 import type { CaptionHit, RenderPlanner } from '../../render/render-planner.ts';
 import { PreviewEngine, videoKey, type PreviewStatus } from './preview-engine.ts';
 
+/** 内核转述来的提示（没有自己的引用）：`frameRender.itemNote` 前面写上实例，原话嵌在里面。 */
+function kernelNote(item: string, note: string) {
+  return { code: 'EXPORT_RENDER_NOTE', detail: `${item}: ${note}`, detailRef: { key: 'frameRender.itemNote', params: { item, note } } };
+}
+
 // 引擎跑在浏览器里；这里只走不碰媒体元素的那部分，补上 Node 没有的动画帧函数与 ImageData（装下像素就行）。
 vi.stubGlobal('requestAnimationFrame', () => 0);
 vi.stubGlobal('cancelAnimationFrame', () => {});
@@ -69,7 +74,7 @@ test('画面由帧计划器画：还在取的文档不报，跳过的层与内�
       renders.push([width, height]);
       return {
         plan,
-        warnings: [{ code: 'EXPORT_RENDER_NOTE', detail: 'badge：字体换成了回退字体' }],
+        warnings: [kernelNote('badge', '字体换成了回退字体')],
         skipped: [
           {
             itemId: 'cap',
@@ -187,7 +192,7 @@ test('声波要的素材频谱：在算时不报占位提示，算好了送进�
       render: () => {
         renders++;
         const spectra = [music, huge].filter((asset) => !heard.has(asset.id)).map((asset) => ({ itemId: 'viz', asset }));
-        const warnings = spectra.length ? [{ code: 'EXPORT_RENDER_NOTE', detail: 'viz：元素 viz 没有注入频谱轨，已画占位块' }] : [];
+        const warnings = spectra.length ? [kernelNote('viz', '元素 viz 没有注入频谱轨，已画占位块')] : [];
         return { plan, warnings, skipped: [], spectra };
       },
       frame: () => new Uint8ClampedArray(960 * 540 * 4),
@@ -245,11 +250,12 @@ test('写了 speaker 的声波：转写还在取时不报「没有转写」，�
     setSpeech: (transcripts: unknown[]) => (speech = transcripts),
     // 内核的样子：一份转写都没有时当作视频里没有转写；有转写而里面没有这位说话人时报另一句。
     render: () => {
-      const detail =
+      const [key, detail] =
         speech.length === 0
-          ? 'viz：视频里没有转写，听不出说话人 spk_a 什么时候说话，声波按无声画'
-          : 'viz：转写里没有说话人 spk_a 在这条序列上说的话，声波按无声画';
-      return { plan, warnings: [{ code: 'EXPORT_RENDER_NOTE', detail }], skipped: [], spectra: [] };
+          ? ['frameRender.speakerNoTranscript', 'viz: This video has no transcript, so it’s unknown when speaker spk_a talks; the waveform is drawn silent']
+          : ['frameRender.speakerNotInSequence', 'viz: The transcript has no speech from speaker spk_a in this sequence; the waveform is drawn silent'];
+      const detailRef = { key: 'frameRender.itemNote', params: { item: 'viz', note: { key, params: { speaker: 'spk_a' } } } };
+      return { plan, warnings: [{ code: 'EXPORT_RENDER_NOTE', detail, detailRef }], skipped: [], spectra: [] };
     },
     frame: () => new Uint8ClampedArray(960 * 540 * 4),
   } as unknown as RenderPlanner;
@@ -339,7 +345,8 @@ test('本机字体：报缺的族里排字点了名的 face 向宿主要一次�
   const plan = { canvas: { width: 1920, height: 1080, background: '#000000', backgroundAlpha: 1 }, layers, voices: [] };
   const note = (family: string) => ({
     code: 'EXPORT_RENDER_NOTE',
-    detail: `title：字体 "${family}" 在当前字体库中不可用，将使用 Noto Sans SC fallback`,
+    detail: `title: Font "${family}" isn’t in the font library; using Noto Sans SC instead`,
+    detailRef: { key: 'frameRender.itemNote', params: { item: 'title', note: { key: 'frameRender.missingFont', params: { family, fallback: 'Noto Sans SC' } } } },
   });
   const face = (family: string, weight = 400) => ({ family, weight, italic: false });
   const injected: string[] = [];
@@ -389,7 +396,8 @@ test('本机字体：报缺的族里排字点了名的 face 向宿主要一次�
   expect(injected).toEqual(['Climate Crisis/400']);
   expect(renders).toBeGreaterThan(before);
   expect(asked).toHaveLength(1);
-  expect(seen.at(-1)).toEqual({ kind: 'ready', problems: [note('Nowhere').detail] });
+  // 按界面语言显示（测试跑在简体中文）。
+  expect(seen.at(-1)).toEqual({ kind: 'ready', problems: ['title：字体 "Nowhere" 在当前字体库中不可用，将使用 Noto Sans SC 代替'] });
   // 同一个族的粗体后来才排到：照样去要。
   bold = true;
   engine.seek(0.1);
@@ -723,7 +731,7 @@ test('转录中的临时字幕：叠进送给计划器的序列，文档不向 R
     render: () => ({
       plan,
       captionHits: [hit],
-      warnings: [{ code: 'EXPORT_RENDER_NOTE', detail: 'bc-live-caption：字体换成了回退字体' }],
+      warnings: [kernelNote('bc-live-caption', '字体换成了回退字体')],
       skipped: [],
       spectra: [],
     }),

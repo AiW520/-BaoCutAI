@@ -43,4 +43,12 @@ export const zhHant: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Lottie 素材讀不到：${p.detail}`,
   lottieUnparsable: (p) => `Lottie 素材無法解析：${p.detail}`,
   captionResourceInvalid: (p) => `字幕樣式用到的資源無法載入：${p.detail}`,
+  itemNote: (p) => `${p.item}：${p.note}`,
+  missingFont: (p) => `字型「${p.family}」不在目前的字型庫中，改用 ${p.fallback}`,
+  svgNotUtf8: 'SVG 貼圖不是 UTF-8 文字，無法換色，按原色繪製',
+  speakerNoTranscript: (p) => `影片裡沒有轉寫，聽不出說話者 ${p.speaker} 何時說話，聲波按無聲繪製`,
+  speakerNotInSequence: (p) => `轉寫裡沒有說話者 ${p.speaker} 在這條序列上說的話，聲波按無聲繪製`,
+  spectrumMissing: (p) => `沒有素材 ${p.asset} 的頻譜`,
+  spectrumUnreadable: (p) => `素材 ${p.asset} 的頻譜無法讀取：${p.detail}`,
+  gifFirstFrameOnly: (p) => `GIF 太大，只繪製第一格：${p.detail}`,
 };

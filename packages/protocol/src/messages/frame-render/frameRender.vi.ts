@@ -43,4 +43,12 @@ export const vi: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Không thể đọc tài nguyên Lottie: ${p.detail}`,
   lottieUnparsable: (p) => `Không thể phân tích tài nguyên Lottie: ${p.detail}`,
   captionResourceInvalid: (p) => `Không thể tải tài nguyên của kiểu phụ đề này: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `Phông "${p.family}" không có trong thư viện phông; dùng ${p.fallback} thay thế`,
+  svgNotUtf8: 'Sticker SVG này không phải văn bản UTF-8 nên không đổi được màu; vẽ bằng màu gốc',
+  speakerNoTranscript: (p) => `Video này không có bản chép lời nên không biết khi nào ${p.speaker} nói; dạng sóng được vẽ im lặng`,
+  speakerNotInSequence: (p) => `Bản chép lời không có lời của ${p.speaker} trong chuỗi này; dạng sóng được vẽ im lặng`,
+  spectrumMissing: (p) => `Không có phổ cho tài nguyên ${p.asset}`,
+  spectrumUnreadable: (p) => `Không thể đọc phổ của tài nguyên ${p.asset}: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `GIF này quá lớn nên chỉ vẽ khung hình đầu tiên: ${p.detail}`,
 };

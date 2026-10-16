@@ -43,4 +43,12 @@ export const ko: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `Lottie 소재를 읽을 수 없습니다: ${p.detail}`,
   lottieUnparsable: (p) => `Lottie 소재를 해석할 수 없습니다: ${p.detail}`,
   captionResourceInvalid: (p) => `이 자막 스타일의 리소스를 불러올 수 없습니다: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `글꼴 "${p.family}"이(가) 글꼴 라이브러리에 없어 ${p.fallback}(으)로 대신합니다`,
+  svgNotUtf8: '이 SVG 스티커는 UTF-8 텍스트가 아니어서 색을 바꿀 수 없습니다. 원래 색으로 그립니다',
+  speakerNoTranscript: (p) => `이 동영상에는 전사가 없어 화자 ${p.speaker}이(가) 언제 말하는지 알 수 없습니다. 파형은 무음으로 그립니다`,
+  speakerNotInSequence: (p) => `전사에 이 시퀀스에서 화자 ${p.speaker}의 발화가 없습니다. 파형은 무음으로 그립니다`,
+  spectrumMissing: (p) => `소재 ${p.asset}의 스펙트럼이 없습니다`,
+  spectrumUnreadable: (p) => `소재 ${p.asset}의 스펙트럼을 읽을 수 없습니다: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `이 GIF는 너무 커서 첫 프레임만 그립니다: ${p.detail}`,
 };

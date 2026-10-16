@@ -1322,9 +1322,7 @@ impl OverlayRenderPlan {
         let warnings = families
             .into_iter()
             .filter(|family| !text.has_family(family))
-            .map(|family| {
-                format!("字体 {family:?} 在当前字体库中不可用，将使用 Noto Sans SC fallback")
-            })
+            .map(|family| missing_font_warning(family))
             .collect();
         // `--no-*` 不改文档，却决定画哪些元素，必须自成一段进缓存键。画质档不参与：
         // 它只改码率，不改任何一个像素。
@@ -9331,4 +9329,9 @@ impl OverlayRenderPlan {
 /// 走向量化的块折叠（[`render_raster::raster::is_opaque`]）。
 fn is_opaque(pixmap: &Pixmap) -> bool {
     render_raster::raster::is_opaque(pixmap.data())
+}
+
+/// 字体库里没有的族的提示（编译字幕时报进 `warnings()`）。宿主自己报缺字体时按它认出这一条、不重复报。
+pub fn missing_font_warning(family: &str) -> String {
+    format!("字体 {family:?} 在当前字体库中不可用，将使用 Noto Sans SC fallback")
 }

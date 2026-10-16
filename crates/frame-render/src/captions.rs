@@ -549,7 +549,19 @@ impl LegacyCaptionPlan {
             }
         }
         self.missing.extend(self.plan.text.take_missing_families());
-        (self.notes.clone(), self.missing.iter().cloned().collect())
+        // 缺字体由渲染器按族自己报（带引用），内核编译时报的同一条不再转述。
+        let notes = self
+            .notes
+            .iter()
+            .filter(|note| {
+                !self
+                    .missing
+                    .iter()
+                    .any(|family| subtitle_render::missing_font_warning(family) == **note)
+            })
+            .cloned()
+            .collect();
+        (notes, self.missing.iter().cloned().collect())
     }
 }
 

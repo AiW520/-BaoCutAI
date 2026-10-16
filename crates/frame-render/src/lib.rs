@@ -172,18 +172,24 @@ impl Gif {
 
 /// 读 GIF 素材（预览与导出同一份；导出的预检也用它判断解不解得开）。动图解不开时退回解第一帧，第二个返回值是给用户的
 /// 提示（超过 [`GIF_BUDGET`] 时）；第一帧也解不开才算失败。
-pub fn load_gif(label: &str, bytes: &[u8]) -> anyhow::Result<(Gif, Option<String>)> {
+pub fn load_gif(label: &str, bytes: &[u8]) -> anyhow::Result<(Gif, Option<message_ref::Text>)> {
     match render_raster::source::AnimatedImage::decode(label, bytes, &GIF_BUDGET) {
         Ok(animated) if animated.frame_count() > 1 => Ok((Gif::Animated(animated), None)),
         Ok(animated) => {
-            let first = animated.frame(0).ok_or_else(|| anyhow::anyhow!("{label}：GIF 没有帧"))?;
+            let first = animated.frame(0).ok_or_else(|| anyhow::anyhow!("{label}: the GIF has no frames"))?;
             Ok((Gif::Still(first), None))
         }
         Err(error) => {
             let still = render_raster::source::animated_image::decode_first_frame(label, bytes)?;
             let note = error
                 .is::<render_raster::source::animated_image::AnimatedImageBudgetExceeded>()
-                .then(|| format!("GIF 太大，只画第一帧：{error:#}"));
+                .then(|| {
+                    message_ref::msg!(
+                        "frameRender.gifFirstFrameOnly",
+                        "This GIF is too large, so only its first frame is drawn: {detail}",
+                        detail = format!("{error:#}")
+                    )
+                });
             Ok((Gif::Still(std::sync::Arc::new(still)), note))
         }
     }

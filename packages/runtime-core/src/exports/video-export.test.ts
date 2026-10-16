@@ -780,12 +780,17 @@ describe.skipIf(!engine || !worker || !ffmpeg)('成片导出（真实引擎 + Re
           if (r > 200 && g > 200 && b > 200) white++;
         }
       }
-      const notes = (job.warnings ?? []).map((w) => w.detail ?? '').filter((d) => d.includes('字体 "ColrProbe"'));
+      const notes = (job.warnings ?? []).map((w) => w.detail ?? '').filter((d) => d.includes('Font "ColrProbe"'));
       return { red, white, notes, job };
     };
     const missing = await exported();
     expect(missing.notes).toHaveLength(1);
-    expect(missing.notes[0]).toContain('在当前字体库中不可用');
+    expect(missing.notes[0]).toContain('isn’t in the font library');
+    // 带引用：界面按自己的语言显示，按引用认出缺的族。
+    expect(missing.job.warnings?.find((w) => w.detail === missing.notes[0])?.detailRef).toMatchObject({
+      key: 'frameRender.itemNote',
+      params: { note: { key: 'frameRender.missingFont', params: { family: 'ColrProbe' } } },
+    });
     expect(missing.red).toBe(0);
     expect(missing.white).toBeGreaterThan(100);
     await fs.copyFile(

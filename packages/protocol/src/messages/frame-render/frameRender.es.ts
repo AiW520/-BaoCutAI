@@ -43,4 +43,12 @@ export const es: FrameRenderMessages = {
   lottieUnreadableDetail: (p) => `No se puede leer el recurso Lottie: ${p.detail}`,
   lottieUnparsable: (p) => `No se puede analizar el recurso Lottie: ${p.detail}`,
   captionResourceInvalid: (p) => `No se pueden cargar los recursos de este estilo de subtítulos: ${p.detail}`,
+  itemNote: (p) => `${p.item}: ${p.note}`,
+  missingFont: (p) => `La fuente "${p.family}" no está en la biblioteca de fuentes; se usa ${p.fallback} en su lugar`,
+  svgNotUtf8: 'Este sticker SVG no es texto UTF-8, así que no se pueden cambiar sus colores; se dibuja con los colores originales',
+  speakerNoTranscript: (p) => `Este vídeo no tiene transcripción, así que no se sabe cuándo habla ${p.speaker}; la onda se dibuja en silencio`,
+  speakerNotInSequence: (p) => `La transcripción no tiene intervenciones de ${p.speaker} en esta secuencia; la onda se dibuja en silencio`,
+  spectrumMissing: (p) => `No hay espectro para el recurso ${p.asset}`,
+  spectrumUnreadable: (p) => `No se puede leer el espectro del recurso ${p.asset}: ${p.detail}`,
+  gifFirstFrameOnly: (p) => `Este GIF es demasiado grande, así que solo se dibuja su primer fotograma: ${p.detail}`,
 };
