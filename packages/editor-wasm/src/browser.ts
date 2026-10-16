@@ -47,6 +47,9 @@ export const {
   speakerProposal,
   applySpeakers,
   sourceChapters,
+  audioAnalysis,
+  sfxRender,
+  sfxRecipes,
 } = semanticsApi(editorSemantics);
 
 /** 与 Node 一侧同名，浏览器里没有文件路径。 */
