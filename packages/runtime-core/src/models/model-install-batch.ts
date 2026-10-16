@@ -28,12 +28,15 @@ export function mergeInstallPlans(
   const estimatedBytes = pending.reduce((sum, c) => sum + (c.detail.bytes ?? c.detail.estimatedBytes), 0);
   const downloadBytes = pending.some((c) => c.detail.bytes === null) ? null : estimatedBytes;
   const spaces = details.flatMap((d) => d.plan.availableBytes === null ? [] : [d.plan.availableBytes]);
+  // 存放位置：有暂停在某处的下载时报告那里（它在原处续传），否则各模型包是同一个请求的位置。
+  const dir = (details.find((d) => d.plan.dir?.fixed) ?? details[0])?.plan.dir;
   return {
     components: items.map((c) => c.item).sort((a, b) => Number(!!a.origin) - Number(!!b.origin)),
     downloadBytes, estimatedBytes, confirmBytes: downloadBytes ?? estimatedBytes,
     resumedBytes: pending.reduce((sum, c) => sum + c.detail.staged, 0),
     availableBytes: spaces.length ? Math.min(...spaces) : null,
     source: [...new Set(pending.map((c) => c.item.source).filter(Boolean))].join(' + '),
+    ...(dir ? { dir } : {}),
     upToDate: pending.length === 0,
   };
 }

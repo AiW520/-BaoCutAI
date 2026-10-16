@@ -45,6 +45,27 @@ export function dirHealth(info: ModelsDirInfo): string | null {
   return null;
 }
 
+/**
+ * 卡片上那一句：装好的模型里，下载时放在了别处（组件带 `location`）的，按文件夹分组；更改模型目录时它们不跟着移动。
+ * 与 Runtime 的 `modelCount` 同一条规则：必需的组件有一件在别处就不算在模型目录里。没有时 null。
+ */
+export function elsewhereNote(bundles: readonly ModelBundleStatus[]): string | null {
+  const groups: { path: string; names: string[] }[] = [];
+  let count = 0;
+  for (const bundle of bundles) {
+    const required = (bundle.components ?? []).filter((c) => !c.optional && c.origin !== 'github-release');
+    if (!required.length || !required.every((c) => c.state === 'installed')) continue;
+    const at = required.find((c) => c.location)?.location;
+    if (!at) continue;
+    count += 1;
+    const name = bundle.label ?? bundle.bundleId;
+    const group = groups.find((g) => g.path === at);
+    if (group) group.names.push(name);
+    else groups.push({ path: at, names: [name] });
+  }
+  return count ? M.elsewhere(count, groups.map((g) => ({ names: g.names, path: shortenDir(g.path, 36) }))) : null;
+}
+
 const LIVE: readonly JobRecord['state'][] = ['queued', 'running'];
 const DIR_KINDS: readonly JobRecord['kind'][] = ['modelInstall', 'modelTest'];
 

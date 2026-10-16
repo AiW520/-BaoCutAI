@@ -58,4 +58,23 @@ export const de: ModelsInstallMessages = {
   removed: (bundleId: string) => `Gelöscht: ${bundleId}`,
   removedKept: (bundleId: string, repos: readonly string[]) =>
     `Gelöscht: ${bundleId} · ${and(repos)} bleiben erhalten, da andere Modellpakete sie weiterhin verwenden: ${pluralForm('de', repos.length, { one: "sie", other: "sie" })}`,
+  noSpaceFolder: (need: string, have: string) =>
+    `Nicht genug Speicherplatz: benötigt ${need}; das Laufwerk dieses Ordners hat nur ${have} frei. Speicher freigeben oder einen anderen Ordner wählen.`,
+  folder: {
+    label: 'Speichern in',
+    modelsDirChip: 'Modellordner',
+    envChip: 'Umgebungsvariable',
+    change: 'Ändern…',
+    pickTitle: 'Speicherort für diesen Download wählen',
+    reset: 'Modellordner verwenden',
+    pickedNote: 'Nur für diesen Download; der Modellordner bleibt unverändert.',
+    toolsNote: 'Tools und Laufzeiten kommen in den Tool-Ordner von BaoCut, nicht hierher.',
+    envNote: 'Der Modellordner ist durch die Umgebungsvariable BAOCUT_MODELS_DIR festgelegt; Downloads landen dort.',
+    fixedNote: 'Der pausierte Download wird in dem Ordner fortgesetzt, in dem er begonnen hat.',
+    missingTitle: 'Dieser Ordner wurde nicht gefunden',
+    missingText: 'Dieser Ordner existiert nicht. Das passiert auch, wenn ein externes Laufwerk nicht verbunden ist; verbinde es oder wähle einen anderen Ordner.',
+    notWritableTitle: 'Dieser Ordner ist nicht beschreibbar',
+    notWritableText: 'BaoCut darf in diesen Ordner nicht schreiben. Wähle einen anderen Ordner oder ändere zuerst seine Berechtigungen.',
+  },
+  storedAt: (path: string) => `Gespeichert in ${path} · außerhalb des Modellordners`,
 };

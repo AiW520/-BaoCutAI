@@ -53,4 +53,23 @@ export const ko: ModelsInstallMessages = {
       .join(' '),
   removed: (bundleId) => `${bundleId} 삭제됨`,
   removedKept: (bundleId, repos) => `${bundleId} 삭제됨 · ${repos.join(', ')} 구성 요소는 다른 모델 패키지가 아직 사용하므로 유지됨`,
+  noSpaceFolder: (need, have) =>
+    `디스크 공간이 부족합니다: ${need} 공간이 필요하지만 이 폴더가 있는 디스크에는 ${have}만 남아 있습니다. 공간을 확보하거나 다른 폴더를 선택하세요.`,
+  folder: {
+    label: '저장 위치',
+    modelsDirChip: '모델 폴더',
+    envChip: '환경 변수',
+    change: '변경…',
+    pickTitle: '이번 다운로드를 저장할 위치 선택',
+    reset: '모델 폴더로 되돌리기',
+    pickedNote: '이번 다운로드에만 사용하며 모델 폴더는 바뀌지 않습니다.',
+    toolsNote: '도구 및 런타임은 여기가 아니라 BaoCut의 도구 폴더에 설치됩니다.',
+    envNote: '모델 폴더가 BAOCUT_MODELS_DIR 환경 변수로 지정되어 있어 다운로드는 그곳에 저장됩니다.',
+    fixedNote: '일시 중지된 다운로드는 처음 시작한 폴더에서 이어집니다.',
+    missingTitle: '이 폴더를 찾을 수 없습니다',
+    missingText: '이 폴더가 없습니다. 외장 드라이브가 연결되지 않았을 때도 이렇게 됩니다. 연결하거나 다른 폴더를 선택하세요.',
+    notWritableTitle: '이 폴더에 쓸 수 없습니다',
+    notWritableText: 'BaoCut에 이 폴더의 쓰기 권한이 없습니다. 다른 폴더를 선택하거나 먼저 권한을 변경하세요.',
+  },
+  storedAt: (path) => `${path}에 저장됨 · 모델 폴더 밖`,
 };

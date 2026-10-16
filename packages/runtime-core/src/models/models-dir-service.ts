@@ -46,6 +46,8 @@ import { taskFailure } from '../localized.ts';
  * 生效的目录：Runtime 启动时环境变量 `BAOCUT_MODELS_DIR` 给了目录就用它（只读，`setDir` 以 `MODELS_DIR_ENV_LOCKED`
  * 拒绝）；否则用设置 `models.dir`；都没有时 `<runtime-home>/models`。
  *
+ * 下载时放到模型目录以外的仓库（`ModelCatalog.locations()`）不归模型目录管：移动只搬模型目录里的，那些仓库留在原处、照常可用。
+ *
  * 更改的顺序：查在用（排队或进行中的本地模型任务、移动）→ 卸下所有空闲的 Worker（有忙的就拒绝）→ 再查一次 →
  * `switch` 时写设置、换模型目录的根；`move` 时提交一个 `modelsMove` 任务，期间模型包都报告为 `relocating`、不能提交任务，
  * 搬完、校验完再写设置、换根、删原目录里的文件。中途失败或取消时回滚，设置与模型目录不变。
@@ -137,10 +139,11 @@ export class ModelsDirService {
     const access = await dirAccess(root);
     const scan = await scanModelsDir(root, catalog.definitions());
     const bundles = await catalog.list();
-    // 与 `scanModelsDir` 同一条规则：发布页组件（音乐引擎）在 Runtime Home 的 `tools/` 里，不算这个文件夹里的模型。
+    // 与 `scanModelsDir` 同一条规则：发布页组件（音乐引擎）在 Runtime Home 的 `tools/` 里，不算这个文件夹里的模型；下载时放到
+    // 别处的（组件带 `location`）也不算。
     const modelCount = bundles.filter((b) => {
       const required = (b.components ?? []).filter((c) => !c.optional && c.origin !== 'github-release');
-      return required.length > 0 && required.every((c) => c.state === 'installed');
+      return required.length > 0 && required.every((c) => c.state === 'installed' && !c.location);
     }).length;
     return {
       path: root,

@@ -78,4 +78,6 @@ export const fr: ModelsDirMessages = {
   moveValidating: (amount: string | null) => `Vérification des fichiers copiés${amount ? ` (${amount})` : ""}…`,
   movePublishing: "Fin du déplacement…",
   moving: (amount: string | null, to: string | null) => `Déplacement${amount ? ` ${amount}` : ""}${to ? ` vers ${to}` : ""}…`,
+  elsewhere: (count: number, groups: readonly { names: readonly string[]; path: string }[]) =>
+    `${count === 1 ? '1 modèle est enregistré' : `${count} modèles sont enregistrés`} dans d’autres dossiers : ${groups.map((g) => `${and(g.names)} (${g.path})`).join(' ; ')}. ${count === 1 ? 'Il reste' : 'Ils restent'} en place quand vous changez le dossier des modèles.`,
 };

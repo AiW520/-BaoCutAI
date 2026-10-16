@@ -842,7 +842,11 @@ export interface RpcMethods {
    * 暂存区里已经收到并校验过的文件不再下载，没下完的文件按 HTTP Range 续传。都已装好时 `jobId` 为 null。同一个模型包已经在
    * 安装时返回那个任务。严格离线（`offline.strict`）时 `conflict`（`OFFLINE_STRICT`）。
    */
-  'models.install': { params: { bundleId: string; confirmBytes?: number; commandId?: Id }; result: ModelInstallResult };
+  /**
+   * `dir`：这次新下载的模型仓库放进哪个文件夹（绝对路径，其下是 `<owner>/<repo>/`）；不给、null 或就是模型目录时放模型目录。模型目录
+   * 不变，这些仓库记下位置、不随模型目录移动（架构设计 §6.3）。
+   */
+  'models.install': { params: { bundleId: string; confirmBytes?: number; commandId?: Id; dir?: string | null }; result: ModelInstallResult };
   /** 多个模型包一次确认；共享组件去重，各项可指定本次来源，不写设置。 */
   'models.installBatch': { params: ModelInstallBatchParams; result: ModelInstallBatchResult };
   /**

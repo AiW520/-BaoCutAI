@@ -50,4 +50,6 @@ export const ru: ModelsDirMessages = {
   moveValidating: (amount) => `Проверка скопированных файлов${amount ? ` (${amount})` : ""}…`,
   movePublishing: "Завершение перемещения…",
   moving: (amount, to) => `Перемещение${amount ? ` ${amount}` : ""}${to ? ` до ${to}` : ""}…`,
+  elsewhere: (count, groups) =>
+    `${pluralForm('ru', count, { one: `${count} модель хранится`, few: `${count} модели хранятся`, many: `${count} моделей хранятся`, other: `${count} модели хранятся` })} в других папках: ${groups.map((g) => `${g.names.join(', ')} (${g.path})`).join('; ')}. При смене папки моделей ${count === 1 ? 'она остаётся' : 'они остаются'} на месте.`,
 };

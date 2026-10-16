@@ -3,13 +3,14 @@ import { newId, type ModelBundleStatus, type ModelInstallBatchPlan } from '@baoc
 import { Button, ButtonGroup, Content, Dialog, DialogContainer, Heading, ProgressCircle } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { DOWNLOAD_SOURCE_COPY as SRC, envName, kindOfComponent } from '../../model/download-source.ts';
-import { installPlanView, problemText, rpcProblem } from '../../model/models-install.ts';
+import { installFolderView, installPlanView, problemText, rpcProblem } from '../../model/models-install.ts';
 import { partLabel } from '../../model/models-local.ts';
 import { M as SEM } from '../../model/semantic-copy.ts';
 import { TEXT_BUNDLE } from '../../model/semantic-package.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useShell } from '../../state/shell-store.ts';
 import { SectionLink } from '../tools/tool-parts.tsx';
+import { DownloadFolder } from './download-folder.tsx';
 import { SourcePicker } from './download-sources.tsx';
 import { LOCAL_INSTALL_COPY as COPY } from './local-models-copy.ts';
 
@@ -24,14 +25,18 @@ const rowHead = style({ display: 'flex', justifyContent: 'space-between', flexWr
 const labelStyle = style({ font: 'ui-sm', fontWeight: 'bold', color: 'gray-900' });
 const sourceStyle = style({ font: 'code-xs', color: 'gray-600', overflowWrap: 'anywhere', userSelect: 'text' });
 
-/** Semantic search installs both models through one confirmation. Sizes and shared components come from Runtime. */
+/**
+ * Semantic search installs both models through one confirmation. Sizes and shared components come from Runtime.
+ * The storage folder (`dir`, null for the models folder) applies to this download only, like the single-model dialog.
+ */
 export function BatchInstallDialog({ bundles, name, onStarted, onClose }: {
   bundles: readonly ModelBundleStatus[]; name: string; onStarted: () => void; onClose: () => void;
 }) {
   const runtime = useRuntime();
   const go = useShell((s) => s.go);
   const [sources, setSources] = useState<Record<string, string | null>>({});
-  const [planned, setPlanned] = useState<{ plan: ModelInstallBatchPlan; sources: typeof sources } | null>(null);
+  const [dir, setDir] = useState<string | null>(null);
+  const [planned, setPlanned] = useState<{ plan: ModelInstallBatchPlan; sources: typeof sources; dir: string | null } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [replanned, setReplanned] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -39,16 +44,17 @@ export function BatchInstallDialog({ bundles, name, onStarted, onClose }: {
   useEffect(() => {
     let live = true;
     setFailure(null);
-    runtime.client.request('models.installBatch', { bundleIds: bundles.map((b) => b.bundleId), sources }).then(
-      ({ plan }) => { if (live) setPlanned({ plan, sources }); },
+    runtime.client.request('models.installBatch', { bundleIds: bundles.map((b) => b.bundleId), sources, ...(dir ? { dir } : {}) }).then(
+      ({ plan }) => { if (live) setPlanned({ plan, sources, dir }); },
       (error: unknown) => { if (live) setFailure(problemText(rpcProblem(error))); },
     );
     return () => { live = false; };
-  }, [runtime, bundles, sources]);
+  }, [runtime, bundles, sources, dir]);
   const plan = planned?.plan;
   const view = plan ? installPlanView(plan) : null;
-  const refreshing = planned?.sources !== sources;
-  const canConfirm = !!plan && !!view && !view.upToDate && !view.noSpace && !refreshing && !busy;
+  const folder = plan ? installFolderView(plan) : null;
+  const refreshing = planned?.sources !== sources || planned?.dir !== dir;
+  const canConfirm = !!plan && !!view && !view.upToDate && !view.noSpace && !folder?.problem && !refreshing && !busy;
   const submit = async (close: () => void) => {
     if (!plan || !canConfirm) return;
     setBusy(true);
@@ -57,14 +63,14 @@ export function BatchInstallDialog({ bundles, name, onStarted, onClose }: {
       // Freeze every effective choice, including defaults, so a settings change cannot redirect queued downloads.
       const selected = Object.fromEntries(plan.components.map((c) => [`${c.repo}@${c.revision}`, c.endpoint]));
       const result = await runtime.client.request('models.installBatch', {
-        bundleIds: bundles.map((b) => b.bundleId), sources: selected, confirmBytes: plan.confirmBytes, commandId,
+        bundleIds: bundles.map((b) => b.bundleId), sources: selected, ...(dir ? { dir } : {}), confirmBytes: plan.confirmBytes, commandId,
       });
       if (result.jobs.length) { onStarted(); close(); }
-      else setPlanned({ plan: result.plan, sources });
+      else setPlanned({ plan: result.plan, sources, dir });
     } catch (error) {
       const detail = (error as { details?: { code?: string; plan?: ModelInstallBatchPlan } })?.details;
       if (detail?.code === 'MODEL_INSTALL_SIZE_CHANGED' && detail.plan) {
-        setPlanned({ plan: detail.plan, sources });
+        setPlanned({ plan: detail.plan, sources, dir });
         setReplanned(true);
       } else setFailure(problemText(rpcProblem(error)));
     } finally { setBusy(false); }
@@ -85,6 +91,7 @@ export function BatchInstallDialog({ bundles, name, onStarted, onClose }: {
                 {view.resumed ? <p className={fine}>{view.resumed}</p> : null}
                 {completing ? <p className={fine}>{COPY.completeNote}</p> : null}
                 {view.noSpace ? <p className={problem}>{view.noSpace}</p> : null}
+                {folder ? <DownloadFolder view={folder} isDisabled={busy || refreshing} onPick={setDir} /> : null}
                 <ul className={list} aria-label={COPY.details}>
                   {plan.components.map((c, i) => {
                     const key = `${c.repo}@${c.revision}`;

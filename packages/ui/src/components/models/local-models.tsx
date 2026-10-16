@@ -31,6 +31,7 @@ import SearchIcon from '@react-spectrum/s2/icons/Search';
 import { iconStyle, style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import {
   bundleActions,
+  bundleLocation,
   installFailure,
   installFailureText,
   installProgressView,
@@ -39,6 +40,7 @@ import {
   removalEstimate,
   removedToast,
   rpcProblem,
+  storedAtText,
 } from '../../model/models-install.ts';
 import { checkDetailLines, checkLineView, hasCheck, tryNotice, type CheckAbilities } from '../../model/model-check.ts';
 import { checkCaption, CHECK_HEAD, CHECK_LABEL, TRY_SUBJECT_IMAGE, TRY_SUBJECT_MUSIC } from '../../model/model-check-copy.ts';
@@ -728,6 +730,8 @@ function BundleRow({
   // 详情的「许可」一行：所有类都列权重的许可，再加上与它不同或要署名的组件（设计稿 settings-local.jsx `lics`）。
   const licenses = licenseLines(bundle, weights);
   const engine = model ? familyDesc(model) : null;
+  // 下载时放在了模型目录以外（下载确认框的「存放位置」）：写明在哪，更改模型目录时它不跟着走。
+  const storedAt = storedAtText(bundle);
 
   return (
     <div className={modelRow} id={speech ? quickAnchor(id) : undefined}>
@@ -751,6 +755,11 @@ function BundleRow({
           </div>
           {restricted ? <div className={modelFacts}>{licenseBrief(restricted)}</div> : null}
           {musicWhy ? <div className={modelFacts}>{musicWhy}</div> : null}
+          {storedAt ? (
+            <div className={modelFacts} title={bundleLocation(bundle) ?? undefined}>
+              {storedAt}
+            </div>
+          ) : null}
         </div>
         <div className={modelActions}>{buttons}</div>
       </div>

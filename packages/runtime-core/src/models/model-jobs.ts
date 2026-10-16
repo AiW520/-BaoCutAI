@@ -242,6 +242,8 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     engineAvailable: () => audioCppEngine() !== null,
     // LiteRT-LM 的引擎缓存（embedding 模型包）：在缓存目录里，删了下次加载重建。
     engineCacheDir: path.join(home.cacheDir, 'litertlm'),
+    // 下载时放到模型目录以外的仓库记在 Runtime Home 里，不随模型目录移动。
+    locationsFile: path.join(home.root, 'store', 'model-locations.json'),
     ...(manifests ? { manifests } : {}),
     ...(testBundles ? { bundles: testBundles } : {}),
   });
@@ -504,6 +506,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     log,
     settings: options.installSettings ?? (() => ({ downloadEndpoint: null, offlineStrict: false })),
     toolsEndpoint: options.toolsEndpoint ?? (() => toolsDownloadEndpoint(toolOverrides, null)),
+    dirLocked: envModelsDir !== null,
     ...modelInstall,
     refresh: () => void services.refresh().catch(() => {}),
     clearDefaults: (bundleId) => services.clearLocalDefaults(bundleId),

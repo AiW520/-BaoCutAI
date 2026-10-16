@@ -1248,9 +1248,12 @@ export const methodParamSchemas = {
     bundleIds: z.array(bundleId).min(1).max(16).refine((ids) => new Set(ids).size === ids.length),
     sources: z.record(z.string().min(1).max(512), z.string().max(2048).refine(isDownloadEndpoint, { error: () => V.downloadEndpoint().text }).nullable())
       .refine((sources) => Object.keys(sources).length <= 128).optional(),
+    dir: absolutePath.nullable().optional(),
     confirmBytes: z.number().int().min(0).optional(), commandId: id.optional(),
   }).strict(),
-  'models.install': z.object({ bundleId, confirmBytes: z.number().int().min(0).optional(), commandId: id.optional() }).strict(),
+  'models.install': z
+    .object({ bundleId, confirmBytes: z.number().int().min(0).optional(), commandId: id.optional(), dir: absolutePath.nullable().optional() })
+    .strict(),
   'models.cancelInstall': z.object({ bundleId, discard: z.boolean().optional() }).strict(),
   'models.remove': z.object({ bundleId }).strict(),
   'models.repair': z.object({ bundleId, confirmBytes: z.number().int().min(0).optional(), commandId: id.optional() }).strict(),

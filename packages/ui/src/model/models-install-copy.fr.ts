@@ -59,4 +59,23 @@ export const fr: ModelsInstallMessages = {
   removed: (bundleId: string) => `Supprimé : ${bundleId}`,
   removedKept: (bundleId: string, repos: readonly string[]) =>
     `Supprimé : ${bundleId} · ${and(repos)} ${pluralForm('fr', repos.length, { one: "reste utilisé par d’autres paquets et a été conservé", other: "restent utilisés par d’autres paquets et ont été conservés" })}`,
+  noSpaceFolder: (need: string, have: string) =>
+    `Espace disque insuffisant : il faut ${need}, et le disque de ce dossier n’a que ${have} libres. Libérez de l’espace ou choisissez un autre dossier.`,
+  folder: {
+    label: 'Enregistrer dans',
+    modelsDirChip: 'Dossier des modèles',
+    envChip: 'Variable d’environnement',
+    change: 'Changer…',
+    pickTitle: 'Choisir où enregistrer ce téléchargement',
+    reset: 'Utiliser le dossier des modèles',
+    pickedNote: 'Pour ce téléchargement uniquement ; le dossier des modèles ne change pas.',
+    toolsNote: 'Les outils et environnements d’exécution vont dans le dossier des outils de BaoCut, pas ici.',
+    envNote: 'Le dossier des modèles est défini par la variable d’environnement BAOCUT_MODELS_DIR ; les téléchargements y vont.',
+    fixedNote: 'Le téléchargement en pause reprend dans le dossier où il a commencé.',
+    missingTitle: 'Dossier introuvable',
+    missingText: 'Ce dossier n’existe pas. Cela arrive aussi quand un disque externe n’est pas connecté ; connectez-le ou choisissez un autre dossier.',
+    notWritableTitle: 'Dossier non accessible en écriture',
+    notWritableText: 'BaoCut n’a pas l’autorisation d’écrire dans ce dossier. Choisissez un autre dossier ou modifiez d’abord ses autorisations.',
+  },
+  storedAt: (path: string) => `Enregistré dans ${path} · hors du dossier des modèles`,
 };

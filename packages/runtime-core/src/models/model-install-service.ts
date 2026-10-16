@@ -90,6 +90,8 @@ import { localizedOf, taskFailure } from '../localized.ts';
  *   状态（`downloading`、进度、`selfTest`）由模型目录经 `models` 主题的 `bundle.updated` 送出。
  * - 安装是两步：先返回计划与 `confirmBytes`，调用方原样交回才提交任务。安装任务排在一个串行队列里（一次装一个）；检查与
  *   这个模型包的转写排同一个队列（同一个 Worker）。
+ * - 安装可以给存放位置 `dir`（这次新下载的模型仓库放那里，模型目录不变）：计划里报告文件夹在不在、能不能写（`plan.dir`），
+ *   确认时有问题就拒绝；模型目录由环境变量指定时只能放模型目录。
  * - 取消安装就是取消它的任务：暂存区保留（暂停），再次安装续传；`discard` 时删掉暂存区。
  * - 删除前确认没有任务在用这个模型包（排队或进行中的转写、检查、安装），Worker 空闲时先卸载；删除后没有出厂默认的能力里
  *   指向它的默认值一并清掉。
@@ -112,6 +114,8 @@ export interface ModelInstallServiceOptions {
   settings: () => { downloadEndpoint: string | null; offlineStrict: boolean };
   /** 读 `BAOCUT_MODELS_ENDPOINT` 的环境，默认 `process.env`。 */
   env?: NodeJS.ProcessEnv;
+  /** 模型目录由环境变量 `BAOCUT_MODELS_DIR` 指定：这时只能下载到模型目录（`dir` 给别处时 `MODELS_DIR_ENV_LOCKED`）。 */
+  dirLocked?: boolean;
   /** 发布页组件（LiteRT-LM 的 C 库）的下载镜像（`BAOCUT_TOOLS_ENDPOINT` / 设置 `tools.downloadEndpoint`）；null 时用官方地址。 */
   toolsEndpoint?: () => string | null;
   /** 下载器的调节项（测试注入本机的假服务、可用空间与内置清单）；给了的项优先于上面两项。 */
@@ -154,32 +158,36 @@ export class ModelInstallService {
 
   /** 安装或修复：没有 `confirmBytes` 时只返回计划；交回的字节数与计划一致才提交任务。 */
   async install(
-    params: { bundleId: string; confirmBytes?: number; commandId?: Id },
+    params: { bundleId: string; confirmBytes?: number; commandId?: Id; dir?: string | null },
     submitter: JobSubmitter,
     options: { repair?: boolean } = {},
   ): Promise<ModelInstallResult> {
     const repair = options.repair ?? false;
+    // 修复在组件所在的地方修，不换位置。
+    const dir = repair ? null : this.#requestedDir(params.dir);
     this.#definition(params.bundleId);
     if (params.commandId) {
       const existing = this.#jobs.jobForCommand(params.commandId);
-      if (existing) return { plan: (await this.#plan(params.bundleId, repair)).plan, jobId: existing };
+      if (existing) return { plan: (await this.#plan(params.bundleId, repair, undefined, dir)).plan, jobId: existing };
     }
     if (this.#options.settings().offlineStrict) {
       throw new RpcError('conflict', RcModels.offlineStrict(), { code: 'OFFLINE_STRICT' });
     }
     await this.#guardDir(true);
     const active = this.#activeInstall(params.bundleId);
-    const detail = await this.#plan(params.bundleId, repair);
+    const detail = await this.#plan(params.bundleId, repair, undefined, dir);
     if (active) return { plan: detail.plan, jobId: active.jobId };
     if (detail.plan.upToDate || params.confirmBytes === undefined) return { plan: detail.plan, jobId: null };
     if (params.confirmBytes !== detail.plan.confirmBytes) {
       throw new RpcError('conflict', RcModels.sizeChanged(), { code: 'MODEL_INSTALL_SIZE_CHANGED', plan: detail.plan });
     }
+    this.#guardTarget(detail);
     return { plan: detail.plan, jobId: this.#submitInstall(detail, submitter, params.commandId) };
   }
 
   /** 全部计划确认后同步入队，不在两个模型之间再次询问；共享文件由串行安装队列复用。 */
   async installBatch(params: ModelInstallBatchParams, submitter: JobSubmitter): Promise<ModelInstallBatchResult> {
+    const dir = this.#requestedDir(params.dir);
     const defs = params.bundleIds.map((id) => this.#definition(id));
     if (this.#options.settings().offlineStrict) {
       throw new RpcError('conflict', RcModels.offlineStrict(), { code: 'OFFLINE_STRICT' });
@@ -198,7 +206,7 @@ export class ModelInstallService {
         } else endpoints[key] = resolveModelsEndpoint(env, params.sources[key]).endpoint;
       }
     }
-    const details = await Promise.all(params.bundleIds.map((id) => this.#plan(id, false, endpoints)));
+    const details = await Promise.all(params.bundleIds.map((id) => this.#plan(id, false, endpoints, dir)));
     const plan = mergeInstallPlans(details, locked);
     if (params.confirmBytes === undefined || plan.upToDate) return { plan, jobs: [] };
     if (params.commandId) {
@@ -210,6 +218,7 @@ export class ModelInstallService {
     if (params.confirmBytes !== plan.confirmBytes) {
       throw new RpcError('conflict', RcModels.sizeChanged(), { code: 'MODEL_INSTALL_SIZE_CHANGED', plan });
     }
+    for (const detail of details) this.#guardTarget(detail);
     if (plan.availableBytes !== null && plan.availableBytes < plan.confirmBytes) {
       throw new RpcError('conflict', ModelsModelInstaller.noSpace(), {
         code: 'MODEL_DOWNLOAD_NO_SPACE', requiredBytes: plan.confirmBytes, availableBytes: plan.availableBytes,
@@ -225,7 +234,15 @@ export class ModelInstallService {
   }
 
   #submitInstall(detail: InstallPlanDetail, submitter: JobSubmitter, commandId?: Id): Id {
-    const spec = { task: 'modelInstall' as const, bundleId: detail.plan.bundleId, repair: detail.repair, confirmBytes: detail.plan.confirmBytes };
+    const target = detail.plan.dir?.path ?? this.#catalog.root;
+    const spec = {
+      task: 'modelInstall' as const,
+      bundleId: detail.plan.bundleId,
+      repair: detail.repair,
+      confirmBytes: detail.plan.confirmBytes,
+      // 放到模型目录以外时记下位置：同一个模型包装到不同的地方不算同一个任务，产物也写明去了哪里。
+      ...(target !== this.#catalog.root ? { dir: target } : {}),
+    };
     const hash = `sha256:${sha256Hex(canonicalJson({ ...spec, components: detail.plan.components }))}`;
     let jobId = '';
     ({ jobId } = this.#jobs.submitTask(
@@ -415,6 +432,7 @@ export class ModelInstallService {
             bundleId,
             repair: detail.repair,
             source: detail.endpoint,
+            dir: detail.plan.dir?.path ?? this.#catalog.root,
             downloadedBytes: outcome.downloadedBytes,
             repos: outcome.published,
           }),
@@ -815,7 +833,7 @@ export class ModelInstallService {
   async #narrowPlan(detail: InstallPlanDetail): Promise<InstallPlanDetail> {
     // 修复要重新核对哈希，开跑时不再算一遍。
     if (detail.repair) return detail;
-    const fresh = await this.#plan(detail.plan.bundleId, false, detail.endpoints).catch(() => null);
+    const fresh = await this.#plan(detail.plan.bundleId, false, detail.endpoints, detail.dir).catch(() => null);
     if (!fresh) return detail;
     const before = new Map(detail.components.map((c) => [c.component, c]));
     const subset = fresh.plan.confirmBytes <= detail.plan.confirmBytes && fresh.components.every((c) => {
@@ -827,9 +845,16 @@ export class ModelInstallService {
     return subset ? fresh : detail;
   }
 
-  async #plan(bundleId: string, repair: boolean, endpoints?: Record<string, string | null>): Promise<InstallPlanDetail> {
+  async #plan(
+    bundleId: string,
+    repair: boolean,
+    endpoints?: Record<string, string | null>,
+    dir: string | null = null,
+  ): Promise<InstallPlanDetail> {
     try {
-      return await this.installer.plan(bundleId, { repair, ...(endpoints ? { endpoints } : {}) });
+      const detail = await this.installer.plan(bundleId, { repair, ...(endpoints ? { endpoints } : {}), dir });
+      if (this.#options.dirLocked && detail.plan.dir) detail.plan.dir = { ...detail.plan.dir, locked: true };
+      return detail;
     } catch (error) {
       if (error instanceof DownloadError) {
         throw new RpcError('conflict', error.message, { code: error.code, remedy: error.remedy, ...error.details });
@@ -851,6 +876,25 @@ export class ModelInstallService {
       throw new RpcError('conflict', RcModels.dirMissing(), {
         code: 'MODELS_DIR_MISSING',
       });
+    }
+  }
+
+  /** 请求的存放位置：就是模型目录时 null；模型目录由环境变量指定时只能是模型目录。 */
+  #requestedDir(dir: string | null | undefined): string | null {
+    if (!dir || path.resolve(dir) === path.resolve(this.#catalog.root)) return null;
+    if (this.#options.dirLocked) {
+      throw new RpcError('conflict', RcModels.envLocked(), { code: 'MODELS_DIR_ENV_LOCKED', path: this.#catalog.root });
+    }
+    return path.resolve(dir);
+  }
+
+  /** 确认时：这次有模型仓库要下载、存放位置却不在或不能写，就不提交（计划里已经报告过 `dir.problem`）。 */
+  #guardTarget(detail: InstallPlanDetail): void {
+    const dir = detail.plan.dir;
+    if (!detail.components.some((c) => c.action === 'download' && !c.source.release)) return;
+    if (dir?.problem === 'missing') throw new RpcError('conflict', RcModels.folderMissing(), { code: 'MODELS_DIR_MISSING', path: dir.path });
+    if (dir?.problem === 'not-writable') {
+      throw new RpcError('conflict', RcModels.folderNotWritable(), { code: 'MODELS_DIR_NOT_WRITABLE', path: dir.path });
     }
   }
 

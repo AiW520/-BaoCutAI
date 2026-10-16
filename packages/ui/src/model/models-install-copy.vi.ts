@@ -4,4 +4,22 @@ const KEEP = 'Giữ phần đã tải; lần tới sẽ tiếp tục.';
 
 export const vi: ModelsInstallMessages = {
 planSize: (size) => `Tải xuống ${size}`, planSizeEstimate: (size) => `Khoảng ${size} (chưa rõ kích thước một số tệp nên dùng ước tính đã đăng ký)`, amountEstimate: (size) => `Khoảng ${size}`, noSpace: (need, have) => `Không đủ dung lượng đĩa: cần ${need} nhưng đĩa chứa thư mục mô hình chỉ còn ${have}. Giải phóng dung lượng trước khi tải.`, resumed: (size) => `Dùng lại ${size} đã tải lần trước, không tải lại.`, space: (size) => `Trống ${size} trên đĩa`, lineKeep: 'Đã cài, giữ nguyên', lineSize: (size, count) => `${size} · ${count} tệp`, lineUnknown: (count) => `Chưa rõ kích thước · ${count} tệp`, queued: 'Đang chờ tải', downloading: (amount) => `Đang tải ${amount}`, downloadingUnknown: (amount) => `Đang tải · đã nhận ${amount}`, verifying: 'Đang xác minh và xuất bản', pausedKept: (amount) => `Đã tạm dừng · giữ ${amount}; tiếp tục từ chỗ đã dừng`, paused: 'Đã tạm dừng', remedyNoSpace: (need, have) => `${need !== null && have !== null ? `Cần ${need} nhưng chỉ còn ${have}. ` : ''}Giải phóng dung lượng rồi tải lại. ${KEEP}`, remedyNetwork: `Kiểm tra mạng rồi tải lại. ${KEEP} Nếu không truy cập được nguồn mặc định, đổi mirror trong Cài đặt › Chung › Nguồn tải xuống.`, remedyIntegrity: 'Tệp từ nguồn tải không khớp kích thước hoặc sha256 trong bản kê; đã xóa tệp hỏng. Đổi nguồn tải khác (Cài đặt › Chung › Nguồn tải xuống) rồi tải lại.', remedySource: (env) => `Nguồn tải không có tệp hoặc từ chối truy cập. Kiểm tra mirror đặt trong Cài đặt › Chung › Nguồn tải xuống (hoặc biến môi trường ${env}) có đầy đủ không, hoặc đổi sang nguồn khác.`, remedyManifest: 'Bản kê có sẵn của gói mô hình này thiếu sha256 đáng tin cậy nên không thể cài đến khi BaoCut được cập nhật.', remedyOffline: 'Chế độ ngoại tuyến nghiêm ngặt bật nên không tải gì. Tắt trong Cài đặt trước để tải.', remedySizeChanged: 'Kích thước tải đã đổi. Xác nhận lại với kế hoạch mới.', remedyInUse: 'Tác vụ đang dùng gói mô hình này (chép lời, tổng hợp, kiểm tra hoặc cài). Chờ hoàn tất hoặc hủy trong Tác vụ nền rồi xóa lại.', remedyUnavailable: 'Gói mô hình hiện không dùng được (chưa cài đầy đủ, tắt hoặc không hỗ trợ trên máy này). Sửa hoặc bật lại trước.', remedyInstallFailed: `Thử tải lại. ${KEEP}`, partFailed: (part) => `Chưa tải được ${part}.`, partFailedFrom: (part, host) => `Chưa tải được ${part} từ ${host}.`, partKept: 'Các phần đã tải được giữ lại, nên khi tải bổ sung chỉ tải phần còn thiếu. Bạn có thể đổi nguồn tải trước.', sentences: (parts) => parts.join(' '), problemText: (message, remedy) => /[.!?。！？]$/.test(message) ? `${message} ${remedy}` : `${message}. ${remedy}`, removalBody: (unknown, frees, kept) => [unknown ? 'Xóa tệp chỉ gói mô hình này dùng.' : frees !== null ? `Giải phóng khoảng ${frees}.` : null, ...kept.map((k) => `Giữ ${k.repo} vì ${k.usedBy.join(', ')} vẫn dùng.`), 'Để dùng lại, cần tải lại.'].filter(Boolean).join(' '), removed: (bundleId) => `Đã xóa ${bundleId}`, removedKept: (bundleId, repos) => `Đã xóa ${bundleId} · giữ ${repos.join(', ')} vì gói mô hình khác vẫn dùng`,
+  noSpaceFolder: (need, have) => `Không đủ dung lượng đĩa: cần ${need}, nhưng ổ đĩa chứa thư mục này chỉ còn ${have}. Hãy giải phóng dung lượng hoặc chọn thư mục khác.`,
+  folder: {
+    label: 'Lưu vào',
+    modelsDirChip: 'Thư mục mô hình',
+    envChip: 'Biến môi trường',
+    change: 'Đổi…',
+    pickTitle: 'Chọn nơi lưu lần tải xuống này',
+    reset: 'Dùng thư mục mô hình',
+    pickedNote: 'Chỉ dùng cho lần tải xuống này; thư mục mô hình không đổi.',
+    toolsNote: 'Công cụ và môi trường chạy được cài vào thư mục công cụ của BaoCut, không đặt ở đây.',
+    envNote: 'Thư mục mô hình được đặt bằng biến môi trường BAOCUT_MODELS_DIR nên các bản tải xuống được lưu ở đó.',
+    fixedNote: 'Lần tải xuống đã tạm dừng sẽ tiếp tục trong thư mục nơi nó bắt đầu.',
+    missingTitle: 'Không tìm thấy thư mục này',
+    missingText: 'Thư mục này không tồn tại. Điều này cũng xảy ra khi ổ đĩa ngoài chưa được kết nối; hãy kết nối hoặc chọn thư mục khác.',
+    notWritableTitle: 'Không thể ghi vào thư mục này',
+    notWritableText: 'BaoCut không có quyền ghi vào thư mục này. Hãy chọn thư mục khác hoặc đổi quyền của nó trước.',
+  },
+  storedAt: (path) => `Lưu tại ${path} · ngoài thư mục mô hình`,
 };

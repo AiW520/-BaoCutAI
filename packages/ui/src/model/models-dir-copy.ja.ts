@@ -67,4 +67,6 @@ export const ja: ModelsDirMessages = {
   moveValidating: (amount) => `コピーしたファイルを検証中${amount ? `（${amount}）` : ''}…`,
   movePublishing: '移動を完了中…',
   moving: (amount, to) => `${to ? `${to} へ` : ''}移動中${amount ? ` ${amount}` : ''}…`,
+  elsewhere: (count, groups) =>
+    `ほかに ${count} 個のモデルが別のフォルダに保存されています：${groups.map((g) => `${g.names.join('、')}（${g.path}）`).join('；')}。モデルフォルダを変更しても移動しません。`,
 };

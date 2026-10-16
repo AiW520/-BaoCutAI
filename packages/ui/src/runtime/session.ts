@@ -865,11 +865,17 @@ export class RuntimeSession {
   // ---- 本地模型包的安装管理（架构设计 §6.3）：状态与进度经 `models` 主题的 `bundle.updated` 送达 ----
 
   /** 安装：不给 `confirmBytes` 时只返回计划；交回计划里的 `confirmBytes` 才提交安装任务。 */
-  async installModelBundle(bundleId: string, confirmBytes?: number): Promise<import('@baocut/protocol').ModelInstallResult> {
-    return this.client.request(
-      'models.install',
-      confirmBytes === undefined ? { bundleId } : { bundleId, confirmBytes, commandId: newId('cmd') },
-    );
+  async installModelBundle(
+    bundleId: string,
+    confirmBytes?: number,
+    dir?: string | null,
+  ): Promise<import('@baocut/protocol').ModelInstallResult> {
+    return this.client.request('models.install', {
+      bundleId,
+      ...(confirmBytes === undefined ? {} : { confirmBytes, commandId: newId('cmd') }),
+      // 存放位置：只用于这次下载，不给时放模型目录。
+      ...(dir ? { dir } : {}),
+    });
   }
 
   /** 修复：逐个文件校验，只重下缺的与坏的。两步确认同安装。 */

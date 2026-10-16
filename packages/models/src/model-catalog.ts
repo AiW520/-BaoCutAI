@@ -25,6 +25,7 @@ import {
 } from './bundle-registry.ts';
 import { EMBEDDING_VISION_OVERHEAD_BYTES, EMBEDDING_WORKER_OVERHEAD_BYTES } from './embedding-bundles.ts';
 import { readInstallRecord } from './install-record.ts';
+import { ModelLocations } from './model-locations.ts';
 import { stagedBytes } from './model-staging.ts';
 import { modelDetail, type ModelText } from './model-text.ts';
 import { hostPlatformKey, releaseAsset, releaseDir, releaseStagedBytes } from './release-component.ts';
@@ -34,7 +35,8 @@ import type { BundleComponent, ModelBundle, ModelFiles } from './worker-contract
 /**
  * 本地模型目录（架构设计 §6.3；Model Worker 协议规范 §4）。
  *
- * 布局：`<models-root>/<owner>/<repo>/`，每个仓库目录带 `.bcut-manifest.json`（与旧版 BaoCut 的下载器兼容）。
+ * 布局：`<models-root>/<owner>/<repo>/`，每个仓库目录带 `.bcut-manifest.json`（与旧版 BaoCut 的下载器兼容）。下载时选了别的文件夹的
+ * 仓库在 `<文件夹>/<owner>/<repo>/`（同样的布局），位置记在 `ModelLocations`（`locationsFile`），不随模型目录移动。
  * `installed` 只要求清单存在、`revision` 与登记一致、列出的每个文件都存在且大小相符；sha256 的校验是单独的
  * `verify()`，结果缓存在内存里——不在每次查询状态时把几百 MB 读一遍。
  *
@@ -96,6 +98,8 @@ export interface ModelCatalogOptions {
   engineCacheDir?: string;
   /** 换掉内置的仓库清单（测试用）：暂停的安装据它报告总字节数。 */
   manifests?: readonly RepoManifestSpec[];
+  /** 放在模型目录以外的仓库的位置记录（Runtime 传 `<home>/store/model-locations.json`）。不给时只在内存里。 */
+  locationsFile?: string;
 }
 
 export type RuntimeBundleState = 'loading' | 'ready' | 'busy' | 'unloading';
@@ -188,6 +192,7 @@ export class ModelCatalog {
   readonly #install = new Map<string, ModelInstallProgress>();
   readonly #listeners = new Set<(bundleId: string) => void>();
   readonly #manifests: readonly RepoManifestSpec[];
+  readonly #locations: ModelLocations;
   /** Worker 握手报告的设备（按后端，首选的在前）：candle 模型包据此报告并使用 `cuda` 或 `cpu`，GGML 的 `cuda` / `vulkan` 或 `cpu`。 */
   readonly #workerDevices = new Map<ModelBackend, string>();
 
@@ -203,6 +208,7 @@ export class ModelCatalog {
     this.#threads = options.threads ?? Math.max(1, Math.min(8, os.availableParallelism() - 2));
     this.#engineCacheDir = options.engineCacheDir ?? null;
     this.#manifests = options.manifests ?? REPO_MANIFESTS;
+    this.#locations = new ModelLocations(options.locationsFile ?? null);
   }
 
   /** 模型目录的根。`setRoot` 之后读到的是新的目录（安装、暂存区、安装记录都跟着它）。 */
@@ -230,9 +236,36 @@ export class ModelCatalog {
     return source.release ? releaseDir(this.toolsDir, source.release) : this.repoDir(source.repo);
   }
 
+  /** 一个仓库放在模型目录以外时，存放它的文件夹（其下是 `<owner>/<repo>/`）；在模型目录里时 null。 */
+  locationOf(repo: string): string | null {
+    const dir = this.#locations.get(repo);
+    return dir === null || dir === path.resolve(this.#root) ? null : dir;
+  }
+
+  /** 一个仓库所在的根：记下的位置，没有时是模型目录。暂存区也在这个根下（`.bcut-staging/`）。 */
+  repoRoot(repo: string): string {
+    return this.locationOf(repo) ?? this.#root;
+  }
+
+  /** 放在模型目录以外的全部仓库与位置。 */
+  locations(): Array<{ repo: string; dir: string }> {
+    return this.#locations
+      .entries()
+      .filter(([repo]) => this.locationOf(repo) !== null)
+      .map(([repo, dir]) => ({ repo, dir }));
+  }
+
+  /**
+   * 记下仓库的存放位置（下载开始时与发布之后）；`dir` 为 null 或就是模型目录时清掉记录（仓库回到模型目录里）。调用方随后告知变化。
+   */
+  setLocation(repo: string, dir: string | null): Promise<void> {
+    return this.#locations.set(repo, dir === null || path.resolve(dir) === path.resolve(this.#root) ? null : dir);
+  }
+
   /**
    * 换模型目录（`models.setDir`，架构设计 §6.3）。调用方先确认没有任务在用、Worker 都已卸下。换过之后，各模型包按新目录里的
-   * 文件重算：清掉校验结果、停用记录与运行状态，逐个通知（`models` 主题的 `bundle.updated`）。
+   * 文件重算：清掉校验结果、停用记录与运行状态，逐个通知（`models` 主题的 `bundle.updated`）。记下了别的位置的仓库不受影响
+   * （位置就是新目录的，从此算在模型目录里）。
    */
   setRoot(root: string): void {
     this.#root = root;
@@ -501,6 +534,7 @@ export class ModelCatalog {
       bytes: check.ok ? (check.bytes ?? 0) : null,
       estimatedBytes: weightBytes([source], this.#manifests, this.#platformKey),
       sharedWith: this.#sharers(bundleId, source),
+      ...(!source.release && this.locationOf(source.repo) ? { location: this.locationOf(source.repo)! } : {}),
       ...(source.optional ? { optional: true } : {}),
       ...(source.license ? { license: source.license } : {}),
     }));
@@ -608,8 +642,9 @@ export class ModelCatalog {
     return result;
   }
 
+  /** 仓库目录：`<repoRoot>/<owner>/<repo>/`。 */
   repoDir(repo: string): string {
-    return path.join(this.root, ...repo.split('/'));
+    return path.join(this.repoRoot(repo), ...repo.split('/'));
   }
 
   /** Worker 池告知运行状态；null 表示没有 Worker 持有它（回到 `installed`）。 */
@@ -679,7 +714,7 @@ export class ModelCatalog {
         total = total === null || !asset ? null : total + asset.size;
         continue;
       }
-      received += await stagedBytes(this.root, source.repo, source.revision);
+      received += await stagedBytes(this.repoRoot(source.repo), source.repo, source.revision);
       const spec = repoManifestFor(source.repo, source.revision, this.#manifests);
       const sizes = spec?.files.map((f) => f.size) ?? [null];
       total = total === null || sizes.some((size) => size === null) ? null : total + sizes.reduce<number>((a, b) => a + (b ?? 0), 0);

@@ -19,4 +19,6 @@ export const it: ModelsDirMessages = {
   switchDescription: (count: number) => `I file nella vecchia posizione vengono conservati, senza eliminarli. Si possono usare solo ${count ? `${models(count)} ` : 'i modelli '}già nella nuova posizione; gli altri appaiono come non installati.`,
   appliedMoving: (where: string) => `Spostamento dei modelli in ${where} avviato`, appliedKept: (where: string) => `Cartella dei modelli cambiata in ${where} · File nella vecchia posizione conservati`, applied: (where: string) => `Cartella dei modelli cambiata in ${where}`,
   moveWaiting: (to: string | null) => `In attesa di iniziare lo spostamento${to ? ` in ${to}` : ''}…`, moveValidating: (amount: string | null) => `Verifica dei file copiati${amount ? ` (${amount})` : ''}…`, movePublishing: 'Completamento dello spostamento…', moving: (amount: string | null, to: string | null) => `Spostamento${amount ? ` di ${amount}` : ''}${to ? ` in ${to}` : ''}…`,
+  elsewhere: (count: number, groups: readonly { names: readonly string[]; path: string }[]) =>
+    `${count === 1 ? '1 modello è salvato' : `${count} modelli sono salvati`} in altre cartelle: ${groups.map((g) => `${and(g.names)} (${g.path})`).join('; ')}. ${count === 1 ? 'Resta' : 'Restano'} dove ${count === 1 ? 'si trova' : 'si trovano'} quando cambi la cartella dei modelli.`,
 };

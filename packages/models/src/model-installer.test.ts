@@ -336,6 +336,142 @@ describe('ModelInstaller', () => {
     expect(await fs.readdir(root)).toEqual([]);
   });
 
+  describe('存放位置', () => {
+    let away: string;
+    beforeEach(async () => {
+      away = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-away-'));
+    });
+    afterEach(async () => {
+      await fs.rm(away, { recursive: true, force: true });
+    });
+
+    it('下载到选定的文件夹：暂存与发布都在那里，记下位置；装好的共享组件留在原处，安装记录在模型目录', async () => {
+      const { catalog, installer } = setup();
+      await run(installer, 'test-a@mlx');
+      const seen: string[] = [];
+      const detail = await installer.plan('test-b@mlx', { dir: away });
+      expect(detail.dir).toBe(away);
+      expect(detail.plan.dir).toEqual({ path: away, modelsDir: root, locked: false, fixed: false, problem: null });
+      expect(detail.components.map((c) => [c.component, c.action, c.root])).toEqual([
+        ['asr', 'download', away],
+        ['vad', 'keep', root],
+      ]);
+      catalog.onChange((id) => seen.push(id));
+      await installer.install(detail, { signal: new AbortController().signal });
+      expect(await readdirSafe(path.join(away, asrB.repo))).toContain('.bcut-manifest.json');
+      expect(fsSync.existsSync(path.join(root, asrB.repo))).toBe(false);
+      expect(fsSync.existsSync(path.join(away, '.bcut-staging'))).toBe(false);
+      expect(catalog.locationOf(asrB.repo)).toBe(away);
+      expect(catalog.repoDir(asrB.repo)).toBe(path.join(away, ...asrB.repo.split('/')));
+      const status = await catalog.status('test-b@mlx');
+      expect(status).toMatchObject({ state: 'installed' });
+      expect(status!.components!.map((c) => [c.component, c.location ?? null])).toEqual([
+        ['asr', away],
+        ['vad', null],
+      ]);
+      expect(Object.keys((await readInstallRecord(root)).bundles).sort()).toEqual(['test-a@mlx', 'test-b@mlx']);
+      expect(seen).toContain('test-b@mlx');
+      // 已经装好的再计划：在原处，不再下载。
+      expect((await installer.plan('test-b@mlx')).plan).toMatchObject({ upToDate: true });
+    });
+
+    it('选定的文件夹就是模型目录时照常放模型目录；不在、不能写时计划里报告问题', async () => {
+      const { installer } = setup();
+      expect((await installer.plan('test-a@mlx', { dir: root })).plan.dir).toEqual({ path: root, modelsDir: root, locked: false, fixed: false, problem: null });
+      const missing = path.join(away, 'gone');
+      expect((await installer.plan('test-a@mlx', { dir: missing })).plan.dir).toEqual({ path: missing, modelsDir: root, locked: false, fixed: false, problem: 'missing' });
+      if (process.platform !== 'win32' && process.getuid?.() !== 0) {
+        await fs.chmod(away, 0o500);
+        try {
+          expect((await installer.plan('test-a@mlx', { dir: away })).plan.dir?.problem).toBe('not-writable');
+        } finally {
+          await fs.chmod(away, 0o700);
+        }
+      }
+    });
+
+    it('暂停在选定文件夹里的下载：状态报告暂停，再计划时不管请求的位置都在原处续传', async () => {
+      const { catalog, installer } = setup();
+      source.throttle(8 * 1024, 10);
+      const controller = new AbortController();
+      const running = installer.install(await installer.plan('test-a@mlx', { dir: away }), {
+        signal: controller.signal,
+        onProgress: (p) => {
+          if (p.receivedBytes > 50_000) controller.abort(new Error('cancelled'));
+        },
+      });
+      await expect(running).rejects.toThrow('cancelled');
+      expect(catalog.locationOf(asrA.repo)).toBe(away);
+      const status = await catalog.status('test-a@mlx');
+      expect(status!.install).toMatchObject({ state: 'paused' });
+      const staged = status!.install!.receivedBytes;
+      expect(staged).toBeGreaterThan(50_000);
+      expect(fsSync.existsSync(path.join(root, '.bcut-staging'))).toBe(false);
+
+      source.throttle(64 * 1024, 0);
+      const again = await installer.plan('test-a@mlx');
+      expect(again.plan.dir).toEqual({ path: away, modelsDir: root, locked: false, fixed: true, problem: null });
+      expect(again.plan.resumedBytes).toBe(staged);
+      expect(again.components.every((c) => c.root === away)).toBe(true);
+      await installer.install(again, { signal: new AbortController().signal });
+      expect(await catalog.status('test-a@mlx')).toMatchObject({ state: 'installed' });
+      expect([catalog.locationOf(asrA.repo), catalog.locationOf(vad.repo)]).toEqual([away, away]);
+    });
+
+    it('丢弃暂停的下载与删除模型包都清掉位置记录；位置记录写进文件，重开目录读得回来', async () => {
+      const file = path.join(away, 'store', 'model-locations.json');
+      const manifests = [asrA, asrB, vad].map((r) => syntheticManifest(r, { sizes: true, estimatedBytes: 1_000_000 }));
+      const catalog = new ModelCatalog({ root, ...mac, bundles, manifests, locationsFile: file });
+      const installer = new ModelInstaller({ catalog, endpoint: () => source.endpoint, manifests, freeBytes: async () => free, backoffMs: () => 5 });
+      const target = path.join(away, 'models');
+      await fs.mkdir(target);
+      await installer.install(await installer.plan('test-a@mlx', { dir: target }), { signal: new AbortController().signal });
+      expect(JSON.parse(await fs.readFile(file, 'utf8'))).toEqual({
+        format_version: 1,
+        repos: { [asrA.repo]: target, [vad.repo]: target },
+      });
+      const reopened = new ModelCatalog({ root, ...mac, bundles, manifests, locationsFile: file });
+      expect(await reopened.status('test-a@mlx')).toMatchObject({ state: 'installed' });
+      expect(reopened.locations()).toEqual([
+        { repo: asrA.repo, dir: target },
+        { repo: vad.repo, dir: target },
+      ]);
+
+      await installer.remove('test-a@mlx');
+      expect(catalog.locations()).toEqual([]);
+      expect(fsSync.existsSync(path.join(target, asrA.repo))).toBe(false);
+      expect(JSON.parse(await fs.readFile(file, 'utf8')).repos).toEqual({});
+
+      const stage = stagingDirOf(target, asrB.repo, asrB.revision);
+      await fs.mkdir(stage, { recursive: true });
+      await fs.writeFile(path.join(stage, 'model.safetensors.part'), Buffer.alloc(500));
+      await catalog.setLocation(asrB.repo, target);
+      expect((await catalog.status('test-b@mlx'))!.install).toMatchObject({ state: 'paused', receivedBytes: 500 });
+      await installer.discard('test-b@mlx');
+      expect(catalog.locationOf(asrB.repo)).toBeNull();
+      expect(fsSync.existsSync(stage)).toBe(false);
+    });
+
+    it('按落到的磁盘分别查可用空间', async () => {
+      const asked: string[] = [];
+      const manifests = [asrA, asrB, vad].map((r) => syntheticManifest(r, { sizes: true, estimatedBytes: 1 }));
+      const spaced = new ModelInstaller({
+        catalog: new ModelCatalog({ root, ...mac, bundles, manifests }),
+        endpoint: () => source.endpoint,
+        manifests,
+        freeBytes: async (dir) => {
+          asked.push(dir);
+          return dir === away ? 10 : 10 * 1024 * 1024 * 1024;
+        },
+      });
+      const detail = await spaced.plan('test-a@mlx', { dir: away });
+      expect(detail.plan.availableBytes).toBe(10);
+      await expect(spaced.install(detail, { signal: new AbortController().signal })).rejects.toMatchObject({ code: 'MODEL_DOWNLOAD_NO_SPACE' });
+      expect(asked).toContain(away);
+      expect(fsSync.existsSync(path.join(away, '.bcut-staging'))).toBe(false);
+    });
+  });
+
   it('大小未知：计划向来源发 HEAD 取大小；取不到时总字节数为未知、用估计值确认', async () => {
     const { installer } = setup({ sizes: false });
     const detail = await installer.plan('test-a@mlx');
@@ -693,3 +829,7 @@ describe('ModelInstaller 发布页组件', () => {
     expect(await catalog.status('embed-b@litert-lm')).toMatchObject({ state: 'not-installed' });
   });
 });
+
+async function readdirSafe(dir: string): Promise<string[]> {
+  return fs.readdir(dir).catch(() => []);
+}

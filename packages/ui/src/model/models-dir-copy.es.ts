@@ -37,4 +37,6 @@ export const es: ModelsDirMessages = {
  applied: (where) => `Carpeta de modelos cambiada a ${where}`, moveWaiting: (to) => `Esperando para empezar a mover${to ? ` a ${to}` : ''}…`,
  moveValidating: (amount) => `Verificando los archivos copiados${amount ? ` (${amount})` : ''}…`, movePublishing: 'Terminando el traslado…',
  moving: (amount, to) => `Moviendo${amount ? ` ${amount}` : ''}${to ? ` a ${to}` : ''}…`,
+  elsewhere: (count, groups) =>
+    `${count === 1 ? '1 modelo está guardado' : `${count} modelos están guardados`} en otras carpetas: ${groups.map((g) => `${andEs(g.names)} (${g.path})`).join('; ')}. ${count === 1 ? 'Se queda' : 'Se quedan'} donde ${count === 1 ? 'está' : 'están'} al cambiar la carpeta de modelos.`,
 };

@@ -27,6 +27,7 @@ import {
   dirBlocker,
   dirHealth,
   dirStats,
+  elsewhereNote,
   moveProgressView,
   pickedMode,
   shortenDir,
@@ -141,6 +142,8 @@ export function ModelsDirCard() {
   const block = locked || busyMove ? null : dirBlocker(jobs, bundles);
   const health = dirHealth(info);
   const progress = busyMove ? moveProgressView(moveJob, info.moveTo) : null;
+  // 下载时放到别处的模型不归这个文件夹管：数量与移动都不算它们，这里另写一句它们在哪。
+  const elsewhere = elsewhereNote(bundles);
   const off = !!block || busyMove || picking;
 
   const pick = async () => {
@@ -222,6 +225,7 @@ export function ModelsDirCard() {
           ) : null}
         </p>
       ) : null}
+      {elsewhere ? <p className={note({})}>{elsewhere}</p> : null}
       <p className={note({})}>{COPY.shareHint}</p>
       {dialog ? (
         <ChangeDialog

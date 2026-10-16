@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { JobRecord, ModelBundleStatus, ModelsDirInfo, ModelsDirInspection } from '@baocut/protocol';
-import { appliedText, changePlan, dirBlocker, dirHealth, dirStats, moveProgressView, pickedMode, shortenDir } from './models-dir.ts';
+import { appliedText, changePlan, dirBlocker, dirHealth, dirStats, elsewhereNote, moveProgressView, pickedMode, shortenDir } from './models-dir.ts';
 
 const GB = 1024 ** 3;
 const MB = 1024 ** 2;
@@ -153,5 +153,41 @@ describe('模型目录', () => {
     expect(moveProgressView(moving, '/x')).toEqual({ percent: 25, label: '正在移动 256 MB / 1.0 GB 到 /x…' });
     expect(moveProgressView({ ...moving, phase: 'validating' }, null).label).toBe('正在校验复制过去的文件（256 MB / 1.0 GB）…');
     expect(moveProgressView({ ...moving, phase: 'publishing' }, '/x')).toEqual({ percent: null, label: '正在完成移动…' });
+  });
+
+  it('下载时放到别处的模型：卡片按文件夹列出（与 Runtime 的计数同一条规则），没装好的与都在模型目录里的不算', () => {
+    const at = (repo: string, location?: string, patch: Partial<NonNullable<ModelBundleStatus['components']>[number]> = {}) => ({
+      component: 'asr',
+      repo,
+      revision: 'r',
+      state: 'installed' as const,
+      bytes: 1,
+      sharedWith: [],
+      ...(location ? { location } : {}),
+      ...patch,
+    });
+    const make = (bundleId: string, label: string, components: NonNullable<ModelBundleStatus['components']>): ModelBundleStatus => ({
+      bundleId,
+      label,
+      capability: 'transcribe',
+      backend: 'mlx',
+      device: 'metal',
+      state: 'installed',
+      components,
+    });
+    const ssd = '/Volumes/ExtremeSSD/AI';
+    const bundles = [
+      make('a', 'Qwen3-ASR', [at('Qwen/asr', ssd)]),
+      make('b', 'Whisper', [at('openai/whisper', ssd)]),
+      make('c', 'Kokoro', [at('hexgrad/kokoro', '/Volumes/Backup')]),
+      make('d', 'Silero', [at('silero/vad')]),
+      make('e', 'Paused', [at('x/paused', ssd, { state: 'missing' })]),
+      make('f', 'Optional only', [at('x/main'), at('x/extra', ssd, { optional: true })]),
+    ];
+    expect(elsewhereNote(bundles)).toBe(
+      '另有 3 个模型存放在其他位置：Qwen3-ASR、Whisper（/Volumes/ExtremeSSD/AI）；Kokoro（/Volumes/Backup）。更改模型目录时它们不跟着移动。',
+    );
+    expect(elsewhereNote([bundles[2]!])).toBe('另有 1 个模型存放在其他位置：Kokoro（/Volumes/Backup）。更改模型目录时它不跟着移动。');
+    expect(elsewhereNote(bundles.slice(3))).toBeNull();
   });
 });

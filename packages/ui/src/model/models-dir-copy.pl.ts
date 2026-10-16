@@ -50,4 +50,6 @@ export const pl: ModelsDirMessages = {
   moveValidating: (amount) => `Weryfikowanie skopiowanych plików${amount ? ` (${amount})` : ""}…`,
   movePublishing: "Kończenie przenoszenia…",
   moving: (amount, to) => `Przenoszenie${amount ? ` ${amount}` : ""}${to ? ` do ${to}` : ""}…`,
+  elsewhere: (count, groups) =>
+    `${pluralForm('pl', count, { one: `${count} model jest zapisany`, few: `${count} modele są zapisane`, many: `${count} modeli jest zapisanych`, other: `${count} modelu jest zapisane` })} w innych folderach: ${groups.map((g) => `${g.names.join(', ')} (${g.path})`).join('; ')}. Po zmianie folderu modeli ${count === 1 ? 'zostaje' : 'zostają'} na miejscu.`,
 };

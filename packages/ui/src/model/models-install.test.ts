@@ -5,9 +5,11 @@ import {
   canDownload,
   downloadableBundle,
   downloadView,
+  bundleLocation,
   inlineInstallMode,
   installFailure,
   installFailureText,
+  installFolderView,
   installPlanView,
   installProgressView,
   modelProblem,
@@ -16,6 +18,7 @@ import {
   removedToast,
   rpcProblem,
   separationDownload,
+  storedAtText,
 } from './models-install.ts';
 import { installingPlacement, isBundleInstalled, localGroups } from './models-local.ts';
 import { bundle } from './models-test-fixtures.ts';
@@ -131,6 +134,92 @@ describe('确认对话框', () => {
     const view = installPlanView(plan({ availableBytes: null }));
     expect(view.space).toBeNull();
     expect(view.noSpace).toBeNull();
+  });
+});
+
+describe('存放位置', () => {
+  const ROOT = '/Users/me/Library/Application Support/BaoCut/models';
+  const SSD = '/Volumes/ExtremeSSD/AI';
+  const dir = (patch: Partial<NonNullable<ModelInstallPlan['dir']>> = {}): ModelInstallPlan['dir'] => ({
+    path: ROOT,
+    modelsDir: ROOT,
+    locked: false,
+    fixed: false,
+    problem: null,
+    ...patch,
+  });
+  const release = {
+    component: 'litertlm-runtime',
+    repo: 'google-ai-edge/LiteRT-LM',
+    revision: 'v0.8.0',
+    origin: 'github-release' as const,
+    action: 'download' as const,
+    files: ['x.tar.gz'],
+    bytes: 43 * MB,
+  };
+
+  it('默认放模型目录：标「模型目录」，可以更改', () => {
+    expect(installFolderView(plan({ dir: dir() }))).toEqual({
+      path: ROOT,
+      chip: 'models-dir',
+      canChange: true,
+      picked: false,
+      problem: null,
+      note: null,
+    });
+  });
+
+  it('选了别处：只用于这次，给改回；这次还要下工具时说它们不放这里', () => {
+    const view = installFolderView(plan({ dir: dir({ path: SSD }) }));
+    expect(view).toMatchObject({ path: SSD, chip: null, canChange: true, picked: true, note: '只用于这次下载，模型目录不变。' });
+    const withTools = installFolderView(plan({ dir: dir({ path: SSD }), components: [...plan().components, release] }));
+    expect(withTools!.note).toBe('只用于这次下载，模型目录不变。工具与运行库装在 BaoCut 的工具目录，不放在这里。');
+  });
+
+  it('环境变量锁定、接着暂停的下载：不能更改，并说明原因', () => {
+    expect(installFolderView(plan({ dir: dir({ locked: true }) }))).toMatchObject({
+      chip: 'env',
+      canChange: false,
+      picked: false,
+      note: '模型目录由环境变量 BAOCUT_MODELS_DIR 指定，下载都放在那里。',
+    });
+    expect(installFolderView(plan({ dir: dir({ path: SSD, fixed: true }) }))).toMatchObject({
+      path: SSD,
+      chip: null,
+      canChange: false,
+      picked: false,
+      note: '暂停的下载在它开始时的文件夹里接着下。',
+    });
+  });
+
+  it('文件夹不在、不能写：写明问题；空间按那个文件夹的磁盘说', () => {
+    expect(installFolderView(plan({ dir: dir({ path: SSD, problem: 'missing' }) }))!.problem).toEqual({
+      title: '找不到这个文件夹',
+      text: '这个文件夹不存在。外置盘没有接上时也会这样，接好后再试，或换一个文件夹。',
+    });
+    expect(installFolderView(plan({ dir: dir({ path: SSD, problem: 'not-writable' }) }))!.problem!.title).toBe('这个文件夹不可写');
+    expect(installPlanView(plan({ dir: dir({ path: SSD }), availableBytes: 500 * MB })).noSpace).toBe(
+      '磁盘空间不够：这次要 1.2 GB，这个文件夹所在的磁盘只剩 500 MB。先清理出空间，或换一个文件夹。',
+    );
+    expect(installPlanView(plan({ dir: dir(), availableBytes: 500 * MB })).noSpace).toContain('模型目录所在的磁盘');
+  });
+
+  it('没有模型仓库要下载（只下工具、都已装好）或旧 Runtime 不给位置时不显示', () => {
+    expect(installFolderView(plan())).toBeNull();
+    expect(installFolderView(plan({ dir: dir(), components: [release] }))).toBeNull();
+    expect(installFolderView(plan({ dir: dir(), components: [plan().components[1]!] }))).toBeNull();
+  });
+
+  it('模型行：组件放在模型目录以外时写明在哪（必需的组件优先）', () => {
+    const away = bundle(QWEN, {
+      components: [
+        component('pyannote/seg', { component: 'diarization', optional: true, location: '/Volumes/Other' }),
+        component('Qwen/Qwen3-ASR-0.6B', { location: SSD }),
+      ],
+    });
+    expect(bundleLocation(away)).toBe(SSD);
+    expect(storedAtText(away)).toBe('存放在 /Volumes/ExtremeSSD/AI · 不在模型目录');
+    expect(storedAtText(bundle(QWEN, { components: [component('Qwen/Qwen3-ASR-0.6B')] }))).toBeNull();
   });
 });
 

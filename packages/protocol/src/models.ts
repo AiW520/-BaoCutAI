@@ -108,6 +108,11 @@ export interface ModelComponentStatus {
   estimatedBytes?: number | null;
   /** 同样用到这个组件（同一仓库与版本）的其他模型包。 */
   sharedWith: string[];
+  /**
+   * 放在模型目录以外时，存放它的文件夹（其下是 `<owner>/<repo>/`）：下载时选了别的文件夹（`models.install` 的 `dir`）。在模型目录里、
+   * 或是发布页组件时没有这一项。这些组件不随模型目录移动。
+   */
+  location?: string;
   /** 可选的组件（对齐器、说话人模型）：安装与修复照样下载，缺它时模型包仍算装好、照常可用。 */
   optional?: boolean;
   /**
@@ -208,18 +213,41 @@ export interface ModelInstallPlan {
   confirmBytes: number;
   /** 暂存区里已经收到、这次不再下载的字节数。 */
   resumedBytes: number;
-  /** 模型目录所在磁盘的可用空间；查不到时 null。 */
+  /** 这次下载的文件夹（`dir.path`）所在磁盘的可用空间；查不到时 null。 */
   availableBytes: number | null;
   /** 下载来源的基址（不含凭据）。 */
   source: string;
+  /** 这次下载的模型仓库放在哪里（发布页组件不在这里，在 Runtime Home 的 `tools/`）。旧 Runtime 不给。 */
+  dir?: ModelInstallDir;
   /** 没有要下载的东西（都已装好）。 */
   upToDate: boolean;
+}
+
+/** 安装计划的存放位置。 */
+export interface ModelInstallDir {
+  /** 文件夹的绝对路径，其下是 `<owner>/<repo>/`：请求给了 `dir` 时是它，否则是模型目录。 */
+  path: string;
+  /** 生效的模型目录（与 `path` 相同时就是放进模型目录）。 */
+  modelsDir: string;
+  /** 模型目录由环境变量 `BAOCUT_MODELS_DIR` 指定：只能放进模型目录（请求的 `dir` 给别处时 `MODELS_DIR_ENV_LOCKED`）。 */
+  locked: boolean;
+  /**
+   * 暂停在某处的下载在原处续传：这时 `path` 是那个位置，请求的 `dir` 不起作用，界面不让换。修复也在组件所在的地方，但不报告为 `fixed`。
+   */
+  fixed: boolean;
+  /**
+   * 文件夹不在（`missing`，外置盘没接上时也这样）或不能写（`not-writable`）：这次有模型仓库要下载时，确认被拒绝
+   * （`MODELS_DIR_MISSING` / `MODELS_DIR_NOT_WRITABLE`）。只下载发布页组件时不受影响。
+   */
+  problem: 'missing' | 'not-writable' | null;
 }
 
 /** 一次确认多个模型包；来源键为 `<repo>@<revision>`，null 表示该种类的官方来源。 */
 export interface ModelInstallBatchParams {
   bundleIds: string[];
   sources?: Record<string, string | null>;
+  /** 同 `models.install` 的 `dir`。 */
+  dir?: string | null;
   confirmBytes?: number;
   commandId?: Id;
 }

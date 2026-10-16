@@ -258,6 +258,7 @@ export {
   type ResolvedEndpoint,
 } from './download-source.ts';
 export { STAGING_DIR, discardStaging, stagedBytes, stagingDirOf } from './model-staging.ts';
+export { MODEL_LOCATIONS_FORMAT, ModelLocations } from './model-locations.ts';
 export {
   DOWNLOAD_REMEDIES,
   DownloadError,

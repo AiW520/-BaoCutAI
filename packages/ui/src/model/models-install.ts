@@ -1,4 +1,4 @@
-import type { JobRecord, ModelBundleStatus, ModelInstallPlan, ModelInstallProgress } from '@baocut/protocol';
+import { live, type JobRecord, type ModelBundleStatus, type ModelInstallPlan, type ModelInstallProgress } from '@baocut/protocol';
 import { MODELS_ENDPOINT_ENV, TOOLS_ENDPOINT_ENV, hostOf, kindOfComponent, planKinds, type SourceKind } from './download-source.ts';
 import {
   bundleCategory,
@@ -10,8 +10,9 @@ import {
   partLabel,
   sharedComponents,
 } from './models-local.ts';
+import { shortenDir } from './models-dir.ts';
 import { fmtSize } from './task-facts.ts';
-import { M } from './models-install-copy.ts';
+import { M, type ModelsInstallMessages } from './models-install-copy.ts';
 import { jobErrorText, remedyText } from './localized-text.ts';
 
 /**
@@ -73,9 +74,11 @@ export function installPlanView(plan: Omit<ModelInstallPlan, 'bundleId'>): Insta
   }));
   const exact = plan.downloadBytes !== null;
   const size = exact ? M.planSize(fmtSize(plan.confirmBytes)) : M.planSizeEstimate(fmtSize(plan.confirmBytes));
+  // 放在模型目录以外时，可用空间是那个文件夹所在的磁盘。
+  const away = !!plan.dir && plan.dir.path !== plan.dir.modelsDir;
   const noSpace =
     plan.availableBytes !== null && plan.availableBytes < plan.confirmBytes
-      ? M.noSpace(fmtSize(plan.confirmBytes), fmtSize(plan.availableBytes))
+      ? (away ? M.noSpaceFolder : M.noSpace)(fmtSize(plan.confirmBytes), fmtSize(plan.availableBytes))
       : null;
   return {
     upToDate: plan.upToDate,
@@ -91,6 +94,71 @@ export function installPlanView(plan: Omit<ModelInstallPlan, 'bundleId'>): Insta
       return { kind, lines: own.map(([, l]) => l), downloading: own.some(([c]) => c.action === 'download') };
     }),
   };
+}
+
+// ---- 存放位置（设计稿 download-dialog.jsx `Where`） ----
+
+export const INSTALL_FOLDER_COPY: ModelsInstallMessages['folder'] = live(() => M.folder);
+
+export interface InstallFolderView {
+  /** 这次的模型仓库放在哪（完整路径，界面里缩短显示）。 */
+  path: string;
+  /** 就是模型目录时标「模型目录」，模型目录由环境变量锁定时标「环境变量」；别处不标。 */
+  chip: 'models-dir' | 'env' | null;
+  /** 能换文件夹：模型目录没被环境变量锁定，也不是接着暂停的下载。 */
+  canChange: boolean;
+  /** 这次选了模型目录以外的文件夹：给「改回模型目录」。 */
+  picked: boolean;
+  /** 文件夹不在或不能写：不让确认。 */
+  problem: { title: string; text: string } | null;
+  /** 位置下面的说明（几句连成一段）；没有时 null。 */
+  note: string | null;
+}
+
+/**
+ * 计划 → 存放位置一块（架构设计 §6.3）。只管模型仓库：这次没有模型仓库要下载（都已装好，或只下发布页组件——它们装在
+ * 工具目录）、旧 Runtime 不给 `dir` 时 null。修复不换位置，调用方不显示。
+ */
+export function installFolderView(plan: Pick<ModelInstallPlan, 'components' | 'dir'>): InstallFolderView | null {
+  const dir = plan.dir;
+  const downloading = plan.components.filter((c) => c.action === 'download');
+  if (!dir || !downloading.some((c) => kindOfComponent(c) === 'models')) return null;
+  const home = dir.path === dir.modelsDir;
+  const picked = !home && !dir.fixed;
+  const notes = [
+    ...(dir.locked ? [M.folder.envNote] : []),
+    ...(dir.fixed ? [M.folder.fixedNote] : []),
+    ...(picked ? [M.folder.pickedNote] : []),
+    ...(downloading.some((c) => kindOfComponent(c) === 'tools') ? [M.folder.toolsNote] : []),
+  ];
+  return {
+    path: dir.path,
+    chip: dir.locked ? 'env' : home ? 'models-dir' : null,
+    canChange: !dir.locked && !dir.fixed,
+    picked,
+    problem:
+      dir.problem === 'missing'
+        ? { title: M.folder.missingTitle, text: M.folder.missingText }
+        : dir.problem === 'not-writable'
+          ? { title: M.folder.notWritableTitle, text: M.folder.notWritableText }
+          : null,
+    note: notes.length ? M.sentences(notes) : null,
+  };
+}
+
+/**
+ * 模型行上那一句：组件下载时放在了模型目录以外（`location`）的文件夹；都在模型目录里时 null。几个组件在不同的地方时报告
+ * 第一个（必需的组件优先）。
+ */
+export function bundleLocation(bundle: Pick<ModelBundleStatus, 'components'>): string | null {
+  const located = (bundle.components ?? []).filter((c) => c.location);
+  return (located.find((c) => !c.optional) ?? located[0])?.location ?? null;
+}
+
+/** 模型行上的「存放在 … · 不在模型目录」；都在模型目录里时 null。 */
+export function storedAtText(bundle: Pick<ModelBundleStatus, 'components'>): string | null {
+  const at = bundleLocation(bundle);
+  return at ? M.storedAt(shortenDir(at, 44)) : null;
 }
 
 // ---- 进度 ----

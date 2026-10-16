@@ -64,4 +64,6 @@ export const ko: ModelsDirMessages = {
   moveValidating: (amount) => `복사한 파일 확인 중${amount ? `(${amount})` : ''}…`,
   movePublishing: '이동 마무리 중…',
   moving: (amount, to) => `${to ? `${to} 위치로 ` : ''}${amount ? `${amount} ` : ''}이동 중…`,
+  elsewhere: (count, groups) =>
+    `모델 ${count}개는 다른 폴더에 저장되어 있습니다: ${groups.map((g) => `${g.names.join(', ')} (${g.path})`).join('; ')}. 모델 폴더를 바꿔도 함께 이동하지 않습니다.`,
 };

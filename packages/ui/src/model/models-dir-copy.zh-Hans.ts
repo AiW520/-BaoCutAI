@@ -58,4 +58,6 @@ export const zhHans: ModelsDirMessages = {
   moveValidating: (amount) => `正在校验复制过去的文件${amount ? `（${amount}）` : ''}…`,
   movePublishing: '正在完成移动…',
   moving: (amount, to) => `正在移动${amount ? ` ${amount}` : ''}${to ? ` 到 ${to}` : ''}…`,
+  elsewhere: (count, groups) =>
+    `另有 ${count} 个模型存放在其他位置：${groups.map((g) => `${g.names.join('、')}（${g.path}）`).join('；')}。更改模型目录时${count === 1 ? '它' : '它们'}不跟着移动。`,
 };

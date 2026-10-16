@@ -78,4 +78,6 @@ export const ptBR: ModelsDirMessages = {
   moveValidating: (amount: string | null) => `Verificando arquivos copiados${amount ? ` (${amount})` : ""}…`,
   movePublishing: "Concluindo movimento…",
   moving: (amount: string | null, to: string | null) => `Movendo${amount ? ` ${amount}` : ""}${to ? ` a ${to}` : ""}…`,
+  elsewhere: (count: number, groups: readonly { names: readonly string[]; path: string }[]) =>
+    `${count === 1 ? '1 modelo está salvo' : `${count} modelos estão salvos`} em outras pastas: ${groups.map((g) => `${and(g.names)} (${g.path})`).join('; ')}. ${count === 1 ? 'Ele fica' : 'Eles ficam'} onde ${count === 1 ? 'está' : 'estão'} quando você altera a pasta de modelos.`,
 };

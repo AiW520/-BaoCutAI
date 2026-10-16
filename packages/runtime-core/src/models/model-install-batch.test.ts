@@ -11,12 +11,13 @@ function detail(bundleId: string, patch: Partial<PlannedComponent> = {}): Instal
     reuse: [], files: [], staged: 30, bytes: 70, estimatedBytes: 80, ...patch,
   };
   return {
-    components: [c], endpoint: 'https://models.example', endpoints: { 'test/shared@v1': null }, toolsEndpoint: null, repair: false, totalBytes: 100,
+    components: [c], endpoint: 'https://models.example', endpoints: { 'test/shared@v1': null }, toolsEndpoint: null, repair: false, dir: null, totalBytes: 100,
     plan: {
       bundleId, components: [{ component: c.component, repo: c.source.repo, revision: c.source.revision,
         origin: 'github-release', action: c.action, files: c.fetch.map((f) => f.path), bytes: c.bytes, source: 'https://github.com/test/shared/releases' }],
       downloadBytes: c.bytes, estimatedBytes: c.estimatedBytes, confirmBytes: c.bytes ?? c.estimatedBytes,
-      resumedBytes: c.staged, availableBytes: 1000, source: 'https://github.com', upToDate: c.action === 'keep',
+      resumedBytes: c.staged, availableBytes: 1000, source: 'https://github.com',
+      dir: { path: '/models', modelsDir: '/models', locked: false, fixed: false, problem: null }, upToDate: c.action === 'keep',
     },
   };
 }
@@ -29,6 +30,9 @@ describe('一次确认多个模型包', () => {
       expect(schema.safeParse({ bundleIds: ['text'], sources: { 'repo@v1': endpoint } }).success).toBe(false);
     }
     expect(schema.safeParse({ bundleIds: ['text', 'text'] }).success).toBe(false);
+    expect(schema.safeParse({ bundleIds: ['text'], dir: '/Volumes/SSD/models' }).success).toBe(true);
+    expect(schema.safeParse({ bundleIds: ['text'], dir: null }).success).toBe(true);
+    expect(schema.safeParse({ bundleIds: ['text'], dir: 'relative/models' }).success).toBe(false);
     expect(webMethodAccess('models.installBatch', { readOnly: false, methods: null })).toBe('not-allowed');
   });
 
@@ -40,6 +44,14 @@ describe('一次确认多个模型包', () => {
     expect(plan).toMatchObject({ downloadBytes: null, estimatedBytes: 80, confirmBytes: 80, resumedBytes: 30, availableBytes: 900 });
     expect(plan.components).toHaveLength(1);
     expect(plan.components[0]).toMatchObject({ bundleIds: ['text', 'multimodal'], sourceLocked: true, endpoint: null });
+  });
+
+  it('存放位置：有暂停在某处的下载时报告那里，否则是请求的位置', () => {
+    const first = detail('text');
+    const second = detail('multimodal');
+    second.plan.dir = { path: '/Volumes/SSD/models', modelsDir: '/models', locked: false, fixed: true, problem: null };
+    expect(mergeInstallPlans([first, second], { models: false, tools: false }).dir).toEqual(second.plan.dir);
+    expect(mergeInstallPlans([first], { models: false, tools: false }).dir).toEqual(first.plan.dir);
   });
 
   it('计划之间已完成的共享组件保留、不再计入下载；不同版本不合并', () => {

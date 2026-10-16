@@ -9,7 +9,8 @@ import { readInstallRecord, updateInstallRecord } from './install-record.ts';
 import { MANIFEST_FILE, readManifest, sha256File, type BcutManifest, type ModelCatalog } from './model-catalog.ts';
 import { DownloadError, ModelDownloader, diskFreeBytes, type DownloadFile } from './model-downloader.ts';
 import { isModelScopeEndpoint, modelFileUrl, repoEndpoint } from './download-source.ts';
-import { discardStaging, removeEmptyParents, stagingDirOf } from './model-staging.ts';
+import { discardStaging, removeEmptyParents, stagedBytes, stagingDirOf } from './model-staging.ts';
+import { dirAccess } from './models-dir.ts';
 import {
   UNPACK_DIR,
   discardReleaseStaging,
@@ -32,6 +33,9 @@ import { extractToolArchive } from './tool-archive.ts';
  *   保留，模型包报告为 `incomplete`，下次只补缺的。完成后把模型包记进安装记录。
  * - 删除（`remove`）：只删没有别的模型包持有的组件。持有者是用到同一仓库与版本、并且在安装记录里或文件齐全的模型包。
  *   仓库目录里是别的版本时不删（不属于这个模型包）。
+ * - 存放位置（`dir`）：这次新下载的模型仓库放进给定的文件夹（`<dir>/<owner>/<repo>/`，暂存区在 `<dir>/.bcut-staging/`，发布照样是
+ *   同一个卷上的改名），不给时放模型目录。开始下载一个仓库时就记下它的位置（`ModelCatalog.setLocation`），暂停的下载据此续传；
+ *   暂停在某处的下载总在原处续传，这时整个计划都放那里（`plan.dir.fixed`）。修复在仓库所在的地方修。安装记录照旧在模型目录里。
  * - 发布页组件（`release`，LiteRT-LM 的 C 库）：按主机平台的压缩包下载（地址见 `release-component.ts`，不发 HEAD，大小取登记的），
  *   核对大小与 sha256，在进程内解开到暂存区（只取包根目录的普通文件，略过 `archive.skip`），没有登记的文件或解不开时删掉暂存、
  *   `MODEL_DOWNLOAD_INTEGRITY`；写好清单后原子地改名到 `<toolsDir>/<名字>/<版本>/`。修复时按清单核对 sha256，没有清单的重新下载
@@ -81,6 +85,8 @@ export interface PlannedComponent {
   estimatedBytes: number;
   /** 发布页组件：这台主机的压缩包与下载地址（`fetch` 里只有这个压缩包）。 */
   release?: { asset: ComponentReleaseAsset; url: string };
+  /** 模型仓库的组件下载、暂存与发布到的根（其下是 `<owner>/<repo>/`）；发布页组件没有（在 `toolsDir`）。 */
+  root?: string;
 }
 
 export interface InstallPlanDetail {
@@ -91,6 +97,8 @@ export interface InstallPlanDetail {
   /** 发布页组件的下载镜像；没有时 null（官方地址）。 */
   toolsEndpoint: string | null;
   repair: boolean;
+  /** 请求的存放位置（`plan` 的 `dir`）；没给或就是模型目录时 null。开跑前重算计划时照用。 */
+  dir: string | null;
   /** 进度的总字节数（含暂存区里已经收到的）；未知时 null。 */
   totalBytes: number | null;
 }
@@ -127,12 +135,24 @@ export class ModelInstaller {
     return this.#catalog.root;
   }
 
-  async plan(bundleId: string, options: { repair?: boolean; endpoints?: Record<string, string | null> } = {}): Promise<InstallPlanDetail> {
+  async plan(
+    bundleId: string,
+    options: { repair?: boolean; endpoints?: Record<string, string | null>; dir?: string | null } = {},
+  ): Promise<InstallPlanDetail> {
     const def = this.#definition(bundleId);
     const repair = options.repair ?? false;
     const endpoint = this.#options.endpoint();
     const toolsOption = this.#options.toolsEndpoint;
     const toolsEndpoint = (typeof toolsOption === 'function' ? toolsOption() : toolsOption) || null;
+    const dir = options.dir && path.resolve(options.dir) !== path.resolve(this.root) ? path.resolve(options.dir) : null;
+    // 暂停在某处的下载在原处续传：第一个这样的仓库决定整个计划放哪里。
+    let fixed: string | null = null;
+    for (const [, source] of componentsOf(def)) {
+      if (source.release || fixed) continue;
+      const at = this.#catalog.repoRoot(source.repo);
+      if (!repair && (await stagedBytes(at, source.repo, source.revision)) > 0 && !(await this.#catalog.componentInstalled(source))) fixed = at;
+    }
+    const target = fixed ?? dir ?? this.root;
     const components: PlannedComponent[] = [];
     const endpoints: Record<string, string | null> = {};
     for (const [component, source] of componentsOf(def)) {
@@ -143,10 +163,11 @@ export class ModelInstaller {
       components.push({
         ...(source.release
           ? await this.#planRelease(component, source, repair, selected)
-          : await this.#planComponent(component, source, repair, selected ?? endpoint)),
+          : await this.#planComponent(component, source, repair, selected ?? endpoint, await this.#rootFor(source, repair, target))),
         endpoint: selected,
       });
     }
+    const access = await dirAccess(target);
     const downloading = components.filter((c) => c.action === 'download');
     const downloadBytes = downloading.some((c) => c.bytes === null) ? null : downloading.reduce((sum, c) => sum + (c.bytes ?? 0), 0);
     const estimatedBytes = downloading.reduce((sum, c) => sum + (c.bytes ?? c.estimatedBytes), 0);
@@ -167,11 +188,35 @@ export class ModelInstaller {
       estimatedBytes,
       confirmBytes: downloadBytes ?? estimatedBytes,
       resumedBytes,
-      availableBytes: await this.#freeBytes(this.root),
+      availableBytes: await this.#freeBytes(target),
       source: this.#sourceOf(endpoint, toolsEndpoint, downloading),
+      dir: {
+        path: target,
+        modelsDir: this.root,
+        // 模型目录是否由环境变量锁定由 Runtime 填（安装器不读环境）。
+        locked: false,
+        fixed: fixed !== null,
+        problem: !access.exists ? 'missing' : !access.writable ? 'not-writable' : null,
+      },
       upToDate: downloading.length === 0,
     };
-    return { plan, components, endpoint, endpoints, toolsEndpoint, repair, totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes };
+    return {
+      plan,
+      components,
+      endpoint,
+      endpoints,
+      toolsEndpoint,
+      repair,
+      dir,
+      totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes,
+    };
+  }
+
+  /** 一个模型仓库这次放在哪个根：修复、已经装好、暂停在原处的在原处，其余放这次的位置。 */
+  async #rootFor(source: BundleComponentSource, repair: boolean, target: string): Promise<string> {
+    const at = this.#catalog.repoRoot(source.repo);
+    if (repair || (await this.#catalog.componentInstalled(source))) return at;
+    return (await stagedBytes(at, source.repo, source.revision)) > 0 ? at : target;
   }
 
   /** 照计划下载、核对、发布。信号中止时停下（暂存区保留，下次续传），抛出中止的原因。 */
@@ -182,13 +227,17 @@ export class ModelInstaller {
     const { signal } = options;
     const onProgress = options.onProgress ?? (() => {});
     const downloading = detail.components.filter((c) => c.action === 'download');
-    const required = downloading.reduce((sum, c) => sum + (c.bytes ?? c.estimatedBytes), 0);
-    const available = await this.#freeBytes(this.root);
-    if (available !== null && available < required) {
-      throw new DownloadError('MODEL_DOWNLOAD_NO_SPACE', M.noSpace(), {
-        requiredBytes: required,
-        availableBytes: available,
-      });
+    // 按落到的磁盘分别查可用空间（发布页组件照旧算在模型目录那边）。
+    const needs = new Map<string, number>();
+    for (const c of downloading) needs.set(c.root ?? this.root, (needs.get(c.root ?? this.root) ?? 0) + (c.bytes ?? c.estimatedBytes));
+    for (const [root, required] of needs) {
+      const available = await this.#freeBytes(root);
+      if (available !== null && available < required) {
+        throw new DownloadError('MODEL_DOWNLOAD_NO_SPACE', M.noSpace(), {
+          requiredBytes: required,
+          availableBytes: available,
+        });
+      }
     }
     let received = detail.plan.resumedBytes;
     let downloaded = 0;
@@ -197,8 +246,9 @@ export class ModelInstaller {
     report('downloading');
     const published: BcutManifest[] = [];
     for (const component of downloading) {
+      const root = component.root ?? this.root;
       const downloader = new ModelDownloader({
-        root: this.root,
+        root,
         endpoint: component.endpoint ?? detail.endpoint,
         fetch: this.#fetch,
         ...(this.#options.retries !== undefined ? { retries: this.#options.retries } : {}),
@@ -217,7 +267,12 @@ export class ModelInstaller {
           continue;
         }
         const { repo, revision } = component.source;
-        if (component.reuse.length > 0) await downloader.reuse(repo, revision, this.#catalog.repoDir(repo), component.reuse);
+        // 先记下位置：中途停下时，暂停的下载按它找到暂存区、在原处续传。
+        if (root !== this.root) {
+          await this.#catalog.setLocation(repo, root);
+          this.#catalog.changed(detail.plan.bundleId);
+        }
+        if (component.reuse.length > 0) await downloader.reuse(repo, revision, path.join(root, ...repo.split('/')), component.reuse);
         const sourceRepo = this.#sourceRepo(component.source);
         await downloader.download(
           repo,
@@ -234,6 +289,7 @@ export class ModelInstaller {
         signal.throwIfAborted();
         report('publishing');
         published.push(await downloader.publish(repo, revision, component.files, sourceRepo));
+        await this.#catalog.setLocation(repo, root);
         this.#catalog.changed(detail.plan.bundleId);
       } catch (error) {
         // 哪一部分没下成：前面下好的已经发布、留着，补齐时只下缺的（界面按它说「X 没下成」）。
@@ -269,6 +325,7 @@ export class ModelInstaller {
       if (!(await fs.stat(dir).catch(() => null))) continue;
       await fs.rm(dir, { recursive: true, force: true });
       await removeEmptyParents(path.dirname(dir), path.dirname(dir));
+      if (!source.release) await this.#catalog.setLocation(source.repo, null);
       removed.push(source.repo);
     }
     await updateInstallRecord(this.root, (r) => {
@@ -282,7 +339,10 @@ export class ModelInstaller {
   async discard(bundleId: string, busy: (source: BundleComponentSource) => boolean = () => false): Promise<void> {
     const def = this.#definition(bundleId);
     for (const [, source] of componentsOf(def)) {
-      if (!busy(source)) await this.#discardStaging(source);
+      if (busy(source)) continue;
+      await this.#discardStaging(source);
+      // 还没发布就丢掉了：位置记录跟着清掉，下次下载重新选。
+      if (!source.release && !(await this.#catalog.componentInstalled(source))) await this.#catalog.setLocation(source.repo, null);
     }
     this.#catalog.changed(bundleId);
   }
@@ -297,7 +357,7 @@ export class ModelInstaller {
 
   async #discardStaging(source: BundleComponentSource): Promise<void> {
     if (source.release) await discardReleaseStaging(this.#catalog.toolsDir, source.release);
-    else await discardStaging(this.root, source.repo, source.revision);
+    else await discardStaging(this.#catalog.repoRoot(source.repo), source.repo, source.revision);
   }
 
   /**
@@ -415,7 +475,13 @@ export class ModelInstaller {
     return manifest;
   }
 
-  async #planComponent(component: string, source: BundleComponentSource, repair: boolean, endpoint: string): Promise<PlannedComponent> {
+  async #planComponent(
+    component: string,
+    source: BundleComponentSource,
+    repair: boolean,
+    endpoint: string,
+    root: string,
+  ): Promise<PlannedComponent> {
     const keep = (): PlannedComponent => ({
       component,
       source,
@@ -426,6 +492,7 @@ export class ModelInstaller {
       staged: 0,
       bytes: 0,
       estimatedBytes: 0,
+      root,
     });
     if (!repair && (await this.#catalog.componentInstalled(source))) return keep();
     const spec = repoManifestFor(source.repo, source.revision, this.#manifests);
@@ -441,7 +508,7 @@ export class ModelInstaller {
         files: unhashed,
       });
     }
-    const dir = this.#catalog.repoDir(source.repo);
+    const dir = path.join(root, ...source.repo.split('/'));
     const onDisk = await readManifest(dir);
     const listed = new Map(onDisk && onDisk.revision === source.revision ? onDisk.files.map((f) => [f.path, f]) : []);
     const reuse: string[] = [];
@@ -470,7 +537,7 @@ export class ModelInstaller {
     if (repair && fetchFiles.length === 0 && manifestOk) return keep();
 
     // 暂存区里已经收到的部分：核对过的整份不再下载，`.part` 续传。
-    const stage = stagingDirOf(this.root, source.repo, source.revision);
+    const stage = stagingDirOf(root, source.repo, source.revision);
     let staged = 0;
     const pending: Array<{ file: DownloadFile; part: number }> = [];
     for (const file of fetchFiles) {
@@ -495,7 +562,7 @@ export class ModelInstaller {
     });
     const bytes = remaining.some((r) => r === null) ? null : remaining.reduce<number>((sum, r) => sum + (r ?? 0), 0);
     const estimatedBytes = bytes ?? Math.max(0, spec.estimatedBytes - staged);
-    return { component, source, action: 'download', fetch: fetchFiles, reuse, files, staged, bytes, estimatedBytes };
+    return { component, source, action: 'download', fetch: fetchFiles, reuse, files, staged, bytes, estimatedBytes, root };
   }
 
   /** 下载来源的仓库：清单的 `sourceRepo`，没写时就是登记的 `repo`。 */

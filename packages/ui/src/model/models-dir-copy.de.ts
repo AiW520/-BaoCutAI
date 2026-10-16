@@ -77,4 +77,6 @@ export const de: ModelsDirMessages = {
   moveValidating: (amount: string | null) => `Kopierte Dateien werden geprüft${amount ? ` (${amount})` : ""}…`,
   movePublishing: "Verschiebung wird abgeschlossen…",
   moving: (amount: string | null, to: string | null) => `Wird verschoben${amount ? ` ${amount}` : ""}${to ? ` zu ${to}` : ""}…`,
+  elsewhere: (count: number, groups: readonly { names: readonly string[]; path: string }[]) =>
+    `${count === 1 ? '1 Modell ist' : `${count} Modelle sind`} in anderen Ordnern gespeichert: ${groups.map((g) => `${and(g.names)} (${g.path})`).join('; ')}. ${count === 1 ? 'Es bleibt' : 'Sie bleiben'} dort, wenn du den Modellordner änderst.`,
 };

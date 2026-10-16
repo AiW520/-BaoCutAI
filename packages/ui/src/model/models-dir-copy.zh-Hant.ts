@@ -58,4 +58,6 @@ export const zhHant: ModelsDirMessages = {
   moveValidating: (amount) => `正在驗證複製的檔案${amount ? `（${amount}）` : ''}…`,
   movePublishing: '正在完成移動…',
   moving: (amount, to) => `正在移動${amount ? ` ${amount}` : ''}${to ? ` 到 ${to}` : ''}…`,
+  elsewhere: (count, groups) =>
+    `另有 ${count} 個模型儲存在其他位置：${groups.map((g) => `${g.names.join('、')}（${g.path}）`).join('；')}。變更模型資料夾時${count === 1 ? '它' : '它們'}不會跟著移動。`,
 };

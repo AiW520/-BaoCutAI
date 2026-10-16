@@ -17,13 +17,16 @@ type Session = Pick<
  */
 export type InstallMode = 'install' | 'complete' | 'repair';
 
-function call(session: Session, mode: InstallMode, bundleId: string, confirmBytes?: number): Promise<ModelInstallResult> {
-  return mode === 'repair' ? session.repairModelBundle(bundleId, confirmBytes) : session.installModelBundle(bundleId, confirmBytes);
+/** `dir`：这次下载的存放位置（null 为模型目录）；修复在组件所在的地方修，不带它。 */
+function call(session: Session, mode: InstallMode, bundleId: string, confirmBytes?: number, dir: string | null = null): Promise<ModelInstallResult> {
+  return mode === 'repair'
+    ? session.repairModelBundle(bundleId, confirmBytes)
+    : session.installModelBundle(bundleId, confirmBytes, dir);
 }
 
 /** 第一步：只拿计划，不下载（修复时 Runtime 会先把已装的文件校验一遍）。 */
-export function planInstall(session: Session, mode: InstallMode, bundleId: string): Promise<ModelInstallResult> {
-  return call(session, mode, bundleId);
+export function planInstall(session: Session, mode: InstallMode, bundleId: string, dir: string | null = null): Promise<ModelInstallResult> {
+  return call(session, mode, bundleId, undefined, dir);
 }
 
 export type ConfirmOutcome =
@@ -34,11 +37,16 @@ export type ConfirmOutcome =
   /** 已经齐全，没有要下载的。 */
   | { kind: 'up-to-date'; plan: ModelInstallPlan };
 
-/** 第二步：把计划里的 `confirmBytes` 原样交回去。大小变了（`MODEL_INSTALL_SIZE_CHANGED`）时带回新计划，不算失败。 */
-export async function confirmInstall(session: Session, mode: InstallMode, plan: ModelInstallPlan): Promise<ConfirmOutcome> {
+/** 第二步：把计划里的 `confirmBytes` 原样交回去（存放位置与第一步相同）。大小变了（`MODEL_INSTALL_SIZE_CHANGED`）时带回新计划，不算失败。 */
+export async function confirmInstall(
+  session: Session,
+  mode: InstallMode,
+  plan: ModelInstallPlan,
+  dir: string | null = null,
+): Promise<ConfirmOutcome> {
   let result: ModelInstallResult;
   try {
-    result = await call(session, mode, plan.bundleId, plan.confirmBytes);
+    result = await call(session, mode, plan.bundleId, plan.confirmBytes, dir);
   } catch (error) {
     const details = (error as { details?: { code?: unknown; plan?: ModelInstallPlan } } | null)?.details;
     if (details?.code === 'MODEL_INSTALL_SIZE_CHANGED' && details.plan) return { kind: 'replan', plan: details.plan };

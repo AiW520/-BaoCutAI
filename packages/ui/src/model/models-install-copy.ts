@@ -28,6 +28,9 @@ const en = {
   amountEstimate: (size: string) => `About ${size}`,
   noSpace: (need: string, have: string) =>
     `Not enough disk space: this needs ${need}, and the disk with the models folder only has ${have} left. Free up space before downloading.`,
+  /** 选了模型目录以外的文件夹时的 `noSpace`。 */
+  noSpaceFolder: (need: string, have: string) =>
+    `Not enough disk space: this needs ${need}, and the disk with this folder only has ${have} left. Free up space or choose another folder.`,
   resumed: (size: string) => `The ${size} downloaded last time is reused, not downloaded again.`,
   space: (size: string) => `${size} free on disk`,
   lineKeep: 'Already installed, left as is',
@@ -79,6 +82,25 @@ const en = {
   removed: (bundleId: string) => `Deleted ${bundleId}`,
   removedKept: (bundleId: string, repos: readonly string[]) =>
     `Deleted ${bundleId} · ${and(repos)} kept because other model packages still use ${repos.length === 1 ? 'it' : 'them'}`,
+  // ---- 存放位置（设计稿 download-dialog.jsx `Where`） ----
+  folder: {
+    label: 'Save to',
+    modelsDirChip: 'Models folder',
+    envChip: 'Environment variable',
+    change: 'Change…',
+    pickTitle: 'Choose where to save this download',
+    reset: 'Use the models folder',
+    pickedNote: 'Only for this download; the models folder stays the same.',
+    toolsNote: "Tools and runtimes go in BaoCut's tools folder, not here.",
+    envNote: 'The models folder is set by the BAOCUT_MODELS_DIR environment variable, so downloads go there.',
+    fixedNote: 'The paused download resumes in the folder where it started.',
+    missingTitle: "Can't find this folder",
+    missingText: "This folder doesn't exist. This also happens when an external drive isn't connected; connect it, or choose another folder.",
+    notWritableTitle: "This folder isn't writable",
+    notWritableText: "BaoCut doesn't have permission to write to this folder. Choose another folder, or change its permissions first.",
+  },
+  /** 模型行：下载时放在了模型目录以外（`path` 已缩短）。 */
+  storedAt: (path: string) => `Stored in ${path} · outside the models folder`,
 };
 
 export type ModelsInstallMessages = typeof en;

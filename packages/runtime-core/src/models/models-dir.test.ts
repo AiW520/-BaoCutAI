@@ -338,6 +338,41 @@ describe('模型目录', () => {
     await fs.mkdir(other);
     expect(codeOf(await rejection(side.client.request('models.setDir', { path: other, mode: 'switch' })))).toBe('MODELS_DIR_ENV_LOCKED');
     expect(codeOf(await rejection(side.client.request('models.setDir', { path: null, mode: 'switch' })))).toBe('MODELS_DIR_ENV_LOCKED');
+    // 下载也只能放模型目录：给别的位置拒绝，给模型目录本身照常。
+    expect(codeOf(await rejection(side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, dir: other })))).toBe('MODELS_DIR_ENV_LOCKED');
+    const plan = await side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, dir: envDir });
+    expect(plan.plan.dir).toEqual({ path: envDir, modelsDir: envDir, locked: true, fixed: false, problem: null });
+  });
+
+  it('下载时放到别处的模型：照常可用，不算进模型目录；移动与更换模型目录时留在原处', async () => {
+    const away = path.join(tmp, 'away');
+    await fs.mkdir(away);
+    for (const repo of repos) await writeSyntheticRepo(away, repo);
+    const store = path.join(tmp, 'home', 'store');
+    await fs.mkdir(store, { recursive: true });
+    await fs.writeFile(
+      path.join(store, 'model-locations.json'),
+      JSON.stringify({ format_version: 1, repos: Object.fromEntries(repos.map((r) => [r.repo, away])) }),
+    );
+    side = await startSide();
+    await until(() => bundleState(side!)?.components?.every((c) => c.state === 'installed'));
+    expect(bundleState(side)!.components!.every((c) => c.location === away)).toBe(true);
+    expect(await side.client.request('models.getDir', {})).toMatchObject({ usedBytes: 0, modelCount: 0 });
+
+    const target = path.join(tmp, 'target');
+    await fs.mkdir(target);
+    const { jobId } = await side.client.request('models.setDir', { path: target, mode: 'move' });
+    // 模型目录里没有要搬的：直接换过去，不建移动任务。
+    expect(jobId).toBeNull();
+    for (const repo of repos) expect(await exists(repoDir(away, repo.repo))).toBe(true);
+    await until(() => bundleState(side!)?.components?.every((c) => c.state === 'installed' && c.location === away));
+    const { jobId: check } = await side.client.request('models.test', { bundleId: TRANSCRIBE_BUNDLE });
+    expect((await until(() => terminal(jobOf(side!, check)), 15_000)).state).toBe('completed');
+
+    // 换到存放它们的文件夹：从此就在模型目录里。
+    await side.client.request('models.setDir', { path: away, mode: 'switch' });
+    await until(() => bundleState(side!)?.components?.every((c) => c.state === 'installed' && c.location === undefined));
+    expect(await side.client.request('models.getDir', {})).toMatchObject({ path: away, modelCount: 1 });
   });
 
   it('不对浏览器开放', () => {

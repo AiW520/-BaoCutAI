@@ -283,6 +283,40 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
     expect(side.jobs()?.jobs.filter((j) => j.kind === 'modelInstall')).toHaveLength(0);
   });
 
+  it('下载到选定的文件夹：模型目录不变；组件带存放位置、照常可用；文件夹不在时计划里报告、确认时拒绝；删除后清掉位置', async () => {
+    side = await startSide(source, free);
+    const gone = path.join(side.dir, 'gone');
+    const missing = await side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, dir: gone });
+    expect(missing.plan.dir).toMatchObject({ path: gone, locked: false, fixed: false, problem: 'missing' });
+    await expect(side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, dir: gone, confirmBytes: missing.plan.confirmBytes }))
+      .rejects.toMatchObject({ details: { code: 'MODELS_DIR_MISSING', path: gone } });
+    expect(source.requests.filter((r) => r.method === 'GET')).toHaveLength(0);
+
+    const away = path.join(side.dir, 'away');
+    await fs.mkdir(away);
+    const { plan } = await side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, dir: away });
+    expect(plan.dir).toMatchObject({ path: away, locked: false, fixed: false, problem: null });
+    expect(plan.dir!.modelsDir).not.toBe(away);
+    const { jobId } = await side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, dir: away, confirmBytes: plan.confirmBytes });
+    expect((await until(() => terminal(jobOf(side!, jobId!)), 10_000)).state).toBe('completed');
+    await until(() => bundleOf(side!)?.state === 'installed');
+    expect(bundleOf(side)!.components!.filter((c) => c.state === 'installed').every((c) => c.location === away)).toBe(true);
+    for (const repo of repos) {
+      expect(await fs.stat(path.join(away, ...repo.repo.split('/'), '.bcut-manifest.json')).then(() => true, () => false)).toBe(true);
+      expect(await fs.stat(path.join(side.home.modelsDir, ...repo.repo.split('/'))).then(() => true, () => false)).toBe(false);
+    }
+    expect(await side.client.request('models.getDir', {})).toMatchObject({ path: side.home.modelsDir, modelCount: 0 });
+    const locations = JSON.parse(await fs.readFile(path.join(side.home.root, 'store', 'model-locations.json'), 'utf8'));
+    expect(Object.values(locations.repos)).toEqual(repos.map(() => away));
+    const { jobId: check } = await side.client.request('models.test', { bundleId: TRANSCRIBE_BUNDLE });
+    expect((await until(() => terminal(jobOf(side!, check)), 15_000)).state).toBe('completed');
+
+    await side.client.request('models.remove', { bundleId: TRANSCRIBE_BUNDLE });
+    await until(() => bundleOf(side!)?.state === 'not-installed');
+    expect(bundleOf(side)!.components!.every((c) => c.location === undefined)).toBe(true);
+    expect(JSON.parse(await fs.readFile(path.join(side.home.root, 'store', 'model-locations.json'), 'utf8')).repos).toEqual({});
+  });
+
   it('两步安装：先给大小，确认后是普通任务；进度在 jobs 主题（字节），状态在 models 主题；取消即暂停，再装续传；自检通过', async () => {
     side = await startSide(source, free);
     expect(bundleOf(side)).toMatchObject({ state: 'not-installed', reason: 'missing-manifest' });

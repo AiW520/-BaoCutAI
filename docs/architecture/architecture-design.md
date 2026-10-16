@@ -910,7 +910,7 @@ VideoStore 用 SQLite，表至少包括 `videos`、`entities`、`document_versio
   cache/                            # 派生缓存，可整体删除；总大小有上限（设置 cache.maxSizeMiB，默认 2 GiB），超限按修改时间删最旧的到 90%，content-index/ 与 baocut-composition-host/ 不删
   workspaces/<bundleId>/            # 代码创作工作区（草稿）
   models/                           # 本地模型
-  store/                            # 模型服务配置与凭据（§6.8）、节点与共享的状态（§6.7）、偏好设置（§5.10）、对外服务的配置（§4.8）、外部工具的登记（external-tools.json，§12.9）、从链接导入的原始链接（link-sources.json，0600，§7.9）、在线调用的用量账本（usage.jsonl，0600，§6.10）
+  store/                            # 模型服务配置与凭据（§6.8）、节点与共享的状态（§6.7）、偏好设置（§5.10）、对外服务的配置（§4.8）、外部工具的登记（external-tools.json，§12.9）、从链接导入的原始链接（link-sources.json，0600，§7.9）、在线调用的用量账本（usage.jsonl，0600，§6.10）、下载到模型目录以外的模型仓库的位置（model-locations.json，§6.3）
   library/                          # 用户库（§5.9）
   tools/                            # 受管外部工具：<工具>/<版本>/ 与下载中的 .staging/（§12.9）
   fonts/                            # 按需下载的字体：files/<族>/、index.json 与下载中的 .staging/（§9.1）
@@ -1404,6 +1404,15 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 - **先停下再改**。有任务在用本地模型（排队或进行中的、带模型包的任务，以及安装、检查、移动）时以 `conflict`（`MODEL_IN_USE`，带 `jobIds`）拒绝；没有时卸下所有空闲的 Worker，有忙的同样拒绝。移动期间每个模型包报告 `error` / `relocating`，不能提交新的本地任务，安装、删除、检查也以 `MODEL_IN_USE` 拒绝。换根之后模型包的状态按新目录重算，`models` 主题对每个模型包发 `bundle.updated`，能力视图重算。
 - **拒绝**。环境变量指定时 `MODELS_DIR_ENV_LOCKED`；文件夹不在（外置盘没接上）`MODELS_DIR_MISSING`；不能写 `MODELS_DIR_NOT_WRITABLE`；与当前目录互相包含 `MODELS_DIR_NESTED`；跨盘移动放不下 `MODELS_DIR_NO_SPACE`（带 `requiredBytes`、`availableBytes` 与补救）。都是 `conflict`。生效的目录不在时安装与修复以 `MODELS_DIR_MISSING` 拒绝，不在别处凭空建出同名的目录。
 - **入口**。设置里各能力页「本机模型」一节顶部的模型目录卡片（产品设计 §7.6）与 CLI `baocut models dir [--set <path> --move|--switch | --reset]`。Web 服务的白名单与 MCP 对外服务都不含这三个方法：更改要搬动几 GB 的文件、卸下本机的 Worker，是这台机器的管理；浏览器的设置页不显示这张卡片。
+
+**存放位置**。安装可以带 `dir`（`models.install`、`models.installBatch`，命令与协议规范 §4.1）：这次新下载的模型仓库放进那个文件夹，模型目录不变。布局与模型目录相同——`<dir>/<owner>/<repo>/` 带清单，暂存区在 `<dir>/.bcut-staging/`，发布照样是同一块盘上的原子改名；发布页组件照样装在 `<runtime-home>/tools/`，安装记录（`.bcut-installs.json`）照样在模型目录里。
+
+- **记录**。放在别处的仓库记在 `<runtime-home>/store/model-locations.json`（`{ "format_version": 1, "repos": { "<owner>/<repo>": "<绝对路径>" } }`，临时文件加改名写入）：下载开始时就记下（暂停后续传要在原处找暂存区），发布后再记一次；删除模型包时清掉，丢弃暂存区而仓库没装时也清掉。位置就是模型目录的不记。记录不放在模型目录里：外置盘没接上时照样知道仓库在哪（模型包报告为没装好），移动或更换模型目录时不跟着走。文件坏了按空记录处理，那些仓库报告为没装，重新下载时再选位置。
+- **计划**。计划的 `dir`（`path`、`modelsDir`、`locked`、`fixed`、`problem`）说这次的模型仓库放在哪；`availableBytes` 是 `path` 所在磁盘的可用空间。已经装好的仓库留在原处；修复在仓库所在的地方修，不看 `dir`；某个仓库有暂停在某处的下载时，整个计划都放那里续传（`fixed`），请求的 `dir` 不起作用。几个仓库落在不同的磁盘上时（修复、续传），开跑前按各自的磁盘再核对一次空间，计划里的数只是 `path` 那一块盘的。
+- **拒绝**。这次有模型仓库要下载、文件夹不在或不能写时，确认以 `MODELS_DIR_MISSING` / `MODELS_DIR_NOT_WRITABLE` 拒绝（计划里已经由 `dir.problem` 报告）；只下载发布页组件时不受影响。模型目录由环境变量指定时只能放模型目录，`dir` 给别处以 `MODELS_DIR_ENV_LOCKED` 拒绝。
+- **任务**。放在模型目录以外时 `dir` 进入安装任务的输入（同一个模型包装到不同的地方不是同一个任务），产物写明放在哪。排队的安装开跑前按同一个 `dir` 重算计划。
+- **与模型目录的关系**。组件状态带 `location`（存放它的文件夹）；`models.getDir` 认出的模型包数不算必需组件放在别处的，移动只扫模型目录本身，更改模型目录时这些仓库留在原处、照常可用。换到的新目录恰好是记下的位置时，那些仓库从此算在模型目录里。
+- **入口**。只有桌面界面的下载确认框可以选（产品设计 §7.6）；智能体的 `models_install` 与 CLI `baocut models install` 照旧放模型目录。Web 服务与 MCP 不开放安装。
 
 **入口**。智能体在缺模型时可以把「下载模型」作为任务的前置步骤提交（`models_install`）：先做计划，按 `command` 风险确认（§3.12），确认的说明写明大小与来源，结果带大小，严格离线时以 `OFFLINE_STRICT` 拒绝；检查一个已安装的模型包（`models_test`）同样按 `command` 确认，用 `jobs_wait` 等结果。MCP 对外服务不提供安装、检查与删除，只能用 `models_list` 看状态；Web 服务的白名单也不含安装管理（§4.8）：下载几百 MB、删掉本机的转写能力是这台机器的管理，浏览器只看得到状态与进度，`jobs.cancel` 能停下一个安装（等于暂停）。CLI：`baocut models install <bundleId> [--yes]`（先显示大小，只有 `--yes` 跳过确认）、`models cancel`、`models repair`、`models test`、`models remove`，`models bundles` 显示组件、进度与最近一次检查。
 

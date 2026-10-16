@@ -4,12 +4,13 @@ import { Button, ButtonGroup, Content, Dialog, DialogContainer, Heading, Progres
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { DOWNLOAD_SOURCE_COPY as SRC, endpointKey, kindTitle } from '../../model/download-source.ts';
 import { CHECK_LABEL } from '../../model/model-check-copy.ts';
-import { installPlanView, problemText, rpcProblem } from '../../model/models-install.ts';
+import { installFolderView, installPlanView, problemText, rpcProblem } from '../../model/models-install.ts';
 import { licenseBrief, nonCommercial } from '../../model/models-tts-local.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useSetting } from '../../state/settings-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { SectionLink } from '../tools/tool-parts.tsx';
+import { DownloadFolder } from './download-folder.tsx';
 import { SourcePicker } from './download-sources.tsx';
 import { confirmInstall, planInstall, type InstallMode } from './local-model-actions.ts';
 import { LOCAL_INSTALL_COPY as COPY } from './local-models-copy.ts';
@@ -63,6 +64,8 @@ type Phase =
  * 不许商用的模型（设计稿 panel-tts-local.jsx `withModelLicense`）下载前先写清许可，确认按钮写「我知道了，下载」；补齐与修复不再问
  * （权重已在，设计稿 settings-local.jsx）。补齐只下载缺的组件，先说一句装好的不动。
  * 修复（设计稿 settings-local.jsx 的修复确认）写明修好后会自动再检查一次；文件都完好时给「重新检查」。
+ * 下载与补齐写出存放位置（设计稿 download-dialog.jsx `Where`）：默认是模型目录，「更改…」只为这一次换文件夹，按它重新做计划；
+ * 修复在组件所在的地方修，不给选。
  * 状态放在 Dialog 外层：S2 的 Dialog 会把 children 在几个 slot 里各渲染一遍。
  */
 export function InstallDialog({
@@ -101,11 +104,13 @@ export function InstallDialog({
   // 在框里换了来源（写的是设置）：按新来源重新做计划，先留着旧计划，算好了再换。
   const modelsEndpoint = useSetting(endpointKey('models'));
   const toolsEndpoint = useSetting(endpointKey('tools'));
+  // 这次下载的存放位置；null 为模型目录。
+  const [dir, setDir] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
     setRefreshing(true);
-    planInstall(runtime, mode, bundleId)
+    planInstall(runtime, mode, bundleId, dir)
       .then(
         (result) => live && setPhase({ kind: 'plan', plan: result.plan, replanned: false }),
         (error: unknown) => live && setPhase({ kind: 'failed', message: problemText(rpcProblem(error)) }),
@@ -114,11 +119,12 @@ export function InstallDialog({
     return () => {
       live = false;
     };
-  }, [runtime, mode, bundleId, modelsEndpoint, toolsEndpoint]);
+  }, [runtime, mode, bundleId, modelsEndpoint, toolsEndpoint, dir]);
 
   const plan = phase.kind === 'plan' ? phase.plan : null;
   const view = plan ? installPlanView(plan) : null;
-  const canConfirm = !!view && !view.upToDate && !view.noSpace && !busy && !refreshing;
+  const folder = plan && mode !== 'repair' ? installFolderView(plan) : null;
+  const canConfirm = !!view && !view.upToDate && !view.noSpace && !folder?.problem && !busy && !refreshing;
   const parts = view ? view.lines.filter((l) => !l.keep).length : 0;
   const perPart = !!view && view.lines.some((l) => l.source !== null);
 
@@ -127,7 +133,7 @@ export function InstallDialog({
     setBusy(true);
     setFailure(null);
     try {
-      const outcome = await confirmInstall(runtime, mode, plan);
+      const outcome = await confirmInstall(runtime, mode, plan, dir);
       if (outcome.kind === 'started') {
         if (onStarted) onStarted(outcome.jobId);
         else ToastQueue.neutral(COPY.started(name), { timeout: 4000 });
@@ -175,6 +181,7 @@ export function InstallDialog({
                       {view.resumed ? <p className={text}>{view.resumed}</p> : null}
                       {view.space ? <p className={text}>{view.space}</p> : null}
                       {view.noSpace ? <p className={problem}>{view.noSpace}</p> : null}
+                      {folder ? <DownloadFolder view={folder} isDisabled={busy || refreshing} onPick={setDir} /> : null}
                       {view.groups.map((g) => (
                         <div key={g.kind} className={stack} role="group" aria-label={kindTitle(g.kind)}>
                           <div className={groupHead}>

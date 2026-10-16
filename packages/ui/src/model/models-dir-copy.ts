@@ -93,6 +93,11 @@ const en = {
   moveValidating: (amount: string | null) => `Verifying the copied files${amount ? ` (${amount})` : ''}…`,
   movePublishing: 'Finishing the move…',
   moving: (amount: string | null, to: string | null) => `Moving${amount ? ` ${amount}` : ''}${to ? ` to ${to}` : ''}…`,
+  /** 卡片：下载时放在别处的模型，按文件夹分组（`path` 已缩短）；更改模型目录时它们留在原处。 */
+  elsewhere: (count: number, groups: readonly { names: readonly string[]; path: string }[]) =>
+    `${count === 1 ? '1 model is' : `${count} models are`} stored in other folders: ${groups.map((g) => `${and(g.names)} (${g.path})`).join('; ')}. ${
+      count === 1 ? 'It stays where it is' : 'They stay where they are'
+    } when you change the models folder.`,
 };
 
 export type ModelsDirMessages = typeof en;

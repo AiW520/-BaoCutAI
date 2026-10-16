@@ -59,6 +59,19 @@ describe('安装与修复：两步确认', () => {
     expect(calls[0]![1]).toHaveProperty('commandId');
   });
 
+  it('存放位置：计划与确认都带上选的文件夹；没选时不带，修复不带', async () => {
+    const reply = () => ({ plan: plan(), jobId: null });
+    const { session, calls } = fakeSession({ 'models.install': reply, 'models.repair': reply });
+    await planInstall(session, 'install', QWEN, '/Volumes/SSD/AI');
+    await confirmInstall(session, 'complete', plan(), '/Volumes/SSD/AI');
+    await planInstall(session, 'install', QWEN, null);
+    await planInstall(session, 'repair', QWEN, '/Volumes/SSD/AI');
+    expect(calls[0]).toEqual(['models.install', { bundleId: QWEN, dir: '/Volumes/SSD/AI' }]);
+    expect(calls[1]![1]).toMatchObject({ bundleId: QWEN, confirmBytes: 400, dir: '/Volumes/SSD/AI' });
+    expect(calls[2]).toEqual(['models.install', { bundleId: QWEN }]);
+    expect(calls[3]).toEqual(['models.repair', { bundleId: QWEN }]);
+  });
+
   it('大小变了：带回新计划让对话框重新确认，不算失败', async () => {
     const next = plan({ confirmBytes: 520, downloadBytes: 520 });
     const error = new RpcError('conflict', '要下载的字节数变了，请按新的计划重新确认', { code: 'MODEL_INSTALL_SIZE_CHANGED', plan: next });
