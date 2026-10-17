@@ -287,7 +287,7 @@ baoyu-design 的 animated-video 把一部动画写成一个 React 树，整体�
 
 | 阶段 | 内容 | 看得见的结果 |
 | --- | --- | --- |
-| 1 | 实时合成层（§4.1、§4.3），只支持「满幅合成 + 上面是原生层」；导入后烘焙转后台（§7.1）；替身过期规则（§7.2）；一个 Three.js（WebGL）与一个 p5 的 fixture 走通验证、实时播与像素烘焙 | 导入一章立刻能在编辑器里播，不等烘焙；WebGL 包有实测记录 |
+| 1 | 实时合成层（§4.1、§4.3），只支持「满幅合成 + 上面是原生层」；导入后烘焙转后台（§7.1）；替身过期规则（§7.2）；WebGL fixture 走通取帧与像素烘焙（已做，宿主改为开 GPU 合成）、3D 资源进白名单（已做） | 导入一章立刻能在编辑器里播，不等烘焙；WebGL 包有实测记录 |
 | 2 | 章节表文档与 `chapters_compile`；`compositions_import --chapter`；`Track.role` 与归轨算法；`assets_import --place role` | 智能体按章生成，重做一章下游自动挪位，旁白与配乐分轨 |
 | 3 | 章节页；检查器参数可调；时间线角标与轨道头角色名；声音页分组 | 用户在编辑器里改脚本、点名重做 |
 | 4 | `compositions_preview --chapter` 边界拼图；skill 与 code-scenes 改写；MV 流程验证 | 用一部讲解片与一首歌各走通一遍 |
@@ -321,5 +321,5 @@ baoyu-design 的 animated-video 把一部动画写成一个 React 树，整体�
 | 事项 | 要确认什么 |
 | --- | --- |
 | 实时层的切点（§4.2） | `render-graph` 的「从某个 order 起画、底下留透明」在 `preview.tsx` 的画布上能否与 iframe 对齐到像素；播放中切点两侧的帧是否同步（iframe 的 `renderAt` 与画布的那一帧要是同一个视频帧） |
-| 第三方图形库（§9） | 运行时的 fixtures 只有 Canvas 2D、原生 DOM 与 HyperFrames，Three.js / WebGL 的包还没有跑过验证与像素烘焙：离屏窗口里 WebGL 带 alpha 的 `capturePage`、`preserveDrawingBuffer` 的要求、p5 的 2D 模式能否走指令烘焙，实测后写进代码包规范 §4.3、§4.4 |
+| p5 与 Three.js 真实库的实测（§9） | WebGL 取帧与像素烘焙已用原生 WebGL fixture（`baocut-webgl`）走通并写进代码包规范 §4.4；还没用 `three.module.js` 与 `p5.min.js` 本体跑过：p5 2D 模式能否走指令烘焙、Three.js 的 `WebGLRenderer` 默认设置要改哪些（`preserveDrawingBuffer`），要把库文件带进一个临时包实测后补进 §4.3 |
 | `align` 的阈值（§6.2） | `coverage` 多低、`lowConfidence` 多少算对不上，用一首歌与一段讲稿实测后定 |

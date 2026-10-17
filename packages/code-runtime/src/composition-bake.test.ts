@@ -202,6 +202,26 @@ describe.skipIf(!resolveElectronBinary() || !hasFfmpeg || !worker)('bakeComposit
     expect(stream.pix_fmt).toMatch(/^yuva444p1[02]le$/);
   });
 
+  it('WebGL 画面录不了：auto 回退像素，带 alpha 编成 ProRes 4444', async () => {
+    const bundle = await inspectBundle(path.join(fixtures, 'baocut-webgl'), { manifest: { contract: 'baocut/1', alpha: true } });
+    tmpDirs.push(bundle.root);
+    const out = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-bake-test-'));
+    tmpDirs.push(out);
+    const host = await CompositionHost.start();
+    try {
+      const outputFile = path.join(out, 'webgl.mov');
+      const result = await bakeComposition(host, bundle, { fps: { num: 30, den: 1 }, ffmpeg, alpha: true, worker, outputFile });
+      expect(result.bake).toMatchObject({ renderer: 'browser-pixels', fallback: { reason: expect.stringContaining('recording') } });
+      expect(result.frames).toBe(30);
+      expect(new Set(result.frameHashes).size).toBeGreaterThan(25);
+      const stream = probe(outputFile);
+      expect(stream).toMatchObject({ codec_name: 'prores', width: 640, height: 360 });
+      expect(stream.pix_fmt).toMatch(/^yuva444p1[02]le$/);
+    } finally {
+      await host.close();
+    }
+  });
+
   it('DOM 画面录不了：auto 回退像素并写明原因，ops 直接失败', async () => {
     const bundle = await inspectBundle(path.join(fixtures, 'baocut-native'), { manifest: { contract: 'baocut/1', alpha: false } });
     tmpDirs.push(bundle.root);

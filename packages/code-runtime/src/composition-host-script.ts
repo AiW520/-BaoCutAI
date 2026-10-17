@@ -34,7 +34,11 @@ const ADAPTER_SOURCE = /*__BAOCUT_ADAPTER_SOURCE__*/null;
 const RECORDER_SOURCE = /*__BAOCUT_RECORDER_SOURCE__*/null;
 const PAINT_WAIT_MS = 500;
 
-app.disableHardwareAcceleration();
+// GPU 合成留着，WebGL（Three.js、p5 的 WEBGL 模式）才有：关掉硬件加速后 Chromium 在 macOS 上连 SwiftShader 也不给
+// （enable-unsafe-swiftshader、use-angle=swiftshader 实测都拿不到 WebGL）。Canvas 2D 与页面光栅仍留在 CPU，
+// 指令烘焙的对拍样本与之前逐位相同；没有 GPU 的机器由 Chromium 自己回落软件合成。
+app.commandLine.appendSwitch('disable-accelerated-2d-canvas');
+app.commandLine.appendSwitch('disable-gpu-rasterization');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 if (app.dock && typeof app.dock.hide === 'function') app.dock.hide();
 // 所有窗口关掉也不退出：会话结束不等于宿主结束。

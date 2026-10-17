@@ -270,11 +270,13 @@ interface CompositionContext {
 - 新的作者模板使用 `noLoop()`，由 Adapter 调用受控的绘制，使用明确的局部时间，而不是真实的运行时长。
 - 使用 `randomSeed` / `noiseSeed`，并固定自己的随机源与调用顺序。
 - 已有的、带状态的草图可以声明 `sequential`：从初始状态按固定步长重放到目标帧（§5.3）。
+- `p5.min.js` 随包带着（§2.4）。2D 模式（缺省的 `createCanvas`）底下是一张 Canvas 2D，满足 §7.2 的条件时可以走指令烘焙，库内部用到录制器不支持的调用时回退像素；`WEBGL` 模式按 §4.4 的 WebGL 处理。p5 本身尚未在离屏宿主里实测。
 
 ### 4.4 Three.js
 
 - 用局部时间直接求出对象的状态，再渲染场景。
 - 动画片段可以通过 `AnimationMixer.setTime` 驱动。但这不等于所有的物理、粒子和异步资源都天然可以随机访问；带状态的部分要么改写成时间的纯函数，要么声明 `sequential`。
+- **WebGL**（Three.js、原生 WebGL、p5 的 `WEBGL` 模式）在离屏宿主里可用：宿主开着 GPU 合成（macOS 上是 ANGLE Metal），只把 Canvas 2D 与页面光栅留在 CPU；关掉硬件加速后 Chromium 连软件 WebGL 也不给。上下文必须开 `preserveDrawingBuffer: true`，`renderAt` 画完调 `gl.finish()`，否则 seek 之后的截图可能拿到空帧。WebGL 画面只能走像素烘焙（§7.1）；不同机器的 GPU 光栅可能有细微差别，帧摘要只在同一台机器上可比。库文件与模型随包带着：`three.module.js` 等放 `vendor/`，`gltf` `glb` `bin` `hdr` `ktx2` 在扩展名白名单里（§6.1）。
 
 ### 4.5 Canvas 与透明
 
@@ -383,7 +385,7 @@ interface CompositionContext {
 **导入**。从一个目录导入代码包，同样经过静态检查与采样验证（§6.2）：
 
 - 用 `lstat` 列出文件，拒绝符号链接。
-- 只收白名单内的扩展名：`html` `htm` `js` `mjs` `cjs` `css` `json` `map` `txt` `md` `svg` `png` `jpg` `jpeg` `webp` `gif` `avif` `woff` `woff2` `ttf` `otf` `mp3` `wav` `ogg` `m4a` `mp4` `webm` `mov` `wasm` `lock`，以及有固定名字的清单文件（§2.5）。
+- 只收白名单内的扩展名：`html` `htm` `js` `mjs` `cjs` `css` `json` `map` `txt` `md` `svg` `png` `jpg` `jpeg` `webp` `gif` `avif` `woff` `woff2` `ttf` `otf` `mp3` `wav` `ogg` `m4a` `mp4` `webm` `mov` `wasm` `lock`，3D 资源 `gltf` `glb` `bin` `hdr` `ktx2`，以及有固定名字的清单文件（§2.5）。
 - 上限：4096 个文件，单个文件 64 MiB，合计 256 MiB，相对路径不超过 512 个字符。
 - 静态扫描网络引用：`src`、`href`、`url()`、`@import`、`fetch`、`new URL` 中的 `http(s)://`、`ws(s)://` 与协议相对 URL（`//` 开头）；XML 命名空间 URI 不算。发现即拒绝。
 - 没有 `bundle.manifest.json` 的包，导入方可以按入口页面根元素的 `data-*` 属性（§4.1）或调用方给出的覆盖值合成一份清单。合成的清单写进暂存副本，不写回源目录；`revision` 默认为 `1`（`Revision` 是非负十进制整数字符串，视频格式规范 §1.2）。
@@ -505,7 +507,7 @@ interface BakeRecord {
 
 ### 7.1 像素烘焙
 
-在离屏宿主里按 §7 的帧时刻逐帧取帧（与预览相同的截图），PNG 经 ffmpeg 的 `image2pipe` 编码。任何合同、任何画面都能走，代价是每帧一次浏览器截图（M2 上 1080×1920 约 2.7 帧/秒）。`frameHashes` 是各帧 PNG 的 sha256。
+在离屏宿主里按 §7 的帧时刻逐帧取帧（与预览相同的截图），PNG 经 ffmpeg 的 `image2pipe` 编码。任何合同、任何画面都能走——DOM、SVG、WebGL（§4.4）与多张画布都在这里——代价是每帧一次浏览器截图（M2 上 1080×1920 约 2.7 帧/秒）。`frameHashes` 是各帧 PNG 的 sha256。
 
 ### 7.2 指令烘焙
 

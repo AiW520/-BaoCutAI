@@ -257,6 +257,12 @@ export const CODE_BUNDLE_ALLOWED_EXTENSIONS = [
   '.mov',
   '.wasm',
   '.lock',
+  // 3D 资源（Three.js 等）：glTF 的 JSON 与二进制、分离的缓冲、HDR 环境贴图、KTX2 压缩纹理
+  '.gltf',
+  '.glb',
+  '.bin',
+  '.hdr',
+  '.ktx2',
 ] as const;
 
 /**
