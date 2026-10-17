@@ -1195,6 +1195,12 @@ fn text_in_a_missing_family_is_reported_on_every_frame_until_its_font_arrives() 
     let fallback = render_with(&mut renderer, &video, 0.5, &mut Media::default());
     assert_eq!(renderer.missing_fonts(), vec!["Permanent Marker".to_string()]);
     assert!(renderer.warnings().iter().any(|w| w.detail == note), "{:?}", renderer.warnings());
+    // 界面按 `frameRender.missingFont` 认缺字体：内核同文的那条（`subtitleRender.missingFont`）不能顶掉它。
+    let reported = serde_json::to_value(renderer.warnings().iter().find(|w| w.detail == note).unwrap()).unwrap();
+    assert_eq!(
+        reported["detailRef"]["params"]["note"]["key"], "frameRender.missingFont",
+        "{reported}"
+    );
     // 预览每帧清掉报告：内核缓存了排好的字，下一帧照样报（与导出一致）。
     renderer.clear_reports();
     assert!(renderer.missing_fonts().is_empty());
