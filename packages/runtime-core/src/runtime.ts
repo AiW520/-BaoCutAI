@@ -900,6 +900,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       nodes,
       log,
       toolSets,
+      // Space 目录在服务之后才建好：MCP 新建视频时（服务开启之后）再取。
+      announceVideoCreated: (video) => space.announceVideoCreated(video),
       ...(options.services ? { options: options.services } : {}),
     });
     stops.add('services', () => services.manager.close(), 'Stopping external services failed');
