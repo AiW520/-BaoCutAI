@@ -17,6 +17,19 @@
 
 包内只用相对路径，不联网；上限是 4096 个文件、单个 64 MiB、合计 256 MiB，底图用 JPEG，贴图用 PNG 并裁到角色实际的边界，不留整幅的透明画布。
 
+## 2.1 写成能走指令烘焙的样子
+
+导入要等多久取决于烘焙走哪条路。compositions_import 对 `baocut/1` 的单张 Canvas 画面先录下绘制指令、在本机多线程光栅（1080×1920 约 50 帧/秒）；录不了的整段回退成浏览器逐帧截图（约 3 帧/秒，30 秒的段要四分多钟）。默认 `bake: "auto"` 自动选，按下面写就能走快的那条：
+
+- **一张画布**：根元素里只有一张 `<canvas>`，宽高等于 `data-width` / `data-height`，不加 CSS 变换与不透明度；文字、图片都画进这张画布，根元素里不放别的可见元素。`getContext('2d')` 不带 `{ alpha: false }`。
+- **每帧从头画**：`renderAt(time)` 开头整幅清屏（`clearRect(0, 0, W, H)`，或不透明的整幅 `fillRect`），不靠上一帧留下的像素，也不局部 `clearRect`。
+- **不读回主画布**：不 `getImageData` / `putImageData`，不把主画布当 `drawImage` 的源。要先画好再处理的效果，在离屏 canvas 上再画一遍（第 5.1 节的 `post-fx.js` 就这么做）。离屏 canvas 随便用，画进主画布时会按位图记下。
+- **不用**：`ctx.filter`（模糊改用 `shadowBlur`，或缩小再放大）、`createConicGradient`、`Path2D`、`clip('evenodd')`、`imageSmoothingEnabled = false`、`imageSmoothingQuality` 设成 `medium` / `high`（保持默认）、`letterSpacing` 与 `wordSpacing`。`globalCompositeOperation` 只用 `source-over`、`lighter`、`multiply`、`screen`、`overlay`、`darken`、`lighten`、`difference`、`exclusion`。
+- **图片**是包里的文件（`img.src = './art/a.png'`，PNG、JPEG、WebP、SVG 都行），不用 `data:` / `blob:` 地址、`ImageBitmap` 或视频帧。
+- **文字**用第 5 节带进包里的字体（`@font-face`），并且覆盖要画的每个字：缺字、彩色 emoji 都会回退。要粗体就带粗体字体文件（只有常规体却写 `bold` 会回退）。拉丁、希腊、西里尔与中日韩文字走得了指令；阿拉伯、泰、天城等文字会回退。
+- **导入后看结果的 `bake`**：`renderer` 是 `drawop-cpu` 就是走了指令。是 `browser-pixels` 时，`bake.fallback.reason` 写着第一条原因（例如 `recording: filter: blur(4px)`、`recording: main-canvas-readback`、`CANVAS_OPS_UNSUPPORTED: … text-missing-glyph: U+2665`），按上面改掉后用 `replace: { itemId }` 重新导入。原因是 `CANVAS_OPS_MISMATCH`（抽样画面对不上）时不用改代码，把原因告诉用户。
+- 写完第一个包时可以传 `bake: "ops"` 导入：走不了指令就直接报错并给出原因，不白等截图。确认能走之后其余的包用默认值。
+
 ## 3. 时间从文稿来
 
 - **整首歌按整帧分段**：帧率取视频的帧率。每段记起始帧（含）与帧数，结束帧不含，下一段的起始帧 = 这一段的起始帧 + 帧数；从第 0 帧一直排到 `ceil(歌长 × 帧率)`，每一帧恰好属于一段，前奏和结尾都在里面。没有字的地方（前奏、换气、间奏、尾奏）也是段，不是空隙。
@@ -35,7 +48,7 @@
 - **角色、道具与场景底图**：用 `skills_read` 读 `baocut-catalog-media`，按它「生成图片」里「成套素材」的做法画出来、抠好，放进包里。
 - **角色在代码里同框**：每张生成的图只有一个角色，两个角色的对视、互动在代码里摆位置、定朝向；同一张图里画两个角色只用于封面、海报这类静止的画面。
 - **图层顺序**固定为：场景底图 → 远处的图形 → 在角色身后的文字 → 角色 → 前景的粒子与光 → 字幕。字从角色身后穿过、被头发挡住，靠的是图层顺序，不是抠图。
-- **图标、光效、边框**：用代码画。SVG 字符串转成图片画到 canvas 上，或直接用 canvas 路径。矢量图标的动效（火苗、摇铃、闪光）给一个相位参数，按时间取值；转成的图片按尺寸与相位缓存，不每帧重新解码。
+- **图标、光效、边框**：用代码画，直接用 canvas 路径，或把 SVG 存成包里的 `.svg` 文件当图片画（不用 `data:` / `blob:` 地址，见第 2.1 节）。矢量图标的动效（火苗、摇铃、闪光）给一个相位参数，按时间取值；按尺寸与相位画到离屏 canvas 上缓存，不每帧重新画。
 - **不用系统 emoji**：各平台的字形不同，离屏渲染时可能没有彩色 emoji 字体。
 - **字体**：从本机已装的字体里选定几款，只把选中的 TTF 或 OTF 文件带进包里，留着它的授权说明。字体集合（`.ttc`）要拆出单个字面再用，不把扩展名改成 `.ttf` 冒充。全片渲染前先用有代表性的歌词画一帧样张：标点、数字和成片里每一种文字都要有字形，缺字会落到别的字体上，例如 `♥` 会被画成彩色 emoji。想要的字体没有时先和用户定换哪款，不悄悄替换。
 - **角色动画**：在几个姿势之间切换，加上位移、旋转、挤压与抖动；不逐帧生成。
@@ -46,7 +59,7 @@
 
 - 每个包一份 `cues.json`：`[{ "t": 3.2, "kind": "flash", "dur": 0.25, "strength": 0.8, "sfx": "boom" }]`。`t` 是包内的秒（与 `renderAt(time)` 同一个时间），`kind` 取 `flash`、`glow`、`shake`、`zoom`、`glitch`，`dur` 是效果的长度，`strength` 是 0..1。画面与音效读同一份表，事件只记一次。
 - `sfx` 可选，是 assets_sfx 的配方名：导入包之后，按表里带 `sfx` 的每一条，在「包在时间线上的开始 + t」处用 assets_sfx 放到音效轨（`place.at`；`riser` 让末尾对准 t，放在 t 减去它的长度处）。改了表就同步改音效，不让画面和声音各走各的。
-- 后期效果：用 `skills_read` 读本 skill 的 `examples/post-fx.js`，原样存成包里的 `post-fx.js`，在 `index.html` 里用 `<script src="./post-fx.js"></script>` 引入，得到全局的 `PostFX`。`PostFX.cuesAt(cues, t)` 把表合成这一刻各种效果的强度，再按它画震动、推近、发光、色散、暗角、颗粒、闪白，文件开头的注释是 `renderAt(time)` 里的写法与叠加顺序。都由 t 决定，不破坏确定性。色散逐像素处理，只在故障那几帧开。
+- 后期效果：用 `skills_read` 读本 skill 的 `examples/post-fx.js`，原样存成包里的 `post-fx.js`，在 `index.html` 里用 `<script src="./post-fx.js"></script>` 引入，得到全局的 `PostFX`。`PostFX.cuesAt(cues, t)` 把表合成这一刻各种效果的强度，再按它画震动、推近、发光、色散、暗角、颗粒、闪白，文件开头的注释是 `renderAt(time)` 里的写法与叠加顺序。都由 t 决定，不破坏确定性。发光与色散要传一个 `draw(g, w, h)`，在离屏画布上把正片再画一遍，不读回主画布，所以能走指令烘焙（第 2.1 节）；色散要再画两遍整幅，只在故障那几帧开。
 
 ## 6. 字幕、封面与署名
 
@@ -60,6 +73,7 @@
 - compositions_preview 一次最多取 24 个时刻：每句、每个段落交界各取一帧，加 `sheet: true` 拼成一张接触表一次看完（格子里不写时刻，按结果的 `sheet.cells` 对照），查文字重叠、画面空、上一句残留到下一段、元素出画。改完只重看改到的时刻。
 - 拼起来的帧只看得出排版，看不出动作：入场、换姿势这类动作，在那一下前后约 2 秒里密集地取满 24 帧看连贯不连贯，再导出预览按正常速度看、听画面跟不跟拍。
 - **全片导入或渲染前先冒烟**：每个包的开头、中点、结尾各用 compositions_preview 取一帧。删掉的辅助函数、拼错的变量这类运行时错误，在这一步就会报出是哪个包、哪个时刻，不等烘焙或渲染到一半才发现。
+- 每个包导入后看结果的 `bake.renderer`：该走指令的包回退成了 `browser-pixels`，按 `bake.fallback.reason` 和第 2.1 节改掉再换上去。
 - 改一段或插入一段只重做那一个包（`replace: { itemId }`，插入时新建一个包放进去、把后面的段往后挪），没改的包不重新导入。
 - 在 BaoCut 之外渲染时：按场景分段渲染、能续跑，没改的段沿用；渲染中途不改代码，否则前后段不一致；从成片里抽几帧与单帧渲染比对，核对每段的帧数。
 - 做完是每一段、连同结尾都已就位、看过，不只是开头样段。
