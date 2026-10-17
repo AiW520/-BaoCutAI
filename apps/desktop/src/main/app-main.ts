@@ -19,6 +19,7 @@ import { showInFolder } from './reveal-path.ts';
 import { installStdioErrorGuards } from './stdio-errors.ts';
 import { saveDialogPath, saveFileData } from './save-dialog-path.ts';
 import { downloadToFile, runtimeMediaUrl } from './save-url.ts';
+import { writeImageRef } from './image-ref-file.ts';
 import { writeRecording } from './recording-file.ts';
 import { desktopRuntimeHeaders, desktopRuntimeResponseHeaders, isDesktopRuntimeRequest } from './runtime-origin.ts';
 
@@ -244,6 +245,13 @@ export function startDesktopApp(): void {
   ipcMain.handle('baocut:write-recording', async (event, raw: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender) || event.senderFrame !== event.sender.mainFrame) throw new Error('not allowed');
     return writeRecording(raw);
+  });
+
+  // 生成图片的参考图：粘贴或从浏览器拖进来的图片只有字节，写进系统临时目录，返回路径给 Runtime。只收应用窗口主框架发来的，
+  // 文件名与扩展名由主进程按文件头起，只收 PNG、JPEG、WebP 且有上限。
+  ipcMain.handle('baocut:write-image-ref', async (event, raw: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender) || event.senderFrame !== event.sender.mainFrame) throw new Error('not allowed');
+    return writeImageRef(raw);
   });
 
   ipcMain.handle('baocut:reveal', (_event, target: unknown) => {

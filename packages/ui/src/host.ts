@@ -51,6 +51,11 @@ export interface HostBridge {
    * 桌面端才有（我的声音 › 克隆新音色）；Web 没有它，那一页本来也不在浏览器里。
    */
   writeRecording?(data: Uint8Array): Promise<string>;
+  /**
+   * 把粘贴或拖进来、没有本机路径的一张参考图（PNG、JPEG、WebP 字节）写进本机的临时目录，返回它的绝对路径，交给 Runtime 的
+   * `generateImage` 当输入图。桌面端才有（生成图片的参考图）；Web 没有它，浏览器里的参考图只能从 Space 或素材库里选。
+   */
+  writeImageRef?(data: Uint8Array): Promise<string>;
   /** 应用自动更新（架构设计 §2.6，桌面端才有）。没有它的宿主里，更新相关的界面一概不出现。 */
   updates?: UpdatesHost;
   /** 界面语言变了（启动时也调一次）：宿主据此换原生菜单与对话框的语言。没有它的宿主不管。 */
