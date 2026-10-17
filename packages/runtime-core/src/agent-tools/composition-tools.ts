@@ -195,10 +195,9 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
         args: { video: 'demo', files: [{ path: 'index.html', content: TINY_OVERLAY }], name: '片头标题', place: { at: '1.5' } },
       },
       {
-        title: '接在上一段代码画面后面，同一条轨，后台烘焙',
+        title: '导入打包好的目录，接在上一段代码画面后面（同一条轨），后台烘焙',
         args: { video: 'demo', path: 'scenes/s2', name: '第二段', place: { track: 'track_01J…', at: '60.8666666667' }, background: true },
       },
-      { title: '导入打包好的目录', args: { video: 'demo', path: 'graphics/lower-third/1' } },
       {
         title: '改色后用第 2 版原地替换时间线上的片段',
         args: { video: 'demo', path: 'graphics/lower-third/2', replace: { itemId: 'item_01J…' } },
