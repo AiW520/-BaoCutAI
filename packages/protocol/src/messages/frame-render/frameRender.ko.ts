@@ -51,4 +51,5 @@ export const ko: FrameRenderMessages = {
   spectrumMissing: (p) => `소재 ${p.asset}의 스펙트럼이 없습니다`,
   spectrumUnreadable: (p) => `소재 ${p.asset}의 스펙트럼을 읽을 수 없습니다: ${p.detail}`,
   gifFirstFrameOnly: (p) => `이 GIF는 너무 커서 첫 프레임만 그립니다: ${p.detail}`,
+  captionAnimationUnknown: (p) => `자막 애니메이션 프리셋 ${p.preset}을(를) 인식할 수 없어 자막에 애니메이션을 적용하지 않습니다`,
 };

@@ -51,4 +51,5 @@ export const ja: FrameRenderMessages = {
   spectrumMissing: (p) => `素材 ${p.asset} のスペクトルがありません`,
   spectrumUnreadable: (p) => `素材 ${p.asset} のスペクトルを読み込めません：${p.detail}`,
   gifFirstFrameOnly: (p) => `この GIF は大きすぎるため、最初のフレームだけを描画します：${p.detail}`,
+  captionAnimationUnknown: (p) => `字幕アニメーションのプリセット ${p.preset} を認識できないため、字幕はアニメーションしません`,
 };

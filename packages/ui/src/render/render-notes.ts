@@ -2,7 +2,8 @@ import type { MessageParam, MessageRef } from '@baocut/protocol';
 
 /**
  * 渲染内核的提示（`EXPORT_RENDER_NOTE`）的引用：`frameRender.itemNote` 写着哪个实例（`item`）与说明（`note`）。说明是嵌套的
- * 引用；内核（元素、字幕、Lottie）转述来的提示还没有引用，是原话。界面按引用认提示，不按某一种语言的原文。
+ * 引用（`frameRender.*`，或元素与字幕内核的 `timelineRender.*`、`subtitleRender.*`）；少数转述来的提示（模板字幕场景的诊断、
+ * 视频源自带的提示）没有引用，是原话。界面按引用认提示，不按某一种语言的原文。
  */
 export interface RenderNote {
   item: string;

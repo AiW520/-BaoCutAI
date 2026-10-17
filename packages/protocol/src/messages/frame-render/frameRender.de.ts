@@ -51,4 +51,5 @@ export const de: FrameRenderMessages = {
   spectrumMissing: (p) => `Kein Spektrum für das Asset ${p.asset}`,
   spectrumUnreadable: (p) => `Das Spektrum des Assets ${p.asset} kann nicht gelesen werden: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Dieses GIF ist zu groß, daher wird nur das erste Bild gezeichnet: ${p.detail}`,
+  captionAnimationUnknown: (p) => `Die Untertitel-Animationsvorgabe ${p.preset} wird nicht erkannt; die Untertitel werden nicht animiert`,
 };

@@ -51,4 +51,5 @@ export const pl: FrameRenderMessages = {
   spectrumMissing: (p) => `Brak spektrum dla zasobu ${p.asset}`,
   spectrumUnreadable: (p) => `Nie można odczytać spektrum zasobu ${p.asset}: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Ten GIF jest za duży, więc rysowana jest tylko pierwsza klatka: ${p.detail}`,
+  captionAnimationUnknown: (p) => `Nie rozpoznano ustawienia animacji napisów ${p.preset}; napisy nie są animowane`,
 };

@@ -51,4 +51,5 @@ export const tr: FrameRenderMessages = {
   spectrumMissing: (p) => `${p.asset} varlığı için spektrum yok`,
   spectrumUnreadable: (p) => `${p.asset} varlığının spektrumu okunamıyor: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Bu GIF çok büyük, bu yüzden yalnızca ilk karesi çiziliyor: ${p.detail}`,
+  captionAnimationUnknown: (p) => `${p.preset} altyazı animasyonu ön ayarı tanınmıyor; altyazılar canlandırılmıyor`,
 };

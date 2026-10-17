@@ -51,4 +51,5 @@ export const zhHant: FrameRenderMessages = {
   spectrumMissing: (p) => `沒有素材 ${p.asset} 的頻譜`,
   spectrumUnreadable: (p) => `素材 ${p.asset} 的頻譜無法讀取：${p.detail}`,
   gifFirstFrameOnly: (p) => `GIF 太大，只繪製第一格：${p.detail}`,
+  captionAnimationUnknown: (p) => `無法辨識字幕動畫預設 ${p.preset}，字幕不加動畫`,
 };

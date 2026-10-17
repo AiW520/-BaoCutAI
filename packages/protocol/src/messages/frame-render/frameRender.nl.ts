@@ -51,4 +51,5 @@ export const nl: FrameRenderMessages = {
   spectrumMissing: (p) => `Geen spectrum voor asset ${p.asset}`,
   spectrumUnreadable: (p) => `Het spectrum van asset ${p.asset} kan niet worden gelezen: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Deze GIF is te groot, dus alleen het eerste frame wordt getekend: ${p.detail}`,
+  captionAnimationUnknown: (p) => `Ondertitelanimatievoorinstelling ${p.preset} wordt niet herkend; de ondertitels worden niet geanimeerd`,
 };

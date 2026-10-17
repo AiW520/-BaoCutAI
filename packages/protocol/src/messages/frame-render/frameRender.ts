@@ -72,6 +72,7 @@ const en = {
   spectrumMissing: (p: P<'asset'>) => `No spectrum for asset ${p.asset}`,
   spectrumUnreadable: (p: P<'asset' | 'detail'>) => `The spectrum of asset ${p.asset} can’t be read: ${p.detail}`,
   gifFirstFrameOnly: (p: P<'detail'>) => `This GIF is too large, so only its first frame is drawn: ${p.detail}`,
+  captionAnimationUnknown: (p: P<'preset'>) => `Subtitle animation preset ${p.preset} isn’t recognized; the subtitles aren’t animated`,
 };
 
 export type FrameRenderMessages = typeof en;

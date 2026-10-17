@@ -51,4 +51,5 @@ export const ptBR: FrameRenderMessages = {
   spectrumMissing: (p) => `Não há espectro para o recurso ${p.asset}`,
   spectrumUnreadable: (p) => `Não é possível ler o espectro do recurso ${p.asset}: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Este GIF é grande demais, então só o primeiro quadro é desenhado: ${p.detail}`,
+  captionAnimationUnknown: (p) => `A predefinição de animação de legenda ${p.preset} não é reconhecida; as legendas não são animadas`,
 };

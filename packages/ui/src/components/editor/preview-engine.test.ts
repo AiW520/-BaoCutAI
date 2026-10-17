@@ -192,7 +192,7 @@ test('声波要的素材频谱：在算时不报占位提示，算好了送进�
       render: () => {
         renders++;
         const spectra = [music, huge].filter((asset) => !heard.has(asset.id)).map((asset) => ({ itemId: 'viz', asset }));
-        const warnings = spectra.length ? [kernelNote('viz', '元素 viz 没有注入频谱轨，已画占位块')] : [];
+        const warnings = spectra.length ? [kernelNote('viz', 'Element viz has no spectrum track; drawing a placeholder')] : [];
         return { plan, warnings, skipped: [], spectra };
       },
       frame: () => new Uint8ClampedArray(960 * 540 * 4),

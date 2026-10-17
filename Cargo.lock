@@ -4187,6 +4187,7 @@ dependencies = [
  "anyhow",
  "caption-scene",
  "libm",
+ "message-ref",
  "motion",
  "png 0.18.1",
  "render-raster",
@@ -4602,6 +4603,7 @@ name = "timeline-render"
 version = "0.4.0"
 dependencies = [
  "anyhow",
+ "message-ref",
  "motion",
  "render-raster",
  "serde_json",

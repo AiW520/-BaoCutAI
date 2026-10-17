@@ -51,4 +51,5 @@ export const vi: FrameRenderMessages = {
   spectrumMissing: (p) => `Không có phổ cho tài nguyên ${p.asset}`,
   spectrumUnreadable: (p) => `Không thể đọc phổ của tài nguyên ${p.asset}: ${p.detail}`,
   gifFirstFrameOnly: (p) => `GIF này quá lớn nên chỉ vẽ khung hình đầu tiên: ${p.detail}`,
+  captionAnimationUnknown: (p) => `Không nhận ra mẫu hoạt ảnh phụ đề ${p.preset}; phụ đề không có hoạt ảnh`,
 };

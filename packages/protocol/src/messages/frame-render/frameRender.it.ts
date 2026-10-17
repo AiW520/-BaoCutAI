@@ -51,4 +51,5 @@ export const it: FrameRenderMessages = {
   spectrumMissing: (p) => `Nessuno spettro per la risorsa ${p.asset}`,
   spectrumUnreadable: (p) => `Impossibile leggere lo spettro della risorsa ${p.asset}: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Questa GIF è troppo grande, quindi viene disegnato solo il primo fotogramma: ${p.detail}`,
+  captionAnimationUnknown: (p) => `Il preset di animazione dei sottotitoli ${p.preset} non è riconosciuto; i sottotitoli non vengono animati`,
 };

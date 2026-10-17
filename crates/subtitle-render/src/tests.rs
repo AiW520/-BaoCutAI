@@ -4342,7 +4342,7 @@ mod tests {
             preview
                 .warnings()
                 .iter()
-                .any(|warning| warning.contains("missing") && warning.contains("已跳过"))
+                .any(|warning| warning.text.contains("missing") && warning.text.contains("skipped"))
         );
         assert!(
             preview

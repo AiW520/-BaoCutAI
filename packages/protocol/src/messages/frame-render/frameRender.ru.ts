@@ -51,4 +51,5 @@ export const ru: FrameRenderMessages = {
   spectrumMissing: (p) => `Нет спектра для ресурса ${p.asset}`,
   spectrumUnreadable: (p) => `Не удаётся прочитать спектр ресурса ${p.asset}: ${p.detail}`,
   gifFirstFrameOnly: (p) => `Этот GIF слишком большой, поэтому рисуется только первый кадр: ${p.detail}`,
+  captionAnimationUnknown: (p) => `Пресет анимации субтитров ${p.preset} не распознан; субтитры не анимируются`,
 };
