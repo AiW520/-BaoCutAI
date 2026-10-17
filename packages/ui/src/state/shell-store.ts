@@ -172,6 +172,11 @@ export interface ShellStore {
    * （功能区收起时也展开；不进历史，后退不撤销它）；单条标签条（窄窗口、完整视图）里只加一个标签，不切走当前那一格。
    */
   openVideoBeside(video: FileTarget, conversationId: Id): void;
+  /**
+   * 终端或对外服务（MCP）的外部 Agent 新建了视频（Space 主题的 `video.created`，产品设计 §3.3）：在 Home 当前位置的功能区打开它，
+   * 打开的方式同 `openVideoBeside`。不在 Home、或当前标签就是视频（编辑器里开着别的视频）时不打开，之后也不补。
+   */
+  openExternalVideo(video: FileTarget): void;
   selectPane(key: string): void;
   replaceFilePane(key: string, target: MediaTarget): void;
   /**
@@ -316,19 +321,16 @@ export const useShell = create<ShellStore>()(
         set((s) => ({ ...patchView(s, { hidden: false }), hiddenBeforeNarrow: false }));
       },
       openVideoBeside: (video, conversationId) => {
-        const state = get();
-        const { route } = state;
+        const { route } = get();
         if (route.tab !== 'home' || route.conversationId !== conversationId) return;
-        const pane: WorkspaceItem = { kind: 'video', target: video };
-        if (homeMode(state)?.single) {
-          const book = workspaceKey(route.conversationId, route.projectId);
-          const current = state.workspaces[book] ?? EMPTY_WORKSPACE;
-          const next = addTab(current, pane);
-          if (next !== current) set((s) => ({ workspaces: { ...s.workspaces, [book]: next } }));
-          return;
-        }
-        state.replace({ ...route, pane });
-        set((s) => ({ ...patchView(s, { hidden: false }), hiddenBeforeNarrow: false }));
+        showVideoBeside(get, set, video);
+      },
+      openExternalVideo: (video) => {
+        const { route, drafts } = get();
+        if (route.tab !== 'home' || route.pane?.kind === 'video') return;
+        // 起始页（还没有会话）的输入框是空的：单条标签条里也切到视频，没有要护着的会话。
+        const idle = !route.conversationId && !(drafts[workspaceKey(null, route.projectId)] ?? '').trim();
+        showVideoBeside(get, set, video, idle);
       },
       selectPane: (key) => {
         const { route, workspaces, replace } = get();
@@ -616,6 +618,26 @@ function exitFull(get: Get, set: Set): void {
   set((s) => ({ ...patchView(s, DEFAULT_VIEW), hiddenBeforeNarrow: false }));
   const { route } = get();
   if (route.tab === 'home' && !route.pane) showRemembered(get, set);
+}
+
+/**
+ * 不由用户点击打开的视频（`openVideoBeside`、`openExternalVideo`，产品设计 §3.3）：分屏里在右侧打开、成为当前标签（功能区收起时
+ * 也展开；不进历史）；单条标签条里只加一个标签，不切走当前那一格，`reveal` 时（空的起始页）也切过去。调用方已确认在 Home。
+ */
+function showVideoBeside(get: Get, set: Set, video: FileTarget, reveal = false): void {
+  const state = get();
+  const { route } = state;
+  if (route.tab !== 'home') return;
+  const pane: WorkspaceItem = { kind: 'video', target: video };
+  if (homeMode(state)?.single && !reveal) {
+    const book = workspaceKey(route.conversationId, route.projectId);
+    const current = state.workspaces[book] ?? EMPTY_WORKSPACE;
+    const next = addTab(current, pane);
+    if (next !== current) set((s) => ({ workspaces: { ...s.workspaces, [book]: next } }));
+    return;
+  }
+  state.replace({ ...route, pane });
+  set((s) => ({ ...patchView(s, { hidden: false }), hiddenBeforeNarrow: false }));
 }
 
 /** 显示分屏：回到当前、收起前或最后一个标签。 */

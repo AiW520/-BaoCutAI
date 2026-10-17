@@ -177,7 +177,7 @@ CLI 不区分「人敲的」与「Agent 敲的」。要让 Agent 宿主的权限
 | `edits` | `apply` | mutation | 一笔事务：`ops`（JSON 数组、`@文件` 或 stdin）+ `revision`；`dry-run` 走预检 |
 | | `undo` | mutation | 撤销最近一笔 |
 | | `ops` | query | 列出操作族与每个操作的 schema、示例（命令协议 §4.2）；`spec edits.<op>` 同源 |
-| `captions` | `create` | mutation | 把转写或译文做成字幕层（现 `captions_create`），`bilingual`、`layout-profile` |
+| `captions` | `create` | mutation | 把转写或译文做成字幕层（现 `captions_create`），`bilingual`、`layout-profile`、`style`（位置与样式：字幕样式文档的键 `y`、`verticalAlign`、`width`、`fontSize`、描边与底板开关等，以默认样式为底；建好后用 `edits_apply` 的 `setCaptionStyle` 改，架构设计 §3.5） |
 | `assets` | `import` | mutation | **新增 sugar**：导入一个文件或 `artifactId`，可选 `place`（同一事务里 `addItem` 到主轨末尾或指定时间）。编译成 `importAsset` [+ `addItem`] |
 | `jobs` | `list` / `inspect` / `wait` / `cancel` / `retry` | query / query / query / mutation / job | `wait` 阻塞到终态或超时；`retry` 是现 `pipelines retry` |
 | `models` | `capabilities` | query | 每种能力可用的 Provider、模型、默认值、限制与不可用原因；`settingsHref` 是对应能力的设置路径，提示用户配置时将它写成 Markdown 链接（产品设计 §3.2.2） |
@@ -501,6 +501,8 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 **链接的生命周期。** 一次性代码在 URL fragment 里，两分钟内有效、只能用一次；登录页用它换成浏览器会话（12 小时，cookie 绑端口），然后回到原来的路径与查询，界面按它打开那个视频。会话还在时不带代码的地址可以再打开。服务重启后旧会话作废。一个任务里 `web open` 一次、复用同一个标签；只在看到登录页 / 401 或连接被拒时重新发链接。
 
 **CLI 优先，浏览器用来看与拖。** 文字与时间线上确定的修改（改字、翻译、剪口、挪到某秒、章节）走命令；网页用于播放、看合成后的画面与字幕位置（帧不是合成后的画面）、所见即所得的拖拽，以及请用户审。网页上的改动与命令写同一份真相、同一份修改历史，所以网页里改过之后，下一条写命令之前重新 `videos inspect`。不在网页上操作 BaoCut 自己的智能体对话与设置。宿主有内置浏览器就在里面打开，否则把链接交给用户；说明书不对任何宿主下断言。
+
+**桌面会自己打开新建的视频。** 用户开着桌面 App、停在 Home 且没开着别的视频时，`videos create`（MCP 的 `videos_create`）建好的视频会自动在功能区打开（产品设计 §3.3「外部 Agent 新建的视频」，Space 主题的 `video.created`）。这只是方便用户旁观：Agent 不能假定用户看见了，说明书不改，要请用户审片仍按下一段给链接。
 
 **交给用户的链接。** Agent 自己打开过的链接已经作废。交付时再 `web open` 一次，把新链接给用户，说明只能用一次、两分钟有效；用户来不及马上点时，请用户自己运行 `baocut web open --video <videoId> --launch`：它在系统浏览器里打开登录页（保留路径与查询），代码从终端粘进去。
 

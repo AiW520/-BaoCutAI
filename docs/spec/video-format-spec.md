@@ -2070,6 +2070,7 @@ box blur、波纹位移与反馈按各自传播范围预留透明边界；独立
 **已落盘的样式正文**。`CaptionStyleBody` 还没有落盘，落盘时由一层确定的编译折成 Studio 样式（设计稿 §8），内核不换；旧字幕样式文档继续支持下面两种正文，与上面的动态场景分支并存：
 
 - Studio 样式（`baocut.legacy-studio-style/0.1`）：`style` 是 v2 的字幕样式，逐词动画写在 `style.wordAnimation`（或 `style.anim`）里，`catalogId` 指逐词动画目录的一格。
+- Studio 样式的摆放：`style.y` 是锚线高度（画布高度的百分比，缺省 86），`style.verticalAlign`（`top` | `center` | `bottom`，缺省 `center`）说字幕块的上边、中线或下边落在锚线上，折成多行时往另一边长；`style.x` 是块中心（画布宽度的百分比，缺省 50）；`style.width` 是最大行宽（画布宽度的百分比，[5, 100]，缺省 80），烧录与预览在这个宽度里折行；`style.fontSize` 是 540 短边下的字号（缺省 30，按画布短边等比放大）。`origStyle` / `transStyle` 里的同名键只挪那一行。切字幕条按 LayoutProfile，不看这些键。智能体用 `captions_create` 的 `style` 与 `edits_apply` 的 `setCaptionStyle` 写同一组键（架构设计 §3.5）。
 - 定位框样式（`baocut.boxed-caption-style/<N>`）：`canvas` 是样式所在画布的像素尺寸，`box` 是字幕框（相对画布中心的像素），`style` 是字号、颜色、对齐、底板等外观；渲染时换算成等价的 Studio 样式。`style.animationPresetId` 选逐词动画，取值是目录的 id，按那一格画，与 Studio 样式选中同一格相同；省略表示不动画。
 - 逐词动画目录有 19 格：`none`、`boxHighlight`、`flipClock`、`highlight`、`karaoke`、`impact`、`reveal`、`floatInTop`、`floatInBottom`、`scaleIn`、`dropIn`、`impactPop`、`colourHighlight`、`rotateFlipClock`、`rotateHighlight`、`stack`、`stomp`、`bounce`、`paint`。`reveal` 是逐字显现：没念到的词不画，念到一个就整个显出来。句子没有词时先应用显示间距，再按 §3.8 的空白切分推算；补间距后仍不带空格的一句是一个词、开头就整句显出来。
 - 引擎写入定位框样式时核对：`style` 是对象，`style.animationPresetId` 出现时是目录里的 id，否则拒绝整份文档（`INVALID_OPERATION`）。Studio 样式的正文不核对；内核遇到认不出的 `catalogId` 按动画名画。

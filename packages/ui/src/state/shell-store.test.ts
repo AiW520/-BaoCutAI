@@ -399,6 +399,56 @@ describe('Home 功能区标签', () => {
     useShell.setState({ workspaceNarrow: false });
   });
 
+  it('外部 Agent 新建的视频：Home 上没开着视频时在功能区打开（起始页也算，收起的也展开），不进历史；开着视频或不在 Home 时不动；单条标签条只加标签，空的起始页除外', () => {
+    useShell.setState({ views: {}, workspaceNarrow: false, hiddenBeforeNarrow: false });
+    const { go, openPane, toggleWorkspace, openExternalVideo } = useShell.getState();
+    const cli = { kind: 'video', target: { projectId: 'p2', path: 'cli' } } as const;
+    const other = { kind: 'video', target: { projectId: 'p2', path: 'other' } } as const;
+    const third = { kind: 'video', target: { projectId: 'p2', path: 'third' } } as const;
+    go({ tab: 'home', conversationId: null, projectId: null });
+    const back = useShell.getState().back.length;
+    openExternalVideo(cli.target);
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: null, projectId: null, pane: cli });
+    expect(useShell.getState().back).toHaveLength(back);
+    expect(useShell.getState().workspaces.new?.tabs).toEqual([cli]);
+    // 编辑器里开着别的视频：不动。
+    openExternalVideo(other.target);
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: null, projectId: null, pane: cli });
+    expect(useShell.getState().workspaces.new?.tabs).toEqual([cli]);
+    // 会话里开着别的标签、功能区收起：打开并展开。
+    go({ tab: 'home', conversationId: 'c3', projectId: null });
+    openPane(files);
+    toggleWorkspace();
+    expect(view('c3')).toEqual({ hidden: true, full: false });
+    openExternalVideo(other.target);
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: 'c3', projectId: null, pane: other });
+    expect(view('c3')).toBeUndefined();
+    // 不在 Home：不动。
+    go({ tab: 'space', category: 'all', projectId: null });
+    openExternalVideo(third.target);
+    expect(useShell.getState().route).toEqual({ tab: 'space', category: 'all', projectId: null });
+    expect(useShell.getState().workspaces.c3?.tabs).toEqual([files, other]);
+    // 窄窗口：会话里只加标签，仍停在原来那一格。
+    go({ tab: 'home', conversationId: 'c4', projectId: null });
+    openPane(files);
+    useShell.setState({ workspaceNarrow: true });
+    openExternalVideo(third.target);
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: 'c4', projectId: null, pane: files });
+    expect(useShell.getState().workspaces.c4?.tabs).toEqual([files, third]);
+    // 窄窗口的起始页：输入框里有字时只加标签；空的时切到视频。
+    go({ tab: 'home', conversationId: null, projectId: 'p5' });
+    useShell.getState().setDraft('new:p5', '做一部片子');
+    openExternalVideo(other.target);
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: null, projectId: 'p5' });
+    expect(useShell.getState().workspaces['new:p5']?.tabs).toEqual([other]);
+    useShell.getState().setDraft('new:p5', '');
+    openExternalVideo(third.target);
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: null, projectId: 'p5', pane: third });
+    expect(view('new:p5')).toBeUndefined();
+    expect(useShell.getState().workspaces['new:p5']?.tabs).toEqual([other, third]);
+    useShell.setState({ workspaceNarrow: false });
+  });
+
   describe('窄窗口：会话是固定的第一个标签', () => {
     const wide = () => useShell.setState({ workspaceNarrow: false, views: {}, hiddenBeforeNarrow: false });
     const at = () => {
