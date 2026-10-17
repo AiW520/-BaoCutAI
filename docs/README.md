@@ -30,6 +30,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | [`design/canvas/`](design/canvas/README.md) | **会话里的设计稿**：智能体在会话里做设计稿（画板）与设计系统、功能区的编辑器、标注作为附件发回会话；目录页指向这些行为在产品、架构、协议文档与运行时包里的位置 |
 | [`design/docs/`](design/docs/README.md) | **会话里的协作文档**：智能体用 `docs_*` 工具写文档、功能区的文档编辑器（标签页、富文本、表格、评论）、评论与请求发回会话；存储与 door 协议、Runtime 路由、skill 与工具、标注协议 |
 | [`design/embedding/`](design/embedding/README.md) | **本地语义能力（方案稿）**：EmbeddingGemma 2 的检索集成方案，以及用同一套本地索引改善写作选材与出处、章节、术语、翻译记忆、重录候选与智能体取材的产品与技术设计 |
+| [`design/motion-video/`](design/motion-video/README.md) | **章节化代码动画片（方案稿）**：HTML / JS + Canvas 或 HyperFrames 的讲解片与 MV 进 AI 编辑器：章节表与按章重做、旁白与配乐按角色分轨、代码包在播放器里实时播放、章节页看改脚本、后台烘焙与导出；从 baoyu-design 的做法借鉴什么 |
 | [`glossary.md`](glossary.md) | **术语表**：同一概念只用一个词 |
 | [`repo-conventions.md`](repo-conventions.md) | **仓库约定**：顶层目录、代码放置与文件命名 |
 | [`development-workflow.md`](development-workflow.md) | **开发流程**：规范与实现同步、验证入口、多端同步、语言与平台、工作区与产物；按任务读取相关章节 |
@@ -51,6 +52,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | 实现 CLI、MCP 工具或 BaoCut skill（给外部 Agent 的能力面） | [`design/agent-surface/`](design/agent-surface/README.md)；架构设计 §3.5、§4.8 |
 | 实现用户库、偏好设置与跨视频检索 | 架构设计 §5.9–§5.11 |
 | 接入本机语义模型、语义检索与写作选材 | [`design/embedding/`](design/embedding/README.md)；架构设计 §5.11、§6.3 |
+| 做讲解片、MV 等代码动画片：章节、分轨、实时播放、导出 | [`design/motion-video/`](design/motion-video/README.md)；代码包规范；架构设计 §8、§9.4 |
 | 实现工具页任务、固定流程与各种导出 | 架构设计 §7.9、§9.13 |
 | 管理外部工具、安装动作与应用更新 | 架构设计 §12.9、§2.6 |
 | 实现 Home 模板库、新增内置模板 | 模板包规范；产品设计 §3.2.1 |
