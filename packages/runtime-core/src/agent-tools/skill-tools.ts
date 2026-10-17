@@ -127,7 +127,7 @@ export class SkillTools implements ToolSet {
         // 终端与 MCP 读 craft 时正文仍是工具桥面的写法：工具名与目录页的引用按这一句对应。
         ...(principal.kind !== 'agent' && !skill.guide
           ? {
-              next: '正文里 <名词>_<动词> 形式的工具名就是 baocut <名词> <动词>（skills_read 即 baocut skills read）；「读 baocut-catalog-<页>」「baocut-workflows」「baocut-conventions」用 baocut skills read <id> 读，装好的 BaoCut skill（baocut skill install）里的 references/catalog/<页>.md 是同一页。',
+              next: '正文里 <名词>_<动词> 形式的工具名就是 baocut <名词> <动词>（下划线换成空格，前面加 baocut）；「读 baocut-catalog-<页>」「baocut-workflows」「baocut-conventions」用 baocut skills read <id> 读，装好的 BaoCut skill（baocut skill install）里的 references/catalog/<页>.md 是同一页。',
             }
           : {}),
       };
