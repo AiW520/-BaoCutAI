@@ -437,7 +437,7 @@ export const ru: CopyMessages = {
     modelsMove: "Переместить папку моделей",
     toolInstall: "Установить инструмент",
     toolUpdate: "Обновить инструмент",
-    fontDownload: "Скачать шрифт",
+    fontDownload: "Скачать шрифт", bake: 'Отрендерить анимированную графику',
     voiceClone: "Клонировать голос",
     agentTranslate: "Перевести",
     legacyImport: "Импортировать прежние проекты",

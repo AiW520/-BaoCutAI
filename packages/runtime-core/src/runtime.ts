@@ -790,6 +790,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       ffmpeg: compositionFfmpeg,
       worker: () => resolveExportWorkerCommand(options.engineHost !== undefined ? options.engineHost : resolveEngineHostCommand()),
       host: compositionHost,
+      jobs: models.jobs,
       log,
     });
     // 智能体写作的句子编号（创作辅助集成设计 §3.4「智能体路径」）：`speech_sentences` 发、`downloads_save` 校验，按会话分开。

@@ -164,7 +164,7 @@ interface CompositionItem extends VisualItemBase {
 
 `span`、`transform`、`opacity` 等来自 `VisualItemBase`；`TimeMap`、`Transform` 见视频格式规范 §2.5 与 §3.5。
 
-预渲染替身与 Bake（§7）的关系：替身是「这段合成已经有一份渲染好的视频」这个事实，运行环境不可用时预览与导出用它代替；Bake 是产生这样一份视频的受控流程，带着输入指纹与验证记录。`audioRoute` 的声部模式、`qualityPolicy` 与 `BakeRecord` 尚未进入实例的字段（§9）；首版的 `BakeRecord` 记在烘焙素材的来源里（§7）。
+预渲染替身与 Bake（§7）的关系：替身是「这段合成已经有一份渲染好的视频」这个事实，运行环境不可用时预览与导出用它代替；Bake 是产生这样一份视频的受控流程，带着输入指纹与验证记录。替身何时不再代表实例现在的画面，见 §7.4。`audioRoute` 的声部模式、`qualityPolicy` 与 `BakeRecord` 尚未进入实例的字段（§9）；首版的 `BakeRecord` 记在烘焙素材的来源里（§7）。
 
 ### 3.2 参数
 
@@ -497,7 +497,8 @@ interface BakeRecord {
 - **编码**。输出 QuickTime `.mov`：`output.alpha` 为 true 时用 ProRes 4444（`yuva444p10le`），否则用 ProRes 422 HQ（`yuv422p10le`）。编码器是 ffmpeg 的 `prores_ks`；指令烘焙在 macOS 上能用 `prores_videotoolbox` 时用它（硬件编码，产物的配置与像素格式相同），`BakeRecord.encoding.codec` 记实际的编码器。烘焙结果作为普通的视频素材导入，`hasAlpha` 如实记录。
 - **渲染器**（§7.1–§7.3）。`compositions_import` 的 `bake` 选渲染器：`auto`（缺省）先走指令烘焙，走不通时整段回退到像素烘焙；`ops` 只走指令，走不通就失败；`pixels` 只走像素。
 - **记录位置**。`BakeRecord` 记在烘焙素材的来源里：`provenance` 为 `{ origin: 'composition-bake', source: BakeRecord }`（视频格式规范 §4.5）。合成实例上还没有对应的字段（§3.1、§9）。首版的 `bakedAssetRef` 与 `sourceBundleRef` 先写代码包清单的 `bundleId/revision`：素材 ID 要等导入事务的回执才知道（§9）。
-- 新建的合成实例用 `prerender` 指向烘焙素材，导出走已有的预渲染替身路径（视频格式规范 §3.7）。
+- 新建的合成实例用 `prerender` 指向烘焙素材，导出走已有的预渲染替身路径（视频格式规范 §3.7）。替身何时过期见 §7.4。
+- **后台烘焙**。`compositions_import` 带 `background: true` 时烘焙交给 `bake` 任务（§7.5），导入不等烘焙。
 - 首版分两次事务：先导入代码包与烘焙素材，再用 `insertItems` 放置合成实例。两步合起来不是原子的：第二步失败时，已导入的两个素材留在视频里，没有实例引用它们。并成一笔的做法见 §9。
 
 - Bake **保留**源代码包、参数、映射和来源，并提供「回到可编辑的源码」。Bake 不是删除源文件。
@@ -560,6 +561,34 @@ interface CompositionBakeInfo {
 
 降级必须是可见的。不得用一张静态图或空白画面静默替代。
 
+### 7.4 替身何时过期
+
+替身是实例在某个代码包版本、某个帧率下渲染好的画面；下面任一条成立时替身**过期**。`@baocut/protocol` 的 `prerenderStaleness(item, assets, sequenceFps)` 是唯一的判断处，预览停住时、导出预检与智能体的检查都调它：
+
+- `bundle-changed`：替身素材来源里的 `BakeRecord.sourceBundleRef`（清单的 `bundleId` / `revision`）与实例 `source.assetRef` 所指代码包清单的身份不同。换了代码包版本却没有重烘就是这种。
+- `fps-mismatch`：`BakeRecord.encoding.fps` 与实例所在序列的帧率不同（序列改了帧率，或实例被挪进另一条帧率不同的序列）。替身的来源不是烘焙记录（旧数据、手工指定的视频）时按替身视频的帧率核对。
+- `missing`：实例没有替身，或替身素材的版本不在视频里。
+
+参数（`parameterValues`）与 `timeMap` 暂不参与：首版实例没有参数；`timeMap` 由替身与合成共用（视频格式规范 §3.7），变速与裁切作用在替身上同样成立。`BakeRecord.status` 不是判据：它记的是烘焙时的状态，不随后来的编辑更新。
+
+过期的后果：
+
+- 导出预检（命令与协议规范 §4.4）逐个核对这次导出用到的替身，有过期的以 `EXPORT_PRERENDER_STALE` 拒绝：`details.items` 每项是 `{ itemId, sequenceId, name, reason, bakedFrom?, current? }`，`remedy` 是重新导入烘焙。`allowStalePrerender: true` 时照旧替身导出，每项一条同名警告（`detail` 是「实例 ID: 原因」）。`missing` 不由这里报：没有替身的实例由渲染内核按 `bundle-without-prerender` 处理。
+- 预览停住时过期的替身不用，继续显示实时层（章节化代码动画片设计 §4.3；实时合成层落地后生效）。
+
+重烘就是带 `replace: { itemId }` 再导入一次同一个代码包：`replaceCodeBundle` 写入新替身（§3.3）。
+
+### 7.5 后台烘焙
+
+`compositions_import` 带 `background: true` 时烘焙成为一项任务（`JobRecord.kind` 为 `bake`；`JobRecord.bake` 记目标：`sequenceId`、`itemId`、代码包素材版本 `bundle`、清单身份 `bundleId` / `manifestRevision`、`fps`、`mode`），导入立刻返回 `bakeJobId`：
+
+- 两笔事务只登记代码包与放实例：实例没有 `prerender`，长度按清单 `intrinsic` 换算到序列帧率（向下取整，与 `replaceCodeBundle` 没有替身时同一算法）；带 `replace` 时 `replaceCodeBundle` 的 `prerender` 为 null，旧替身随之摘掉。
+- 任务排 `composition-bake` 队列，并发 1（指令烘焙已多线程光栅，并行只争 CPU）；暂存目录在视频所在卷的 `blobs/.staging/`；阶段 `encoding`（进度 `{ unit: 'frames', done, total }`）→ `applying`。任务进行中视频由 Runtime 的租约保持打开，不持有写锁，用户与智能体可以继续改别的实例。
+- 烘完以两笔写入（行为者 `system:compositions`）：导入替身素材（`provenance` 同上），再 `replaceCodeBundle` 把实例的 `prerender` 指过去（`assetRef` 不变）。写之前与每次重试前核对实例还在、仍指同一个代码包素材版本、`timeMap` 仍是从 0 起的等速线性，否则任务以 `COMPOSITION_BAKE_SUPERSEDED` 失败（替身没有归宿，不写）。版本冲突（`PROJECT_REVISION_CONFLICT`）重试三次。替身长度与放置时的清单长度不同时记一条 `COMPOSITION_BAKE_LENGTH_ADJUSTED` 警告（回执 `impact.codeEdits` 有前后帧数）。
+- 结果 `result.artifactId` 是替身的 `<assetId>@<revision>`。烘焙失败的错误码沿用代码包的（`COMPOSITION_*`、`BUNDLE_*`），别的记 `COMPOSITION_BAKE_FAILED`。取消用 `jobs.cancel`。Runtime 重启时未完成的任务按不可重试处理（`interrupted`），实例留着没有替身，重新带 `replace` 导入即可。
+- 没烘完就导出：实例没有替身，渲染内核按 `bundle-without-prerender` 报 `EXPORT_UNSUPPORTED_CONTENT`。
+- `background` 与 `register` 互斥；后台烘焙与前台一样只在有 Electron 离屏宿主的 Runtime 可用。
+
 ---
 
 ## 8. 开放范围
@@ -583,13 +612,14 @@ HyperFrames 合同进入第一期，是 2026-10-07 用户开始实现任务时�
 | 事项 | 状态 | 需要决定什么 |
 | --- | --- | --- |
 | `CompositionContext`（§4.1） | 本规范补全 | 绘制目标的形式；素材解析的接口；是否提供音频上下文 |
-| 合成实例的字段（§3.1） | `audioRoute`、`qualityPolicy`、`bake` 未纳入 | 声部模式与质量政策的取值；Bake 记录是否从烘焙素材的来源（§7）移到实例上，与预渲染替身如何衔接、替身何时过期 |
+| 合成实例的字段（§3.1） | `audioRoute`、`qualityPolicy`、`bake` 未纳入 | 声部模式与质量政策的取值；Bake 记录是否从烘焙素材的来源（§7）移到实例上，与预渲染替身如何衔接（替身何时过期已定，§7.4） |
 | 包的目录布局（§2.5） | 部分已定 | 已定：首版固定 `bundle.manifest.json`、`files.manifest.json`、`verification.json` 三个文件名。待定：其余文件名是否强制；文件名固定之后 `source.filesManifest` 是否还需要 |
 | `BakeRecord`（§7） | 已定 | 首版编码为 QuickTime `.mov`，带 alpha 用 ProRes 4444，否则 ProRes 422 HQ；记录放在烘焙素材的 `provenance` 里（§7）。是否进入实例字段见上面「合成实例的字段」 |
 | 参数 Schema 的约定（§3.2） | 只有原则 | 支持的 JSON Schema 子集；界面控件的映射；影响时长的标记方式 |
 | `runtime.contract` 的命名与版本 | 已定 | 格式 `<合同名>/<主版本>`，不兼容的变化提升主版本，`adapterContractVersion` 取同一个值（§2.2）；第一期同时提供 `baocut/1` 与 `hyperframes/1` |
 | `contentHash` 的覆盖范围（§2.2） | 部分已定 | 已定：`files.manifest.json` 不计入 `entries`（计入则不能列出自己的摘要）。待定：清单的 `contentHash` 与目录素材的树摘要（视频格式规范 §4.3）算法不同，是否统一或写明两者的关系 |
 | 导入的原子性（§7） | 首版两笔事务 | 原子导入的路径：让合成实例的 `ItemInput` 接受 `assetImportRef`（命令与协议规范 §4.2 已允许视频、图片、白板与音频实例这样引用同一事务里 `importAsset` 的 `ref`），届时导入与放置并成一笔事务。在此之前 `BakeRecord` 的 `bakedAssetRef` 与 `sourceBundleRef` 用代码包清单的 `bundleId/revision` 占位，不是素材引用 |
+| 后台烘焙写入替身（§7.5） | 首版两笔事务 | 替身写入是「导入素材 + `replaceCodeBundle`」两笔，中间别人可以插一笔；要并成一笔需要一个只改 `prerender` 的操作，或让 `replaceCodeBundle` 接受同一事务里 `importAsset` 的 ref（与上一行同一条路） |
 | `cue-track` 的数据形式 | 未定 | 传给代码的 cue 数据的结构 |
 | 检查点的格式 | 未定 | 作者如何声明与实现可保存的状态 |
 | Remotion 的许可与透明导出 | 待验证 | 已定：不随应用分发，用代码包自己的依赖（§4.6）。透明导出按实际版本确认可用的模式 |

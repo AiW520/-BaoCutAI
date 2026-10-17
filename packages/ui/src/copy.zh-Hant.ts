@@ -366,7 +366,7 @@ export const zhHant: CopyMessages = {
     modelsMove: '移動模型資料夾',
     toolInstall: '安裝工具',
     toolUpdate: '更新工具',
-    fontDownload: '下載字型',
+    fontDownload: '下載字型', bake: '烘焙程式碼畫面',
     voiceClone: '克隆音色',
     agentTranslate: '翻譯',
     legacyImport: '匯入舊版專案',

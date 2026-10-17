@@ -380,7 +380,7 @@ export const ko: CopyMessages = {
     modelsMove: '모델 폴더 이동',
     toolInstall: '도구 설치',
     toolUpdate: '도구 업데이트',
-    fontDownload: '글꼴 다운로드',
+    fontDownload: '글꼴 다운로드', bake: '모션 그래픽 베이크',
     voiceClone: '목소리 복제',
     agentTranslate: '번역',
     legacyImport: '이전 프로젝트 가져오기',

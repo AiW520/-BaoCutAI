@@ -437,7 +437,7 @@ export const pl: CopyMessages = {
     modelsMove: "Przenieś folder modeli",
     toolInstall: "Zainstaluj narzędzie",
     toolUpdate: "Zaktualizuj narzędzie",
-    fontDownload: "Pobierz czcionkę",
+    fontDownload: "Pobierz czcionkę", bake: 'Wyrenderuj grafikę animowaną',
     voiceClone: "Sklonuj głos",
     agentTranslate: "Przetłumacz",
     legacyImport: "Zaimportuj wcześniejsze projekty",

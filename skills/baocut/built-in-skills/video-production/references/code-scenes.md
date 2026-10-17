@@ -29,6 +29,7 @@
 - **文字**用第 5 节带进包里的字体（`@font-face`），并且覆盖要画的每个字：缺字、彩色 emoji 都会回退。要粗体就带粗体字体文件（只有常规体却写 `bold` 会回退）。拉丁、希腊、西里尔与中日韩文字走得了指令；阿拉伯、泰、天城等文字会回退。
 - **导入后看结果的 `bake`**：`renderer` 是 `drawop-cpu` 就是走了指令。是 `browser-pixels` 时，`bake.fallback.reason` 写着第一条原因（例如 `recording: filter: blur(4px)`、`recording: main-canvas-readback`、`CANVAS_OPS_UNSUPPORTED: … text-missing-glyph: U+2665`），按上面改掉后用 `replace: { itemId }` 重新导入。原因是 `CANVAS_OPS_MISMATCH`（抽样画面对不上）时不用改代码，把原因告诉用户。
 - 写完第一个包时可以传 `bake: "ops"` 导入：走不了指令就直接报错并给出原因，不白等截图。确认能走之后其余的包用默认值。
+- **一段接一段导入**时带 `background: true`：导入立刻返回 `bakeJobId`，烘焙在后台排队串行进行（jobs_list / jobs_wait 看进度），期间接着导入下一段或改别的片段。改了这一段（换代码包、变速、裁开头）或删掉它，任务以 COMPOSITION_BAKE_SUPERSEDED 结束，要重新带 replace 导入。导出前用 jobs_list 确认烘焙都完成了：没烘完的片段没有预渲染，导出会被拒绝。换了代码包版本却没重烘的片段导出时以 EXPORT_PRERENDER_STALE 拒绝，正路是带 replace 重新导入；只有用户明确要旧画面才用 allowStalePrerender。
 - **用 Three.js、p5 WEBGL 或别的 WebGL 库**时走不了指令，整段按截图烘焙（约 3 帧/秒），导入前跟用户说清要等多久。库文件放进包里（`vendor/three.module.js`），不引 CDN；模型与贴图用 `gltf` / `glb` / `bin` / `hdr` / `ktx2`。WebGL 上下文开 `preserveDrawingBuffer: true`（Three.js 是 `new WebGLRenderer({ preserveDrawingBuffer: true })`），`renderAt` 里同步画完那一帧，不用 `requestAnimationFrame` 循环；时间只从 `renderAt` 的参数来，不用 `THREE.Clock`。
 
 ## 3. 时间从文稿来

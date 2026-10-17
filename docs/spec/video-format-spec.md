@@ -828,7 +828,7 @@ interface CompositionItem extends VisualItemBase {
 - **白板**。按素材图片推导揭示的顺序（先墨线后色块，按阅读顺序），画到 `draw` 秒画完，之后整图静止到终点；推导出的揭示顺序不保存。`beats` 把画面分成按时间揭示的几拍：落在 `box` 里的笔画归这一拍，从 `at` 画到 `end`。数字 `at` 单调不减，`end` 晚于 `at` 且不晚于下一拍的 `at`，末拍的 `end` 不晚于 `draw`。词锚点解析到序列时刻后减去实例起点；解析不到的锚点让这一拍退回几何顺序并报告。`pace: 'stretch'` 每拍撑满自己的窗口，`'natural'` 按自然速度画完后停住；`strict` 时 `box` 是硬遮罩，重叠处的像素归后一拍。
 - **生成类元素的秒**（`draw`、`interval`、拍的时刻、`wind` 里的秒）都是实例局部时间，按最短的十进制写法读成精确有理数，不量化，渲染按精确的局部时刻取样（§2.5）。
 - **代码合成**。`bundle` 指向一个确定的代码包版本，执行合同见代码包规范。原来的内置生成器（`baocut.counter`、`baocut.sticker`、`baocut.lottie`、`baocut.audio-visualizer`、`baocut.progress`）已由上面的种类取代，不再是合成的来源。运行环境不可用的代码包不得画成空白之后当作成功：有预渲染替身就用替身，没有就报告这个实例画不出来。
-- **预渲染替身**。`prerender` 是把这段合成渲染好的视频。它与合成共用 `timeMap`：合成的局部时间就是替身视频的源时间。合成的运行环境不可用，或来不及实时渲染时，预览与导出用替身代替；能运行时以代码为准。替身不是源：改了参数或换了代码包版本，替身就过期了。
+- **预渲染替身**。`prerender` 是把这段合成渲染好的视频。它与合成共用 `timeMap`：合成的局部时间就是替身视频的源时间。合成的运行环境不可用，或来不及实时渲染时，预览与导出用替身代替；能运行时以代码为准。替身不是源：改了参数或换了代码包版本，替身就过期了；过期的判定与后果见代码包规范 §7.4。
 - **声音**。合成发出的声音（用替身时是替身视频的音轨）由 `audio` 路由。时间线上另有同一段声音的音频实例时（例如渲染结果里已经混入了配音，配音又单独放在音频轨道上），必须关掉 `audio.enabled`，不得两处同时出声。合成与这些音频实例写进同一个音画联动组（`linkGroupId`，§3.4）表示组里的音频是合成声音单独放的一份：引擎写入时核对，同一条序列里组内有音频实例时，组内合成的 `audio` 必须省略或 `enabled: false`。替身是混好的成片，只扣掉其中几句做不到，整条关掉。
 
 字段来源：`schema.rs` 的 `CounterProps`、`StickerProps`、`VisualizerProps`、`ProgressProps`、`DrawProps`、`PlaceholderProps`、`ConfettiProps`、`WhiteboardProps`、`WhiteboardBeat` 及其 `validate`；缺省落位见 `geometry.rs`。

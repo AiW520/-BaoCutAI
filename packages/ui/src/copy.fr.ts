@@ -417,7 +417,7 @@ export const fr: CopyMessages = {
     modelsMove: "Déplacer le dossier des modèles",
     toolInstall: "Installer l’outil",
     toolUpdate: "Mettre l’outil à jour",
-    fontDownload: "Télécharger la police",
+    fontDownload: "Télécharger la police", bake: 'Précalculer le graphisme animé',
     voiceClone: "Cloner la voix",
     agentTranslate: "Traduire",
     legacyImport: "Importer les anciens projets",

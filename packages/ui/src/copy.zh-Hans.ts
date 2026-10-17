@@ -377,7 +377,7 @@ export const zhHans: CopyMessages = {
     modelsMove: '移动模型目录',
     toolInstall: '安装工具',
     toolUpdate: '更新工具',
-    fontDownload: '下载字体',
+    fontDownload: '下载字体', bake: '烘焙代码画面',
     voiceClone: '克隆音色',
     agentTranslate: '翻译',
     legacyImport: '导入旧版项目',

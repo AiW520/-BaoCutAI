@@ -716,6 +716,7 @@ const exportSettings = z.union([
       bitrateKbps: z.number().int().min(100).max(200_000).optional(),
       burnCaptions: z.boolean().optional(),
       onUnsupported: z.enum(['fail', 'skip']).optional(),
+      allowStalePrerender: z.boolean().optional(),
       audio: z.object(audioExportOptions).strict().optional(),
       source: audioExportSource.optional(),
     })

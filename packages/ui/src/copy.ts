@@ -453,7 +453,7 @@ const en = {
     modelsMove: 'Move models folder',
     toolInstall: 'Install tool',
     toolUpdate: 'Update tool',
-    fontDownload: 'Download font',
+    fontDownload: 'Download font', bake: 'Bake motion graphic',
     voiceClone: 'Clone voice',
     agentTranslate: 'Translate',
     legacyImport: 'Import earlier projects',

@@ -379,7 +379,7 @@ export const ja: CopyMessages = {
     modelsMove: 'モデルフォルダを移動',
     toolInstall: 'ツールをインストール',
     toolUpdate: 'ツールを更新',
-    fontDownload: 'フォントをダウンロード',
+    fontDownload: 'フォントをダウンロード', bake: 'モーショングラフィックをベイク',
     voiceClone: '声をクローン',
     agentTranslate: '翻訳',
     legacyImport: '以前のプロジェクトの読み込み',

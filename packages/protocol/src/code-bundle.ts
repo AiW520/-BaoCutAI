@@ -1,5 +1,5 @@
 import type { Id } from './domain.ts';
-import type { CodeEdit, MediaTime, Rate, Revision, VersionRef } from './video.ts';
+import type { AssetRecord, CodeEdit, CompositionItem, MediaTime, Rate, Revision, VersionRef } from './video.ts';
 import type { MediaHandle } from './methods.ts';
 
 /**
@@ -194,6 +194,71 @@ export interface CompositionBakeInfo {
 /** 预渲染素材 `provenance.origin` 的取值；`provenance.source` 是 `BakeRecord`。 */
 export const BAKE_PROVENANCE_ORIGIN = 'composition-bake';
 
+/**
+ * 替身为什么不能代表实例现在的画面（代码包规范 §7.4）：`missing` 没有替身；`bundle-changed` 替身烘焙自别的代码包版本
+ * （`BakeRecord.sourceBundleRef` 与实例 `source.assetRef` 所指清单的 `bundleId` / `revision` 不同）；`fps-mismatch` 替身的帧率与所在序列不同。
+ */
+export type PrerenderStaleReason = 'missing' | 'bundle-changed' | 'fps-mismatch';
+
+export interface PrerenderStaleness {
+  itemId: Id;
+  reason: PrerenderStaleReason;
+  /** 替身烘焙自哪个代码包版本（替身没有烘焙记录时省略）。 */
+  bakedFrom?: VersionRef;
+  /** 实例现在指向的代码包清单身份（`bundleId` / `revision`）。 */
+  current?: VersionRef;
+}
+
+/**
+ * 判断一个合成实例的替身是否过期（代码包规范 §7.4）。预览停住时、导出预检与智能体的检查共用这一处判断。
+ * 替身的来源不是烘焙记录（旧数据、手工指定的视频）时只核对帧率：没有记录就不知道烘焙自哪个版本，不按过期处理。
+ * 返回 null 表示替身可用。
+ */
+export function prerenderStaleness(
+  item: Pick<CompositionItem, 'id' | 'source' | 'prerender'>,
+  assets: Readonly<Record<Id, AssetRecord>>,
+  sequenceFps: Rate,
+): PrerenderStaleness | null {
+  if (!item.prerender) return { itemId: item.id, reason: 'missing' };
+  const standIn = assets[item.prerender.id]?.revisions[item.prerender.revision];
+  if (!standIn) return { itemId: item.id, reason: 'missing' };
+  const bundle = assets[item.source.assetRef.id]?.revisions[item.source.assetRef.revision]?.bundle as
+    | { bundleId?: unknown; revision?: unknown }
+    | undefined;
+  const current =
+    typeof bundle?.bundleId === 'string' && typeof bundle.revision === 'string' ? { id: bundle.bundleId, revision: bundle.revision } : undefined;
+  const record = standIn.provenance.origin === BAKE_PROVENANCE_ORIGIN ? (standIn.provenance.source as BakeRecord | undefined) : undefined;
+  if (record) {
+    const from = record.sourceBundleRef;
+    if (current && (from.id !== current.id || from.revision !== current.revision)) {
+      return { itemId: item.id, reason: 'bundle-changed', bakedFrom: from, current };
+    }
+    if (record.encoding.fps.num * sequenceFps.den !== sequenceFps.num * record.encoding.fps.den) {
+      return { itemId: item.id, reason: 'fps-mismatch', bakedFrom: from, ...(current ? { current } : {}) };
+    }
+    return null;
+  }
+  const rate = standIn.video?.frameRate;
+  const fps = rate?.kind === 'cfr' ? rate.rate : rate?.nominal;
+  if (fps && fps.num * sequenceFps.den !== sequenceFps.num * fps.den) {
+    return { itemId: item.id, reason: 'fps-mismatch', ...(current ? { current } : {}) };
+  }
+  return null;
+}
+
+/** 后台烘焙任务（`JobRecord.bake`，`kind: 'bake'`）：给哪个实例烘、烘哪个代码包版本、按什么帧率与渲染器。 */
+export interface CompositionBakeJob {
+  sequenceId: Id;
+  itemId: Id;
+  /** 代码包素材的版本（实例的 `source.assetRef`）。 */
+  bundle: VersionRef;
+  /** 清单里的身份，写进 `BakeRecord.sourceBundleRef`。 */
+  bundleId: string;
+  manifestRevision: Revision;
+  fps: Rate;
+  mode: CompositionBakeMode;
+}
+
 export const CODE_BUNDLE_ERROR_CODES = [
   // 导入与验证（§6.2）
   'BUNDLE_MANIFEST_INVALID',
@@ -365,6 +430,12 @@ export interface CompositionImportParams {
   register?: boolean;
   /** 烘焙渲染器，缺省 `auto`。 */
   bake?: CompositionBakeMode;
+  /**
+   * true 时烘焙转为后台任务（`kind: 'bake'`，代码包规范 §7.5）：两笔修改只登记代码包、按清单的长度放实例（没有替身），
+   * 立刻返回 `bakeJobId`；任务完成后以一笔修改写入替身并把实例的 `prerender` 指过去。缺省 false（等烘焙完再返回）。
+   * 与 `register` 互斥。
+   */
+  background?: boolean;
   revision?: Revision;
   commandId?: Id;
   conversationId?: Id;
@@ -402,8 +473,10 @@ export interface CompositionImportResult {
     encoding: BakeRecord['encoding'];
     hasAlpha: boolean;
   } | null;
-  /** 烘焙用的渲染器与用时；回退到像素时带 `fallback.reason`。只登记时为 null。 */
+  /** 烘焙用的渲染器与用时；回退到像素时带 `fallback.reason`。只登记与后台烘焙时为 null。 */
   bake: CompositionBakeInfo | null;
+  /** 后台烘焙（`background: true`）的任务；同步烘焙与只登记时为 null。 */
+  bakeJobId: Id | null;
   /** 放到时间线上（或原地替换）的合成片段与它所在的轨；只登记时为 null。 */
   itemId: Id | null;
   trackId: Id | null;
