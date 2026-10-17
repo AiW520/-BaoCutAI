@@ -181,7 +181,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     description: [
       '把一段用网页代码写的动画（代码包）导入视频：验证、烘焙成带透明的预渲染视频，并放到时间线上。',
       '代码包是一个目录（path），或内联的几个文件（files）：入口 HTML（默认 index.html）加它用到的脚本、样式、图片与字体，全部用包内相对路径引用，不能访问网络（CDN、在线字体、fetch 都不行）。',
-      '作者合同二选一：hyperframes/1——根元素带 data-composition-id、data-width、data-height、data-fps、data-duration（秒），页面背景透明（没有清单时默认按透明叠加层处理；全幅不透明的画面传 manifest.alpha=false 或写 data-alpha="false"）；页面在 window.__timelines[<compositionId>] 上注册一条暂停的时间线（seek(秒)、time()、duration()、pause()），画面只由 seek 到的时间决定。baocut/1——页面在 window.__baocutCompositions[<compositionId>] 上暴露 initialize / renderAt(time, params) / dispose。包里有 bundle.manifest.json 时按清单，没有时按根元素的 data-* 与 manifest 覆盖生成清单。',
+      '作者合同二选一：hyperframes/1——根元素带 data-composition-id、data-width、data-height、data-fps、data-duration（秒），页面背景透明（没有清单时默认按透明叠加层处理；全幅不透明的画面传 manifest.alpha=false 或写 data-alpha="false"）；页面在 window.__timelines[<compositionId>] 上注册一条暂停的时间线（seek(秒)、time()、duration()、pause()），画面只由 seek 到的时间决定。baocut/1——页面在 window.__baocutCompositions[<compositionId>] 上暴露 initialize(context)（context.target 是根元素；在这里等图片与字体加载完）、renderAt(time, params)（time 是 { ticks, timescale }，秒 = Number(ticks) / timescale，不是秒数；params 目前是空对象）与 dispose，画面只由 time 决定。整镜整段的画面用 baocut/1（单张 Canvas 能走指令烘焙），叠加的贴片与动态图形用 hyperframes/1。包里有 bundle.manifest.json 时按清单，没有时按根元素的 data-* 与 manifest 覆盖生成清单。',
       '导入时在离屏浏览器里验证：根元素与时间线、seek 回读、末帧夹到时长、同一时刻两次取帧一致（确定性）、声明透明时确有透明像素、运行时没有网络请求。通过后按视频根序列的帧率逐帧烘焙成 ProRes 预渲染（带透明时 4444、不透明时 422 HQ；预览与导出用它。baocut/1 的 Canvas 画面先录绘制指令、在本机光栅，比浏览器逐帧截图快得多，见 bake），代码包与预渲染作为素材收进视频（第一笔修改），再放一个合成片段（第二笔修改，可以分别撤销）：默认从 0 秒、铺满画布、放在最上面的视觉轨（那条轨在这段时间里被占着或锁着时新建一条），place 可以改轨道与开始时间。register: true 时只验证并登记代码包素材。background: true 时烘焙放到后台的 bake 任务里（jobs_* 看进度），导入立刻返回，片段先没有预渲染；多段连续导入时用它，不用等每段烘完。',
       '改已经放上去的代码画面（改文案、改色）：改源文件、用新的 revision 重新打包，再带 replace: { itemId } 导入——第二笔用 replaceCodeBundle 原地换掉那个片段的代码包与预渲染，其余设置都保留；不带 replace 会多出一个叠在上面的片段。',
       '这是给视频加动画标题、字幕条、图表、转场卡等代码画面的正路：不要自己用浏览器录屏或 ffmpeg 渲染 mp4 再当素材导入。导入之前可以先用 compositions_preview 按时刻取帧看画面。',
@@ -209,7 +209,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '在离屏浏览器里按合成内部的时刻取代码画面的帧，写成 PNG，用来检查排版与动画。',
       '代码包给目录（path）、内联文件（files，写法同 compositions_import），或已经导入这个视频的代码包素材（assetId）。at 是合成的局部时间（秒），超过时长的夹到末帧（clamped: true）。帧是代码包自己的画面（透明处保留透明），不是与视频合成后的画面；不改视频、不验证、不烘焙。',
       `文件写在写文件目录（会话与终端是工作目录）下的 ${FRAMES_DIR}/<videoId>/，名为 composition-<bundleId>-at-<毫秒>ms.png，同一时刻再取时覆盖。`,
-      'sheet: true 时另拼一张接触表（composition-<bundleId>-sheet-<首>-<尾>ms-<帧数>.png），看一张图就能查完文字重叠、空画面、上一段残留与元素出画；格子里不写时刻，按 sheet.cells（index、row、column、at）对照。查转场与入场时，在切点前后约 1 秒里密集地取十几帧再拼。',
+      'sheet: true 时另拼一张接触表（composition-<bundleId>-sheet-<首>-<尾>ms-<帧数>.png），看一张图就能查完文字重叠、空画面、上一段残留与元素出画；格子里不写时刻：按 at 给的顺序从左到右排、一行满了换行，对不上时看 sheet.cells（index、row、column、at）。查转场与入场时，在切点前后约 1 秒里密集地取十几帧再拼。',
       '返回 frames（每帧 at、file、实际采样的 sampledSeconds、clamped 与 PNG 的 sha256：两次取同一时刻摘要相同才说明画面是确定的）、尺寸与时长，给了 sheet 时还有 sheet（file、columns、rows、cellWidth、cellHeight、cells）。错误码与 compositions_import 相同，另有 COMPOSITION_SHEET_FAILED（拼表失败，单帧照样写好了）。',
     ].join('\n'),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },

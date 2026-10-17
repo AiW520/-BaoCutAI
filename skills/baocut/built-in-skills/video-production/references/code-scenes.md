@@ -12,8 +12,57 @@
 
 | 用户要的 | 怎么做 |
 | --- | --- |
-| 可编辑的视频（默认） | 写成代码包，用 compositions_import 导入。用 `baocut/1` 合同：`initialize` 里等图片与字体加载完（`img.decode()`），`renderAt(time)` 在一块 `<canvas>` 上画出那一刻；全画幅不透明的在根元素写 `data-alpha="false"`。按段落（一段一个场景）切成几个代码包首尾相接，改一段只重新导入那一段（`replace: { itemId }`） |
+| 可编辑的视频（默认） | 写成代码包，用 compositions_import 导入。用 `baocut/1` 合同（下面的最小包）：`initialize(context)` 里等图片与字体加载完（`img.decode()`），`renderAt(time, params)` 在一块 `<canvas>` 上画出那一刻（`time` 是 `{ ticks, timescale }`，秒 = `Number(ticks) / timescale`，不是秒数）；全画幅不透明的在根元素写 `data-alpha="false"`。按段落（一段一个场景）切成几个代码包首尾相接，改一段只重新导入那一段（`replace: { itemId }`） |
 | 只要一个视频文件，明说由代码直接渲染、不要可编辑视频 | 在 BaoCut 之外渲染，例如逐帧画好交给 ffmpeg 编码。交付时说明画面不能在编辑器里逐个元素改；之后要可编辑，按上一行重做，不把渲染出的文件当素材导入后再叠加修改 |
+
+整镜整段的画面用 `baocut/1`；叠加在实拍或别的画面上的贴片、标题、字幕条用 `motion-graphics` 的 scaffold（`hyperframes/1`，`window.__timelines` + `seek(秒)`），两种合同不混在一个包里。`baocut/1` 的最小包（根元素的 `data-*` 就是清单，不用另写 `bundle.manifest.json`；`data-composition-id` 与注册用的键相同）：
+
+```html
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #000; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  canvas { display: block; }
+  @font-face { font-family: 'Body'; src: url('./fonts/body.ttf'); }
+</style>
+<div id="root" data-composition-id="scene-1" data-width="1080" data-height="1920" data-fps="30" data-duration="12.4" data-alpha="false">
+  <canvas id="stage" width="1080" height="1920"></canvas>
+</div>
+<script>
+  const W = 1080, H = 1920;
+  let ctx = null;
+  const hero = new Image();
+  hero.src = './art/hero.png';
+  function draw(t) {
+    // t 是这一段内的秒数；画面只由 t 决定（第 4 节）
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#0b1020';
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = '72px Body';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('第 ' + Math.floor(t) + ' 秒', 80, 200);
+    ctx.drawImage(hero, 100, 400 + Math.min(t / 0.6, 1) * 200);
+  }
+  window.__baocutCompositions = window.__baocutCompositions || {};
+  window.__baocutCompositions['scene-1'] = {
+    async initialize(context) {
+      // context.target 是上面的根元素；这里等图片与字体都加载完
+      ctx = context.target.querySelector('#stage').getContext('2d');
+      await Promise.all([hero.decode(), document.fonts.load('72px Body')]);
+      draw(0);
+    },
+    async renderAt(time, params) {
+      // time 是 { ticks, timescale }：秒 = Number(ticks) / timescale；params 目前是空对象
+      draw(Number(time.ticks) / time.timescale);
+    },
+    dispose() {
+      ctx = null;
+    },
+  };
+</script>
+```
 
 包内只用相对路径，不联网；上限是 4096 个文件、单个 64 MiB、合计 256 MiB，底图用 JPEG，贴图用 PNG 并裁到角色实际的边界，不留整幅的透明画布。
 
@@ -29,6 +78,7 @@
 - **文字**用第 5 节带进包里的字体（`@font-face`），并且覆盖要画的每个字：缺字、彩色 emoji 都会回退。要粗体就带粗体字体文件（只有常规体却写 `bold` 会回退）。拉丁、希腊、西里尔与中日韩文字走得了指令；阿拉伯、泰、天城等文字会回退。
 - **导入后看结果的 `bake`**：`renderer` 是 `drawop-cpu` 就是走了指令。是 `browser-pixels` 时，`bake.fallback.reason` 写着第一条原因（例如 `recording: filter: blur(4px)`、`recording: main-canvas-readback`、`CANVAS_OPS_UNSUPPORTED: … text-missing-glyph: U+2665`），按上面改掉后用 `replace: { itemId }` 重新导入。原因是 `CANVAS_OPS_MISMATCH`（抽样画面对不上）时不用改代码，把原因告诉用户。
 - 写完第一个包时可以传 `bake: "ops"` 导入：走不了指令就直接报错并给出原因，不白等截图。确认能走之后其余的包用默认值。
+- `bake` 与 `background` 要新版 Runtime：参数说明（终端是 `help compositions import`）里列不出这两项就是旧版，先更新 BaoCut，更新不了就不带它们。终端里写成 `--bake ops`、`--background`。不带 `background` 时命令要等整段烘完才返回，期间没有进度输出：一段几十秒到几分钟属正常，不是卡死。
 - **一段接一段导入**时带 `background: true`：导入立刻返回 `bakeJobId`，烘焙在后台排队串行进行（jobs_list / jobs_wait 看进度），期间接着导入下一段或改别的片段。改了这一段（换代码包、变速、裁开头）或删掉它，任务以 COMPOSITION_BAKE_SUPERSEDED 结束，要重新带 replace 导入。导出前用 jobs_list 确认烘焙都完成了：没烘完的片段没有预渲染，导出会被拒绝。换了代码包版本却没重烘的片段导出时以 EXPORT_PRERENDER_STALE 拒绝，正路是带 replace 重新导入；只有用户明确要旧画面才用 allowStalePrerender。
 - **用 Three.js、p5 WEBGL 或别的 WebGL 库**时走不了指令，整段按截图烘焙（1080p 约 3 帧/秒），导入前跟用户说清要等多久。库文件放进包里（`vendor/three.module.js` 原样能用），不引 CDN；模型与贴图用 `gltf` / `glb` / `bin` / `hdr` / `ktx2`。Three.js 用 `new WebGLRenderer({ canvas, alpha: true, preserveDrawingBuffer: true })` 画到根元素里的画布，`setPixelRatio(1)`、`setSize(W, H, false)`，透明输出 `setClearColor(0x000000, 0)`；`renderAt` 里同步画完那一帧再 `renderer.getContext().finish()`，不用 `requestAnimationFrame` 循环；时间只从 `renderAt` 的参数来，不用 `THREE.Clock`。
 - **用 p5 画 2D**能走指令：实例模式 `new p5(sketch, root)` 让画布挂进根元素，`setup` 里 `pixelDensity(1)`、`createCanvas(W, H)`、`noLoop()`，`draw` 开头 `clear()`（透明）或整幅 `background(...)`（不透明，根元素写 `data-alpha="false"`），`renderAt` 记下时间后 `inst.redraw()`，`initialize` 等 `setup` 跑完。文字要 `textFont` 指向包内字体。原样的 `p5.min.js` 会被离线扫描拒绝（`BUNDLE_NETWORK_REFERENCE`，库字串里有 9 处 URL）：带进包前把 `https://cdn.jsdelivr.net/npm/p5/translations/` 改成 `./translations/`，把 `new URL("http://…")` 探测字串与两处文档链接的 `http(s)://` 换成别的前缀；这些字串不影响画面。只画图形的场景优先纯 Canvas 2D，不用带 1 MB 的库。
@@ -44,6 +94,7 @@
 ## 4. 确定性
 
 - 第 t 秒的画面只由 t 决定：不用 `Math.random`、`Date.now` 与自走的动画；要随机就用按编号取值的哈希（同一个编号永远是同一个值）。计数、位置、已出现的元素都从 t 算出来，不逐帧累加。
+- 缓动函数先把进度钳到 `[0, 1]`，区间外严格返回 0 或 1：back、elastic 这类曲线在 0 附近会算出极小的非零值，拿它判断「已出现」就会提前露出元素。
 - 导入时会核对同一时刻两次取帧一致（不一致报 `COMPOSITION_NONDETERMINISTIC`）。确定的画面也能单独取任意一帧、分段并行渲染。
 
 ## 5. 画面元素
@@ -73,7 +124,7 @@
 ## 7. 自检
 
 - 先画一帧风格样张给用户看，定下再写全片。**开头样段要带上第一次高潮**（副歌或第一个爆点）：风格撑不撑得住在高潮上才看得出来，留到最后才发现要返工。
-- compositions_preview 一次最多取 24 个时刻：每句、每个段落交界各取一帧，加 `sheet: true` 拼成一张接触表一次看完（格子里不写时刻，按结果的 `sheet.cells` 对照），查文字重叠、画面空、上一句残留到下一段、元素出画。改完只重看改到的时刻。
+- compositions_preview 一次最多取 24 个时刻：每句、每个段落交界各取一帧，加 `sheet: true` 拼成一张接触表一次看完（格子里不写时刻，按 `at` 给的顺序从左到右、一行满了换行，对不上就看结果的 `sheet.cells`），查文字重叠、画面空、上一句残留到下一段、元素出画。改完只重看改到的时刻。帧写在工作目录下的 `.baocut-out/frames/`，是临时输出：终端里从自己的工作目录运行，不在用户的代码仓库里跑。
 - 拼起来的帧只看得出排版，看不出动作：入场、换姿势这类动作，在那一下前后约 2 秒里密集地取满 24 帧看连贯不连贯，再导出预览按正常速度看、听画面跟不跟拍。
 - **全片导入或渲染前先冒烟**：每个包的开头、中点、结尾各用 compositions_preview 取一帧。删掉的辅助函数、拼错的变量这类运行时错误，在这一步就会报出是哪个包、哪个时刻，不等烘焙或渲染到一半才发现。
 - 每个包导入后看结果的 `bake.renderer`：该走指令的包回退成了 `browser-pixels`，按 `bake.fallback.reason` 和第 2.1 节改掉再换上去。
