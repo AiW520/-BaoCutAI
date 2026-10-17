@@ -133,7 +133,7 @@
 - 每个包导入后看结果的 `bake.renderer`：该走指令的包回退成了 `browser-pixels`，按 `bake.fallback.reason` 和第 2.1 节改掉再换上去。
 - 改一段或插入一段只重做那一个包（`replace: { itemId }`，插入时新建一个包放进去、把后面的段往后挪），没改的包不重新导入。
 - **一段变长、变短或插进新段**：`replace` 不会挪后面的片段，变长时撞上同轨后一段会以 TIMELINE_OVERLAP 拒绝；deleteItems 也只删不挪，留下空隙。先按整帧算出差值 Δ（新帧数 − 旧帧数；插入时是新段的帧数），再按这个顺序做：
-  1. videos_inspect 列出这一段结尾之后开始的全部片段，画面、旁白、字幕、音效、音乐各轨都算上。字幕层是一条一条的片段，漏挪一条就和画面错开。
+  1. videos_inspect 带 `fromSeconds`（这一段的结尾）列出片段，结果是与这段时间相交的片段，只留 `startSeconds` 不早于这一段结尾的那些；`itemsCoverage.truncated` 为 true 时加大 `limit` 再读。画面、旁白、字幕、音效、音乐各轨都算上，字幕层的片段漏挪一个，那段字幕就和画面错开。
   2. 变长或插入时，先用一笔 edits_apply 的 `moveItems` 把它们整体后挪 Δ（`offset` 写 `{"unit": "frames", "value": Δ}`），腾出位置；变短时先换包，再前挪。
   3. 带 `replace` 换包，或在腾出的位置放新段，旁白与字幕跟着换。
   4. videos_inspect 核对各段首尾相接、没有空隙也不重叠，总长等于各段帧数之和。
