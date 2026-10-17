@@ -103,14 +103,13 @@ export class SkillTools implements ToolSet {
     const file = p.path ?? SKILL_FILE;
     try {
       const skill = await this.#deps.skills.require(p.id);
-      // 说明书页是会话指导的一部分，按工具桥面渲染（Agent 面设计 §8.6）；终端与 MCP 的读者有装好的 BaoCut skill，里面是 CLI 面的同一页。
-      if (skill.guide && principal.kind !== 'agent') {
-        throw new ToolError(
-          'SKILL_NOT_FOUND',
-          `没有这个 skill：${p.id}。它是 BaoCut 会话内智能体的说明书页；外部 Agent 读装好的 BaoCut skill 里的 references/（baocut skill install）`,
-        );
-      }
-      const { content, size } = await readSkillFile(skill, file);
+      // 说明书页是会话指导的一部分，按工具桥面渲染（Agent 面设计 §8.6）；终端与 MCP 的读者拿同一页的 CLI 面（工具名是 baocut 命令，
+      // 与装好的 BaoCut skill 里的那一页相同），craft 里「用 skills_read 读 baocut-catalog-<页>」在终端里就能照做。
+      const cliFace = skill.guide && principal.kind !== 'agent';
+      const { content, size } =
+        cliFace && skill.cliContent !== undefined && file === SKILL_FILE
+          ? { content: skill.cliContent, size: Buffer.byteLength(skill.cliContent) }
+          : await readSkillFile(skill, file);
       return {
         id: skill.id,
         name: skill.name,
@@ -123,6 +122,12 @@ export class SkillTools implements ToolSet {
           ? {
               files: skill.files.map((f) => f.path),
               ...(skill.guide ? {} : { dir: skill.dir, assets: skill.files.filter((f) => isAssetPath(f.path)).map((f) => f.path) }),
+            }
+          : {}),
+        // 终端与 MCP 读 craft 时正文仍是工具桥面的写法：工具名与目录页的引用按这一句对应。
+        ...(principal.kind !== 'agent' && !skill.guide
+          ? {
+              next: '正文里 <名词>_<动词> 形式的工具名就是 baocut <名词> <动词>（skills_read 即 baocut skills read）；「读 baocut-catalog-<页>」「baocut-workflows」「baocut-conventions」用 baocut skills read <id> 读，装好的 BaoCut skill（baocut skill install）里的 references/catalog/<页>.md 是同一页。',
             }
           : {}),
       };

@@ -70,6 +70,8 @@ export interface LoadedSkill {
   updatedAt: string;
   /** 说明书页（在内存里，只有 `SKILL.md`，就是 `content`）。 */
   guide?: true;
+  /** 说明书页按 CLI 面渲染的正文：终端与 MCP 的 `skills_read` 读到的那一份（与装好的 BaoCut skill 里的同一页相同）。 */
+  cliContent?: string;
 }
 
 export interface SkillScan {
@@ -360,6 +362,7 @@ function guidePageSkill(page: AgentSkillPage, sourceDir: string, updatedAt: stri
     body: page.body,
     updatedAt,
     guide: true,
+    cliContent: page.cliBody,
   };
 }
 

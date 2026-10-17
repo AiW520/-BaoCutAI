@@ -117,9 +117,18 @@ describe('Agent skill 端到端', () => {
     expect(JSON.stringify(other.body)).toContain('SKILL_FILE_NOT_FOUND');
     const list = await client.request('skills.list', {});
     expect(list.diagnostics).toEqual([expect.objectContaining({ code: 'builtin-conflict', scope: 'user', dir: 'baocut-conventions' })]);
-    // 终端与 MCP 不读工具桥面的页：它们有装好的 BaoCut skill。
+    // 终端与 MCP 读到的是同一页的 CLI 面：工具名是 baocut 命令，没有工具桥面的写法与占位符。
     const outside = await client.request('catalog.call', { name: 'skills_read', args: { id: 'baocut-conventions' }, cwd: dir });
-    expect(outside).toMatchObject({ ok: false, error: { code: 'SKILL_NOT_FOUND' } });
+    expect(outside).toMatchObject({
+      ok: true,
+      result: { id: 'baocut-conventions', origin: 'builtin', path: 'SKILL.md', files: ['SKILL.md'] },
+    });
+    const cliPage = (outside as { result: { content: string; next?: string } }).result;
+    expect(cliPage.content).toContain('# 约定');
+    expect(cliPage.content).toContain('baocut jobs wait');
+    expect(cliPage.content).not.toContain('`jobs_wait`');
+    expect(cliPage.content).not.toContain('{{');
+    expect(cliPage.next).toBeUndefined();
   });
 
   it('开着的 skill 出现在会话开始的索引里，关着的不出现；开关经 RPC 持久', async () => {
