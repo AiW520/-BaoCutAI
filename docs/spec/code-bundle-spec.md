@@ -519,7 +519,7 @@ interface BakeRecord {
   - `{"type":"header", width, height, fps:{num,den}, frames, alpha}`、`{"type":"page", background}`（页面底色，直通 RGBA 0–1）；
   - 资源 `{"type":"font"|"image"|"bitmap", id, …}`：字体与图片是包内相对路径；`bitmap` 是作图片源的离屏 canvas 按版本号拍下的非预乘 RGBA（base64）；
   - 帧 `{"type":"frame", index, init?, ops, states, grads, pats}`：`ops` 是路径、裁剪、状态栈与绘制指令，`states` 是绘制时读到的真实状态（变换、填充、透明度、合成、投影、线型、字体），`grads` / `pats` 是这帧用到的渐变与图案。
-- **文字**在页面里归一成左对齐、alphabetic 基线（对齐与基线偏移用 Chromium 的 `measureText`），Worker 用包里的字体文件整形（rustybuzz）成轮廓。字体按 CSS 匹配从 `document.fonts` 选 face，必须是包内的字体文件。合成斜体按 0.25 的水平切变还原；合成粗体（请求 ≥ 600、字体文件与 `@font-face` 都不到 600）各平台的加粗量不同，判为不支持。
+- **文字**在页面里归一成左对齐、alphabetic 基线（对齐与基线偏移用 Chromium 的 `measureText`），Worker 用包里的字体文件整形（rustybuzz）成轮廓。字体按 CSS 匹配从 `document.fonts` 选 face，必须是包内的字体文件。中日韩相邻标点按 `text-spacing-trim: normal` 挤压（与 Chromium 的 HanKerning 相同：整段开 `chws`，字体有 `halt` 时给「》（」这类相邻对里该挤的字单独开 `halt`，行首不挤）；整形宽度与 `measureText` 差超过 max(0.5px, 0.2%) 判为不支持。合成斜体按 0.25 的水平切变还原；合成粗体（请求 ≥ 600、字体文件与 `@font-face` 都不到 600）各平台的加粗量不同，判为不支持。
 - **不支持的情况**有第一条原因就停止录制，例如：`unsupported-call: <方法>`（`putImageData`、`reset` 等）、`filter: <值>`、`conic-gradient`、`Path2D`、`font-not-bundled: <族名>`、`text-synthetic-bold: <字重>`、`text-rtl`、`composite-operation: <模式>`、`clip-evenodd`、`clear-rect-partial`、`frame-not-cleared`、`image-smoothing-disabled`、`main-canvas-readback`。
 
 ### 7.3 对拍与回退
