@@ -1,5 +1,5 @@
 import type { Id } from './domain.ts';
-import type { CompositionBakeJob } from './code-bundle.ts';
+import type { CompositionBakeInfo, CompositionBakeJob } from './code-bundle.ts';
 import type { ExportJobInfo, ExportValidation } from './exports.ts';
 import type { JobLibraryUse } from './library.ts';
 import type { ImageFormat, ImageInputMediaType, ImageInputMode, MusicMode, MusicPlanning, SpeechFormat, TextEffort, VoiceMode } from './models.ts';
@@ -436,8 +436,16 @@ export interface JobRecord {
    * 文本生成任务：`artifactId` 是全文的产物，`text` 是摘要与预览，没有 `outputs`。
    * 导出：同生成任务，`outputs` 是已经发布的文件；多个文件里有的没有发布时任务为 `failed`（`EXPORT_PARTIALLY_PUBLISHED`），
    * `result` 仍列出已经发布的。
+   * 后台烘焙（`bake`）：`artifactId` 是替身 `<assetId>@<revision>`，`bake` 是实际用的渲染器、用时与回退原因（同 `compositions_import`
+   * 回执的 `bake`）。
    */
-  result: { documentId: Id | null; artifactId: string; outputs?: GeneratedOutput[]; text?: TextJobResult } | null;
+  result: {
+    documentId: Id | null;
+    artifactId: string;
+    outputs?: GeneratedOutput[];
+    text?: TextJobResult;
+    bake?: CompositionBakeInfo;
+  } | null;
   warnings: JobWarning[];
   /** 生成任务冻结的参数；转写任务没有。 */
   generation?: GenerationParameters;

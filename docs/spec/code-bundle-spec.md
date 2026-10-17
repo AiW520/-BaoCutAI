@@ -587,7 +587,7 @@ interface CompositionBakeInfo {
 - 两笔事务只登记代码包与放实例：实例没有 `prerender`，长度按清单 `intrinsic` 换算到序列帧率（向下取整，与 `replaceCodeBundle` 没有替身时同一算法）；带 `replace` 时 `replaceCodeBundle` 的 `prerender` 为 null，旧替身随之摘掉。
 - 任务排 `composition-bake` 队列，并发 1（指令烘焙已多线程光栅，并行只争 CPU）；暂存目录在视频所在卷的 `blobs/.staging/`；阶段 `encoding`（进度 `{ unit: 'frames', done, total }`）→ `applying`。任务进行中视频由 Runtime 的租约保持打开，不持有写锁，用户与智能体可以继续改别的实例。
 - 烘完以两笔写入（行为者 `system:compositions`）：导入替身素材（`provenance` 同上），再 `replaceCodeBundle` 把实例的 `prerender` 指过去（`assetRef` 不变）。写之前与每次重试前核对实例还在、仍指同一个代码包素材版本、`timeMap` 仍是从 0 起的等速线性，否则任务以 `COMPOSITION_BAKE_SUPERSEDED` 失败（替身没有归宿，不写）。版本冲突（`PROJECT_REVISION_CONFLICT`）重试三次。替身长度与放置时的清单长度不同时记一条 `COMPOSITION_BAKE_LENGTH_ADJUSTED` 警告（回执 `impact.codeEdits` 有前后帧数）。
-- 结果 `result.artifactId` 是替身的 `<assetId>@<revision>`。烘焙失败的错误码沿用代码包的（`COMPOSITION_*`、`BUNDLE_*`），别的记 `COMPOSITION_BAKE_FAILED`。取消用 `jobs.cancel`。Runtime 重启时未完成的任务按不可重试处理（`interrupted`），实例留着没有替身，重新带 `replace` 导入即可。
+- 结果 `result.artifactId` 是替身的 `<assetId>@<revision>`，`result.bake` 是实际用的渲染器、用时与回退原因（同导入回执的 `bake`）。烘焙失败的错误码沿用代码包的（`COMPOSITION_*`、`BUNDLE_*`），别的记 `COMPOSITION_BAKE_FAILED`。取消用 `jobs.cancel`。Runtime 重启时未完成的任务按不可重试处理（`interrupted`），实例留着没有替身，重新带 `replace` 导入即可。
 - 没烘完就导出：实例没有替身，渲染内核按 `bundle-without-prerender` 报 `EXPORT_UNSUPPORTED_CONTENT`。
 - `background` 与 `register` 互斥；后台烘焙与前台一样只在有 Electron 离屏宿主的 Runtime 可用。
 

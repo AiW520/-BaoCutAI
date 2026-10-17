@@ -313,9 +313,8 @@ export class CompositionService {
           }),
         ).catch((error: unknown) => {
           if (error instanceof CodeBundleError || error instanceof ToolError) throw error;
-          throw new ToolError('COMPOSITION_BAKE_FAILED', `烘焙预渲染失败：${error instanceof Error ? error.message : String(error)}`, {
-            next: '检查 ffmpeg 是否可用（BAOCUT_FFMPEG 或 PATH 里的 ffmpeg）；也可以先用 register: true 只登记代码包',
-          });
+          const reason = error instanceof Error ? error.message : String(error);
+          throw new ToolError('COMPOSITION_BAKE_FAILED', `烘焙预渲染失败：${reason}`, { next: bakeFailureNext(reason) });
         });
       }
 
@@ -354,12 +353,19 @@ export class CompositionService {
           ref: PRERENDER_REF,
         });
       }
-      const imported = await caller.apply(opened, {
-        expectedRevision: args.revision ?? before.revision,
-        label: RcAgentTools.importAssetLabel({ name, place: false }).text,
-        operations,
-        commandId: args.commandId,
-      });
+      // 调用方没给 revision 时，别人同时写入（例如上一段的后台烘焙正在写替身）造成的版本冲突按最新版本重试。
+      const latest = () => current(videos, opened).revision;
+      const imported = await applyRetryingConflicts(
+        (expectedRevision) =>
+          caller.apply(opened, {
+            expectedRevision,
+            label: RcAgentTools.importAssetLabel({ name, place: false }).text,
+            operations,
+            commandId: args.commandId,
+          }),
+        args.revision ?? before.revision,
+        args.revision === undefined ? latest : null,
+      );
       const refs = imported.receipt.refs ?? {};
       const afterImport = current(videos, opened);
       const bundleAssetId = refs[BUNDLE_REF]!;
@@ -383,20 +389,25 @@ export class CompositionService {
       if (target && placing) {
         let swapped: EditResult;
         try {
-          swapped = await caller.apply(opened, {
-            expectedRevision: after,
-            label: RcAgentTools.replaceCompositionLabel({ name }).text,
-            operations: [
-              {
-                type: 'replaceCodeBundle',
-                sequenceId: target.sequenceId,
-                itemId: target.itemId,
-                assetRef: { id: bundleAssetId, revision: bundleRevision },
-                prerender: prerenderRef,
-              },
-            ],
-            commandId: args.commandId !== undefined ? `${args.commandId}-place` : undefined,
-          });
+          swapped = await applyRetryingConflicts(
+            (expectedRevision) =>
+              caller.apply(opened, {
+                expectedRevision,
+                label: RcAgentTools.replaceCompositionLabel({ name }).text,
+                operations: [
+                  {
+                    type: 'replaceCodeBundle',
+                    sequenceId: target.sequenceId,
+                    itemId: target.itemId,
+                    assetRef: { id: bundleAssetId, revision: bundleRevision },
+                    prerender: prerenderRef,
+                  },
+                ],
+                commandId: args.commandId !== undefined ? `${args.commandId}-place` : undefined,
+              }),
+            after,
+            args.revision === undefined ? latest : null,
+          );
         } catch (error) {
           // 引擎的 message 并进上面这句话里：留在 extra 里会盖掉它，模型就看不到第一笔已经提交。
           const { message: engineMessage, ...body } = errorBody(error);
@@ -439,13 +450,18 @@ export class CompositionService {
         ];
         let placed: EditResult;
         try {
-          placed = await caller.apply(opened, {
-            expectedRevision: after,
-            // 第一期沿用导入素材的文案（「导入 … 并放到时间线上」），不另加文案键。
-            label: RcAgentTools.importAssetLabel({ name, place: true }).text,
-            operations: placeOps,
-            commandId: args.commandId !== undefined ? `${args.commandId}-place` : undefined,
-          });
+          placed = await applyRetryingConflicts(
+            (expectedRevision) =>
+              caller.apply(opened, {
+                expectedRevision,
+                // 第一期沿用导入素材的文案（「导入 … 并放到时间线上」），不另加文案键。
+                label: RcAgentTools.importAssetLabel({ name, place: true }).text,
+                operations: placeOps,
+                commandId: args.commandId !== undefined ? `${args.commandId}-place` : undefined,
+              }),
+            after,
+            args.revision === undefined ? latest : null,
+          );
         } catch (error) {
           // 引擎的 message 并进上面这句话里：留在 extra 里会盖掉它，模型就看不到第一笔已经提交。
           const { message: engineMessage, ...body } = errorBody(error);
@@ -714,7 +730,7 @@ export class CompositionService {
       });
     }
     this.#deps.log?.info('Composition bake applied', { videoId, itemId: job.itemId, jobId: task.jobId, frames: bake.frames });
-    return { documentId: null, artifactId: `${prerender.id}@${prerender.revision}` };
+    return { documentId: null, artifactId: `${prerender.id}@${prerender.revision}`, bake: bake.bake };
   }
 
   /** 预览：按合成内部的时刻取帧，写成 PNG（同一时刻再取时覆盖）。不改视频、不验证、不烘焙。 */
@@ -1011,9 +1027,41 @@ function bakeFailure(error: unknown): unknown {
   if (error instanceof ToolError)
     return taskFailure(error.code, RcVideo.compositionBakeFailed({ code: error.code }), { detail: error.message, ...error.extra });
   if (error instanceof RpcError) return error;
+  const detail = error instanceof Error ? error.message : String(error);
   return taskFailure('COMPOSITION_BAKE_FAILED', RcVideo.compositionBakeFailed({ code: 'COMPOSITION_BAKE_FAILED' }), {
-    detail: error instanceof Error ? error.message : String(error),
+    detail,
+    next: bakeFailureNext(detail),
   });
+}
+
+// i18n-ignore-start: 给模型的工具说明、错误与下一步
+/** 烘焙失败的下一步：指令烘焙画不出来（`bake: 'ops'`）是代码包的画法问题；其余多半是 ffmpeg。 */
+function bakeFailureNext(reason: string): string {
+  if (/instruction bake cannot render|CANVAS_OPS_UNSUPPORTED/.test(reason)) {
+    return '指令烘焙画不出这个包：每帧开头先 setTransform(1, 0, 0, 1, 0, 0) 再整幅 clearRect 或不透明的整幅 fillRect（铺满画布的 drawImage 不算清屏），只用 Canvas 2D 的绘制调用；或改 bake: "auto" 退回浏览器逐帧截图';
+  }
+  return '检查 ffmpeg 是否可用（BAOCUT_FFMPEG 或 PATH 里的 ffmpeg）；也可以先用 register: true 只登记代码包';
+}
+// i18n-ignore-end
+
+/**
+ * 导入的一笔写入：`pinned` 是这一笔要求的版本；`latest` 给出时（调用方没有自己钉住版本），版本冲突按当时的最新版本重试
+ * 几次（并发的后台烘焙在写替身时就会这样），否则原样抛。
+ */
+async function applyRetryingConflicts(
+  write: (expectedRevision: string) => Promise<EditResult>,
+  pinned: string,
+  latest: (() => string) | null,
+): Promise<EditResult> {
+  let expected = pinned;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await write(expected);
+    } catch (error) {
+      if (!latest || attempt >= BAKE_WRITE_ATTEMPTS || errorBody(error).code !== 'PROJECT_REVISION_CONFLICT') throw error;
+      expected = latest();
+    }
+  }
 }
 
 /** 验证没通过：第一项失败的检查给出错误码与下一步，全部检查放进错误。 */
