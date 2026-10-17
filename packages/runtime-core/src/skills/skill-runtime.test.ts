@@ -129,6 +129,11 @@ describe('Agent skill 端到端', () => {
     expect(cliPage.content).not.toContain('`jobs_wait`');
     expect(cliPage.content).not.toContain('{{');
     expect(cliPage.next).toBeUndefined();
+    // 页里引用别的 craft 时给命令，不给装好的说明书里才有的 ../craft/ 链接。
+    const subtitles = await client.request('catalog.call', { name: 'skills_read', args: { id: 'baocut-catalog-subtitles' }, cwd: dir });
+    const subtitlesPage = (subtitles as { result: { content: string } }).result;
+    expect(subtitlesPage.content).toContain('`baocut skills read polish-transcript`');
+    expect(subtitlesPage.content).not.toContain('../craft/');
   });
 
   it('开着的 skill 出现在会话开始的索引里，关着的不出现；开关经 RPC 持久', async () => {

@@ -63,6 +63,11 @@ export interface RenderAgentSkillOptions {
   face: AgentSkillFace;
   /** 给出时，`{{tool:…}}` 里的名字必须在目录里（CLI 面给 `surfaces` 含 `cli` 的目录，工具桥面给 `agent` 的）。 */
   catalog?: AgentSkillCatalog | null;
+  /**
+   * CLI 面 `{{skill:id}}` 的写法：`relative`（缺省）是指向 `references/craft/<id>.md` 的链接，给装好的说明书；`command` 是
+   * 「用 `baocut skills read <id>` 读」，给 Runtime 直接送到终端或 MCP 的页（那里没有 craft 目录可点）。
+   */
+  craftLinks?: 'relative' | 'command';
 }
 
 export interface RenderAgentSkillTextOptions extends RenderAgentSkillOptions {
@@ -380,6 +385,10 @@ function renderPlaceholders(
         if (options.craftIds && !options.craftIds.has(value)) fail(RcSkills.craftNotFound({ placeholder: whole, dir: AGENT_SKILL_CRAFT_DIR }));
         // i18n-ignore: 给模型的工具说明、错误与下一步
         if (face === 'agent') return lead ? `用 \`skills_read\` 读 \`${value}\`` : `\`${value}\`（用 \`skills_read\` 读）`;
+        if (options.craftLinks === 'command') {
+          const command = `\`baocut skills read ${value}\``;
+          return lead ? `用 ${command} 读` : `\`${value}\`（用 ${command} 读）`;
+        }
         const target = `${AGENT_SKILL_CRAFT_DIR}/${value}.md`;
         return `${lead ?? ''}[${value}](${path.posix.relative(path.posix.dirname(file), target)})`;
       }
@@ -477,7 +486,7 @@ export interface AgentGuidance {
 export function renderAgentGuidance(source: string | AgentSkillFiles, catalog?: AgentSkillCatalog | null): AgentGuidance {
   const rendered = renderAgentSkill(source, { face: 'agent', catalog: catalog ?? null });
   // 同一份来源再按 CLI 面渲染一遍：终端与 MCP 读说明书页时拿到的是这一面（§8.6）。
-  const cli = renderAgentSkill(source, { face: 'cli', catalog: catalog ?? null });
+  const cli = renderAgentSkill(source, { face: 'cli', catalog: catalog ?? null, craftLinks: 'command' });
   const guidance = cleanBody(splitFrontmatter(rendered.get(AGENT_SKILL_ENTRY)!, AGENT_SKILL_ENTRY).body);
   const pages: AgentSkillPage[] = [];
   /** 工具桥面正文为空的页（整页只给 CLI 面）：不登记成说明书页。 */
