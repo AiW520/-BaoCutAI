@@ -31,7 +31,12 @@ export const captionStylePatch = z
       .describe('字幕块的哪条边落在 y 上：top 上边、center 中线（缺省）、bottom 下边；折成多行时往另一边长'),
     x: z.number().min(0).max(100).optional().describe('字幕块中心的横向位置：画面宽度的百分比，缺省 50'),
     width: z.number().min(5).max(100).optional().describe('最大行宽：画面宽度的百分比，缺省 80；烧进画面时一行超过它就折行'),
-    fontSize: z.number().min(4).max(200).optional().describe('字号：按 540 短边下的像素（1080×1920 上乘 2），缺省 30；双语时是原文行，译文行按比例放大'),
+    fontSize: z
+      .number()
+      .min(4)
+      .max(200)
+      .optional()
+      .describe('字号：按 540 短边下的像素（1080×1920 上乘 2），缺省 30；双语时是原文行，译文行按比例放大'),
     fontWeight: z.number().int().min(100).max(900).optional().describe('字重，100–900，默认样式 700'),
     fontFamily: z.string().trim().min(1).max(200).optional().describe('字体族名；system 为系统字体（默认）'),
     fontColor: color.optional().describe('字色，默认白 #FFFFFF'),
@@ -43,7 +48,10 @@ export const captionStylePatch = z
       })
       .optional()
       .describe('描边；默认样式开着（黑色）'),
-    dropShadow: z.strictObject({ on: z.boolean().describe('投影开关') }).optional().describe('投影；默认样式开着'),
+    dropShadow: z
+      .strictObject({ on: z.boolean().describe('投影开关') })
+      .optional()
+      .describe('投影；默认样式开着'),
     background: z.boolean().optional().describe('底板开关；默认关'),
     backgroundColor: color.optional().describe('底板颜色，默认 #000000B3'),
   })
@@ -99,7 +107,11 @@ const NEW_STYLE_REF = 'agent-caption-style';
  *
  * 就地改 `operations`；形状不对时抛 `OperationShapeError`。
  */
-export async function expandCaptionStyles(operations: Record<string, unknown>[], video: VideoSnapshot, readBody: BodyReader): Promise<void> {
+export async function expandCaptionStyles(
+  operations: Record<string, unknown>[],
+  video: VideoSnapshot,
+  readBody: BodyReader,
+): Promise<void> {
   if (!operations.some((op) => op.type === 'setCaptionStyle')) return;
   const patched = new Map<Id, { record: DocumentRecord; body: Json; at: number }>();
   const fresh = new Map<Id, { body: Json; at: number; attach: Set<Id> }>();
@@ -129,7 +141,8 @@ export async function expandCaptionStyles(operations: Record<string, unknown>[],
     const sequence = video.sequences[String(op.sequenceId ?? video.rootSequenceId)];
     const item = sequence?.items.find((entry) => entry.id === op.itemId);
     if (!sequence || !item) throw new OperationShapeError(index, `序列里没有实例 ${String(op.itemId)}`);
-    if (item.type !== 'caption') throw new OperationShapeError(index, `实例 ${item.id} 是 ${item.type}，setCaptionStyle 只用于字幕；文字片段用 setStyle`);
+    if (item.type !== 'caption')
+      throw new OperationShapeError(index, `实例 ${item.id} 是 ${item.type}，setCaptionStyle 只用于字幕；文字片段用 setStyle`);
     if (item.styleDocumentId) {
       const record = video.documents[item.styleDocumentId];
       if (!record) throw new OperationShapeError(index, `字幕 ${item.id} 的样式文档 ${item.styleDocumentId} 不在视频里`);
@@ -173,6 +186,8 @@ export async function expandCaptionStyles(operations: Record<string, unknown>[],
 function unstyledCaptions(sequence: Sequence): Set<Id> {
   const locked = new Set(sequence.tracks.filter((track) => track.locked).map((track) => track.id));
   return new Set(
-    sequence.items.filter((item) => item.type === 'caption' && !item.styleDocumentId && !item.locked && !locked.has(item.trackId)).map((item) => item.id),
+    sequence.items
+      .filter((item) => item.type === 'caption' && !item.styleDocumentId && !item.locked && !locked.has(item.trackId))
+      .map((item) => item.id),
   );
 }
