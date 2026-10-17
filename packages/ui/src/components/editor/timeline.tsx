@@ -1221,10 +1221,10 @@ export function Timeline({
               onSeek={seek}
             />
           ))}
-          {transcripts.map((lane) => (
+          {transcripts.map((transcriptLane) => (
             <TranscriptRow
-              key={lane.trackId}
-              lane={lane}
+              key={transcriptLane.trackId}
+              lane={transcriptLane}
               sequence={sequence}
               height={ROW_HEIGHT}
               rowClass={row}

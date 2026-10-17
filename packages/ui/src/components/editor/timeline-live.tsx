@@ -188,51 +188,49 @@ export function LiveCaptionRow({
         {running ? <span className={`${dot} bc-live-dot`} title={tip} /> : null}
       </div>
       <div className={laneClass} style={{ width: laneWidth }} onPointerDown={hold}>
-        {lane.sources.map((source) => (
-          <TranscriptCues key={source.assetId} source={source} sequence={sequence} xOf={xOf} view={view} onSeek={onSeek} />
-        ))}
+        {placed.map((p) => {
+          const x0 = xOf(p.start);
+          const x1 = xOf(p.end);
+          if (x1 < view.left || x0 > view.right) return null;
+          const width = Math.max(2, x1 - x0 - GAP_PX);
+          const tail = running && p === last;
+          return (
+            <span key={p.key} className={cue} style={{ left: x0, width }} title={p.text} onClick={() => onSeek(p.start)}>
+              {width >= LABEL_MIN_PX ? <span className={cueText}>{p.text}</span> : null}
+              {tail ? <span className={`${caret} bc-live-caret`} /> : null}
+            </span>
+          );
+        })}
+        {bands.map((b) => {
+          const x0 = xOf(b.start);
+          const x1 = xOf(b.end);
+          if (x1 < view.left || x0 > view.right) return null;
+          const width = Math.max(2, x1 - x0);
+          return (
+            <div
+              key={b.start}
+              className={`${band} bc-live-pending`}
+              style={{ left: x0, width }}
+              title={tip}
+              onClick={(event) => {
+                // 带上点哪里播放头就落哪里——它是时间线上一段普通的地面，不是可选中的块。
+                const rect = event.currentTarget.getBoundingClientRect();
+                onSeek(Math.max(b.start, Math.min(b.end, b.start + (event.clientX - rect.left) / pps)));
+              }}>
+              <span className={`${bandDot} bc-live-dot`} />
+              {width >= 150 ? (
+                <span className={bandText}>{remain ? C.pendingLeft(remain) : C.liveTitle}</span>
+              ) : width >= 60 ? (
+                <span className={bandText}>{C.liveTitle}</span>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/** 文稿行里一个素材的句子块：转写正文按字幕的断句切句，经取用这个素材的实例投到序列上。 */
-function TranscriptCues({
-  source,
-  sequence,
-  xOf,
-  view,
-  onSeek,
-}: {
-  source: TranscriptRowSource;
-  sequence: Sequence;
-  xOf(seconds: number): number;
-  view: { left: number; right: number };
-  onSeek(seconds: number): void;
-}) {
-  const body = useDocumentBody(source.speech);
-  const placed = useMemo(() => placeTranscript(sequence, source.assetId, body), [sequence, source.assetId, body]);
-  return (
-    <>
-      {placed.map((p) => {
-        const x0 = xOf(p.start);
-        const x1 = xOf(p.end);
-        if (x1 < view.left || x0 > view.right) return null;
-        const width = Math.max(2, x1 - x0 - GAP_PX);
-        return (
-          <span
-            key={p.key}
-            className={transcriptCue}
-            style={{ left: x0, width }}
-            title={`${p.text} · ${C.transcriptRowTip}`}
-            onClick={() => onSeek(p.start)}>
-            {width >= LABEL_MIN_PX ? <span className={cueText}>{p.text}</span> : null}
-          </span>
-        );
-      })}
-    </>
-  );
-}
 
 /**
  * 时间线上要画只读文稿行的素材（`transcriptRows`）：一条字幕轨都没有、素材转录过。正画着临时转录行（`liveRows`）的素材不算，
@@ -284,23 +282,48 @@ export function TranscriptRow({
         </span>
       </div>
       <div className={laneClass} style={{ width: laneWidth }} onPointerDown={hold}>
-        {placed.map((p) => {
-          const x0 = xOf(p.start);
-          const x1 = xOf(p.end);
-          if (x1 < view.left || x0 > view.right) return null;
-          const width = Math.max(2, x1 - x0 - GAP_PX);
-          return (
-            <span
-              key={p.key}
-              className={transcriptCue}
-              style={{ left: x0, width }}
-              title={`${p.text} · ${C.transcriptRowTip}`}
-              onClick={() => onSeek(p.start)}>
-              {width >= LABEL_MIN_PX ? <span className={cueText}>{p.text}</span> : null}
-            </span>
-          );
-        })}
+        {lane.sources.map((source) => (
+          <TranscriptCues key={source.assetId} source={source} sequence={sequence} xOf={xOf} view={view} onSeek={onSeek} />
+        ))}
       </div>
     </div>
+  );
+}
+
+/** 文稿行里一个素材的句子块：转写正文按字幕的断句切句，经取用这个素材的实例投到序列上。 */
+function TranscriptCues({
+  source,
+  sequence,
+  xOf,
+  view,
+  onSeek,
+}: {
+  source: TranscriptRowSource;
+  sequence: Sequence;
+  xOf(seconds: number): number;
+  view: { left: number; right: number };
+  onSeek(seconds: number): void;
+}) {
+  const body = useDocumentBody(source.speech);
+  const placed = useMemo(() => placeTranscript(sequence, source.assetId, body), [sequence, source.assetId, body]);
+  return (
+    <>
+      {placed.map((p) => {
+        const x0 = xOf(p.start);
+        const x1 = xOf(p.end);
+        if (x1 < view.left || x0 > view.right) return null;
+        const width = Math.max(2, x1 - x0 - GAP_PX);
+        return (
+          <span
+            key={p.key}
+            className={transcriptCue}
+            style={{ left: x0, width }}
+            title={`${p.text} · ${C.transcriptRowTip}`}
+            onClick={() => onSeek(p.start)}>
+            {width >= LABEL_MIN_PX ? <span className={cueText}>{p.text}</span> : null}
+          </span>
+        );
+      })}
+    </>
   );
 }

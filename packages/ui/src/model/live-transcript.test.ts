@@ -245,8 +245,8 @@ describe('只读的文稿行', () => {
     const seq = {
       ...sequence([a3, a2, video('v1', 0, 150, 0), onOther]),
       tracks: [
-        { ...subtitleTrack, id: 'v9', order: 5, kind: 'video' as const },
-        { ...subtitleTrack, id: 'v1', order: 1, kind: 'video' as const },
+        { ...subtitleTrack, id: 'v9', order: 5, kind: 'visual' as const },
+        { ...subtitleTrack, id: 'v1', order: 1, kind: 'visual' as const },
       ],
     };
     const documents = {
