@@ -577,6 +577,15 @@ export class VideoService {
     return host.request('fonts.resolve', { faces, ...(cacheDir ? { cacheDir } : {}) });
   }
 
+  /**
+   * Codex Pet 的图集待机那一行编成循环 APNG（`pets.idleApng`）：引擎解 WebP、按尺寸认版本、裁出 6 格写到 `out`。
+   * 不涉及哪个视频；图集不对时引擎以 `PET_SHEET_INVALID` 拒绝。
+   */
+  async petIdleApng(sheet: string, out: string): Promise<{ version: 1 | 2; durationMs: number }> {
+    const host = await this.#ensureHost();
+    return host.request('pets.idleApng', { sheet, out });
+  }
+
   /** 本机已装的字体的族名（引擎扫的那一份，只有名字）。 */
   async fontFamilies(): Promise<string[]> {
     const host = await this.#ensureHost();

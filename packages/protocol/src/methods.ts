@@ -88,6 +88,7 @@ import type {
   TextCapabilityParameters,
 } from './models.ts';
 import type { StickerApplyParams, StickerApplyResult } from './sticker-packs.ts';
+import type { PetApplyParams, PetApplyResult, PetHandleParams } from './pets.ts';
 import type {
   LibraryApplyParams,
   LibraryApplyResult,
@@ -1127,6 +1128,18 @@ export interface RpcMethods {
    * `source.stickerPack: { id }`（视频格式规范 §4.1）。之后与应用里的那份无关。放到时间线上由调用方另外编辑。
    */
   'stickers.applyToVideo': { params: StickerApplyParams; result: StickerApplyResult };
+
+  /**
+   * Codex Pets（`pets.ts` 的目录）的短期读取句柄，同 `artifacts.openHandle`：元素面板画格子用。官方 pet 的图集从素材 CDN、
+   * 社区 pet 的图集与缩略图从上游取进本机缓存，之后离线也能用。目录里没有的 pet、官方 pet 的 `thumbnail` 与 `preview` 是 `not-found`
+   * （`PET_NOT_FOUND`）；取不下来是 `internal`（`ONLINE_ASSET_UNAVAILABLE`）。
+   */
+  'pets.openHandle': { params: PetHandleParams; result: MediaHandle };
+  /**
+   * 把一只 pet 贴进视频：图集待机那一行编成循环 APNG，再以一笔普通的编辑事务拷进视频（`importAsset`，`managed`），
+   * 来源记 `origin: 'codex-pet'`、`source.codexPet`（视频格式规范 §4.5）。图集解不开或尺寸不对时 `invalid-request`（`PET_SHEET_INVALID`）。
+   */
+  'pets.applyToVideo': { params: PetApplyParams; result: PetApplyResult };
 
   /**
    * Agent 的 skill 目录（架构设计 §3.8）：内置目录与 `<Runtime Home>/skills/` 里的全部可用 skill、各自的开关，以及跳过的目录与原因。

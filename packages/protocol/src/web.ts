@@ -96,6 +96,8 @@ export const WEB_DEFAULT_METHODS: readonly string[] = [
   'templates.*',
   // 随包贴纸（元素面板）：句柄只发给目录里的贴纸；拷进视频是一笔普通编辑，同 `edits.*`。
   'stickers.*',
+  // Codex Pets（元素面板）：句柄只发给目录里的 pet，取的地址由 Runtime 按目录拼；拷进视频是一笔普通编辑。
+  'pets.*',
   // Agent 的 skill（§3.8）：看与开关逐个列出。添加、导入、移除与写入类（`skills.add`、`skills.importGithub`、`skills.remove`、
   // `inspectPackage`、`installPackage`、`create`、`duplicate`、`write`、`restore`、`export`，§12.9）不开放：它们往 Runtime Home 写入或删除目录、从本机任意文件夹或网络取内容，与受管外部工具的安装一样只在桌面界面与 CLI 里做。
   'skills.list',
@@ -168,6 +170,7 @@ export const WEB_READ_METHODS: readonly RpcMethod[] = [
   'templates.get',
   'templates.openHandle',
   'stickers.openHandle',
+  'pets.openHandle',
   'skills.list',
   'skills.get',
   'skills.readFile',

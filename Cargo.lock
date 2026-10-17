@@ -1000,7 +1000,9 @@ version = "0.4.0"
 dependencies = [
  "editor-semantics",
  "font-files",
+ "image",
  "message-ref",
+ "png 0.18.1",
  "render-graph",
  "serde",
  "serde_json",

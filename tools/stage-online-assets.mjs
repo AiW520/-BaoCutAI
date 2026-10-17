@@ -1,7 +1,9 @@
 // 把不随包的线上素材按 CDN 上的路径排进一个目录，供上传（packages/runtime-core/src/online-assets.ts）。
 //
-//   npm run stage:online-assets -- <输出目录>
+//   npm run stage:online-assets -- <输出目录> [--official-pets]
 //
+// `--official-pets` 把官方 Codex Pets 的图集（原型 `designs/baocut/assets/pets/official/`，OpenAI 的素材，没有公开的再分发许可，
+// 见那里的 README）也排进 `pets/official/`；默认不排，上传前要先确认可以放到公开的 CDN 上。社区 pet 不转存，Runtime 从上游取。
 // 目录里的相对路径就是 CDN 上的路径（`<基址>/<路径>`），整个目录原样传到桶的根。每个文件先按随包清单核对大小与 sha256，
 // 对不上就停下：Runtime 只认清单里的字节。`manifest.json` 列出这次排进去的文件，便于核对上传结果。
 import { createHash } from 'node:crypto';
@@ -10,9 +12,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = process.argv[2];
+const args = process.argv.slice(2);
+const officialPets = args.includes('--official-pets');
+const out = args.find((arg) => !arg.startsWith('--'));
 if (!out) {
-  console.error('用法：stage-online-assets.mjs <输出目录>');
+  console.error('用法：stage-online-assets.mjs <输出目录> [--official-pets]');
   process.exit(1);
 }
 
@@ -42,6 +46,15 @@ for (const name of readdirSync(animDir)
   const entry = animManifest[name];
   if (!entry) fail(`清单里没有：stickers/anim/${name}`);
   stage(path.join(animDir, name), `stickers/anim/${name}`, entry);
+}
+
+// 官方 Codex Pets：清单是原型的 `assets/pets/provenance.json`（与 `@baocut/protocol` 的 `pet-catalog.ts` 同源）。
+if (officialPets) {
+  const petsDir = path.join(ROOT, 'designs', 'baocut', 'assets', 'pets');
+  const petManifest = JSON.parse(readFileSync(path.join(petsDir, 'provenance.json'), 'utf8')).pets;
+  for (const id of Object.keys(petManifest).sort()) {
+    stage(path.join(petsDir, 'official', id, 'spritesheet.webp'), `pets/official/${id}/spritesheet.webp`, petManifest[id]);
+  }
 }
 
 writeFileSync(path.join(out, 'manifest.json'), `${JSON.stringify({ files: staged }, null, 2)}\n`);

@@ -128,6 +128,7 @@ import { SpeechSentenceTools } from './agent-tools/speech-sentence-tools.ts';
 import { MemoryCitationRegistry } from './ai-tools/citation-registry.ts';
 import { TemplateCatalog, resolveBuiltinTemplatesDir } from './templates/template-catalog.ts';
 import { StickerPacks, resolveStickerPacksDir } from './templates/sticker-packs.ts';
+import { CodexPets } from './templates/codex-pets.ts';
 import { OnlineAssets, resolveOnlineAssetsUrl } from './online-assets.ts';
 import { templateLogoPreparer } from './templates/template-logos.ts';
 import { SkillCatalog, resolveBuiltinSkillsDir } from './skills/skill-catalog.ts';
@@ -1098,6 +1099,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         online: onlineAssets,
         videos,
       }),
+      pets: new CodexPets({ online: onlineAssets, videos }),
       skills,
       skillInstaller,
       fonts,

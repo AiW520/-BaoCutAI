@@ -64,6 +64,11 @@ const fileTarget = z.union([
 const revision = z.string().regex(/^\d+$/);
 /** 随包贴纸的 ID（`sticker-packs.ts`）：`<包>-<文件>`，目录里有没有由 Runtime 查。 */
 const stickerId = z.string().regex(/^[A-Za-z0-9-]+\.(svg|json)$/).max(200);
+/** Codex Pet（`pets.ts`）：官方的 ID 或社区的 slug，目录里有没有由 Runtime 查。 */
+const petRef = z.discriminatedUnion('source', [
+  z.object({ source: z.literal('official'), id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/).max(100) }).strict(),
+  z.object({ source: z.literal('community'), slug: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/).max(200) }).strict(),
+]);
 const assetTarget = { videoId: id, assetId: id, revision: revision.optional() };
 const attachmentTarget = z.object({ conversationId: id, attachmentId: id }).strict();
 const localFileTarget = z.object({ localPath: filePath }).strict();
@@ -89,7 +94,7 @@ const cropsDisjoint = (crops: { from: number; to: number }[]) =>
  * 引擎拒绝未知字段并按操作序号报错。
  */
 const editOperation = z.looseObject({ type: z.string().min(1).max(50) });
-/** 拷进视频的命令同一笔事务里接着做的修改与修改名（`library.applyToVideo`、`stickers.applyToVideo`）。 */
+/** 拷进视频的命令同一笔事务里接着做的修改与修改名（`library.applyToVideo`、`stickers.applyToVideo`、`pets.applyToVideo`）。 */
 const followUpEdits = {
   operations: z.array(editOperation).min(1).max(499).optional(),
   label: z.string().trim().min(1).max(200).optional(),
@@ -1393,6 +1398,17 @@ export const methodParamSchemas = {
     .object({
       videoId: id,
       id: stickerId,
+      commandId: id,
+      expectedRevision: revision.optional(),
+      name: z.string().trim().min(1).max(200).optional(),
+      ...followUpEdits,
+    })
+    .strict(),
+  'pets.openHandle': z.object({ pet: petRef, file: z.enum(['sheet', 'thumbnail', 'preview']) }).strict(),
+  'pets.applyToVideo': z
+    .object({
+      videoId: id,
+      pet: petRef,
       commandId: id,
       expectedRevision: revision.optional(),
       name: z.string().trim().min(1).max(200).optional(),

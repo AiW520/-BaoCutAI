@@ -62,6 +62,7 @@ import type { TemplateCatalog } from './templates/template-catalog.ts';
 import { templateMethods } from './templates/template-methods.ts';
 import type { StickerPacks } from './templates/sticker-packs.ts';
 import { ProjectBrands } from './skills/project-brand.ts';
+import type { CodexPets } from './templates/codex-pets.ts';
 import { skillMethods } from './skills/skill-methods.ts';
 import type { SkillCatalog } from './skills/skill-catalog.ts';
 import type { SkillInstaller } from './skills/skill-installer.ts';
@@ -129,6 +130,8 @@ export interface HandlerDeps {
   templates: TemplateCatalog;
   /** 随包贴纸（元素面板，`stickers.*`）。 */
   stickers: StickerPacks;
+  /** Codex Pets（元素面板，`pets.*`）。 */
+  pets: CodexPets;
   /** Agent 的 skill 目录与安装动作（§3.8、§12.9）。 */
   skills: SkillCatalog;
   skillInstaller: SkillInstaller;
@@ -213,6 +216,7 @@ export function createHandlers({
   externalTools,
   templates,
   stickers,
+  pets,
   skills,
   skillInstaller,
   fonts,
@@ -632,6 +636,8 @@ export function createHandlers({
       // 随包贴纸（元素面板）：句柄只发给目录里的贴纸；拷进视频是一笔普通编辑。
       'stickers.openHandle': (p) => stickers.openHandle(p, media),
       'stickers.applyToVideo': (p, principal) => stickers.applyToVideo(p, principal),
+      'pets.openHandle': (p) => pets.openHandle(p, media),
+      'pets.applyToVideo': (p, principal) => pets.applyToVideo(p, principal),
       // 用户库（架构设计 §5.9）：只经 Runtime 读写。
       'library.list': (p) => library.list(p),
       'library.get': (p) => library.get(p),

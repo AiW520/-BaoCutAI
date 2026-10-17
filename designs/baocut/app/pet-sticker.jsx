@@ -166,7 +166,7 @@
 
   const SUBS = [{k: 'official', label: '官方'}, {k: 'community', label: '社区'}, {k: 'mine', label: '我的'}];
 
-  /** 官方那 9 只的网格（随包，`assets/pets/official/`）。 */
+  /** 官方那 9 只的网格。实现里从 baocut.com 的 CDN 下载、取过就留在本机；原型直接读 `assets/pets/official/`。 */
   function OfficialGrid({list, onAdd}) {
     return (
       <div className="stgrid stgrid--anim">
@@ -228,13 +228,13 @@
         <div className="signpost">
           社区 Pet 来自 awesome-codex-pet，各按作者自报的许可使用（多为 CC BY-NC 4.0，
           标橙的是<b>仅限非商用</b>）；署名跟着元素一起存，导出时能报出来。缩略图与雪碧图
-          按需从站点取，不随包。
+          按需从站点取、取过就留在本机，不随包。
         </div>
       </>
     );
   }
 
-  /** 动态贴纸 › Pet 子页。三段：官方（随包 9 只）/ 社区（按 11 类浏览）/ 我的（品牌库）。 */
+  /** 动态贴纸 › Pet 子页。三段：官方（9 只，CDN 下载）/ 社区（按 11 类浏览）/ 我的（品牌库）。 */
   function PetSection({ctx, q, onAdd}) {
     const [sub, setSub] = React.useState('official');
     const official = React.useMemo(() => PET.search(CAT.OFFICIAL, q), [q]);
@@ -260,8 +260,8 @@
         <div className="hint">
           Codex Pet 是 Codex 桌面端桌宠的格式：一份 pet.json ＋ 一张 WebP 雪碧图（8 列 ×
           192×208，v1 九行 / v2 十一行），每行一种状态、逐帧时长各不相同。落到画布上先放
-          待机那一行，帧号由播放头决定。官方 9 只随包；社区 239 只按 11 类浏览，点一格
-          才取那一只的雪碧图。
+          待机那一行，帧号由播放头决定。官方 9 只、社区 239 只（按 11 类浏览）都不随包，
+          第一次用到那一只才下载它的雪碧图，之后留在本机。
         </div>
       </>
     );
