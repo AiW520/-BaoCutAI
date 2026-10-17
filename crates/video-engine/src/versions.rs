@@ -20,6 +20,7 @@ use crate::line_diff::{FilePatch, apply_files, diff_files, format_patches, parse
 use crate::model::*;
 use crate::state::VideoState;
 use crate::store::{DocumentBody, Store};
+use crate::task_guard::TaskProtection;
 use crate::video::{CommitInput, Committed, DB_FILE, LOCK_FILE, OpenMode, Video, VideoTransaction, acquire_lock, payload_hash};
 use crate::workspace::{self, SNAPSHOT_DIR, SnapshotFiles, VIDEO_FILE};
 
@@ -240,6 +241,8 @@ pub struct RestoreRequest {
     pub before: bool,
     pub actor: Actor,
     pub keep: Option<usize>,
+    /// 智能体任务的保护范围：回到版本同样不能触碰它（同 `edits.apply`）。
+    pub protections: Vec<TaskProtection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -729,20 +732,10 @@ impl History {
 struct Chain {
     /// 每个版本结束时的快照。
     ends: BTreeMap<u64, SnapshotFiles>,
-    /// 最旧的那一版开始时的快照。
-    start: Option<SnapshotFiles>,
-    /// 往回走到这一版时对不上：它之前的状态都得不到。
+    /// 每个反向应用过的版本开始时的快照。
+    starts: BTreeMap<u64, SnapshotFiles>,
+    /// 往回走到这一版时对不上（或是读不出的版本文件）：它及更早的状态都得不到。
     broken_at: Option<u64>,
-}
-
-impl Chain {
-    /// 某个版本开始时（即上一版结束时）的快照。
-    fn start_of(&self, versions: &[Loaded], seq: u64) -> Option<&SnapshotFiles> {
-        match versions.iter().rev().find(|v| v.seq < seq) {
-            Some(prev) => self.ends.get(&prev.seq),
-            None => self.start.as_ref(),
-        }
-    }
 }
 
 fn hashes_match(files: &SnapshotFiles, changes: &[FileChange], after: bool) -> bool {
@@ -757,7 +750,7 @@ fn hashes_match(files: &SnapshotFiles, changes: &[FileChange], after: bool) -> b
 fn reconstruct(current: &SnapshotFiles, versions: &[Loaded], unreadable: &[u64], lowest: u64) -> Chain {
     let mut chain = Chain {
         ends: BTreeMap::new(),
-        start: None,
+        starts: BTreeMap::new(),
         broken_at: None,
     };
     let mut state = current.clone();
@@ -770,8 +763,6 @@ fn reconstruct(current: &SnapshotFiles, versions: &[Loaded], unreadable: &[u64],
         if version.seq < lowest {
             return chain;
         }
-        // 两个读得出的版本之间夹着读不出的版本文件：链在那里断了。
-        let previous = index.checked_sub(1).map(|i| versions[i].seq).unwrap_or(0);
         match apply_files(&version.patches, &state, true) {
             Ok(before) if hashes_match(&before, &version.header.files, false) => state = before,
             _ => {
@@ -779,12 +770,14 @@ fn reconstruct(current: &SnapshotFiles, versions: &[Loaded], unreadable: &[u64],
                 return chain;
             }
         }
-        if unreadable.iter().any(|u| *u > previous && *u < version.seq) {
-            chain.broken_at = Some(version.seq);
+        chain.starts.insert(version.seq, state.clone());
+        // 与更旧的读得出的版本之间夹着读不出的版本文件：链断在那个文件上。
+        let previous = index.checked_sub(1).map(|i| versions[i].seq).unwrap_or(0);
+        if let Some(gap) = unreadable.iter().filter(|u| **u > previous && **u < version.seq).max() {
+            chain.broken_at = Some(*gap);
             return chain;
         }
     }
-    chain.start = Some(state);
     chain
 }
 
@@ -1230,7 +1223,7 @@ impl Video {
         let lowest = if request.before { request.version } else { request.version + 1 };
         let chain = reconstruct(&current, &history.versions, &history.unreadable, lowest);
         let target = if request.before {
-            chain.start_of(&history.versions, request.version)
+            chain.starts.get(&request.version)
         } else {
             chain.ends.get(&request.version)
         };
@@ -1254,7 +1247,8 @@ impl Video {
         };
         let committed = self.commit(
             next,
-            CommitInput::direct(request.command_id.clone(), hash, label.clone(), request.actor.clone(), documents),
+            CommitInput::direct(request.command_id.clone(), hash, label.clone(), request.actor.clone(), documents)
+                .with_protections(&request.protections),
         )?;
         let spec = WriteSpec {
             kind: VersionKind::Restore,

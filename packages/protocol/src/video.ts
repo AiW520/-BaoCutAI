@@ -1597,6 +1597,85 @@ export interface HistoryEntry {
   undoAvailable: boolean;
 }
 
+/** 版本的种类（视频格式规范 §9.4）：一段普通的工作，或单独成版的保存、回到版本、外部导入、重建。 */
+export type VideoVersionKind = 'segment' | 'save' | 'restore' | 'external' | 'rebuild';
+
+/** 版本动作清单的一行：同一操作者、同一修改名的事务合在一起计数。 */
+export interface VideoVersionAction {
+  /** 操作者的 ID（`user_local`、`agent:<name>`、`system:jobs` 等）。 */
+  actor: string;
+  label: string;
+  labelRef?: MessageRef;
+  count: number;
+}
+
+/** 这一版改了的快照文件：之前与之后的摘要，不存在的一侧为 null。 */
+export interface VideoVersionFile {
+  path: string;
+  before: string | null;
+  after: string | null;
+}
+
+/** 版本文件的头部（视频格式规范 §9.4）。 */
+export interface VideoVersionHeader {
+  version: number;
+  kind: VideoVersionKind;
+  startedAt: string;
+  updatedAt: string;
+  /** 这一版覆盖的修订号：开始时快照的与结束时的。 */
+  fromRevision: Revision;
+  toRevision: Revision;
+  /** 英文缺省文字；界面用 `localizeText(summary, summaryRef)` 按当前语言显示。 */
+  summary: string;
+  summaryRef?: MessageRef;
+  actions: VideoVersionAction[];
+  /** 超出清单、只计了数的事务。 */
+  actionsOmitted?: number;
+  /** 这一版里改过视频的会话。 */
+  conversations: { id: Id; title: string }[];
+  /** 保存的版本才有。 */
+  name?: string;
+  note?: string;
+  checkpointId?: Id;
+  files: VideoVersionFile[];
+}
+
+/** 版本列表里的一项。 */
+export interface VideoVersion extends VideoVersionHeader {
+  /** 版本文件的大小（字节）。 */
+  bytes: number;
+  /** 最新的一版：之后的改动还可能并进来。 */
+  open: boolean;
+}
+
+/** 一部视频的版本，新的在前；读不出头部的版本文件的序号列在 `unreadable`。 */
+export interface VideoVersionList {
+  versions: VideoVersion[];
+  unreadable: number[];
+}
+
+/** 一个版本的头部与 diff 文本。 */
+export interface VideoVersionText {
+  header: VideoVersionHeader;
+  diff: string;
+}
+
+/**
+ * 工作区快照与视频库的关系（视频格式规范 §9.7）：`pending` 是库领先、几秒内会写；`conflict` 是快照被外部改过，不会被覆盖；
+ * `missing` 是还没有快照；`rebuild` 是只有快照、没有 `video.db`。
+ */
+export type VideoSnapshotState = 'synced' | 'pending' | 'conflict' | 'missing' | 'rebuild';
+
+export interface VideoSnapshotStatus {
+  state: VideoSnapshotState;
+  revision?: Revision;
+  snapshotRevision?: Revision;
+  /** 被外部改过的快照文件（相对快照目录）。 */
+  changedPaths?: string[];
+  versions: number;
+  latestVersion?: number;
+}
+
 export interface UndoStep {
   transactionId: Id;
   /** 正向修改的名字（撤销与重做都用它），显示同回执的 `label`。 */

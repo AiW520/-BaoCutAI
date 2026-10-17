@@ -46,6 +46,9 @@ export const de: RcAgentToolsMessages = {
   captionsLabel: "Untertitel-Ebene hinzufügen",
   undoSummary: (p: { transactionId: string }) => `Bearbeitung rückgängig machen: ${p.transactionId}`,
   undoLatestSummary: "Letzte Bearbeitung rückgängig machen",
+  saveVersionSummary: (p: { name: string }) => `Aktuellen Stand als Version „${p.name}“ speichern`,
+  restoreVersionSummary: (p: { version: number }) => `Zu Version ${p.version} zurückkehren`,
+  restoreBeforeVersionSummary: (p: { version: number }) => `Zum Stand vor Version ${p.version} zurückkehren`,
   deleteVideoSummary: (p: { name: string; path: string; days: number }) =>
     `Video löschen: „${p.name}“ (${p.path}): in den Papierkorb verschieben; Wiederherstellung in Space möglich für ${`${p.days} ${pluralForm('de', p.days, { one: "Tag", other: "Tage" })}`}. Originaldateien verknüpfter Materialien bleiben an ihrem Speicherort`,
   importPackageSummary: (p: { file: string }) => `Portables Paket öffnen: ${p.file}`,

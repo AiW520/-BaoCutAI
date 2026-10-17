@@ -58,6 +58,9 @@ export const ja: RcAgentToolsMessages = {
   captionsLabel: '字幕レイヤーを追加',
   undoSummary: (p) => `編集 ${p.transactionId} を取り消し`,
   undoLatestSummary: '直前の編集を取り消し',
+  saveVersionSummary: (p) => `現在の状態をバージョン「${p.name}」として保存`,
+  restoreVersionSummary: (p) => `バージョン ${p.version} に戻す`,
+  restoreBeforeVersionSummary: (p) => `バージョン ${p.version} より前に戻す`,
   deleteVideoSummary: (p) =>
     `動画「${p.name}」（${p.path}）を削除：ゴミ箱に移動し、${p.days} 日間は Space で復元できます。リンクした素材の元ファイルはそのまま残ります`,
   importPackageSummary: (p) => `ポータブルパッケージ ${p.file} を開く`,

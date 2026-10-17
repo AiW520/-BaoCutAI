@@ -231,6 +231,7 @@ fn restoring_a_version_is_one_undoable_transaction() {
             before: false,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     let committed = restored.committed.expect("有改动");
@@ -247,6 +248,7 @@ fn restoring_a_version_is_one_undoable_transaction() {
             before: false,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert_eq!(replay.committed.unwrap().receipt.transaction_id, committed.receipt.transaction_id);
@@ -259,6 +261,7 @@ fn restoring_a_version_is_one_undoable_transaction() {
             before: true,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert_eq!(video_json(&video), baseline);
@@ -283,6 +286,7 @@ fn restoring_a_version_is_one_undoable_transaction() {
             before: false,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert!(same.committed.is_none());
@@ -312,6 +316,7 @@ fn a_document_revision_comes_back_with_its_body() {
             before: true,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert_eq!(fs::read_to_string(&doc_path).unwrap(), original);
@@ -376,6 +381,7 @@ fn saved_versions_are_pinned_and_deleting_one_merges_its_neighbours() {
                 before: false,
                 actor: user(),
                 keep: Some(2),
+                protections: Vec::new(),
             })
             .unwrap();
         probe.committed.take().expect("有改动");
@@ -403,6 +409,7 @@ fn saved_versions_are_pinned_and_deleting_one_merges_its_neighbours() {
             before: true,
             actor: user(),
             keep: Some(2),
+            protections: Vec::new(),
         })
         .expect("链仍连续");
 
@@ -444,6 +451,7 @@ fn pruning_keeps_the_chain_continuous() {
                 before: false,
                 actor: user(),
                 keep: Some(10),
+                protections: Vec::new(),
             })
             .unwrap();
         assert_eq!(video_json(&video), states[version as usize - 1]);
@@ -471,6 +479,7 @@ fn a_tampered_version_breaks_the_chain_at_that_version() {
             before: false,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap_err();
     assert_eq!(error.code, "VERSION_CHAIN_BROKEN");
@@ -483,9 +492,36 @@ fn a_tampered_version_breaks_the_chain_at_that_version() {
             before: true,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert!(video_json(&video).contains("第 2 版"));
+
+    // 读不出的版本文件：断点就是它，紧挨在它上面的版本开始时的状态仍能回到。
+    fs::write(&path, "not a version").unwrap();
+    let list = list_versions(video.dir()).unwrap();
+    assert_eq!(list.unreadable, vec![2]);
+    let error = video
+        .restore_version(&RestoreRequest {
+            command_id: "cmd_r1".into(),
+            version: 1,
+            before: false,
+            actor: user(),
+            keep: None,
+            protections: Vec::new(),
+        })
+        .unwrap_err();
+    assert_eq!(error.details["brokenAt"], 2);
+    video
+        .restore_version(&RestoreRequest {
+            command_id: "cmd_r3b".into(),
+            version: 3,
+            before: true,
+            actor: user(),
+            keep: None,
+            protections: Vec::new(),
+        })
+        .unwrap();
 }
 
 #[test]
@@ -552,6 +588,7 @@ fn a_video_is_rebuilt_from_its_snapshot_byte_for_byte() {
             before: true,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert!(video_json(&rebuilt).contains("标题"));
@@ -594,6 +631,7 @@ fn blobs_referenced_by_kept_versions_survive_gc() {
             before: true,
             actor: user(),
             keep: None,
+            protections: Vec::new(),
         })
         .unwrap();
     assert!(video.state().assets.contains_key(&asset));

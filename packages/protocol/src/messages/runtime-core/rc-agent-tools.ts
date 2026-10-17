@@ -89,6 +89,9 @@ const en = {
   captionsLabel: 'Add subtitle layer',
   undoSummary: (p: { transactionId: string }) => `Undo edit ${p.transactionId}`,
   undoLatestSummary: 'Undo the latest edit',
+  saveVersionSummary: (p: { name: string }) => `Save the current state as version "${p.name}"`,
+  restoreVersionSummary: (p: { version: number }) => `Restore version ${p.version}`,
+  restoreBeforeVersionSummary: (p: { version: number }) => `Restore to before version ${p.version}`,
   deleteVideoSummary: (p: { name: string; path: string; days: number }) =>
     `Delete video "${p.name}" (${p.path}): move it to the Trash, where it can be restored in Space for ${plural(p.days, 'day', 'days')}. Original files of linked assets stay where they are`,
   importPackageSummary: (p: { file: string }) => `Open portable package ${p.file}`,

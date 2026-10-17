@@ -58,6 +58,9 @@ export const ko: RcAgentToolsMessages = {
   captionsLabel: '자막 레이어 추가',
   undoSummary: (p) => `수정 ${p.transactionId} 실행 취소`,
   undoLatestSummary: '최근 수정 실행 취소',
+  saveVersionSummary: (p) => `현재 상태를 버전 “${p.name}”(으)로 저장`,
+  restoreVersionSummary: (p) => `버전 ${p.version}(으)로 되돌리기`,
+  restoreBeforeVersionSummary: (p) => `버전 ${p.version} 이전으로 되돌리기`,
   deleteVideoSummary: (p) =>
     `영상 “${p.name}”(${p.path}) 삭제: 휴지통으로 옮기며 ${p.days}일 동안 Space에서 복원할 수 있습니다. 연결된 소재의 원본 파일은 그대로 둡니다`,
   importPackageSummary: (p) => `휴대용 패키지 ${p.file} 열기`,

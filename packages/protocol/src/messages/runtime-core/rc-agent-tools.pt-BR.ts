@@ -44,6 +44,9 @@ export const ptBR: RcAgentToolsMessages = {
   captionsLabel: "Adicionar camada de legendas",
   undoSummary: (p: { transactionId: string }) => `Desfazer edição ${p.transactionId}`,
   undoLatestSummary: "Desfazer a última edição",
+  saveVersionSummary: (p: { name: string }) => `Salvar o estado atual como a versão “${p.name}”`,
+  restoreVersionSummary: (p: { version: number }) => `Voltar à versão ${p.version}`,
+  restoreBeforeVersionSummary: (p: { version: number }) => `Voltar para antes da versão ${p.version}`,
   deleteVideoSummary: (p: { name: string; path: string; days: number }) =>
     `Excluir vídeo “${p.name}" (${p.path}): mover para a Lixeira, restaurável no Space por ${plural(p.days, "dia", "dias")}. Arquivos originais das mídias vinculadas permanecem no local`,
   importPackageSummary: (p: { file: string }) => `Abrir pacote portátil ${p.file}`,

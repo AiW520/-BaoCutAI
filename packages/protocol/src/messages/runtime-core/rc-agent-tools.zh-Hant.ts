@@ -58,6 +58,9 @@ export const zhHant: RcAgentToolsMessages = {
   captionsLabel: '新增字幕層',
   undoSummary: (p) => `還原修改 ${p.transactionId}`,
   undoLatestSummary: '還原最近一次修改',
+  saveVersionSummary: (p) => `把目前狀態儲存為版本「${p.name}」`,
+  restoreVersionSummary: (p) => `回到版本 ${p.version}`,
+  restoreBeforeVersionSummary: (p) => `回到版本 ${p.version} 之前`,
   deleteVideoSummary: (p) =>
     `刪除影片「${p.name}」（${p.path}）：移到垃圾桶，${p.days} 天內可在 Space 中回復。連結素材的原始檔案保留在原處`,
   importPackageSummary: (p) => `開啟可攜式套件 ${p.file}`,

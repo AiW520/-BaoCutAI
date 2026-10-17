@@ -46,6 +46,9 @@ export const nl: RcAgentToolsMessages = {
   captionsLabel: "Ondertitellaag toevoegen",
   undoSummary: (p: { transactionId: string }) => `Bewerking ongedaan maken: ${p.transactionId}`,
   undoLatestSummary: "Laatste bewerking ongedaan maken",
+  saveVersionSummary: (p: { name: string }) => `Huidige stand opslaan als versie ‘${p.name}’`,
+  restoreVersionSummary: (p: { version: number }) => `Terug naar versie ${p.version}`,
+  restoreBeforeVersionSummary: (p: { version: number }) => `Terug naar vóór versie ${p.version}`,
   deleteVideoSummary: (p: { name: string; path: string; days: number }) =>
     `Video verwijderen: ‘${p.name}’ (${p.path}): verplaatsen naar de prullenmand; herstellen in Space kan gedurende ${`${p.days} ${pluralForm('nl', p.days, { one: "dag", other: "dagen" })}`}. De oorspronkelijke bestanden van gekoppelde media blijven staan`,
   importPackageSummary: (p: { file: string }) => `Draagbaar pakket openen: ${p.file}`,

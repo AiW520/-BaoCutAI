@@ -69,6 +69,9 @@ export const it: RcAgentToolsMessages = {
   captionsLabel: 'Aggiungi livello di sottotitoli',
   undoSummary: (p: { transactionId: string }) => `Annulla la modifica ${p.transactionId}`,
   undoLatestSummary: 'Annulla l’ultima modifica',
+  saveVersionSummary: (p: { name: string }) => `Salva lo stato attuale come versione «${p.name}»`,
+  restoreVersionSummary: (p: { version: number }) => `Torna alla versione ${p.version}`,
+  restoreBeforeVersionSummary: (p: { version: number }) => `Torna a prima della versione ${p.version}`,
   deleteVideoSummary: (p: { name: string; path: string; days: number }) =>
     `Elimina il video «${p.name}» (${p.path}): spostalo nel Cestino, da cui puoi ripristinarlo nello Space per ${plural(p.days, 'giorno', 'giorni')}. I file originali dei materiali collegati restano dove sono`,
   importPackageSummary: (p: { file: string }) => `Apri il pacchetto portatile ${p.file}`,

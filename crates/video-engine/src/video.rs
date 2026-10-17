@@ -1372,6 +1372,11 @@ impl CommitInput {
             removed_assets: Vec::new(),
         }
     }
+
+    pub(crate) fn with_protections(mut self, protections: &[TaskProtection]) -> CommitInput {
+        self.protections = protections.to_vec();
+        self
+    }
 }
 
 /// 每个实例引用的素材与文档必须存在。返回失去引用的实例。
