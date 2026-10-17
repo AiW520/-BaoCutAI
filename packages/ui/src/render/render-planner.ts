@@ -9,6 +9,7 @@ interface PreviewExports {
   bc_alloc(len: number): number;
   bc_free(ptr: number, len: number): void;
   bc_set_video(ptr: number, len: number): number;
+  bc_set_live(ptr: number, len: number): number;
   bc_plan(seconds: number): number;
   bc_font_files(): number;
   bc_add_font(ptr: number, len: number): number;
@@ -156,6 +157,7 @@ export class RenderPlanner {
   /** 从这个实例分出去的实例（缩略图）：之后送进来的本机字体也送给它们。 */
   readonly #forks = new Set<RenderPlanner>();
   #videoInput: Uint8Array | null = null;
+  #liveInput: Uint8Array | null = null;
   #documentsInput: Uint8Array | null = null;
   #speechInput: Uint8Array | null = null;
   readonly #assets = new Map<string, Uint8Array>();
@@ -227,6 +229,16 @@ export class RenderPlanner {
     this.#call((exports) => withBytes(exports, input, (ptr, len) => exports.bc_set_video(ptr, len)));
     // 送不进去的视频不记：WASM 那边还是上一个，重新载入时也送上一个。
     this.#videoInput = input;
+  }
+
+  /**
+   * 实时层开关（动效视频设计 §4.2）：开了之后计划把最底下那个没有可用替身的代码包合成切成 `plan.live`，画布从它上面那层起画、
+   * 底下留透明；`blocked` 是宿主退回替身或占位的实例（载入失败、取帧抛错、超时），这些不再切。缩略图与金标准不开。
+   */
+  setLive(options: { enabled: boolean; blocked?: readonly Id[] }): void {
+    const input = encoder.encode(JSON.stringify({ enabled: options.enabled, blocked: options.blocked ?? [] }));
+    this.#liveInput = input;
+    this.#call((exports) => withBytes(exports, input, (ptr, len) => exports.bc_set_live(ptr, len)));
   }
 
   /** 换一批字幕与字幕样式文档。 */
@@ -441,6 +453,7 @@ export class RenderPlanner {
         });
       }
       if (this.#videoInput) withBytes(exports, this.#videoInput, (ptr, len) => exports.bc_set_video(ptr, len));
+      if (this.#liveInput) withBytes(exports, this.#liveInput, (ptr, len) => exports.bc_set_live(ptr, len));
       if (this.#documentsInput) withBytes(exports, this.#documentsInput, (ptr, len) => exports.bc_set_documents(ptr, len));
       if (this.#speechInput) withBytes(exports, this.#speechInput, (ptr, len) => exports.bc_set_speech(ptr, len));
       for (const [name, bytes] of this.#assets) {

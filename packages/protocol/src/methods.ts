@@ -652,6 +652,11 @@ export interface RpcMethods {
   /** 视频素材在源时间 `at`（秒）的一帧，缩成小 JPEG（时间线的胶片条）。时间按 0.1 秒取整后缓存。 */
   'media.thumbnail': { params: AssetTarget & { at: number }; result: MediaThumbnail };
   /**
+   * 已导入的代码包素材（目录素材）的受限读取地址（架构设计 §4.5；动效视频设计 §4.1）：编辑器的实时合成层把入口页面装进沙箱
+   * `<iframe>`，包内文件按相对路径从同一个前缀取。只给 `bundle` 清单在的目录素材；入口页面在给出时注入取帧脚本与桥。
+   */
+  'media.bundle': { params: AssetTarget; result: BundleHandle };
+  /**
    * 本机字体（架构设计 §9.1）：按「族名、字重、斜体」在本机字体里挑一个 face（与排版引擎同一套匹配），给出它所在文件的
    * 受限读取句柄（同 `media.resolve`）与把它抽成单独字体的做法：编辑器预览按区间只取这一个 face 的表，拼好注入渲染器
    * （字体集合不整个下载）。与成片导出冻结的是同一份解析与抽法。只按给的 face 找，不列字体目录；抽出来的 face 上限 96 MB。
@@ -1476,6 +1481,16 @@ export interface FontsResolveResult {
  */
 export type MediaPeaks =
   { status: 'ready'; binsPerSecond: number; peaks: string } | { status: 'pending'; retryAfterMs: number } | { status: 'no-audio' };
+
+/**
+ * 代码包目录的受限读取地址：`url` 是目录的前缀（以 `/` 结尾），包内文件接在后面；`entry` 是入口页面在包内的相对路径。
+ * 与文件句柄一样不可猜、有期限、每次使用顺延；地址本身就是凭证（Web 上沙箱 iframe 里的请求带不上会话 cookie）。
+ */
+export interface BundleHandle {
+  url: string;
+  entry: string;
+  expiresAt: string;
+}
 
 export interface MediaThumbnail {
   mimeType: 'image/jpeg';

@@ -1,6 +1,7 @@
 import { RcWeb } from '@baocut/protocol/messages/runtime-core';
 import path from 'node:path';
 import {
+  type CodeBundleManifest,
   RpcError,
   SETTING_MANAGED_BY,
   parseVideoTopic,
@@ -21,6 +22,7 @@ import {
   webVideoHref,
 } from '@baocut/protocol';
 import type { Harness, TopicSubscription } from '@baocut/harness';
+import { compositionPageScript } from '@baocut/code-runtime';
 import type { AgentSetup } from './agent-setup.ts';
 import type { AttachmentStore } from './attachments.ts';
 import type { TrustedPrincipal } from './gateway.ts';
@@ -486,6 +488,13 @@ export function createHandlers({
       },
       'media.peaks': async (p) => analysis.peaks(await videos.mediaSource(p.videoId, p.assetId, p.revision)),
       'media.thumbnail': async (p) => analysis.thumbnail(await videos.mediaSource(p.videoId, p.assetId, p.revision), p.at),
+      'media.bundle': async (p) => {
+        // 代码包目录（动效视频设计 §4.1）：只给清单在的目录素材，入口按清单的 `runtime.entry`；入口页面给出时注入取帧脚本与桥。
+        const { root, file, record } = await videos.mediaSource(p.videoId, p.assetId, p.revision);
+        const manifest = record.bundle as CodeBundleManifest | undefined;
+        if (!manifest || manifest.runtime.engine !== 'browser') throw new RpcError('not-found', RcRuntime.fileNotFound());
+        return media.issueBundle(root, file, { entry: manifest.runtime.entry, inject: compositionPageScript() });
+      },
       'videos.create': async (p, principal) => {
         const { root, scope } = await videoRoot(p);
         return videos.create(p, root, scope, principal);

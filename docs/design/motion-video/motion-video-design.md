@@ -320,6 +320,6 @@ baoyu-design 的 animated-video 把一部动画写成一个 React 树，整体�
 
 | 事项 | 要确认什么 |
 | --- | --- |
-| 实时层的切点（§4.2） | `render-graph` 的「从某个 order 起画、底下留透明」在 `preview.tsx` 的画布上能否与 iframe 对齐到像素；播放中切点两侧的帧是否同步（iframe 的 `renderAt` 与画布的那一帧要是同一个视频帧） |
+| 实时层的帧同步（§4.2） | 切点已做（`render-graph` 的 `live` 切点，iframe 按同一个矩阵用 CSS `matrix()` 摆，与画布对齐到画布像素）；播放中切点两侧是否同一个视频帧靠「每帧送本地时刻、页面等两次 `requestAnimationFrame` 才回」保证，要在 60 fps 素材叠实时层时实测画布与 iframe 的帧偏差，以及三个 iframe 同挂时的内存 |
 | p5 与 Three.js 真实库的实测（§9） | 已测（2026-10-17，macOS，three r170、p5 1.11.3 带进临时包）：p5 2D 草图走指令烘焙并通过对拍，p5 `WEBGL` 与 Three.js 走像素烘焙（`canvas-not-2d`），不开 `preserveDrawingBuffer` 的 Three.js 变体取到的帧与开了的相同；`p5.min.js` 原样因字串里的 9 处 URL 被静态扫描拒绝。结论写进代码包规范 §4.3、§4.4，扫描的取舍记在 §9 |
 | `align` 的阈值（§6.2） | `coverage` 多低、`lowConfidence` 多少算对不上，用一首歌与一段讲稿实测后定 |

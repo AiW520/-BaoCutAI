@@ -259,6 +259,49 @@ export interface CompositionBakeJob {
   mode: CompositionBakeMode;
 }
 
+/**
+ * 编辑器实时合成层的桥（动效视频设计 §4.1；架构设计 §9.4）：舞台里的代码包跑在不开 `allow-same-origin` 的沙箱 `<iframe>` 里，
+ * 父页面调不进去，取帧脚本（`composition-adapter.ts`）的三个调用改经 `postMessage` 往返。两端都只认带 `channel` 的消息，
+ * 页面只认来自 `window.parent` 的、父页面只认来自那个 iframe 的 `contentWindow` 的；iframe 的来源是不透明的，`targetOrigin` 只能是 `*`。
+ */
+export const COMPOSITION_BRIDGE_CHANNEL = 'baocut.composition-bridge/1';
+
+/** 页面载入、桥就位时主动发一次：父页面从这时起才发请求。 */
+export interface CompositionBridgeHello {
+  channel: typeof COMPOSITION_BRIDGE_CHANNEL;
+  kind: 'hello';
+}
+
+/** 父页面 → 页面：取帧脚本的一个调用；`id` 由父页面编，回信带回。 */
+export type CompositionBridgeRequest =
+  | {
+      channel: typeof COMPOSITION_BRIDGE_CHANNEL;
+      kind: 'ready';
+      id: number;
+      contract: CodeBundleContract;
+      /** 省略时页面自己从根元素的 `data-composition-id` 取（没有就是 `main`，与导入时的 `readRootAttributes` 同一规则）。 */
+      compositionId?: string;
+      timeoutMs: number;
+      context: { width: number; height: number; fps: Rate; durationFrames: number };
+    }
+  | { channel: typeof COMPOSITION_BRIDGE_CHANNEL; kind: 'seek'; id: number; seconds: number }
+  | { channel: typeof COMPOSITION_BRIDGE_CHANNEL; kind: 'dispose'; id: number };
+
+/** 页面 → 父页面：取帧脚本的信封原样带回（`{ ok: true, value }` 或 `{ ok: false, code, message }`）。 */
+export interface CompositionBridgeResponse {
+  channel: typeof COMPOSITION_BRIDGE_CHANNEL;
+  kind: 'result';
+  id: number;
+  result: { ok: true; value: unknown } | { ok: false; code: CodeBundleErrorCode | string; message: string };
+}
+
+export type CompositionBridgeMessage = CompositionBridgeHello | CompositionBridgeRequest | CompositionBridgeResponse;
+
+/** 收到的 `message` 事件的 `data` 是不是这座桥的消息（别的来源与别的脚本的 `postMessage` 一律不认）。 */
+export function isCompositionBridgeMessage(data: unknown): data is CompositionBridgeMessage {
+  return typeof data === 'object' && data !== null && (data as { channel?: unknown }).channel === COMPOSITION_BRIDGE_CHANNEL;
+}
+
 export const CODE_BUNDLE_ERROR_CODES = [
   // 导入与验证（§6.2）
   'BUNDLE_MANIFEST_INVALID',

@@ -1,7 +1,7 @@
-import type { DocumentRecord, FontFaceQuery, Sequence } from '@baocut/protocol';
+import type { AssetRecord, DocumentRecord, FontFaceQuery, Sequence } from '@baocut/protocol';
 import { expect, test, vi } from 'vitest';
 import type { LoadedFace, LocalFont } from '../../render/local-fonts.ts';
-import type { CaptionHit, RenderPlanner } from '../../render/render-planner.ts';
+import { PlanFailure, type CaptionHit, type RenderPlanner } from '../../render/render-planner.ts';
 import { PreviewEngine, videoKey, type PreviewStatus } from './preview-engine.ts';
 
 /** 内核转述来的提示（没有自己的引用）：`frameRender.itemNote` 前面写上实例，原话嵌在里面。 */
@@ -894,5 +894,208 @@ test('字幕场景按样式文档的冻结素材版本加载字节', async () =>
   } as never);
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(sent).toContainEqual({ id: 'badge', revision: 'old-version' });
+  engine.dispose();
+});
+
+/** 实时合成层用的计划器：开了实时层且这件合成没拉黑时，计划的底层是它；记下每次画是不是透明底，可按要求抛发光错误。 */
+function livePlanner() {
+  const setLive: { enabled: boolean; blocked: string[] }[] = [];
+  const renders: { frame: number; transparent: boolean }[] = [];
+  const state = { enabled: false, blocked: new Set<string>(), emissive: false };
+  const planAt = (seconds: number) => {
+    const frame = Math.floor(seconds * 30 + 1e-6);
+    const live = state.enabled && !state.blocked.has('comp');
+    return {
+      sequenceId: 'seq',
+      sequenceRevision: 'r1',
+      frame,
+      canvas: { width: 1920, height: 1080, background: '#000000', backgroundAlpha: live ? 0 : 1 },
+      layers: [{ kind: 'text', itemId: 'title', matrix: [1, 0, 0, 1, 0, 0], opacity: 1, content: {} }],
+      voices: [],
+      ...(live
+        ? {
+            live: {
+              itemId: 'comp',
+              asset: { id: 'bundle', revision: '1' },
+              sourceSeconds: seconds,
+              sourceRate: 1,
+              matrix: [1920, 0, 0, 1080, 0, 0],
+              opacity: 1,
+              width: 1280,
+              height: 720,
+              standIn: 'none',
+            },
+          }
+        : {}),
+    };
+  };
+  const planner = {
+    ...fakePlanner(),
+    planAt,
+    setDocuments: () => {},
+    clearPictures: () => {},
+    setLive: (next: { enabled: boolean; blocked: string[] }) => {
+      setLive.push(next);
+      state.enabled = next.enabled;
+      state.blocked = new Set(next.blocked);
+    },
+    render: (seconds: number, _w: number, _h: number, options?: { transparent?: boolean }) => {
+      const plan = planAt(seconds);
+      if (plan.live && state.emissive) throw new PlanFailure({ code: 'EMISSIVE_STRAIGHT_ALPHA_UNSUPPORTED', message: 'emissive' });
+      renders.push({ frame: plan.frame, transparent: options?.transparent === true });
+      return { plan, warnings: [], skipped: [], spectra: [], fonts: [] };
+    },
+    frame: () => new Uint8ClampedArray(4),
+  } as unknown as RenderPlanner;
+  return { planner, setLive, renders, state };
+}
+
+/** 假的实时层宿主：记下预载名单、每次 show 的层与帧号；失败由测试触发。 */
+function fakeLiveHost() {
+  const prepared: string[][] = [];
+  const shown: [string | null, number][] = [];
+  const listeners = new Set<(itemId: string, reason: string) => void>();
+  return {
+    prepared,
+    shown,
+    host: {
+      prepare: (candidates: readonly { itemId: string }[]) => void prepared.push(candidates.map((c) => c.itemId)),
+      show: (layer: { itemId: string } | null, frame: number) => void shown.push([layer?.itemId ?? null, frame]),
+      onFailure: (listener: (itemId: string, reason: string) => void) => (listeners.add(listener), () => listeners.delete(listener)),
+    },
+    fail: (itemId: string, reason: string) => listeners.forEach((listener) => listener(itemId, reason)),
+  };
+}
+
+const withComposition = {
+  ...sequence,
+  items: [
+    { id: 'title', type: 'text', enabled: true, trackId: 't', span: { fromFrame: 0, durationFrames: 300 } },
+    {
+      id: 'comp',
+      type: 'composition',
+      enabled: true,
+      trackId: 'b',
+      span: { fromFrame: 0, durationFrames: 300 },
+      source: { kind: 'bundle', assetRef: { id: 'bundle', revision: '1' } },
+      parameterValues: {},
+      timeMap: { kind: 'identity' },
+    },
+  ],
+} as unknown as Sequence;
+const bundleAssets = {
+  bundle: {
+    id: 'bundle',
+    kind: 'video',
+    name: 'bundle',
+    currentRevision: '1',
+    revisions: {
+      '1': {
+        revision: '1',
+        bundle: {
+          bundleId: 'b',
+          revision: '7',
+          runtime: { engine: 'browser', contract: 'hyperframes/1', entry: 'index.html' },
+          intrinsic: { width: 1280, height: 720, fps: { num: 30, den: 1 }, durationFrames: 300 },
+        },
+      },
+    },
+  },
+} as unknown as Record<string, AssetRecord>;
+
+async function liveEngine() {
+  const frames = manualFrames();
+  const { planner, setLive, renders, state } = livePlanner();
+  const live = fakeLiveHost();
+  const seen: PreviewStatus[] = [];
+  const engine = new PreviewEngine({ onTime: () => {}, onEnded: () => {} }, () => Promise.resolve(planner));
+  engine.onStatus((status) => seen.push(status));
+  const canvas = { width: 0, height: 0, getContext: () => ({ canvas, putImageData: () => {} }) };
+  engine.attachCanvas(canvas as unknown as HTMLCanvasElement, 0.5);
+  engine.setVideo(withComposition, bundleAssets);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  return { frames, planner, setLive, renders, state, live, seen, engine };
+}
+
+test('实时合成层：接上宿主才开实时层；底是实时层的那一帧画透明底，拆掉宿主后画回不透明的', async () => {
+  const { frames, setLive, renders, live, seen, engine } = await liveEngine();
+  expect(setLive).toEqual([]);
+  expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
+  expect(seen.at(-1)).toEqual({ kind: 'ready' });
+
+  engine.attachLive(live.host);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(setLive).toEqual([{ enabled: true, blocked: [] }]);
+  expect(renders.at(-1)).toEqual({ frame: 0, transparent: true });
+  expect(live.prepared).toEqual([['comp']]);
+  expect(live.shown.at(-1)).toEqual(['comp', 0]);
+  expect(engine.live?.itemId).toBe('comp');
+  // 实时档：状态报 live，没有别的提示。
+  expect(seen.at(-1)).toEqual({ kind: 'ready', live: true });
+
+  engine.attachLive(null);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(setLive.at(-1)).toEqual({ enabled: false, blocked: [] });
+  expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
+  expect(live.shown.at(-1)).toEqual([null, -1]);
+  expect(seen.at(-1)).toEqual({ kind: 'ready' });
+  frames.restore();
+  engine.dispose();
+});
+
+test('实时合成层：播放中每个 tick 都把这一帧的实时层与帧号交给宿主（同一帧只定位一次由宿主保证），帧号不回头', async () => {
+  const { frames, live, engine } = await liveEngine();
+  engine.attachLive(live.host);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  live.shown.length = 0;
+  engine.play();
+  // 60 Hz 的刷新放 30 fps 的视频：0.1 秒里 6 个 tick，跨 3 个视频帧。
+  for (let i = 1; i <= 6; i++) frames.tick(i * (1000 / 60));
+  const shownFrames = live.shown.map(([, frame]) => frame);
+  expect([...new Set(shownFrames)]).toEqual([0, 1, 2, 3]);
+  expect(shownFrames).toEqual([...shownFrames].sort((a, b) => a - b));
+  expect(live.shown.every(([itemId]) => itemId === 'comp')).toBe(true);
+  engine.pause();
+  frames.restore();
+  engine.dispose();
+});
+
+test('实时合成层：宿主报失败的合成拉黑，重送 setLive，下一个计划没有实时层、画回不透明底；retry 解除', async () => {
+  const { frames, setLive, renders, live, seen, engine } = await liveEngine();
+  engine.attachLive(live.host);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  live.fail('comp', 'ready-timeout');
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(setLive.at(-1)).toEqual({ enabled: true, blocked: ['comp'] });
+  expect(engine.live).toBeNull();
+  expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
+  expect(live.shown.at(-1)).toEqual([null, 0]);
+  // 拉黑后不再预载它。
+  expect(live.prepared.at(-1)).toEqual([]);
+  expect(seen.at(-1)).toEqual({ kind: 'ready' });
+
+  engine.retry();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(setLive.at(-1)).toEqual({ enabled: true, blocked: [] });
+  expect(engine.live?.itemId).toBe('comp');
+  expect(live.prepared.at(-1)).toEqual(['comp']);
+  frames.restore();
+  engine.dispose();
+});
+
+test('实时合成层：透明底上有发光像素时这件合成拉黑、重算计划再画，不进错误状态', async () => {
+  const { frames, setLive, renders, state, live, seen, engine } = await liveEngine();
+  state.emissive = true;
+  engine.attachLive(live.host);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(setLive).toEqual([
+    { enabled: true, blocked: [] },
+    { enabled: true, blocked: ['comp'] },
+  ]);
+  expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
+  expect(engine.live).toBeNull();
+  expect(seen.some((status) => status.kind === 'error')).toBe(false);
+  expect(seen.at(-1)).toEqual({ kind: 'ready' });
+  frames.restore();
   engine.dispose();
 });

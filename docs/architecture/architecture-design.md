@@ -779,6 +779,8 @@ WebM 与 QuickTime（包括代码动画烘焙的 ProRes MOV）播放通过 `medi
 
 `media.resolve` 在 `resolveInside` 的真实路径与权限检查之后，读取至多 64 KiB 前缀识别内容类型。目标是视频条目（`{ entryId }`，视频是一个目录）时，给它的主素材：封面那一帧所在的素材版本，与 Space 缩略图同一个来源，不打开视频、不取写锁；它是素材原片，没有套用时间线上的剪辑、字幕与叠加，会话里的视频卡就地播放用（产品设计 §3.2.2）；没有封面时 `not-found`。给 `{ entryId, assetId, revision }` 时是这个视频条目里的那个素材版本，同样按视频目录经只读查询找、不打开视频，Space 检索命中的那一段就地播放用（`space.hitMoments`）。桌面端另有本机文件目标 `{ localPath }`（只在 `MediaTarget` 里，不是 `FileTarget`，不能拿去打开或删除视频）：回复里工作目录之外、没有产物记录的文档或媒体副本在文件标签里只读预览用。Runtime 只对桌面客户端（`principal.kind === 'desktop'`）发放，其余主体（浏览器、CLI、对外服务）按原来的访问范围 `forbidden`；路径必须是绝对路径，以文件自己的目录为根走同一个 `resolveInside`，只给普通文件，目录、不存在的路径与经符号链接指到别的目录的都拒绝，内容识别与大小上限不变，不发放目录。`MediaHandle` 可附带 `contentKind`（text/image/pdf/audio/video/archive/binary）与 `textEncoding`（UTF-8、带 BOM 的 UTF-16LE/BE），HTTP MIME 与检测结果一致；字段缺省时旧客户端行为保持兼容。压缩包只认头部，不为预览解压。文本载入时再次限制实际接收字节数，并以严格解码拒绝截断编码或后续出现的二进制控制字符；媒体依然走受限 Range 通道，采样不扩大可读目录。同一受限句柄的 `?download=1` 返回带 UTF-8 文件名的附件响应，下载大视频直接走流式传输，不先把完整文件读进界面内存。
 
+代码包目录走同一张句柄表的另一个前缀 `/bundle/<句柄>/<包内路径>`（`media.bundle`，命令协议规范 §4.1）：编辑器的实时合成层把代码包装在不开 `allow-same-origin` 的沙箱 `<iframe>` 里（动效视频设计 §4.1），它的来源是不透明的，请求带不上会话 cookie、`Sec-Fetch-Site` 也是跨站，所以这个前缀只认目录句柄（句柄本身就是凭据，与设计稿编辑器一样）。每个响应带包自己的 CSP——脚本、样式、图片、字体、媒体与 `fetch` 只能来自这个前缀，内联放行、不放行 `eval`，`child-src 'none'`、`sandbox allow-scripts`——以及 `Cross-Origin-Resource-Policy: cross-origin`，不带 `X-Frame-Options`；包内路径只认 `/` 分隔、没有空段、`.`、`..` 与点文件的相对路径，由 `resolveInside` 按真实路径确认在目录之内。入口页面给出时在 `<head>` 开头注入取帧脚本与 `postMessage` 桥（`code-runtime` 的 `composition-bridge.ts`），先于包自己的脚本跑；父页面只认 `event.source` 是那个 iframe 的消息，`targetOrigin` 为 `*`；`ready` 可以不带 `compositionId`，桥在页面里按根元素的 `data-composition-id` 取，没有就是 `main`（与离屏宿主同一规则，浏览器清单本身不写它）。Electron 与 Web 共用这条路；离屏宿主仍直接 `executeJavaScript`，不经这座桥。
+
 播放时钟和拖动留在界面本地。`requestGeneration` 保证旧的异步帧不会覆盖新的 seek。流式文本可以合并小块，但保留消息身份与完成边界；终态事件和权限事件不可因节流而丢失。客户端可以显示缓存，但「已连接」不等于「数据已追平」。
 
 ### 4.6 ContextBarrier：发送前同步
@@ -2459,6 +2461,7 @@ Alpha 必须声明 straight 或 premultiplied；格式转换由 `FrameSurface` �
 - 播放中一个视频帧只画一次：显示器刷新比视频帧率高时不重画；文档、素材、字体、频谱或尺寸变了，同一帧也重画。
 - 停着定位（拖动播放头、点时间线、逐帧）不等视频定位落地：还在定位的视频先用它上一张读出的画面马上画，接连定位按播放的像素预算画。这是时机上的差别；最后一次定位之后 200 ms（`SCRUB_SETTLE_MS`）没再定位、媒体都对准了，再按原尺寸画精确的那一帧。引擎的 `exact` 只在画布上是这一帧时为真。
 - 预览 WASM 按输出尺寸留两台渲染器（播放一台、停住一台），来回切不重建排版、字幕编译与素材缓存；送进来的字体、文档、转写与频谱对每一台都生效，声波拼好的频谱轨（与尺寸无关）换台时带过去，不重拼。`parity.test.ts` 在几种尺寸来回画之后核对停住的那一帧仍与导出逐字节相同。
+- 底是实时合成层时（动效视频设计 §4：没有可用替身的满幅代码合成，宿主接上了 `LiveLayerHost`）是 Interactive：帧计划把它切成 `live`，画布画透明底、只画它上面的层，底下的沙箱 `<iframe>` 由引擎按同一个视频帧送本地时刻（`packages/ui/src/components/editor/live-layer.ts`）。停住时的取舍：有替身且不过期（代码包规范 §7.4 的 `prerenderStaleness`：出处的 `sourceBundleRef` 与代码包清单一致、烘焙帧率与序列相同）就画替身，那才是导出的那一帧，Export-Exact；没有替身或过期时继续显示实时层，引擎的 `exact` 为假、状态带 `live`，舞台提示改成「实时预览，导出前要烘焙」，不把它标成精确。代码包载入失败、取帧报错、3 秒内没就绪、或透明底上有发光像素叠不上去时，这件合成拉黑、重新算计划，退回替身或占位；`retry` 解除。
 
 待补：60 fps 的 1080p 素材播放中只出到每秒 37–48 帧（30 fps 素材到 30 帧）；内核里每个元素都分配、清空、拷贝一整幅的层（`subtitle-render` 的叠层入口），元素多时这是大头；每帧把视频画面经 Canvas 2D 读回再送进 WASM（`drawImage` 加 `getImageData`）约 8–9 ms，要省掉得让视频不经内核、由 GPU 合成在底下（只在视频是最底一层、上面全是内核画的层时成立）；打开后第一张精确帧最慢约 1.5 秒（等视频载入）；播放中画面与声音的偏差 p95 约 30–50 ms。
 

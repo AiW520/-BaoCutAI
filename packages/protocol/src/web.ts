@@ -141,6 +141,7 @@ export const WEB_READ_METHODS: readonly RpcMethod[] = [
   'media.subtitles',
   'media.peaks',
   'media.thumbnail',
+  'media.bundle',
   'slides.open',
   'design.open',
   'designSystem.open',

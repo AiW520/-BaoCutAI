@@ -986,6 +986,7 @@ export const methodParamSchemas = {
   'media.subtitles': fileTarget,
   'media.peaks': z.object(assetTarget).strict(),
   'media.thumbnail': z.object({ ...assetTarget, at: z.number().finite().nonnegative().max(1_000_000) }).strict(),
+  'media.bundle': z.object(assetTarget).strict(),
   ...FONT_PARAM_SCHEMAS,
   ...COMPOSITION_PARAM_SCHEMAS,
   'videos.create': z
