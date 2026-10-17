@@ -19,7 +19,9 @@ function exportKindLabel(kind: string): string {
   }
 }
 
-function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }): string {
+function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; dir?: string | null }): string {
+  // 文件放进指定目录：导入视频的照常说完，再说文件放在哪。
+  if (p.dir && (p.target === 'create' || p.target === 'video')) return `${linkImportAfter({ ...p, dir: null })}（ダウンロードしたファイルは ${p.dir} に保存）`;
   const recognition = `${p.language ? `、言語 ${p.language}` : ''}${p.provider ? `（${p.provider}${p.model ? ` ${p.model}` : ''}）` : ''}`;
   if (p.target === 'create') {
     return `、動画${p.name ? `「${p.name}」` : '（名前はページタイトル）'}を作成してタイムラインに追加${p.transcribe ? `してから文字起こし${recognition}${p.captions ? 'と字幕レイヤーの作成' : ''}` : ''}`;
@@ -27,6 +29,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   if (p.target === 'video') return `、動画に読み込み${p.transcribe ? 'して文字起こし' : ''}`;
   if (p.target === 'project') return `、プロジェクトの downloads/ に保存${p.transcribe ? 'して TXT と SRT に文字起こし' : ''}`;
   if (p.target === 'download') return `、ダウンロードフォルダに保存${p.transcribe ? 'して TXT と SRT に文字起こし' : ''}`;
+  if (p.target === 'folder') return `、${p.dir} に保存${p.transcribe ? 'して TXT と SRT に文字起こし' : ''}`;
   return '';
 }
 
@@ -66,6 +69,7 @@ export const ja: RcAgentToolsMessages = {
   translationDocumentName: (p) => `${p.language} の翻訳`,
   importAssetSummary: (p) => `素材 ${p.name} を読み込み${p.place ? '、タイムラインに追加' : ''}`,
   importAssetLabel: (p) => `${p.name} を読み込み${p.place ? '、タイムラインに追加' : ''}`,
+  openMediaSaveSummary: (p) => `${p.source} から「${p.title}」（${p.license}）を ${p.target} にダウンロード（同名のファイルがあれば番号を付け、上書きしません）`,
   openMediaDownloadSummary: (p) => `${p.source} から「${p.title}」（${p.license}）をダウンロードして読み込み${p.place ? '、タイムラインに追加' : ''}`,
   sfxSummary: (p) => `効果音「${p.recipe}」を生成して読み込み${p.place ? '、タイムラインに追加' : ''}`,
  

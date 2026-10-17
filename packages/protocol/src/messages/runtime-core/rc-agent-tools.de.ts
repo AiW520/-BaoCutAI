@@ -2,12 +2,15 @@ function exportKindLabel(kind: string): string {
   const labels: Record<string, string> = { subtitles: 'Untertitel', transcript: 'Transkript', audio: 'Audio', video: 'Videodatei', portable: 'portables Paket', project: 'Projektdatei' };
   return labels[kind] ?? kind;
 }
-function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }): string {
+function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; dir?: string | null }): string {
+  // 文件放进指定目录：导入视频的照常说完，再说文件放在哪。
+  if (p.dir && (p.target === 'create' || p.target === 'video')) return `${linkImportAfter({ ...p, dir: null })}, die heruntergeladene Datei in ${p.dir} ablegen`;
   const recognition = `${p.language ? `, Sprache ${p.language}` : ''}${p.provider ? ` (${p.provider}${p.model ? ` ${p.model}` : ''})` : ''}`;
   if (p.target === 'create') return `, Video erstellen${p.name ? ` „${p.name}“` : ' (nach dem Seitentitel benannt)'} und in die Zeitleiste einfügen${p.transcribe ? `, dann transkribieren${recognition}${p.captions ? ' und eine Untertitel-Ebene erstellen' : ''}` : ''}`;
   if (p.target === 'video') return `, ins Video importieren${p.transcribe ? ' und transkribieren' : ''}`;
   if (p.target === 'project') return `, im Projektordner downloads/ speichern${p.transcribe ? ' und in TXT und SRT transkribieren' : ''}`;
   if (p.target === 'download') return `, im Downloadordner speichern${p.transcribe ? ' und in TXT und SRT transkribieren' : ''}`;
+  if (p.target === 'folder') return `, in ${p.dir} speichern${p.transcribe ? ' und in TXT und SRT transkribieren' : ''}`;
   return '';
 }
 
@@ -58,6 +61,7 @@ export const de: RcAgentToolsMessages = {
   importAssetSummary: (p: { name: string; place: boolean }) => `Material importieren: ${p.name}${p.place ? " und in die Zeitleiste einfügen" : ""}`,
 
   importAssetLabel: (p: { name: string; place: boolean }) => `Importieren: ${p.name}${p.place ? " und in die Zeitleiste einfügen" : ""}`,
+  openMediaSaveSummary: (p) => `„${p.title}“ von ${p.source} (${p.license}) herunterladen nach ${p.target} (bei vergebenem Namen nummeriert, niemals überschrieben)`,
   openMediaDownloadSummary: (p: { title: string; source: string; license: string; place: boolean }) => `„${p.title}“ von ${p.source} (${p.license}) herunterladen und importieren${p.place ? " und in die Zeitleiste einfügen" : ""}`,
   sfxSummary: (p: { recipe: string; place: boolean }) => `Soundeffekt „${p.recipe}“ erzeugen und importieren${p.place ? ' und in die Zeitleiste einfügen' : ''}`,
   replaceCompositionSummary: (p: { name: string; clip: string }) =>

@@ -4,12 +4,15 @@ import { pluralForm } from '../../i18n.ts';
 function exportKindLabel(kind: string): string {
   switch (kind) { case 'subtitles': return 'les sous-titres'; case 'transcript': return 'la transcription'; case 'audio': return 'l’audio'; case 'video': return 'le fichier vidéo'; case 'portable': return 'le paquet portable'; case 'project': return 'le fichier de projet'; default: return kind; }
 }
-function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }): string {
+function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; dir?: string | null }): string {
+  // 文件放进指定目录：导入视频的照常说完，再说文件放在哪。
+  if (p.dir && (p.target === 'create' || p.target === 'video')) return `${linkImportAfter({ ...p, dir: null })}, en enregistrant le fichier téléchargé dans ${p.dir}`;
   const recognition = `${p.language ? `, langue ${p.language}` : ''}${p.provider ? ` (${p.provider}${p.model ? ` ${p.model}` : ''})` : ''}`;
   if (p.target === 'create') return `, créer une vidéo${p.name ? ` « ${p.name} »` : ' (nommée d’après le titre de la page)'} et l’ajouter à la timeline${p.transcribe ? `, puis la transcrire${recognition}${p.captions ? ' et créer un calque de sous-titres' : ''}` : ''}`;
   if (p.target === 'video') return `, l’importer dans la vidéo${p.transcribe ? ' et la transcrire' : ''}`;
   if (p.target === 'project') return `, l’enregistrer dans downloads/ du projet${p.transcribe ? ' et la transcrire en TXT et SRT' : ''}`;
   if (p.target === 'download') return `, l’enregistrer dans le dossier Téléchargements${p.transcribe ? ' et la transcrire en TXT et SRT' : ''}`;
+  if (p.target === 'folder') return `, l’enregistrer dans ${p.dir}${p.transcribe ? ' et la transcrire en TXT et SRT' : ''}`;
   return '';
 }
 
@@ -27,6 +30,7 @@ export const fr: RcAgentToolsMessages = {
   importPackageSummary: (p) => `Ouvrir le paquet portable ${p.file}`, renameVideoLabel: 'Renommer la vidéo', putDocumentSummary: (p) => `Écrire une nouvelle version du document ${p.documentId}`,
   newDocumentSummary: (p) => `Créer un document (${p.kind})`, updateDocumentLabel: (p) => `Mettre à jour le document « ${p.name} »`, newDocumentLabel: (p) => `Créer le document « ${p.name} »`, translationDocumentName: (p) => `Traduction en ${p.language}`,
   importAssetSummary: (p) => `Importer le média ${p.name}${p.place ? ' et l’ajouter à la timeline' : ''}`, importAssetLabel: (p) => `Importer ${p.name}${p.place ? ' et l’ajouter à la timeline' : ''}`,
+  openMediaSaveSummary: (p) => `Télécharger « ${p.title} » depuis ${p.source} (${p.license}) vers ${p.target} (numéroté si le nom existe déjà, jamais écrasé)`,
   openMediaDownloadSummary: (p) => `Télécharger « ${p.title} » depuis ${p.source} (${p.license}) et l’importer${p.place ? ' dans la timeline' : ''}`,
   sfxSummary: (p) => `Générer l’effet sonore « ${p.recipe} » et l’importer${p.place ? ' dans la timeline' : ''}`,
   replaceCompositionSummary: (p) => `Importer ${p.name} et remplacer le clip ${p.clip} de la timeline`,

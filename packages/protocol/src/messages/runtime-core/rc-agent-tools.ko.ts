@@ -19,7 +19,9 @@ function exportKindLabel(kind: string): string {
   }
 }
 
-function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }): string {
+function linkImportAfter(p: { target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; dir?: string | null }): string {
+  // 文件放进指定目录：导入视频的照常说完，再说文件放在哪。
+  if (p.dir && (p.target === 'create' || p.target === 'video')) return `${linkImportAfter({ ...p, dir: null })} (다운로드한 파일은 ${p.dir}에 저장)`;
   const recognition = `${p.language ? `, 언어 ${p.language}` : ''}${p.provider ? `(${p.provider}${p.model ? ` ${p.model}` : ''})` : ''}`;
   if (p.target === 'create') {
     return `, 영상${p.name ? ` “${p.name}”` : '(페이지 제목으로 이름 지정)'} 만들기 및 타임라인에 추가${p.transcribe ? `, 이후 전사${recognition}${p.captions ? ' 및 자막 레이어 만들기' : ''}` : ''}`;
@@ -27,6 +29,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   if (p.target === 'video') return `, 영상으로 가져오기${p.transcribe ? ' 및 전사' : ''}`;
   if (p.target === 'project') return `, 프로젝트의 downloads/에 저장${p.transcribe ? ' 및 TXT와 SRT로 전사' : ''}`;
   if (p.target === 'download') return `, 다운로드 폴더에 저장${p.transcribe ? ' 및 TXT와 SRT로 전사' : ''}`;
+  if (p.target === 'folder') return `, ${p.dir}에 저장${p.transcribe ? ' 및 TXT와 SRT로 전사' : ''}`;
   return '';
 }
 
@@ -66,6 +69,7 @@ export const ko: RcAgentToolsMessages = {
   translationDocumentName: (p) => `${p.language} 번역`,
   importAssetSummary: (p) => `소재 ${p.name} 가져오기${p.place ? ' 및 타임라인에 추가' : ''}`,
   importAssetLabel: (p) => `${p.name} 가져오기${p.place ? ' 및 타임라인에 추가' : ''}`,
+  openMediaSaveSummary: (p) => `${p.source}에서 "${p.title}"(${p.license})을(를) ${p.target}에 다운로드(이름이 겹치면 번호를 붙이며 덮어쓰지 않음)`,
   openMediaDownloadSummary: (p) => `${p.source}에서 "${p.title}"(${p.license}) 다운로드 후 가져오기${p.place ? ' 및 타임라인에 추가' : ''}`,
   sfxSummary: (p) => `효과음 "${p.recipe}"을(를) 생성해 가져오기${p.place ? ' 후 타임라인에 추가' : ''}`,
  
