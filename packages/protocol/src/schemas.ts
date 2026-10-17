@@ -877,6 +877,7 @@ export const methodParamSchemas = {
     template: templateSendRefSchema.optional(),
     skill: skillSendRefSchema.optional(),
     skills: skillSendListSchema.optional(),
+    skipProjectBrand: z.boolean().optional(),
     slideAnnotations: slideAnnotations.optional(),
     designAnnotations: designAnnotations.optional(),
     designSystemAnnotations: designSystemAnnotations.optional(),

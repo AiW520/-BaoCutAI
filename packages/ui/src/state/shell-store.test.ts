@@ -38,7 +38,12 @@ const routes: Route[] = [
   { tab: 'space', category: 'video', projectId: null, video: { entryId: 'e1' } },
   { tab: 'settings', section: 'diagnostics' },
   { tab: 'settings', section: 'agent' },
-  { tab: 'settings', section: 'skills' },
+  { tab: 'skills' },
+  { tab: 'skills', view: 'external' },
+  { tab: 'skills', id: 'brand-kit' },
+  { tab: 'skills', id: '剪口播', view: 'files', file: 'assets/logo 1.svg' },
+  { tab: 'skills', brand: 'p1' },
+  { tab: 'skills', brand: 'p1', view: 'files', file: 'brand/a&b.png' },
   { tab: 'settings', section: 'privacy' },
   { tab: 'models', category: 'asr' },
   { tab: 'models', category: 'tts', page: 'voices' },
@@ -76,6 +81,9 @@ describe('界面内链接', () => {
     expect(parseHref('/space/bogus')).toEqual({ tab: 'space', category: 'all', projectId: null });
     expect(parseHref('/settings/bogus')).toEqual({ tab: 'settings', section: 'general' });
     expect(parseHref('/tools/bogus')).toEqual({ tab: 'tools' });
+    // Skills：列表上没有文件页签，详情上没有「在终端里用」
+    expect(parseHref('/skills?tab=files&file=SKILL.md')).toEqual({ tab: 'skills' });
+    expect(parseHref('/skills/x?tab=external')).toEqual({ tab: 'skills', id: 'x' });
   });
 
   it('旧链接迁移：设置里的模型页去模型页签，工具里的远端算力去服务', () => {
@@ -84,13 +92,14 @@ describe('界面内链接', () => {
   });
 
   it('旧链接迁移：/settings/agent/<页签> 去新的位置，认不出的页落到 Agent 提供方', () => {
-    expect(parseHref('/settings/agent/skills')).toEqual({ tab: 'settings', section: 'skills' });
+    expect(parseHref('/settings/agent/skills')).toEqual({ tab: 'skills' });
     expect(parseHref('/settings/agent/permissions')).toEqual({ tab: 'settings', section: 'privacy' });
     expect(parseHref('/settings/agent/advanced')).toEqual({ tab: 'settings', section: 'agent' });
     expect(parseHref('/settings/agent/connect')).toEqual({ tab: 'settings', section: 'agent' });
     expect(parseHref('/settings/agent/bogus')).toEqual({ tab: 'settings', section: 'agent' });
     expect(parseHref('/settings/agent')).toEqual({ tab: 'settings', section: 'agent' });
-    expect(parseHref('/settings/skills')).toEqual({ tab: 'settings', section: 'skills' });
+    expect(parseHref('/settings/skills')).toEqual({ tab: 'skills' });
+    expect(parseHref('/settings/integrations')).toEqual({ tab: 'skills' });
   });
 
   it('旧链接迁移：工具的旧短名落到注册表 ID 的新页', () => {
@@ -100,11 +109,12 @@ describe('界面内链接', () => {
     expect(parseHref('/tools/link-import')).toEqual({ tab: 'tools', tool: 'link-import' });
   });
 
-  it('除了设置，每个入口都有页面侧栏；打开视频时侧栏还在', () => {
+  it('除了设置与 Skills，每个入口都有页面侧栏；打开视频时侧栏还在', () => {
     expect(hasSidebar({ tab: 'space', category: 'video', projectId: null, video: { entryId: 'e1' } })).toBe(true);
     expect(hasSidebar({ tab: 'tasks', taskId: 't1' })).toBe(true);
     expect(hasSidebar({ tab: 'settings', section: 'about' })).toBe(false);
     expect(hasSidebar({ tab: 'models', category: 'llm' })).toBe(false);
+    expect(hasSidebar({ tab: 'skills', id: 'x' })).toBe(false);
   });
 });
 

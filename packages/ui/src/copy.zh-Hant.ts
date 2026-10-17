@@ -741,7 +741,7 @@ export const zhHant: CopyMessages = {
     unavailableTitle: (name: string) => `${name}尚未提供`,
     notRunning: '服務沒有執行，請先啟動',
     mcpRelated: '想讓終端機裡的 Claude Code、Codex 學會 BaoCut 的工作流程？那要為它們安裝 BaoCut 的 Skill，不需要啟動服務，說明在',
-    mcpRelatedLink: '設定 › Skills',
+    mcpRelatedLink: 'Skills',
   },
   runtimeCard: {
     name: 'BaoCut Runtime',

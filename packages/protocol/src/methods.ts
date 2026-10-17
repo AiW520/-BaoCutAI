@@ -112,7 +112,21 @@ import type {
   CompositionPreviewResult,
 } from './code-bundle.ts';
 import type { TemplateDetail, TemplateListResult, TemplateSendRef } from './template.ts';
-import type { SkillChangeResult, SkillDetail, SkillFileContent, SkillListResult, SkillRemoveResult, SkillSendRef } from './skill.ts';
+import type {
+  ProjectBrandDetail,
+  ProjectBrandSummary,
+  SkillChangeResult,
+  SkillDetail,
+  SkillFileChange,
+  SkillFileContent,
+  SkillInstallResult,
+  SkillListResult,
+  SkillPackageInspection,
+  SkillPackagePick,
+  SkillRemoveResult,
+  SkillSendRef,
+  SkillVersionsResult,
+} from './skill.ts';
 import type {
   SpaceContinueResult,
   SpaceListParams,
@@ -430,6 +444,8 @@ export interface RpcMethods {
       template?: TemplateSendRef;
       skill?: SkillSendRef;
       skills?: SkillSendRef[];
+      /** 只这一条不带项目的 `BRAND.md`（架构设计 §3.8「项目品牌」）。 */
+      skipProjectBrand?: boolean;
       slideAnnotations?: SlideAnnotation[];
       designAnnotations?: DesignAnnotation[];
       designSystemAnnotations?: DesignSystemAnnotation[];
@@ -1118,12 +1134,19 @@ export interface RpcMethods {
    */
   'skills.list': { params: Record<string, never>; result: SkillListResult };
   /** 一个 skill 的摘要、`SKILL.md` 全文与文件清单。没有这个 skill（或它没能加载）时 `not-found`（`SKILL_NOT_FOUND`）。 */
-  'skills.get': { params: { id: string }; result: SkillDetail };
+  'skills.get': { params: { id: string; revision?: number }; result: SkillDetail };
   /**
    * 读 skill 目录里的一个文本文件。`path` 必须是 `skills.get` 文件清单里的路径，否则 `not-found`（`SKILL_FILE_NOT_FOUND`）；
    * 超过 `SKILL_LIMITS.readFileBytes` 时 `invalid-request`（`SKILL_FILE_TOO_LARGE`），不是 UTF-8 文本时 `invalid-request`（`SKILL_FILE_NOT_TEXT`）。
    */
-  'skills.readFile': { params: { id: string; path: string }; result: SkillFileContent };
+  'skills.readFile': { params: { id: string; path: string; revision?: number }; result: SkillFileContent };
+  /**
+   * skill 目录里任一文件（含图片、音频等二进制）的短期读取句柄，同 `templates.openHandle`：详情页画素材、播放音频用。
+   * 不在文件清单里 `not-found`（`SKILL_FILE_NOT_FOUND`）；`revision` 不在保留的版本里 `not-found`（`SKILL_VERSION_NOT_FOUND`）。
+   */
+  'skills.openHandle': { params: { id: string; path: string; revision?: number }; result: MediaHandle };
+  /** 保留的版本，新的在前（架构设计 §3.8「版本」）。内置 skill 为空清单。 */
+  'skills.versions': { params: { id: string }; result: SkillVersionsResult };
   /**
    * 开关一个 skill（内置的也可以）。只存与来源默认值不同的差量。对已经在运行的原生会话不生效：会话开始时的 skill 索引是那时的开关，
    * 之后新开的原生会话才按新的开关（架构设计 §3.8）。
@@ -1150,6 +1173,50 @@ export interface RpcMethods {
    * （`SKILL_BUILTIN_NOT_REMOVABLE`），只能关。Web 会话不开放。
    */
   'skills.remove': { params: { id: string }; result: SkillRemoveResult };
+  /**
+   * 认一个上传包（zip 文件或文件夹，架构设计 §3.8「上传包」）：列出候选、略过的条目与同名冲突，不写任何东西。读不了时
+   * `invalid-request`（`SKILL_PACKAGE_INVALID`），一个 `SKILL.md` 都没有时 `invalid-request`（`SKILL_INVALID`）。Web 会话不开放。
+   */
+  'skills.inspectPackage': { params: { path: string }; result: SkillPackageInspection };
+  /**
+   * 按选择安装上传包里的候选：`new` 新装（同名 `SKILL_EXISTS`）、`update` 给同名的个人 skill 存一个新版本（不是个人的
+   * `SKILL_NOT_EDITABLE`）、`copy` 另存为副本（`conflict.copyId`）。有 `issue` 的候选 `SKILL_PACKAGE_INVALID`。Web 会话不开放。
+   */
+  'skills.installPackage': { params: { path: string; picks: SkillPackagePick[]; commandId?: Id }; result: SkillInstallResult };
+  /** 新建一个空白的个人 skill：`body` 是界面按语言给的正文模板，front matter 由 Runtime 写。id 由 `name` 规范化，占用时加 `-2`…。 */
+  'skills.create': {
+    params: { name: string; title?: string; description: string; body: string; commandId?: Id };
+    result: SkillChangeResult;
+  };
+  /** 把一个 skill（内置的也可以）复制成个人 skill，从第 1 版起；id 是 `<id>-2` 起第一个空的。 */
+  'skills.duplicate': { params: { id: string; title?: string; commandId?: Id }; result: SkillChangeResult };
+  /**
+   * 改个人 skill 的文件并存成一个新版本。`baseRevision` 不是当前版本时 `conflict`（`SKILL_REVISION_CONFLICT`）；不是个人的
+   * `SKILL_NOT_EDITABLE`；删 `SKILL.md`、改完不合规时 `SKILL_INVALID`；超过上限 `SKILL_TOO_LARGE`。Web 会话不开放。
+   */
+  'skills.write': {
+    params: { id: string; baseRevision: number; changes: SkillFileChange[]; note?: string; commandId?: Id };
+    result: SkillChangeResult;
+  };
+  /** 把一个旧版本存成新版本，不改写历史。Web 会话不开放。 */
+  'skills.restore': { params: { id: string; revision: number; commandId?: Id }; result: SkillChangeResult };
+  /** 把当前版本打成 zip 写到 `path`（不含点开头的条目与版本记录）。Web 会话不开放。 */
+  'skills.export': { params: { id: string; path: string }; result: { path: string } };
+
+  /**
+   * 项目根目录的 `BRAND.md`（架构设计 §3.8「项目品牌」）：有它的未归档项目。每次调用都重新读磁盘。
+   */
+  'brands.list': { params: Record<string, never>; result: { brands: ProjectBrandSummary[] } };
+  /** 一个项目的 `BRAND.md` 全文与 `brand/` 的文件清单；没有时 `brand` 与 `content` 为 null。没有这个项目时 `PROJECT_NOT_FOUND`。 */
+  'brands.get': { params: { projectId: Id }; result: ProjectBrandDetail };
+  /** 读 `BRAND.md` 或 `brand/` 里的一个文本文件；其余路径 `not-found`（`BRAND_NOT_FOUND`）。 */
+  'brands.readFile': { params: { projectId: Id; path: string }; result: SkillFileContent };
+  /** `BRAND.md` 或 `brand/` 里任一文件的短期读取句柄。 */
+  'brands.openHandle': { params: { projectId: Id; path: string }; result: MediaHandle };
+  /** 写 `BRAND.md` 与 `brand/`：没有 `BRAND.md` 时由这次建出来，写完必须有。Web 会话不开放。 */
+  'brands.write': { params: { projectId: Id; changes: SkillFileChange[]; commandId?: Id }; result: { brand: ProjectBrandSummary } };
+  /** 从一个 skill 生成 `BRAND.md`（正文去掉 front matter，素材进 `brand/`，脚本不带）。已有时 `conflict`（`BRAND_EXISTS`）。Web 会话不开放。 */
+  'brands.createFromSkill': { params: { projectId: Id; skillId: string; commandId?: Id }; result: { brand: ProjectBrandSummary } };
 
   /**
    * 共享这台电脑的模型能力（节点协议规范 §10）：开启节点服务并生成一个配对码。已经开着时按新参数重启监听。

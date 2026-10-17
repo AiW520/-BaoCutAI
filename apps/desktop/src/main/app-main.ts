@@ -14,6 +14,7 @@ import { quitChoice, quitPrompt, type QuitChoice } from './quit-prompt.ts';
 import { RuntimeSupervisor } from './runtime-supervisor.ts';
 import { installWebTabs } from './web-tabs.ts';
 import { openLocalFile } from './open-local-file.ts';
+import { trashProjectBrand } from './trash-brand.ts';
 import { showInFolder } from './reveal-path.ts';
 import { installStdioErrorGuards } from './stdio-errors.ts';
 import { saveDialogPath, saveFileData } from './save-dialog-path.ts';
@@ -247,6 +248,12 @@ export function startDesktopApp(): void {
 
   ipcMain.handle('baocut:reveal', (_event, target: unknown) => {
     showInFolder(target, (file) => shell.showItemInFolder(file));
+  });
+
+  // 删除项目品牌：BRAND.md 与 brand/ 移到废纸篓 / 回收站。只收应用窗口主框架发来的，路径在主进程里重新校验。
+  ipcMain.handle('baocut:trash-project-brand', async (event, projectPath: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender) || event.senderFrame !== event.sender.mainFrame) throw new Error('not allowed');
+    await trashProjectBrand(projectPath, (target) => shell.trashItem(target));
   });
 
   ipcMain.handle('baocut:open-file', (event, target: unknown) => {

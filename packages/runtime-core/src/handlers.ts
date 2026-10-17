@@ -61,6 +61,7 @@ import { resolveSaveDirectory } from './external-tools/downloads-directory.ts';
 import type { TemplateCatalog } from './templates/template-catalog.ts';
 import { templateMethods } from './templates/template-methods.ts';
 import type { StickerPacks } from './templates/sticker-packs.ts';
+import { ProjectBrands } from './skills/project-brand.ts';
 import { skillMethods } from './skills/skill-methods.ts';
 import type { SkillCatalog } from './skills/skill-catalog.ts';
 import type { SkillInstaller } from './skills/skill-installer.ts';
@@ -232,6 +233,8 @@ export function createHandlers({
   /** 文件定位到来源目录与文件。目录内的检查在媒体通道（或视频服务）里做。 */
   const locateMedia = (target: FileTarget) => locateFileTarget(harness, space, target);
   /** 发送与插话带的幻灯片标注：deck 换成相对会话工作目录的路径（docs/design/slides §9）。 */
+  // 项目品牌（§3.8）：不缓存，每次按项目登记读磁盘。
+  const brands = new ProjectBrands({ projects: () => harness.listProjects(), skills });
   const slideAnnotationsOf = (conversationId: Id, annotations: readonly SlideAnnotation[] | undefined) =>
     resolveSlideAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
   /** 设计稿标注同上（docs/design/canvas §9）。 */
@@ -604,13 +607,14 @@ export function createHandlers({
         media,
         harness,
         skills,
+        brands,
         slideAnnotationsOf,
         designAnnotationsOf,
         designSystemAnnotationsOf,
         videoAnnotationsOf,
         docsAnnotationsOf,
       }),
-      ...skillMethods({ skills, installer: skillInstaller }),
+      ...skillMethods({ skills, installer: skillInstaller, brands, media }),
       ...catalogMethods(toolCatalog, agentSkillsDir === undefined ? {} : { agentSkillsDir: () => agentSkillsDir }),
       ...toolCatalogueMethods({
         space,

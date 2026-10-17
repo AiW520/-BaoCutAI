@@ -756,7 +756,7 @@ export const ko: CopyMessages = {
     unavailableTitle: (name: string) => `${name}은(는) 아직 사용할 수 없습니다`,
     notRunning: '서비스가 실행 중이 아닙니다. 먼저 시작하세요',
     mcpRelated: '터미널의 Claude Code나 Codex가 BaoCut의 워크플로를 익히게 하고 싶나요? 서비스를 시작할 필요 없이 BaoCut Skill을 설치하면 됩니다. 참고:',
-    mcpRelatedLink: '설정 › Skills',
+    mcpRelatedLink: 'Skills',
   },
   runtimeCard: {
     name: 'BaoCut Runtime',

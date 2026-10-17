@@ -70,6 +70,8 @@ contextBridge.exposeInMainWorld('baocut', {
   pathForFile: (file: File) => webUtils.getPathForFile(file),
   revealPath: (target: string) => ipcRenderer.invoke('baocut:reveal', target),
   openFile: (target: string) => ipcRenderer.invoke('baocut:open-file', target),
+  // 删除项目品牌：BRAND.md 与 brand/ 移到废纸篓（路径在主进程里重新校验）。
+  trashProjectBrand: (projectPath: string) => ipcRenderer.invoke('baocut:trash-project-brand', projectPath),
   web,
   updates,
   openExternal: (url: string) => ipcRenderer.invoke('baocut:open-external', url),

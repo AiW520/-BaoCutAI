@@ -755,7 +755,7 @@ export const ja: CopyMessages = {
     unavailableTitle: (name: string) => `「${name}」はまだ利用できません`,
     notRunning: 'サービスが実行されていません。先に開始してください',
     mcpRelated: 'ターミナルの Claude Code や Codex に BaoCut のワークフローを覚えさせたい場合は、BaoCut の Skill をインストールしてください。サービスは不要です。詳しくは',
-    mcpRelatedLink: '設定 › Skills',
+    mcpRelatedLink: 'Skills',
   },
   runtimeCard: {
     name: 'BaoCut Runtime',

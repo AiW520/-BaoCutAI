@@ -811,7 +811,7 @@ export const fr: CopyMessages = {
     unavailableTitle: (name: string) => `${name} est encore indisponible`,
     notRunning: "Le service est arrêté. Démarrez-le d’abord",
     mcpRelated: "Pour apprendre les flux BaoCut à Claude Code ou Codex dans le terminal, installez le Skill BaoCut ; aucun service requis. Voir",
-    mcpRelatedLink: "Réglages › Skills",
+    mcpRelatedLink: "Skills",
   },
 
   runtimeCard: {

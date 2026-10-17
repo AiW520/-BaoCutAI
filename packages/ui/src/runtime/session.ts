@@ -198,6 +198,7 @@ export class RuntimeSession {
     designSystemAnnotations?: readonly DesignSystemAnnotation[],
     videoAnnotations?: readonly VideoAnnotation[],
     docsAnnotations?: readonly DocsAnnotation[],
+    options: { skipProjectBrand?: boolean } = {},
   ): Promise<Id> {
     const { taskId } = await this.client.request('conversations.send', {
       conversationId,
@@ -212,6 +213,7 @@ export class RuntimeSession {
       ...(designSystemAnnotations?.length ? { designSystemAnnotations: [...designSystemAnnotations] } : {}),
       ...(videoAnnotations?.length ? { videoAnnotations: [...videoAnnotations] } : {}),
       ...(docsAnnotations?.length ? { docsAnnotations: [...docsAnnotations] } : {}),
+      ...(options.skipProjectBrand ? { skipProjectBrand: true } : {}),
     });
     return taskId;
   }
