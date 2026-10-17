@@ -158,6 +158,7 @@
 
 在 `references/craft/video-production/` 下，用到时再打开；代码与样例原样复制，按正文说的用法取用。
 
+- [`examples/bundle-preview.html`](video-production/examples/bundle-preview.html)
 - [`examples/post-fx.js`](video-production/examples/post-fx.js)
 - [代码场景：整镜整段用 Canvas 或 SVG 画](video-production/references/code-scenes.md)
 - [分镜卡、过渡描述与运镜检查](video-production/references/shot-plan.md)
