@@ -897,6 +897,9 @@ test('字幕场景按样式文档的冻结素材版本加载字节', async () =>
   engine.dispose();
 });
 
+/** 实时合成层测试里替身（预渲染）的素材版本。 */
+const standInAsset = { id: 'baked', revision: '1' };
+
 /**
  * 实时合成层用的计划器（与 render-graph 同一规则）：开了实时层、这件合成没拉黑，且舞台在动或替身不可用时，计划的底层是它；
  * 记下每次画是不是透明底，可按要求抛发光错误。
@@ -913,7 +916,13 @@ function livePlanner() {
       sequenceRevision: 'r1',
       frame,
       canvas: { width: 1920, height: 1080, background: '#000000', backgroundAlpha: live ? 0 : 1 },
-      layers: [{ kind: 'text', itemId: 'title', matrix: [1, 0, 0, 1, 0, 0], opacity: 1, content: {} }],
+      layers: [
+        // 不切实时层、替身可用：底是替身的视频层。
+        ...(!live && state.standIn === 'usable'
+          ? [{ kind: 'video', itemId: 'comp', asset: standInAsset, sourceSeconds: seconds, sourceRate: 1, matrix: [1920, 0, 0, 1080, 0, 0], opacity: 1 }]
+          : []),
+        { kind: 'text', itemId: 'title', matrix: [1, 0, 0, 1, 0, 0], opacity: 1, content: {} },
+      ],
       voices: [],
       ...(live
         ? {
@@ -937,6 +946,7 @@ function livePlanner() {
     planAt,
     setDocuments: () => {},
     clearPictures: () => {},
+    setPicture: () => {},
     setLive: (next: { enabled: boolean; playing: boolean; blocked: string[] }) => {
       setLive.push(next);
       state.enabled = next.enabled;
@@ -1105,15 +1115,20 @@ test('实时合成层：透明底上有发光像素时这件合成拉黑、重�
 });
 
 test('实时合成层：播放与拖动中不看替身一律实时播、不提醒烘焙；停住才画可用的替身，iframe 等画布画上那一帧之后再收起', async () => {
+  // 替身的视频元素：定位立刻落地（不走 FakeMedia 的 seeking），就绪与否由 readyState 定。
+  const { video } = fakeMedia();
+  let currentTime = 0;
+  Object.defineProperty(video, 'currentTime', { get: () => currentTime, set: (seconds: number) => (currentTime = seconds) });
   const { frames, planner, setLive, renders, state, live, seen, engine } = await liveEngine();
   state.standIn = 'usable';
+  const standInKey = videoKey(standInAsset, 0);
+  engine.register(standInKey, video as unknown as HTMLVideoElement);
   // 记下画与收起的先后：收起 iframe 必须在画布画上不透明的那一帧之后。
   const order: string[] = [];
   const render = planner.render.bind(planner);
   planner.render = ((...args: Parameters<RenderPlanner['render']>) => {
-    const rendered = render(...args);
-    order.push(rendered.plan.live ? 'render:live' : 'render:opaque');
-    return rendered;
+    order.push(args[3]?.transparent ? 'render:transparent' : 'render:opaque');
+    return render(...args);
   }) as RenderPlanner['render'];
   const show = live.host.show;
   live.host.show = (layer, frame) => {
@@ -1158,6 +1173,29 @@ test('实时合成层：播放与拖动中不看替身一律实时播、不提�
   expect(engine.live).toBeNull();
   expect(renders.at(-1)).toEqual({ frame: 30, transparent: false });
   expect(live.shown.at(-1)).toEqual([null, 30]);
+
+  // 替身还在来时停下（Runtime 还在备播放副本、舞台没挂元素；挂上了还没就绪）：不等它，画布按透明底画、iframe 不收；
+  // 替身到了才画不透明的那一帧、收起 iframe。
+  engine.register(standInKey, null);
+  engine.play();
+  frames.tick(2000 / 60);
+  expect(engine.live?.itemId).toBe('comp');
+  order.length = 0;
+  engine.pause();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(engine.live).toBeNull();
+  expect(order).toEqual(['render:transparent']);
+  expect(live.shown.at(-1)?.[0]).toBe('comp');
+  video.readyState = 1;
+  engine.register(standInKey, video as unknown as HTMLVideoElement);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(order).toEqual(['render:transparent', 'render:transparent']);
+  expect(live.shown.at(-1)?.[0]).toBe('comp');
+  video.readyState = 4;
+  video.land();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(order).toEqual(['render:transparent', 'render:transparent', 'render:opaque', 'hide']);
+  expect(live.shown.at(-1)?.[0]).toBeNull();
 
   // 替身不可用时停住也是实时层，这时才提醒烘焙。
   state.standIn = 'stale';

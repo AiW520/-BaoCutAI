@@ -247,6 +247,14 @@ export class PreviewEngine {
   /** 从媒体元素读像素用的画布。 */
   #scratch: CanvasRenderingContext2D | null = null;
   #stats: PlaybackStats = emptyStats();
+  /**
+   * 这一层的画面还在来：在载入或定位，或还没有元素（地址还在取、Runtime 在备兼容副本）。载入失败的元素与取不到的素材字节
+   * 不算（这一帧照画，跳过它）。
+   */
+  #coming(layer: MediaLayer, state: Readiness | undefined): boolean {
+    return state === 'pending' || (state === 'absent' && !this.#kernelDecoded(layer) && this.#sourceOf(layer) === null);
+  }
+
   /** 卡住时点名卡在哪一步的开发日志（见 preview-watch）。 */
   readonly #watch = new PreviewWatch(() => this.#snapshot());
   #unwatch: (() => void)[] | null = null;
@@ -255,6 +263,8 @@ export class PreviewEngine {
   #problems: string[] = [];
   /** 画布上这一帧的底是没有可用替身的实时合成层（随 `problems` 一起进状态，舞台提示「导出前要烘焙」）。 */
   #liveShown = false;
+  /** 实时层宿主此刻露着的合成（画布透明处底下的 iframe）；收起之后是 null。 */
+  #liveOn: Id | null = null;
   /** 要的转写里还有没取到的：声波的说话人提示先不报（取到之前内核当作没有转写）。 */
   #speechLoading = false;
   /** 素材频谱的解码器（用计划器的模块分析），第一次要频谱时建。 */
@@ -392,6 +402,7 @@ export class PreviewEngine {
     this.#liveUnwatch?.();
     this.#liveUnwatch = null;
     this.#liveHost?.show(null, -1);
+    this.#liveOn = null;
     this.#liveHost = host;
     this.#livePrepared = '';
     if (host) {
@@ -434,6 +445,7 @@ export class PreviewEngine {
   #blockLive(itemId: Id, reason: string): void {
     if (this.#liveBlocked.has(itemId)) return;
     this.#liveBlocked.add(itemId);
+    if (this.#liveOn === itemId) this.#liveOn = null;
     this.#watch.noteError(`实时合成层 ${itemId}（${reason}）`, new Error(reason)); // i18n-ignore: 开发日志
     this.#sendLive();
     if (this.#video) this.#liveCandidates = liveCandidates(this.#video.sequence, this.#video.assets, this.#liveBlocked);
@@ -825,7 +837,10 @@ export class PreviewEngine {
     if (this.#liveHost) {
       this.#prepareLive();
       // 这一帧没有实时层时不在这里收起 iframe：等画布画上替身那一帧再收（#paint），停下来的那一刻底下不露黑。
-      if (plan.live) this.#liveHost.show(plan.live, plan.frame);
+      if (plan.live) {
+        this.#liveHost.show(plan.live, plan.frame);
+        this.#liveOn = plan.live.itemId;
+      }
     }
 
     // 视频层与自带的声音（轨道隐藏时只有声音）：视频实例，或带预渲染替身的合成。素材取计划里带的那个。
@@ -962,7 +977,17 @@ export class PreviewEngine {
       const picture = element ? this.#lastPictures.get(element) : undefined;
       if (picture) stale.set(layer.itemId, picture);
     }
-    const waiting = [...states].some(([itemId, state]) => state === 'pending' && !stale.has(itemId));
+    // 停住了、iframe 还露着的那件合成的替身还在来（Runtime 还在备播放副本、元素还没挂上，或还在定位）：不等它，画布按透明底画、
+    // iframe 不收，实时层多撑一会儿；替身到了（元素挂上、媒体事件）再画不透明的那一帧、收起 iframe，停下的那一刻不黑屏。导出不经过这里。
+    const heldByLive = new Set<Id>(
+      !plan.live && this.#liveHost && this.#liveOn !== null
+        ? layers
+            .filter(isMediaLayer)
+            .filter((layer) => layer.itemId === this.#liveOn && this.#coming(layer, states.get(layer.itemId)))
+            .map((layer) => layer.itemId)
+        : [],
+    );
+    const waiting = [...states].some(([itemId, state]) => state === 'pending' && !stale.has(itemId) && !heldByLive.has(itemId));
     if (waiting) {
       const now = performance.now();
       this.#holdSince ??= now;
@@ -976,6 +1001,7 @@ export class PreviewEngine {
     const pending = new Set<Id>();
     const notes: string[] = [];
     let rendered: RenderedFrame;
+    let transparent = plan.live !== undefined || heldByLive.size > 0;
     try {
       this.#sendDocuments(planner, layers, pending);
       // 暂停时转写取到了只叫重画、不重新对元素：在这里送上，这一帧就按转写画声波。
@@ -984,8 +1010,15 @@ export class PreviewEngine {
       const start = performance.now();
       this.#sendPictures(planner, layers, states, stale, width, height);
       const uploaded = performance.now();
-      // 底是实时合成层时画透明底（背景也不铺），iframe 从画布的透明处露出来。
-      rendered = plan.live ? planner.render(this.#time, width, height, { transparent: true }) : planner.render(this.#time, width, height);
+      // 底是实时合成层、或替身还在来而 iframe 还撑着时画透明底（背景也不铺），iframe 从画布的透明处露出来。
+      try {
+        rendered = transparent ? planner.render(this.#time, width, height, { transparent: true }) : planner.render(this.#time, width, height);
+      } catch (error) {
+        // 替身还在来时的透明底叠不上去（发光像素）：这一帧按不透明的画，替身的位置先空着。
+        if (plan.live || heldByLive.size === 0 || !(error instanceof PlanFailure) || error.code !== EMISSIVE_STRAIGHT_ALPHA) throw error;
+        transparent = false;
+        rendered = planner.render(this.#time, width, height);
+      }
       if (this.#playing) {
         sample(this.#stats.uploadMs, uploaded - start);
         sample(this.#stats.renderMs, performance.now() - uploaded);
@@ -1010,18 +1043,18 @@ export class PreviewEngine {
     }
     context.putImageData(new ImageData(planner.frame(), width, height), 0, 0);
     // 画布上已经是不透明的这一帧（替身或占位）：现在才收起底下的 iframe。
-    if (!plan.live) this.#liveHost?.show(null, plan.frame);
+    if (!plan.live && !transparent && this.#liveHost) {
+      this.#liveHost.show(null, plan.frame);
+      this.#liveOn = null;
+    }
     // 临时字幕不是视频里的实例：不给点选；内核对它的提示（跳过、警告）与还在取的层一样不报（记进 `pending`）。
     this.#setCaptionHits((rendered.captionHits ?? []).filter((hit) => hit.itemId !== LIVE_CAPTION_ITEM_ID));
     pending.add(LIVE_CAPTION_ITEM_ID);
     this.#painted = { revision: plan.sequenceRevision, frame: plan.frame };
     // 实时合成层的帧是 Interactive 档（动效视频设计 §4.3）：底下是 iframe 实时画的，不是导出的那一帧。
     this.#exact = quality === 'exact' && !plan.live && [...states.values()].every((state) => state === 'ready');
-    // 画面出来了：没有还在来的媒体。载入失败的元素与取不到的素材字节不再等（这一帧照画，跳过它），只有还没有元素的在来。
-    const coming = layers.filter(isMediaLayer).some((layer) => {
-      const state = states.get(layer.itemId);
-      return state === 'pending' || (state === 'absent' && !this.#kernelDecoded(layer) && this.#sourceOf(layer) === null);
-    });
+    // 画面出来了：没有还在来的媒体。
+    const coming = layers.filter(isMediaLayer).some((layer) => this.#coming(layer, states.get(layer.itemId)));
     if (!coming) this.#setPictured(true);
     if (this.#playing) {
       this.#stats.presented++;
