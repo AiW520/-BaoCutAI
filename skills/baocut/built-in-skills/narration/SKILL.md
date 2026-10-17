@@ -46,7 +46,7 @@ version: 1.6.0
 ## 4. 量出来、查接缝、重配
 
 - **量**：结果的时长取自结果里的媒体事实，对照预算。超了按第 1 节判断是否允许压缩，再重配那一段，不改时间线速度；短了照实交。
-- **对齐**：把旁白素材转写得到每个字的时间（transcribe 给旁白的 asset，语言断言为稿子的语言）；字幕与切镜都用这份时间，不凭感觉估。要选词时间为 `native` 的模型：先看 models_capabilities 里转写模型的 `wordTimestamps`，默认模型是 `none`（如 MOSS）时显式给 `model`（本机如 qwen3-asr），不然拿不到字时间；`acceptsHint` 为 true 的模型才在提示里放专名。不等结果（jobs_wait 之后）时，转写文档的 id 在任务结果的 `pipeline.summary.documentId`，用 documents_read 读。
+- **对齐**：把旁白素材转写得到每个字的时间（transcribe 给旁白的 asset，语言断言为稿子的语言）；字幕与切镜都用这份时间，不凭感觉估。要选词时间为 `native` 的模型：先看 models_capabilities 里转写模型的 `wordTimestamps`，默认模型是 `none`（如 MOSS）时显式给 `model`（本机如 qwen3-asr），不然拿不到字时间；`acceptsHint` 为 true 的模型才在提示里放专名。不等结果（jobs_wait 之后）时，转写文档的 id 在任务结果的 `pipeline.summary.documentId`，用 documents_read 读。识别错的字（同音字、专名）在建字幕前用 edits_apply 的 `updateWords` 改回稿子的写法，词的时间不动（做法用 `skills_read` 读 `baocut-catalog-subtitles` 的「润色写回」）。
 - **查接缝**（量出来的）：用对齐后的字时间与第 1 节的计数方法算每句的单位/秒与句间停顿。偏离中位数超过 15% 的句子、超过 0.8 秒的句间停顿，是重配或剪掉静音的候选。
 - **重配一句**：只对那一句 speak（同音色、同说明、换 seed），用对齐时间在时间线上替换那一句的范围；新句比原句长时按第 1 节处理文本与时长的冲突，不变速。
 - **改稿只动改到的段**：稿子改了一段或插进一段时，只重配、重新对齐那一段；没改的段落沿用原来的录音与字时间，不整片重配、重转写。
