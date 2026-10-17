@@ -286,7 +286,11 @@ export class RuntimeSession {
   /** 让用户选一个目录并登记为项目；取消时返回 null。 */
   async openProjectFromDialog(): Promise<Project | null> {
     const dir = await this.host.pickDirectory();
-    if (!dir) return null;
+    return dir ? this.openProject(dir) : null;
+  }
+
+  /** 把一个已有目录登记为项目（已经是项目时返回那一个，归档的拿回列表；架构设计 §5.1）。 */
+  async openProject(dir: string): Promise<Project> {
     const { project } = await this.client.request('projects.open', { path: dir });
     return project;
   }
