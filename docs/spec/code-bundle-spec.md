@@ -270,13 +270,15 @@ interface CompositionContext {
 - 新的作者模板使用 `noLoop()`，由 Adapter 调用受控的绘制，使用明确的局部时间，而不是真实的运行时长。
 - 使用 `randomSeed` / `noiseSeed`，并固定自己的随机源与调用顺序。
 - 已有的、带状态的草图可以声明 `sequential`：从初始状态按固定步长重放到目标帧（§5.3）。
-- `p5.min.js` 随包带着（§2.4）。2D 模式（缺省的 `createCanvas`）底下是一张 Canvas 2D，满足 §7.2 的条件时可以走指令烘焙，库内部用到录制器不支持的调用时回退像素；`WEBGL` 模式按 §4.4 的 WebGL 处理。p5 本身尚未在离屏宿主里实测。
+- `p5.min.js` 随包带着（§2.4）。实测（p5 1.11.3，macOS 离屏宿主）：2D 模式（缺省的 `createCanvas`）底下是一张 Canvas 2D，草图每帧以 `clear()` 或不透明的 `background()` 开头、只画图形时走指令烘焙（§7.2）并通过对拍；库内部用到录制器不支持的调用时回退像素。文字按 §7.2 要用包内 `@font-face` 的字体族（`textFont`）。`WEBGL` 模式按 §4.4 处理：录制器报 `canvas-not-2d`，整段像素烘焙。
+- 写法：实例模式 `new p5(sketch, 根元素)` 让画布挂进根元素，`setup` 里 `pixelDensity(1)`、`createCanvas(宽, 高)`、`noLoop()`；`initialize` 等 `setup` 跑完再 resolve，`renderAt` 记下时间后 `redraw()`。
+- 原样的 `p5.min.js` 过不了 §6.1 的静态扫描：库的字串里有 9 处绝对 URL（whatwg-url 的探测字串 `new URL("http://a")` 等 6 处、i18next 翻译的 CDN 路径、两处文档链接），导入报 `BUNDLE_NETWORK_REFERENCE`。这些字串不影响绘制，带 p5 之前把它们改掉（CDN 路径改成相对路径，其余换掉协议前缀）或从源码构建一份不带 FES 与 i18n 的库；扫描是否放过字串里的 URL 见 §9。
 
 ### 4.4 Three.js
 
 - 用局部时间直接求出对象的状态，再渲染场景。
 - 动画片段可以通过 `AnimationMixer.setTime` 驱动。但这不等于所有的物理、粒子和异步资源都天然可以随机访问；带状态的部分要么改写成时间的纯函数，要么声明 `sequential`。
-- **WebGL**（Three.js、原生 WebGL、p5 的 `WEBGL` 模式）在离屏宿主里可用：宿主开着 GPU 合成（macOS 上是 ANGLE Metal），只把 Canvas 2D 与页面光栅留在 CPU；关掉硬件加速后 Chromium 连软件 WebGL 也不给。上下文必须开 `preserveDrawingBuffer: true`，`renderAt` 画完调 `gl.finish()`，否则 seek 之后的截图可能拿到空帧。WebGL 画面只能走像素烘焙（§7.1）；不同机器的 GPU 光栅可能有细微差别，帧摘要只在同一台机器上可比。库文件与模型随包带着：`three.module.js` 等放 `vendor/`，`gltf` `glb` `bin` `hdr` `ktx2` 在扩展名白名单里（§6.1）。
+- **WebGL**（Three.js、原生 WebGL、p5 的 `WEBGL` 模式）在离屏宿主里可用：宿主开着 GPU 合成（macOS 上是 ANGLE Metal），只把 Canvas 2D 与页面光栅留在 CPU；关掉硬件加速后 Chromium 连软件 WebGL 也不给。宿主截的是合成后的页面（`capturePage`），不回读画布：实测（three r170，macOS）不开 `preserveDrawingBuffer`、不调 `gl.finish()` 的变体与开了的逐帧摘要相同；仍建议开 `preserveDrawingBuffer: true` 并在 `renderAt` 画完调 `gl.finish()`，别的平台与 Chromium 版本没有测过。WebGL 画面只能走像素烘焙（§7.1；录制器报 `canvas-not-2d`，`auto` 回退、`ops` 失败），640×360 约 23 帧/秒；不同机器的 GPU 光栅可能有细微差别，帧摘要只在同一台机器上可比。库文件与模型随包带着：`three.module.js` 等放 `vendor/`（原样通过静态扫描，库里的 URL 都在注释里），`gltf` `glb` `bin` `hdr` `ktx2` 在扩展名白名单里（§6.1）。`WebGLRenderer({ canvas, alpha: true })` 画到根元素里的画布，`setPixelRatio(1)`、`setSize(宽, 高, false)` 让画布像素尺寸等于固有尺寸；透明输出 `setClearColor(0x000000, 0)`，验证的 alpha 检查通过。
 
 ### 4.5 Canvas 与透明
 
@@ -621,6 +623,7 @@ HyperFrames 合同进入第一期，是 2026-10-07 用户开始实现任务时�
 | 导入的原子性（§7） | 首版两笔事务 | 原子导入的路径：让合成实例的 `ItemInput` 接受 `assetImportRef`（命令与协议规范 §4.2 已允许视频、图片、白板与音频实例这样引用同一事务里 `importAsset` 的 `ref`），届时导入与放置并成一笔事务。在此之前 `BakeRecord` 的 `bakedAssetRef` 与 `sourceBundleRef` 用代码包清单的 `bundleId/revision` 占位，不是素材引用 |
 | 后台烘焙写入替身（§7.5） | 首版两笔事务 | 替身写入是「导入素材 + `replaceCodeBundle`」两笔，中间别人可以插一笔；要并成一笔需要一个只改 `prerender` 的操作，或让 `replaceCodeBundle` 接受同一事务里 `importAsset` 的 ref（与上一行同一条路） |
 | `cue-track` 的数据形式 | 未定 | 传给代码的 cue 数据的结构 |
+| 静态网络扫描与三方库（§6.1） | 待定 | 原样的 `p5.min.js` 因字串里的 9 处 URL 被拒（§4.3），运行期已有网络拦截兜底（§2.6）；是否让扫描只在会触发加载的位置拒绝、字串里的绝对 URL 降为警告 |
 | 检查点的格式 | 未定 | 作者如何声明与实现可保存的状态 |
 | Remotion 的许可与透明导出 | 待验证 | 已定：不随应用分发，用代码包自己的依赖（§4.6）。透明导出按实际版本确认可用的模式 |
 | 首批 P0 模板 | 未定 | 数量、类型与许可 |

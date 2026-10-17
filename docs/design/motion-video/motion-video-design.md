@@ -305,7 +305,7 @@ baoyu-design 的 animated-video 把一部动画写成一个 React 树，整体�
 | | §7.10 | `NarrationCueSheet` 由章节表取代：标废弃，内容并入 §7.12 |
 | 代码包规范 | §2.5 与 `CODE_BUNDLE_ALLOWED_EXTENSIONS` | 白名单加 `.glb` `.gltf` `.hdr` `.ktx2`（及 `.bin`，glTF 的二进制缓冲） |
 | | §3.1、§9 | 替身过期规则（§7.2，已做：代码包规范 §7.4）；`audioRoute` 在讲解片与 MV 里的取值 |
-| | §4.3、§4.4 | 实测后补 WebGL 取帧与 p5 2D 烘焙的结论 |
+| | §4.3、§4.4 | 实测后补 WebGL 取帧与 p5 2D 烘焙的结论（已做：p5 2D 走指令烘焙，Three.js 像素烘焙，`p5.min.js` 原样过不了静态扫描） |
 | | §7 | 烘焙成为后台 Job，导入不等烘焙（已做：代码包规范 §7.5） |
 | 架构设计 | §8.6 | `SceneRecipe` / `BuildLedger` 与章节表的关系（章节表是意图与编译记录，Ledger 记构建） |
 | | §9.4 | 实时合成层的层级与停住时的取舍 |
@@ -321,5 +321,5 @@ baoyu-design 的 animated-video 把一部动画写成一个 React 树，整体�
 | 事项 | 要确认什么 |
 | --- | --- |
 | 实时层的切点（§4.2） | `render-graph` 的「从某个 order 起画、底下留透明」在 `preview.tsx` 的画布上能否与 iframe 对齐到像素；播放中切点两侧的帧是否同步（iframe 的 `renderAt` 与画布的那一帧要是同一个视频帧） |
-| p5 与 Three.js 真实库的实测（§9） | WebGL 取帧与像素烘焙已用原生 WebGL fixture（`baocut-webgl`）走通并写进代码包规范 §4.4；还没用 `three.module.js` 与 `p5.min.js` 本体跑过：p5 2D 模式能否走指令烘焙、Three.js 的 `WebGLRenderer` 默认设置要改哪些（`preserveDrawingBuffer`），要把库文件带进一个临时包实测后补进 §4.3 |
+| p5 与 Three.js 真实库的实测（§9） | 已测（2026-10-17，macOS，three r170、p5 1.11.3 带进临时包）：p5 2D 草图走指令烘焙并通过对拍，p5 `WEBGL` 与 Three.js 走像素烘焙（`canvas-not-2d`），不开 `preserveDrawingBuffer` 的 Three.js 变体取到的帧与开了的相同；`p5.min.js` 原样因字串里的 9 处 URL 被静态扫描拒绝。结论写进代码包规范 §4.3、§4.4，扫描的取舍记在 §9 |
 | `align` 的阈值（§6.2） | `coverage` 多低、`lowConfidence` 多少算对不上，用一首歌与一段讲稿实测后定 |
