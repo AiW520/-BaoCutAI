@@ -2,7 +2,6 @@ import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import {
   ANIMATED_STICKER_PACKS,
   COMMUNITY_PETS,
-  OFFICIAL_PETS,
   STICKER_PACKS,
   packStickers,
   type AssetRecord,
@@ -310,7 +309,7 @@ export function ElementsPanel({ sequence, assets }: { sequence: Sequence; assets
   const pets = petPeek(q);
   const keep: Section[] = [
     ...(mineStatic.stickers.length || stickerPacks.length ? ['sticker' as const] : []),
-    ...(mineDynamic.stickers.length || animPacks.length || pets.official.length || pets.community.length ? ['dynamic' as const] : []),
+    ...(mineDynamic.stickers.length || animPacks.length || pets.length ? ['dynamic' as const] : []),
   ];
   const sections = elementSections(query, keep).filter((section) => root || section.key === tab);
   const current =
@@ -662,9 +661,8 @@ function Dynamic({
   const shown = shownPacks(sub, packs);
   const withConfetti = (sub === 'all' || sub === 'confetti') && items.length > 0;
   const at = withConfetti ? confettiAt(shown) : -1;
-  // Codex Pets 跟在「我的贴纸」后面（设计稿 `PetPeek`）：不搜索时摆官方的前几只，搜索时摆命中的。
-  const peek = petPeek(brand.query);
-  const withPets = sub === 'all' && peek.official.length + peek.community.length > 0;
+  // Codex Pets 跟在「我的贴纸」后面（设计稿 `PetPeek`）：不搜索时摆目录的前几只，搜索时摆命中的。
+  const withPets = sub === 'all' && petPeek(brand.query).length > 0;
   const lead = withMine || withPets;
   const confetti = (first: boolean) => (
     <Fragment key="confetti">
@@ -680,7 +678,7 @@ function Dynamic({
           <PackHead
             first={!withMine}
             title={PT.title}
-            note={PT.peekNote(OFFICIAL_PETS.length, COMMUNITY_PETS.length)}
+            note={PT.peekNote(COMMUNITY_PETS.length)}
             action={<ViewAll onPress={onPets} />}
           />
           <PetPeekGrid query={brand.query} editable={tiles.editable} />

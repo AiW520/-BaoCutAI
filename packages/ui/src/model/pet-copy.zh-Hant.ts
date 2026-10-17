@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const zhHant: PetMessages = {
   title: 'Codex Pets',
   note: '8 欄精靈圖 · 待機循環 · 跟隨播放頭',
-  peekNote: (official, community) => `官方 ${official} · 社群 ${community}`,
-  official: '官方',
-  community: '社群',
-  sources: 'Pet 來源',
+  peekNote: (count) => `社群 ${count}`,
   categoryChips: 'Pet 分類',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const zhHant: PetMessages = {
     robots: '機器人',
     'objects-props': '物件與道具',
   },
-  version: (version) => `v${version}`,
   noMatch: '沒有符合的 Pet',
   noMatchHint: '換個詞，或換一個分類',
   nonCommercial: '僅限非商業使用',

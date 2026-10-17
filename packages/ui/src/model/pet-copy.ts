@@ -18,10 +18,7 @@ import { vi } from './pet-copy.vi.ts';
 const en = {
   title: 'Codex Pets',
   note: '8-column sprite sheets · idle loop · follows the playhead',
-  peekNote: (official: number, community: number) => `${official} official · ${community} community`,
-  official: 'Official',
-  community: 'Community',
-  sources: 'Pet sources',
+  peekNote: (count: number) => `${count} community pets`,
   categoryChips: 'Pet categories',
   chip: (label: string, count: number) => `${label} ${count}`,
   categories: {
@@ -37,7 +34,6 @@ const en = {
     robots: 'Robots',
     'objects-props': 'Objects & props',
   } as Record<string, string>,
-  version: (version: number) => `v${version}`,
   noMatch: 'No matching pets',
   noMatchHint: 'Try another word or category',
   nonCommercial: 'Non-commercial use only',

@@ -1130,9 +1130,8 @@ export interface RpcMethods {
   'stickers.applyToVideo': { params: StickerApplyParams; result: StickerApplyResult };
 
   /**
-   * Codex Pets（`pets.ts` 的目录）的短期读取句柄，同 `artifacts.openHandle`：元素面板画格子用。官方 pet 的图集从素材 CDN、
-   * 社区 pet 的图集与缩略图从上游取进本机缓存，之后离线也能用。目录里没有的 pet、官方 pet 的 `thumbnail` 与 `preview` 是 `not-found`
-   * （`PET_NOT_FOUND`）；取不下来是 `internal`（`ONLINE_ASSET_UNAVAILABLE`）。
+   * Codex Pets（`pets.ts` 的目录）的短期读取句柄，同 `artifacts.openHandle`：元素面板画格子用。图集与缩略图从上游取进本机
+   * 缓存，之后离线也能用。目录里没有的 pet 是 `not-found`（`PET_NOT_FOUND`）；取不下来是 `internal`（`ONLINE_ASSET_UNAVAILABLE`）。
    */
   'pets.openHandle': { params: PetHandleParams; result: MediaHandle };
   /**

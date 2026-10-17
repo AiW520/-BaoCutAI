@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const de: PetMessages = {
   title: 'Codex Pets',
   note: 'Sprite-Sheets mit 8 Spalten · Ruhe-Schleife · folgt dem Abspielkopf',
-  peekNote: (official, community) => `${official} offiziell · ${community} aus der Community`,
-  official: 'Offiziell',
-  community: 'Community',
-  sources: 'Herkunft der Haustiere',
+  peekNote: (count) => `${count} aus der Community`,
   categoryChips: 'Haustier-Kategorien',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const de: PetMessages = {
     robots: 'Roboter',
     'objects-props': 'Gegenstände',
   },
-  version: (version) => `v${version}`,
   noMatch: 'Keine passenden Haustiere',
   noMatchHint: 'Versuche ein anderes Wort oder eine andere Kategorie',
   nonCommercial: 'Nur nichtkommerzielle Nutzung',

@@ -1,19 +1,7 @@
-// @generated 由原型的 designs/baocut/app/model-pet-catalog.js 与 designs/baocut/assets/pets/provenance.json 转写，不要手改。
-import type { CommunityPet, OfficialPet, PetCategory } from './pets.ts';
+// @generated 由原型的 designs/baocut/app/model-pet-catalog.js 转写，不要手改。
+import type { CommunityPet, PetCategory } from './pets.ts';
 
 // i18n-ignore-start 目录数据：名字、作者与许可是原文，不翻译
-export const OFFICIAL_PETS: readonly OfficialPet[] = [
-  { id: 'bsod', name: 'BSOD', description: 'A tiny blue-screen gremlin.', version: 2, bytes: 1361670, sha256: 'b55c717298786dc56622c287d707d60e526fd7b32b39a60346871d6c6516b26d' },
-  { id: 'codex', name: 'Codex', description: 'The original Codex companion.', version: 2, bytes: 1309110, sha256: 'ac2990f24d55372411cebdc66a726e1fcbf5e80ec95378e2d25a6241abbedf88' },
-  { id: 'dewey', name: 'Dewey', description: 'A calm companion for focused workspace days', version: 2, bytes: 1159676, sha256: 'f2be8f576ab9d6cf287dd3518f86670e98d0270a83d41015d1018ab3aef791be' },
-  { id: 'fireball', name: 'Fireball', description: 'Hot path energy for fast iteration.', version: 2, bytes: 1445424, sha256: 'c1447dba809eb642e58aa213da5920eb27764e0f1df34a5651db091a1f79cbf3' },
-  { id: 'hoots', name: 'Hoots', description: 'A sharp-eyed owl for polished work in a blink.', version: 2, bytes: 2447958, sha256: '62539958eb6ab2b23c6cb640c6ca9516a42a75e785203eee3eeff4d9c4581456' },
-  { id: 'null-signal', name: 'Null Signal', description: 'Quiet signal from the void.', version: 2, bytes: 797008, sha256: 'a816f7488c187ffe8b7f5d58319deb6cfa591f98c219ef06cbaf10d1f9f330db' },
-  { id: 'rocky', name: 'Rocky', description: 'A steady rock when the diff gets large.', version: 2, bytes: 978516, sha256: '81970d728fb0a024385298c47dd9128ee18e9eb9d1db84ccacd42edea9f3bd6a' },
-  { id: 'seedy', name: 'Seedy', description: 'Small green shoots for new ideas.', version: 2, bytes: 1277240, sha256: '4cc6c9f4bc61882379472dfa7fa91ca128b90933b0ae3cda9fff3da91dc6d1f8' },
-  { id: 'stacky', name: 'Stacky', description: 'A balanced stack for deep work.', version: 2, bytes: 1050996, sha256: '7e1afd29221d3ac0de0bd7a528e9b49170910742e634cd666fa7ad16d7b2e7d2' },
-];
-
 export const PET_CATEGORIES: readonly PetCategory[] = [
   { slug: 'game-characters', name: 'Game Characters', zh: '游戏角色' },
   { slug: 'anime-characters', name: 'Anime Characters', zh: '动漫角色' },

@@ -3,29 +3,18 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  COMMUNITY_PETS,
-  OFFICIAL_PETS,
-  PET_CATEGORIES,
-  communityPetPreviewUrl,
-  communityPetSheetUrl,
-  communityPetThumbnailUrl,
-} from '@baocut/protocol';
+import { COMMUNITY_PETS, PET_CATEGORIES, communityPetPreviewUrl, communityPetSheetUrl, communityPetThumbnailUrl } from '@baocut/protocol';
 import type { TrustedPrincipal } from '../gateway.ts';
 import type { MediaRegistry } from '../media.ts';
-import type { OnlineAsset, OnlineAssets } from '../online-assets.ts';
+import type { OnlineAssets } from '../online-assets.ts';
 import type { VideoService } from '../videos/video-service.ts';
-import { resolveStickerPacksDir } from './sticker-packs.ts';
 import { CodexPets } from './codex-pets.ts';
 
-const repo = path.dirname(resolveStickerPacksDir({})!);
-const prototypePets = path.join(repo, 'designs/baocut/assets/pets');
 const webp = (body = 'sheet') => Buffer.concat([Buffer.from('RIFF\0\0\0\0WEBP'), Buffer.from(body)]);
 const sha = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
 describe('Codex Pets', () => {
   let cache: string;
-  let wanted: OnlineAsset[];
   let fetched: string[];
   let served: Record<string, Buffer>;
   let converted: [string, string][];
@@ -34,7 +23,6 @@ describe('Codex Pets', () => {
 
   beforeEach(() => {
     cache = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-pets-'));
-    wanted = [];
     fetched = [];
     served = {};
     converted = [];
@@ -44,16 +32,7 @@ describe('Codex Pets', () => {
   afterEach(() => fs.rmSync(cache, { recursive: true, force: true }));
 
   const pets = () => {
-    const online = {
-      cacheDir: cache,
-      ensure: async (asset: OnlineAsset) => {
-        wanted.push(asset);
-        const file = path.join(cache, asset.path);
-        fs.mkdirSync(path.dirname(file), { recursive: true });
-        fs.writeFileSync(file, webp());
-        return file;
-      },
-    } as unknown as OnlineAssets;
+    const online = { cacheDir: cache } as unknown as OnlineAssets;
     const videos = {
       petIdleApng: async (sheet: string, out: string) => {
         converted.push([sheet, out]);
@@ -75,31 +54,12 @@ describe('Codex Pets', () => {
     issue: async (root: string, file: string) => (issued.push(path.join(root, file)), { url: file }),
   } as unknown as MediaRegistry;
 
-  it('目录：官方 9 只与原型随附的图集逐字节对得上；社区 239 只，分类都在目录里', () => {
-    const provenance = JSON.parse(fs.readFileSync(path.join(prototypePets, 'provenance.json'), 'utf8')).pets;
-    expect(OFFICIAL_PETS.map((pet) => pet.id)).toEqual(Object.keys(provenance));
-    for (const pet of OFFICIAL_PETS) {
-      const bytes = fs.readFileSync(path.join(prototypePets, 'official', pet.id, 'spritesheet.webp'));
-      expect({ bytes: bytes.length, sha256: sha(bytes) }, pet.id).toEqual({ bytes: pet.bytes, sha256: pet.sha256 });
-    }
+  it('目录：社区 239 只，分类都在目录里', () => {
     expect(COMMUNITY_PETS).toHaveLength(239);
     const categories = new Set(PET_CATEGORIES.map((category) => category.slug));
     expect(COMMUNITY_PETS.every((pet) => categories.has(pet.category))).toBe(true);
     expect(new Set(COMMUNITY_PETS.map((pet) => pet.slug)).size).toBe(239);
     expect(COMMUNITY_PETS.every((pet) => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(pet.slug))).toBe(true);
-  });
-
-  it('官方 pet 的图集按目录的大小与 sha256 从素材 CDN 取；没有单独的缩略图', async () => {
-    const codex = OFFICIAL_PETS.find((pet) => pet.id === 'codex')!;
-    await pets().openHandle({ pet: { source: 'official', id: 'codex' }, file: 'sheet' }, media);
-    expect(wanted).toEqual([{ path: 'pets/official/codex/spritesheet.webp', bytes: codex.bytes, sha256: codex.sha256 }]);
-    expect(issued).toEqual([path.join(cache, 'pets/official/codex/spritesheet.webp')]);
-    await expect(pets().openHandle({ pet: { source: 'official', id: 'codex' }, file: 'thumbnail' }, media)).rejects.toMatchObject({
-      details: { code: 'PET_NOT_FOUND' },
-    });
-    await expect(pets().openHandle({ pet: { source: 'official', id: 'nope' }, file: 'sheet' }, media)).rejects.toMatchObject({
-      code: 'not-found',
-    });
   });
 
   it('社区 pet 从上游取进缓存，之后离线也用缓存；不是 WebP、取不下来时报 ONLINE_ASSET_UNAVAILABLE', async () => {

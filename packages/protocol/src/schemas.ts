@@ -64,11 +64,8 @@ const fileTarget = z.union([
 const revision = z.string().regex(/^\d+$/);
 /** 随包贴纸的 ID（`sticker-packs.ts`）：`<包>-<文件>`，目录里有没有由 Runtime 查。 */
 const stickerId = z.string().regex(/^[A-Za-z0-9-]+\.(svg|json)$/).max(200);
-/** Codex Pet（`pets.ts`）：官方的 ID 或社区的 slug，目录里有没有由 Runtime 查。 */
-const petRef = z.discriminatedUnion('source', [
-  z.object({ source: z.literal('official'), id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/).max(100) }).strict(),
-  z.object({ source: z.literal('community'), slug: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/).max(200) }).strict(),
-]);
+/** Codex Pet（`pets.ts`）：社区的 slug，目录里有没有由 Runtime 查。 */
+const petRef = z.object({ source: z.literal('community'), slug: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/).max(200) }).strict();
 const assetTarget = { videoId: id, assetId: id, revision: revision.optional() };
 const attachmentTarget = z.object({ conversationId: id, attachmentId: id }).strict();
 const localFileTarget = z.object({ localPath: filePath }).strict();

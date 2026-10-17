@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const ko: PetMessages = {
   title: 'Codex Pets',
   note: '8열 스프라이트 시트 · 대기 반복 · 재생 헤드를 따라감',
-  peekNote: (official, community) => `공식 ${official} · 커뮤니티 ${community}`,
-  official: '공식',
-  community: '커뮤니티',
-  sources: '펫 출처',
+  peekNote: (count) => `커뮤니티 ${count}`,
   categoryChips: '펫 카테고리',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const ko: PetMessages = {
     robots: '로봇',
     'objects-props': '사물과 소품',
   },
-  version: (version) => `v${version}`,
   noMatch: '일치하는 펫이 없습니다',
   noMatchHint: '다른 단어나 카테고리로 찾아 보세요',
   nonCommercial: '비상업적 용도만 허용',

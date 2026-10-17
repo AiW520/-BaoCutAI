@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const nl: PetMessages = {
   title: 'Codex Pets',
   note: 'Spritesheets met 8 kolommen · rustlus · volgt de afspeelkop',
-  peekNote: (official, community) => `${official} officieel · ${community} uit de community`,
-  official: 'Officieel',
-  community: 'Community',
-  sources: 'Herkomst van huisdieren',
+  peekNote: (count) => `${count} uit de community`,
   categoryChips: 'Huisdiercategorieën',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const nl: PetMessages = {
     robots: 'Robots',
     'objects-props': 'Voorwerpen',
   },
-  version: (version) => `v${version}`,
   noMatch: 'Geen passende huisdieren',
   noMatchHint: 'Probeer een ander woord of een andere categorie',
   nonCommercial: 'Alleen niet-commercieel gebruik',

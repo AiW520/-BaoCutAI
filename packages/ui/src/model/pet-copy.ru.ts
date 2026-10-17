@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const ru: PetMessages = {
   title: 'Codex Pets',
   note: 'Спрайт-листы в 8 столбцов · цикл ожидания · следует за курсором воспроизведения',
-  peekNote: (official, community) => `Официальных: ${official} · от сообщества: ${community}`,
-  official: 'Официальные',
-  community: 'Сообщество',
-  sources: 'Источник питомцев',
+  peekNote: (count) => `От сообщества: ${count}`,
   categoryChips: 'Категории питомцев',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const ru: PetMessages = {
     robots: 'Роботы',
     'objects-props': 'Предметы',
   },
-  version: (version) => `v${version}`,
   noMatch: 'Подходящих питомцев нет',
   noMatchHint: 'Попробуйте другое слово или категорию',
   nonCommercial: 'Только некоммерческое использование',

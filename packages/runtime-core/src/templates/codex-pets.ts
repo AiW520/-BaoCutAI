@@ -8,8 +8,6 @@ import {
   communityPetPreviewUrl,
   communityPetSheetUrl,
   communityPetThumbnailUrl,
-  officialPet,
-  officialPetSheetPath,
   type MediaHandle,
   type PetApplyParams,
   type PetApplyResult,
@@ -24,7 +22,7 @@ import type { OnlineAssets } from '../online-assets.ts';
 import type { VideoService } from '../videos/video-service.ts';
 
 export interface CodexPetsOptions {
-  /** 官方 pet 的图集从素材 CDN 取；本机缓存的根也用它的（`<cacheDir>/pets/…`）。 */
+  /** 本机缓存的根用它的（`<cacheDir>/pets/…`）。 */
   online: OnlineAssets;
   videos: VideoService;
   /** 测试用：替换取社区文件的 `fetch`。 */
@@ -46,9 +44,9 @@ interface ResolvedPet {
 }
 
 /**
- * Codex Pets（`pets.*`）：目录在 `@baocut/protocol` 的 `pets.ts`。官方 pet 的图集不随包，从素材 CDN 取（`OnlineAssets`，
- * 按目录里的大小与 sha256 核对）；社区 pet 的图集与缩略图从上游（awesome-codex-pet 与它的站点）取，没有清单可对，只认
- * 目录里有的 slug、WebP 文件头与大小上限。都存进本机缓存（`<home>/cache/online-assets/pets/`），之后离线也能用。
+ * Codex Pets（`pets.*`）：目录在 `@baocut/protocol` 的 `pets.ts`，都是社区 pet。图集与缩略图从上游（awesome-codex-pet
+ * 与它的站点）取，没有清单可对，只认目录里有的 slug、WebP 文件头与大小上限。存进本机缓存
+ * （`<home>/cache/online-assets/pets/`），之后离线也能用。
  * 贴进视频前由引擎把待机那一行编成循环 APNG（`pets/idle/<图集 sha256>.apng`，同一张图集只编一次），再拷进视频：
  * 一笔普通的编辑事务（`importAsset`，`managed`；调用方给的 `operations` 接在后面，一步撤销）。
  */
@@ -65,21 +63,8 @@ export class CodexPets {
   }
 
   #resolve(ref: PetRef): ResolvedPet {
-    const notFound = (id: string) => new RpcError('not-found', RcStickers.petNotFound({ id }), { code: 'PET_NOT_FOUND' });
-    if (ref.source === 'official') {
-      const pet = officialPet(ref.id);
-      if (!pet) throw notFound(ref.id);
-      return {
-        name: pet.name,
-        source: { source: 'official', id: pet.id, name: pet.name, author: 'OpenAI', version: pet.version },
-        sheet: async () => ({
-          file: await this.#options.online.ensure({ path: officialPetSheetPath(pet.id), bytes: pet.bytes, sha256: pet.sha256 }),
-          sha256: pet.sha256,
-        }),
-      };
-    }
     const pet = communityPet(ref.slug);
-    if (!pet) throw notFound(ref.slug);
+    if (!pet) throw new RpcError('not-found', RcStickers.petNotFound({ id: ref.slug }), { code: 'PET_NOT_FOUND' });
     return {
       name: pet.name,
       source: { source: 'community', slug: pet.slug, name: pet.name, author: pet.author, license: pet.license, version: pet.version },
@@ -128,18 +113,13 @@ export class CodexPets {
   /** 句柄由调用方所在通道的媒体表发（同 `stickers.openHandle`）。 */
   async openHandle(p: PetHandleParams, media: MediaRegistry): Promise<MediaHandle> {
     const pet = this.#resolve(p.pet);
-    let file: string;
-    if (p.file === 'sheet') file = (await pet.sheet()).file;
-    else if (p.pet.source === 'community') {
-      const { slug } = p.pet;
-      file =
-        p.file === 'thumbnail'
+    const { slug } = p.pet;
+    const file =
+      p.file === 'sheet'
+        ? (await pet.sheet()).file
+        : p.file === 'thumbnail'
           ? await this.#community(slug, 'thumbnail.webp', communityPetThumbnailUrl(slug))
           : await this.#community(slug, 'idle.webp', communityPetPreviewUrl(slug));
-    } else {
-      // 官方 pet 没有单独的缩略图与动图：界面从图集裁格子。
-      throw new RpcError('not-found', RcStickers.petNotFound({ id: `${p.pet.id}/${p.file}` }), { code: 'PET_NOT_FOUND' });
-    }
     return media.issue(this.#cacheDir, path.relative(this.#cacheDir, file));
   }
 

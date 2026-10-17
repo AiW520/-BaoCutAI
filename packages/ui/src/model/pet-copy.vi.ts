@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const vi: PetMessages = {
   title: 'Codex Pets',
   note: 'Sprite sheet 8 cột · lặp trạng thái chờ · theo đầu phát',
-  peekNote: (official, community) => `${official} chính thức · ${community} cộng đồng`,
-  official: 'Chính thức',
-  community: 'Cộng đồng',
-  sources: 'Nguồn thú cưng',
+  peekNote: (count) => `${count} cộng đồng`,
   categoryChips: 'Danh mục thú cưng',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const vi: PetMessages = {
     robots: 'Robot',
     'objects-props': 'Đồ vật và đạo cụ',
   },
-  version: (version) => `v${version}`,
   noMatch: 'Không có thú cưng phù hợp',
   noMatchHint: 'Thử từ khác hoặc danh mục khác',
   nonCommercial: 'Chỉ dùng phi thương mại',

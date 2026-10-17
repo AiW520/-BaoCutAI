@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const es: PetMessages = {
   title: 'Codex Pets',
   note: 'Hojas de sprites de 8 columnas · bucle en reposo · sigue el cabezal',
-  peekNote: (official, community) => `${official} oficiales · ${community} de la comunidad`,
-  official: 'Oficiales',
-  community: 'Comunidad',
-  sources: 'Origen de las mascotas',
+  peekNote: (count) => `${count} de la comunidad`,
   categoryChips: 'Categorías de mascotas',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const es: PetMessages = {
     robots: 'Robots',
     'objects-props': 'Objetos y accesorios',
   },
-  version: (version) => `v${version}`,
   noMatch: 'No hay mascotas que coincidan',
   noMatchHint: 'Prueba con otra palabra u otra categoría',
   nonCommercial: 'Solo uso no comercial',

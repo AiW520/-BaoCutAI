@@ -174,8 +174,9 @@ mod tests {
         }
     }
 
+    /// 一张真实的 v2 图集（原型目录里那份），确认 WebP 解码与 APNG 编码走得通。
     #[test]
-    fn real_official_sheets_decode() {
+    fn real_sheet_decodes() {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../designs/baocut/assets/pets/official/codex/spritesheet.webp");
         let (apng, version) = encode_idle(&fs::read(dir).unwrap()).unwrap();
         assert_eq!(version, 2);

@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const tr: PetMessages = {
   title: 'Codex Pets',
   note: '8 sütunlu sprite sayfaları · bekleme döngüsü · oynatma kafasını izler',
-  peekNote: (official, community) => `${official} resmi · ${community} topluluk`,
-  official: 'Resmi',
-  community: 'Topluluk',
-  sources: 'Evcil hayvan kaynakları',
+  peekNote: (count) => `${count} topluluk`,
   categoryChips: 'Evcil hayvan kategorileri',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const tr: PetMessages = {
     robots: 'Robotlar',
     'objects-props': 'Nesneler ve aksesuarlar',
   },
-  version: (version) => `v${version}`,
   noMatch: 'Eşleşen evcil hayvan yok',
   noMatchHint: 'Başka bir sözcük veya kategori deneyin',
   nonCommercial: 'Yalnızca ticari olmayan kullanım',

@@ -3,10 +3,7 @@ import type { PetMessages } from './pet-copy.ts';
 export const ja: PetMessages = {
   title: 'Codex Pets',
   note: '8 列のスプライトシート · 待機ループ · 再生ヘッドに追従',
-  peekNote: (official, community) => `公式 ${official} · コミュニティ ${community}`,
-  official: '公式',
-  community: 'コミュニティ',
-  sources: 'ペットの入手元',
+  peekNote: (count) => `コミュニティ ${count}`,
   categoryChips: 'ペットのカテゴリ',
   chip: (label, count) => `${label} ${count}`,
   categories: {
@@ -22,7 +19,6 @@ export const ja: PetMessages = {
     robots: 'ロボット',
     'objects-props': '小物・道具',
   },
-  version: (version) => `v${version}`,
   noMatch: '一致するペットはありません',
   noMatchHint: '別の言葉やカテゴリで試してください',
   nonCommercial: '非商用利用のみ',
