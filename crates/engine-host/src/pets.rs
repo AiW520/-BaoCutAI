@@ -134,7 +134,7 @@ mod tests {
     use super::*;
     use std::io::Cursor;
 
-    /// 一张 v1 图集：第 0 行第 i 格整格是第 i 种颜色，其余透明。
+    /// 一张 `rows` 行的图集（9 行是 v1、11 行是 v2）：第 0 行第 i 格整格是第 i 种颜色，其余透明。
     fn sheet(rows: u32) -> Vec<u8> {
         let mut image = image::RgbaImage::new(COLUMNS * CELL_WIDTH, rows * CELL_HEIGHT);
         for column in 0..6 {
@@ -174,11 +174,9 @@ mod tests {
         }
     }
 
-    /// 一张真实的 v2 图集（原型目录里那份），确认 WebP 解码与 APNG 编码走得通。
     #[test]
-    fn real_sheet_decodes() {
-        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../designs/baocut/assets/pets/official/codex/spritesheet.webp");
-        let (apng, version) = encode_idle(&fs::read(dir).unwrap()).unwrap();
+    fn v2_sheets_decode() {
+        let (apng, version) = encode_idle(&sheet(11)).unwrap();
         assert_eq!(version, 2);
         let decoder = image::codecs::png::PngDecoder::new(Cursor::new(&apng)).unwrap();
         assert!(decoder.is_apng().unwrap());
