@@ -1082,6 +1082,7 @@ dependencies = [
  "media-native",
  "message-ref",
  "render-graph",
+ "render-raster",
  "serde",
  "serde_json",
  "sha2 0.11.0",

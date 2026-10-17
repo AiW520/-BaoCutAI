@@ -33,7 +33,7 @@ use crate::draw::{
 };
 use crate::scene::SceneNode;
 use render_raster::ShaderQuad;
-use render_raster::drawop::{Color4, DrawOp, FrameBuilder, FrameOps, Mat6};
+use render_raster::drawop::{Color4, DrawOp, FrameBuilder, FrameOps, Mat6, PaintData};
 use render_raster::source::kernel::DrawBox;
 use timeline::schema::{
     ConfettiProps, DrawProps, ElementKind, Place, PlaceholderProps, ProgressProps, ShapeProps,
@@ -880,13 +880,6 @@ impl EvaluatedSceneElement {
             .iter()
             .map(|value| builder.string_id(value))
             .collect::<Vec<_>>();
-        let paint_ids = self
-            .reference
-            .paints
-            .iter()
-            .cloned()
-            .map(|paint| builder.paint_id(paint))
-            .collect::<Vec<_>>();
         let bitmap_ids = self
             .reference
             .bitmaps
@@ -894,6 +887,33 @@ impl EvaluatedSceneElement {
             .cloned()
             .map(|bitmap| builder.bitmap_id(bitmap))
             .collect::<Vec<_>>();
+        let paint_ids = self
+            .reference
+            .paints
+            .iter()
+            .cloned()
+            .map(|paint| {
+                let paint = match paint {
+                    PaintData::Pattern {
+                        bitmap,
+                        repeat,
+                        quality,
+                        opacity,
+                        transform,
+                    } => PaintData::Pattern {
+                        bitmap: *bitmap_ids.get(bitmap as usize).ok_or_else(|| {
+                            anyhow::anyhow!("scene reference Pattern paint references unknown bitmap {bitmap}")
+                        })?,
+                        repeat,
+                        quality,
+                        opacity,
+                        transform,
+                    },
+                    other => other,
+                };
+                Ok(builder.paint_id(paint))
+            })
+            .collect::<Result<Vec<_>>>()?;
         for op in &self.reference.ops {
             let remapped = match op {
                 DrawOp::Clear { .. }
@@ -902,7 +922,36 @@ impl EvaluatedSceneElement {
                 | DrawOp::PopLayer
                 | DrawOp::PopClip
                 | DrawOp::PushMatte
-                | DrawOp::PopMatte { .. } => op.clone(),
+                | DrawOp::PopMatte { .. }
+                | DrawOp::PushShadow { .. }
+                | DrawOp::PopShadow
+                | DrawOp::PushBlend { .. }
+                | DrawOp::PopBlend => op.clone(),
+                DrawOp::StrokePathDash {
+                    path,
+                    paint,
+                    width,
+                    cap,
+                    join,
+                    miter,
+                    dash,
+                    dash_offset,
+                    tf,
+                } => DrawOp::StrokePathDash {
+                    path: *path_ids.get(*path as usize).ok_or_else(|| {
+                        anyhow::anyhow!("scene reference StrokePathDash references unknown path {path}")
+                    })?,
+                    paint: *paint_ids.get(*paint as usize).ok_or_else(|| {
+                        anyhow::anyhow!("scene reference StrokePathDash references unknown paint {paint}")
+                    })?,
+                    width: *width,
+                    cap: *cap,
+                    join: *join,
+                    miter: *miter,
+                    dash: dash.clone(),
+                    dash_offset: *dash_offset,
+                    tf: *tf,
+                },
                 DrawOp::FillPath { path, color, tf } => DrawOp::FillPath {
                     path: *path_ids.get(*path as usize).ok_or_else(|| {
                         anyhow::anyhow!("scene reference FillPath 引用未知 path {path}")

@@ -21,6 +21,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | [`acceptance/windows-validation.md`](acceptance/windows-validation.md) | **Windows 实机验证记录**：MSVC 原生媒体与导出、EcoQoS、Runtime IPC、凭据与 Windows 路径回归的实际通过项、失败项和未测边界 |
 | [`design/subtitle/`](design/subtitle/README.md) | **字幕与翻译设计（移植自 v2）**：转录后处理、翻译载体、字幕对齐与切分、字幕导出的设计记录；实现在 `crates/speech-doc`，文中的数据模型名指 v2，与 v3 的对应见架构设计 §14 |
 | [`design/export/windows-media-path-todo.md`](design/export/windows-media-path-todo.md) | **Windows 导出媒体路径待办**：成片导出在 Windows 上的解码直写缓冲、行搬运、编码输入拷贝、EcoQoS 验证、硬件解码、编码节流与三家显卡兼容；每条写明位置、做法、像素会不会变与验证方法 |
+| [`design/export/composition-ops-bake.md`](design/export/composition-ops-bake.md) | **代码包的指令烘焙**：Canvas 2D 录制 → DrawOp → 多线程光栅 → ProRes 的做法、文字与对拍的取舍、s02 实测与第二期 |
 | [`design/export/gpu-compositing.md`](design/export/gpu-compositing.md) | **导出合成上 GPU（方案稿）**：现有的 wgpu 部件、帧级合成目标的接缝、回读与硬件编码衔接的三级、像素一致性的容差、回落与报告、上线门槛与分期 |
 | [`design/brand/app-icon.md`](design/brand/app-icon.md) | **App 图标设计**：图形组成、三色配色与备选变体、外形模板、否决过的方向；绘制源码在 `tools/app-icon/` |
 | [`design/timeline/`](design/timeline/README.md) | **时间线语义与元素模型（移植自 v2）**：v2 元素模型与 v3 视频格式的逐项对照（接线各批的输入），以及剪辑域、剪口播、元素几何、`timeline.json` 的设计记录；实现在 `crates/timeline`，文中的数据模型名指 v2 |

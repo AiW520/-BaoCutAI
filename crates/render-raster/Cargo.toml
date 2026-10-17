@@ -126,3 +126,7 @@ media-native = { workspace = true }
 [[example]]
 name = "bcf_stage_bench"
 required-features = ["media"]
+
+[[example]]
+name = "canvas2d_compare"
+required-features = ["media"]

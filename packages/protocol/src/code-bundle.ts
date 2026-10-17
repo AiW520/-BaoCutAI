@@ -171,8 +171,24 @@ export interface BakeRecord {
   outputProfileHash: string;
   bakedAt: string;
   status: 'current' | 'stale';
-  /** 烘焙输出的编码（第一期：PNG 帧序列封进 QuickTime，带 alpha 时 `prores_ks` 4444）。 */
+  /** 烘焙输出的编码（ProRes 封进 QuickTime：带 alpha 时 4444，不透明时 422 HQ；编码器是 `prores_videotoolbox` 或 `prores_ks`）。 */
   encoding: { container: 'mov'; codec: string; pixelFormat: string; alpha: boolean; fps: Rate; frames: number };
+}
+
+/** 烘焙渲染器的选择（代码包规范 §7）：`auto` 先走指令、画不出来时整段回退像素；`ops` 只走指令；`pixels` 只走像素。 */
+export type CompositionBakeMode = 'auto' | 'ops' | 'pixels';
+
+/** 一次烘焙实际用的渲染器、用时与回退原因（`compositions.import` 结果的 `bake`，代码包规范 §7.3）。 */
+export interface CompositionBakeInfo {
+  /** `drawop-cpu`：录制 Canvas 调用、Render Worker 光栅；`browser-pixels`：浏览器逐帧截图。 */
+  renderer: 'drawop-cpu' | 'browser-pixels';
+  /** 整段烘焙的平均帧率（帧数 ÷ 总用时）。 */
+  fps: number;
+  seconds: number;
+  /** `auto` 回退到像素时的原因（英文诊断）。 */
+  fallback?: { reason: string };
+  /** 指令路线各阶段的用时与吞吐（诊断用，字段可能增减）。 */
+  stages?: Record<string, Record<string, number | string>>;
 }
 
 /** 预渲染素材 `provenance.origin` 的取值；`provenance.source` 是 `BakeRecord`。 */
@@ -341,6 +357,8 @@ export interface CompositionImportParams {
   place?: { track?: Id; at?: string };
   replace?: { itemId: Id };
   register?: boolean;
+  /** 烘焙渲染器，缺省 `auto`。 */
+  bake?: CompositionBakeMode;
   revision?: Revision;
   commandId?: Id;
   conversationId?: Id;
@@ -378,6 +396,8 @@ export interface CompositionImportResult {
     encoding: BakeRecord['encoding'];
     hasAlpha: boolean;
   } | null;
+  /** 烘焙用的渲染器与用时；回退到像素时带 `fallback.reason`。只登记时为 null。 */
+  bake: CompositionBakeInfo | null;
   /** 放到时间线上（或原地替换）的合成片段与它所在的轨；只登记时为 null。 */
   itemId: Id | null;
   trackId: Id | null;

@@ -492,7 +492,8 @@ interface BakeRecord {
 ```
 
 - 烘焙按实例所在序列或导出的帧率取帧：第 k 帧的局部时间是 `t = k / fps`，不按包的 `intrinsic.fps`（§5.4）。`compositions_import` 新放置的实例在根序列上，用根序列的帧率；`replace` 用被替换实例所在序列的帧率。
-- **编码**。首版输出 QuickTime `.mov`：`output.alpha` 为 true 时用 ProRes 4444（`yuva444p10le`），否则用 ProRes 422 HQ。烘焙结果作为普通的视频素材导入，`hasAlpha` 如实记录。
+- **编码**。输出 QuickTime `.mov`：`output.alpha` 为 true 时用 ProRes 4444（`yuva444p10le`），否则用 ProRes 422 HQ（`yuv422p10le`）。编码器是 ffmpeg 的 `prores_ks`；指令烘焙在 macOS 上能用 `prores_videotoolbox` 时用它（硬件编码，产物的配置与像素格式相同），`BakeRecord.encoding.codec` 记实际的编码器。烘焙结果作为普通的视频素材导入，`hasAlpha` 如实记录。
+- **渲染器**（§7.1–§7.3）。`compositions_import` 的 `bake` 选渲染器：`auto`（缺省）先走指令烘焙，走不通时整段回退到像素烘焙；`ops` 只走指令，走不通就失败；`pixels` 只走像素。
 - **记录位置**。`BakeRecord` 记在烘焙素材的来源里：`provenance` 为 `{ origin: 'composition-bake', source: BakeRecord }`（视频格式规范 §4.5）。合成实例上还没有对应的字段（§3.1、§9）。首版的 `bakedAssetRef` 与 `sourceBundleRef` 先写代码包清单的 `bundleId/revision`：素材 ID 要等导入事务的回执才知道（§9）。
 - 新建的合成实例用 `prerender` 指向烘焙素材，导出走已有的预渲染替身路径（视频格式规范 §3.7）。
 - 首版分两次事务：先导入代码包与烘焙素材，再用 `insertItems` 放置合成实例。两步合起来不是原子的：第二步失败时，已导入的两个素材留在视频里，没有实例引用它们。并成一笔的做法见 §9。
@@ -501,6 +502,51 @@ interface BakeRecord {
 - Bake 之后修改参数或替换版本，烘焙结果标记为 `stale`；界面提示重新烘焙，或继续使用实时求值。
 - 只有源成片、没有作者代码时，不得把一个普通 MP4 包装成「可编辑的 Remotion 合成」。
 - Bake 与「只有成片的输入」是两回事：前者保留回到源码的引用，后者不能伪装成源视频。
+
+### 7.1 像素烘焙
+
+在离屏宿主里按 §7 的帧时刻逐帧取帧（与预览相同的截图），PNG 经 ffmpeg 的 `image2pipe` 编码。任何合同、任何画面都能走，代价是每帧一次浏览器截图（M2 上 1080×1920 约 2.7 帧/秒）。`frameHashes` 是各帧 PNG 的 sha256。
+
+### 7.2 指令烘焙
+
+只用于 `baocut/1` 合同、全部画面画在一张 Canvas 2D 上的包。宿主在页面里包装 `CanvasRenderingContext2D`（`packages/code-runtime/src/canvas-recorder.ts`），seek 到每一帧时把主画布上的调用记成指令，交给 Render Worker（`export-worker canvas-bake`）转成 DrawOp（[DrawOp 协议 v8](drawop-binary-spec.md#canvas-2d-原语v8)）、多线程光栅、直接把 RGBA 送进编码器。
+
+- **主画布**。根元素里唯一一张挂进文档的 canvas，尺寸等于固有尺寸、铺满视口。根元素里有别的可见 DOM、非 2D 上下文、`alpha: false` 的上下文、CSS 变换或不透明度时不录。
+- **每帧自成一体**。帧首写下延续下来的路径与裁剪栈（`init`），各帧可以并行转换。每帧必须先清屏（整幅的 `clearRect`，或不透明的整幅 `fillRect`），否则判为不支持。
+- **录制文件**是 NDJSON，放在视频所在卷的 `blobs/.staging/` 下，烘焙结束删掉：
+  - `{"type":"header", width, height, fps:{num,den}, frames, alpha}`、`{"type":"page", background}`（页面底色，直通 RGBA 0–1）；
+  - 资源 `{"type":"font"|"image"|"bitmap", id, …}`：字体与图片是包内相对路径；`bitmap` 是作图片源的离屏 canvas 按版本号拍下的非预乘 RGBA（base64）；
+  - 帧 `{"type":"frame", index, init?, ops, states, grads, pats}`：`ops` 是路径、裁剪、状态栈与绘制指令，`states` 是绘制时读到的真实状态（变换、填充、透明度、合成、投影、线型、字体），`grads` / `pats` 是这帧用到的渐变与图案。
+- **文字**在页面里归一成左对齐、alphabetic 基线（对齐与基线偏移用 Chromium 的 `measureText`），Worker 用包里的字体文件整形（rustybuzz）成轮廓。字体按 CSS 匹配从 `document.fonts` 选 face，必须是包内的字体文件。合成斜体按 0.25 的水平切变还原；合成粗体（请求 ≥ 600、字体文件与 `@font-face` 都不到 600）各平台的加粗量不同，判为不支持。
+- **不支持的情况**有第一条原因就停止录制，例如：`unsupported-call: <方法>`（`putImageData`、`reset` 等）、`filter: <值>`、`conic-gradient`、`Path2D`、`font-not-bundled: <族名>`、`text-synthetic-bold: <字重>`、`text-rtl`、`composite-operation: <模式>`、`clip-evenodd`、`clear-rect-partial`、`frame-not-cleared`、`image-smoothing-disabled`、`main-canvas-readback`。
+
+### 7.3 对拍与回退
+
+指令烘焙的画面要与 Chromium 一致才可信。录制之后，在同一个会话里照常截几帧样本（缺省 5 帧，均匀取、含首尾），Worker 先把这几帧光栅出来比较，全部通过才开始整段光栅：
+
+| 指标 | 阈值 | 说明 |
+| --- | --- | --- |
+| 4× 降采样 SSIM | ≥ 0.98 | 只看结构，不追字形边缘的亚像素差别 |
+| 平坦区最大偏差 | ≤ 4/255 | 渐变抖动的差别在内 |
+| 过渡带占比 | ≤ 5% | 偏差超过阈值的边缘像素占全图的比例 |
+
+逐像素最大偏差不作判据：macOS 的 CoreText 字形平滑让 Chromium 的文字略粗，文字边缘的单像素偏差可以到 200 以上，降采样后看不出。
+
+`auto` 遇到下列情况整段回退到像素烘焙（不按帧混用两种渲染器），回退原因写进结果：录制判为不支持、页面底色读不到、合同不是 `baocut/1`、没有 Render Worker、Worker 报 `CANVAS_OPS_UNSUPPORTED`（转换不了）/ `CANVAS_OPS_MISMATCH`（样本对不上）/ `CANVAS_OPS_INVALID`（录制有误），以及 Worker 的其他失败（旧版不认识 `canvas-bake`、编码失败）。取消不回退。
+
+`compositions_import` 的结果带 `bake`（只登记时为 null）：
+
+```ts
+interface CompositionBakeInfo {
+  renderer: 'drawop-cpu' | 'browser-pixels';
+  fps: number;                     // 帧数 ÷ 整段烘焙用时
+  seconds: number;
+  fallback?: { reason: string };   // auto 回退到像素时的原因（英文诊断）
+  stages?: Record<string, Record<string, number | string>>;   // 指令路线各阶段的用时与吞吐，诊断用
+}
+```
+
+回退必须可见：结果与日志都写明原因，不静默换渲染器。指令烘焙的 `frameHashes` 是各帧直通 RGBA 的 sha256，与像素烘焙的 PNG 摘要不可比。
 
 **降级**。运行环境不满足包的要求时（例如缺少 GPU 能力、Adapter 版本不兼容、沙箱不可用）：
 
@@ -520,7 +566,7 @@ interface BakeRecord {
 
 | 阶段 | 范围 |
 | --- | --- |
-| **P0** | 受控 Web 合同（`baocut/1`）与 HyperFrames 合同（`hyperframes/1`）的导入、验证、取帧与烘焙；执行环境是 Electron 离屏窗口。p5.js、Three.js、Canvas 按各自被支持的子集接入 |
+| **P0** | 受控 Web 合同（`baocut/1`）与 HyperFrames 合同（`hyperframes/1`）的导入、验证、取帧与烘焙；执行环境是 Electron 离屏窗口。p5.js、Three.js、Canvas 按各自被支持的子集接入。`baocut/1` 的单张 Canvas 2D 画面走指令烘焙（§7.2），其余走像素烘焙 |
 | **P1** | 导入外部的 Remotion 代码；更丰富的独立层输出；检查点；Playwright 或无头 Chromium 的执行环境 |
 | **G** | 三层编辑的区分、不可变版本、时间依赖的保守失效、Bake 保留源码引用，对任何已开放的合同都生效 |
 

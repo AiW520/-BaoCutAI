@@ -12,6 +12,7 @@ import {
   type CodeBundleErrorCode,
   type CodeBundleVerificationReport,
   type CodeEdit,
+  type CompositionBakeMode,
   type CompositionImportResult,
   type CompositionPlacement,
   type CompositionInlineFile,
@@ -96,6 +97,8 @@ export interface CompositionServiceDeps {
   videos: VideoService;
   /** 烘焙用的 ffmpeg（绝对路径或命令名）。 */
   ffmpeg: () => string | Promise<string>;
+  /** 指令烘焙用的 Render Worker（`export-worker`）；没有时 `auto` 回退像素。 */
+  worker?: () => string | null;
   host: SharedCompositionHost;
   log?: Logger;
 }
@@ -126,6 +129,8 @@ export interface CompositionImportRequest extends BundleSourceInput {
   /** 原地替换时间线上已有的合成片段（代码包规范 §3.3）；与 `place`、`register` 互斥。 */
   replace?: { itemId: string } | undefined;
   register?: boolean | undefined;
+  /** 烘焙渲染器（代码包规范 §7），缺省 `auto`。 */
+  bake?: CompositionBakeMode | undefined;
   revision?: string | undefined;
   commandId?: string | undefined;
 }
@@ -240,6 +245,7 @@ export class CompositionService {
     // 要替换的片段先查：不存在或不是合成片段时不必验证与烘焙。
     const target = args.replace ? replaceTarget(current(videos, opened), args.replace.itemId) : null;
     const work = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-composition-'));
+    let bakeDir: string | null = null;
     try {
       const dir = await sourceDirectory(args, caller.importBase(opened), work);
       const bundle = await inspect(dir, args, work);
@@ -257,10 +263,23 @@ export class CompositionService {
       const fps = sequence.fps;
       let bake: BakeResult | null = null;
       if (!register) {
-        const outputFile = path.join(work, `${safeName(bundle.manifest.bundleId)}-${safeName(bundle.manifest.revision)}.mov`);
+        // 预渲染与录制都大（ProRes、绘制指令）：放在视频所在卷的 blobs/.staging 下，导入时同卷复制；建不了时退回临时目录。
+        const dir = await bakeDirectory(opened.ref.path, work);
+        bakeDir = dir;
+        const outputFile = path.join(dir, `${safeName(bundle.manifest.bundleId)}-${safeName(bundle.manifest.revision)}.mov`);
         const ffmpeg = await this.#deps.ffmpeg();
+        const log = this.#deps.log;
         bake = await this.#withHost((host) =>
-          bakeComposition(host, bundle, { fps, outputFile, ffmpeg, alpha: bundle.manifest.output.alpha }),
+          bakeComposition(host, bundle, {
+            fps,
+            outputFile,
+            ffmpeg,
+            alpha: bundle.manifest.output.alpha,
+            mode: args.bake ?? 'auto',
+            worker: this.#deps.worker?.() ?? null,
+            workDir: dir,
+            ...(log ? { log: (line: string) => log.info(line, { bundleId: bundle.manifest.bundleId }) } : {}),
+          }),
         ).catch((error: unknown) => {
           if (error instanceof CodeBundleError || error instanceof ToolError) throw error;
           throw new ToolError('COMPOSITION_BAKE_FAILED', `烘焙预渲染失败：${error instanceof Error ? error.message : String(error)}`, {
@@ -448,12 +467,14 @@ export class CompositionService {
             : null,
         itemId,
         trackId,
+        bake: bake ? bake.bake : null,
         item: itemId ? placementOf(finalVideo, itemId) : null,
         ...(replaced ? { replaced } : {}),
       };
     } catch (error) {
       throw toolError(error);
     } finally {
+      if (bakeDir && bakeDir !== work) await fs.rm(bakeDir, { recursive: true, force: true }).catch(() => {});
       await fs.rm(work, { recursive: true, force: true }).catch(() => {});
     }
   }
@@ -765,4 +786,18 @@ function safeName(text: string): string {
 
 function round(value: number): number {
   return Math.round(value * 1000) / 1000;
+}
+
+/**
+ * 烘焙的工作目录：视频目录的 `blobs/.staging/` 下（视频格式规范：发布前的临时区，引擎 GC 清掉超过 1 小时的残留），与预渲染素材同卷；
+ * 建不了（只读、不是本地目录）时用 `fallback`。调用方的 `fallback` 清理时一并删掉；放在视频里的由 `finally` 删。
+ */
+async function bakeDirectory(videoDir: string, fallback: string): Promise<string> {
+  try {
+    const staging = path.join(videoDir, 'blobs', '.staging');
+    await fs.mkdir(staging, { recursive: true });
+    return await fs.mkdtemp(path.join(staging, 'composition-bake-'));
+  } catch {
+    return fallback;
+  }
 }

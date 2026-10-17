@@ -784,7 +784,14 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     const compositionFfmpeg = async () =>
       process.env.BAOCUT_FFMPEG || (await findOnPath('ffmpeg', (await toolEnv()).PATH ?? '')) || 'ffmpeg';
     // 导入与预览的主体：工具（会话、终端、对外服务）与界面的 `compositions.*` 共用这一个，宿主也是同一个。
-    const compositions = new CompositionService({ videos, ffmpeg: compositionFfmpeg, host: compositionHost, log });
+    // 指令烘焙（代码包规范 §7.2）用成片的同一个 Render Worker。
+    const compositions = new CompositionService({
+      videos,
+      ffmpeg: compositionFfmpeg,
+      worker: () => resolveExportWorkerCommand(options.engineHost !== undefined ? options.engineHost : resolveEngineHostCommand()),
+      host: compositionHost,
+      log,
+    });
     // 智能体写作的句子编号（创作辅助集成设计 §3.4「智能体路径」）：`speech_sentences` 发、`downloads_save` 校验，按会话分开。
     const citationRegistry = new MemoryCitationRegistry();
     const toolSets = (toolScope: ToolScope): ToolSet[] => {
