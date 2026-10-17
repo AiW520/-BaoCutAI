@@ -66,7 +66,7 @@ pub struct LiveLayer {
     /// 清单的固有尺寸（像素）：宿主按它布置页面，再缩放到 `matrix`。
     pub width: u32,
     pub height: u32,
-    /// 为什么没有可用的替身。
+    /// 替身的状态：停住时切成实时层的只会是 `None` / `Stale`；播放中一律实时播，`Usable` 说明停下来会画替身。
     pub stand_in: StandInState,
 }
 
@@ -79,15 +79,17 @@ pub enum StandInState {
     /// 预渲染过期（代码包规范 §7.4）：烘焙出处（`BakeRecord.sourceBundleRef`）与实例指向的代码包清单（`bundleId`、`revision`）
     /// 不一致，或帧率（`BakeRecord.encoding.fps`，没有烘焙记录时是替身视频的帧率）与序列不同。
     Stale,
-    /// 有，且与代码包、序列帧率一致：预览与导出都画它。
+    /// 有，且与代码包、序列帧率一致：导出画它，预览停住时也画它（动效视频设计 §4.3）。
     Usable,
 }
 
-/// 预览的实时层开关（动效视频设计 §4.2）。默认关着：严格导出与缩略图不走实时层。`blocked` 是宿主载入失败、取帧抛错或
-/// 超时的实例，这一轮退回替身或占位，不再切。
+/// 预览的实时层开关（动效视频设计 §4.2、§4.3）。默认关着：严格导出与缩略图不走实时层。`playing` 是舞台在动（播放、拖动播放头
+/// 还没落地）：这时合成一律实时播，不看替身；停住时只有没有可用替身的才切。`blocked` 是宿主载入失败、取帧抛错或超时的实例，
+/// 这一轮退回替身或占位，不再切。
 #[derive(Clone, Copy, Debug, Default)]
 pub struct LiveOptions<'a> {
     pub enabled: bool,
+    pub playing: bool,
     pub blocked: &'a [Id],
 }
 
@@ -346,8 +348,8 @@ pub fn plan_interactive_with_speech(
     plan_interactive_live(video, sequence_id, seconds, speech, LiveOptions::default())
 }
 
-/// 同 [`plan_interactive_with_speech`]，并按 `live` 决定要不要把最底下那个没有可用替身的代码包合成切成实时层
-/// （动效视频设计 §4.2）。只有编辑器的舞台走这里。
+/// 同 [`plan_interactive_with_speech`]，并按 `live` 决定要不要把最底下那个代码包合成切成实时层（动效视频设计 §4.2、§4.3）：
+/// 播放中一律切，停住时只切没有可用替身的。只有编辑器的舞台走这里。
 pub fn plan_interactive_live(
     video: VideoView<'_>,
     sequence_id: &str,
@@ -421,7 +423,7 @@ fn plan_frame_live(
 
     let mut layers: Vec<(LayerOrder<'_>, VisualLayer)> = Vec::new();
     let mut voices: Vec<(i64, AudioVoice)> = Vec::new();
-    // 实时层的候选：在视、可见、没有可用替身、没被宿主拦下的代码包合成（动效视频设计 §4.2）。
+    // 实时层的候选：在视、可见、没被宿主拦下的代码包合成（动效视频设计 §4.2）；停住时还要没有可用替身（§4.3）。
     let mut live_candidates: Vec<(LiveLayer, bool)> = Vec::new();
     for item in &sequence.items {
         let base = item.base();
@@ -506,7 +508,7 @@ fn plan_frame_live(
                     layers.push((order, layer));
                     if live.enabled && !live.blocked.contains(&composition.base.id) {
                         let stand_in = stand_in_state(video.assets, composition, fps);
-                        if stand_in != StandInState::Usable
+                        if (live.playing || stand_in != StandInState::Usable)
                             && let Some(candidate) = live_layer(video, composition, (source, rate), canvas, stand_in)
                         {
                             live_candidates.push(candidate);

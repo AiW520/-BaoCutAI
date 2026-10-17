@@ -253,7 +253,7 @@ export class PreviewEngine {
   /** 第几次接渲染内核：重试之后，之前那次迟到的结果不收。 */
   #attach = 0;
   #problems: string[] = [];
-  /** 画布上这一帧的底是实时合成层（随 `problems` 一起进状态）。 */
+  /** 画布上这一帧的底是没有可用替身的实时合成层（随 `problems` 一起进状态，舞台提示「导出前要烘焙」）。 */
   #liveShown = false;
   /** 要的转写里还有没取到的：声波的说话人提示先不报（取到之前内核当作没有转写）。 */
   #speechLoading = false;
@@ -285,8 +285,8 @@ export class PreviewEngine {
   #liveUnwatch: (() => void) | null = null;
   /** 退回替身或占位的合成（载入失败、就绪超时、取帧报错、发光像素装不下）：计划器不再把它们切成实时层。 */
   readonly #liveBlocked = new Set<Id>();
-  /** 送过实时层设置的计划器：之后每次换计划器、改拉黑名单都要重送。 */
-  #liveSent = false;
+  /** 上次送给计划器的实时层设置（开关、在不在动、拉黑名单拼的键）；没送过或送的是关是 null。换计划器时清掉重送。 */
+  #liveSent: string | null = null;
   /** 这部视频里要实时播的合成，按开始时刻；换视频时重算。 */
   #liveCandidates: LiveCandidate[] = [];
   /** 上次叫宿主预载的那几件（按实例拼的键）。 */
@@ -325,7 +325,7 @@ export class PreviewEngine {
           this.#planner = planner;
           // WASM 陷阱之后计划器会自己重新载入；好了再对一次。
           planner.onRecovered = () => this.#refresh();
-          this.#liveSent = false;
+          this.#liveSent = null;
           this.#sendLive();
           this.#loadVideo();
           this.#refresh();
@@ -407,14 +407,27 @@ export class PreviewEngine {
     return this.#plan?.live ?? null;
   }
 
-  /** 计划器开不开实时层、哪些合成拉黑了：有宿主才开；送过一次之后名单变了也要重送。 */
-  #sendLive(): void {
+  /** 舞台在动：播放中，或停着定位还没落地（`SCRUB_SETTLE_MS`）。这时代码包合成不看替身一律实时播（动效视频设计 §4.3）。 */
+  #moving(): boolean {
+    return this.#playing || this.#scrubTimer !== null;
+  }
+
+  /**
+   * 计划器开不开实时层、舞台在不在动、哪些合成拉黑了：有宿主才开；设置没变不重送。播放、暂停、定位与落地都要叫一次，
+   * 送了之后重新求计划（停下来有可用替身的合成要换成替身那一帧）。返回有没有真的送。
+   */
+  #sendLive(): boolean {
     const planner = this.#planner;
-    if (!planner) return;
+    if (!planner) return false;
     const enabled = this.#liveHost !== null;
-    if (!enabled && !this.#liveSent) return;
-    planner.setLive({ enabled, blocked: [...this.#liveBlocked] });
-    this.#liveSent = enabled;
+    if (!enabled && this.#liveSent === null) return false;
+    const playing = enabled && this.#moving();
+    const blocked = [...this.#liveBlocked];
+    const key = enabled ? `${playing}\n${blocked.join('\n')}` : null;
+    if (enabled && key === this.#liveSent) return false;
+    planner.setLive({ enabled, playing, blocked });
+    this.#liveSent = key;
+    return true;
   }
 
   /** 宿主放不出这件合成（载入失败、超时、取帧报错）或这一帧叠不上去：退回替身或占位，重新算计划。 */
@@ -654,8 +667,11 @@ export class PreviewEngine {
       this.#dragging = dragging;
       this.#scrubTimer = setTimeout(() => {
         this.#endScrub();
+        // 落地了：有可用替身的合成从实时层换成替身那一帧，先重新求计划再画。
+        if (this.#sendLive()) this.#sync();
         if (!this.#exact) this.#requestPaint();
       }, SCRUB_SETTLE_MS);
+      this.#sendLive();
     }
     this.#exact = false;
     this.#refresh();
@@ -673,6 +689,8 @@ export class PreviewEngine {
     this.#endScrub();
     this.#exact = false;
     this.#stats = emptyStats();
+    // 播放中实时层不看替身：下面的 #sync 按这个设置求第一帧的计划；设置变了第一个 tick 就要重画（帧号没变也画，画布要换成透明底）。
+    if (this.#sendLive()) this.#dirty = true;
     const step = () => {
       if (!this.#playing || !this.#video) return;
       const started = performance.now();
@@ -715,7 +733,8 @@ export class PreviewEngine {
     this.#playing = false;
     cancelAnimationFrame(this.#tick);
     for (const element of this.#elements.values()) if (!(element instanceof HTMLImageElement)) element.pause();
-    // 停下之后逐帧对准，画出停住的那一帧。
+    // 停下之后逐帧对准，画出停住的那一帧：有可用替身的合成这时画替身（动效视频设计 §4.3）。
+    this.#sendLive();
     this.#refresh();
   }
 
@@ -805,7 +824,8 @@ export class PreviewEngine {
     for (const listener of this.#planListeners) listener(plan);
     if (this.#liveHost) {
       this.#prepareLive();
-      this.#liveHost.show(plan.live ?? null, plan.frame);
+      // 这一帧没有实时层时不在这里收起 iframe：等画布画上替身那一帧再收（#paint），停下来的那一刻底下不露黑。
+      if (plan.live) this.#liveHost.show(plan.live, plan.frame);
     }
 
     // 视频层与自带的声音（轨道隐藏时只有声音）：视频实例，或带预渲染替身的合成。素材取计划里带的那个。
@@ -989,6 +1009,8 @@ export class PreviewEngine {
       canvas.height = height;
     }
     context.putImageData(new ImageData(planner.frame(), width, height), 0, 0);
+    // 画布上已经是不透明的这一帧（替身或占位）：现在才收起底下的 iframe。
+    if (!plan.live) this.#liveHost?.show(null, plan.frame);
     // 临时字幕不是视频里的实例：不给点选；内核对它的提示（跳过、警告）与还在取的层一样不报（记进 `pending`）。
     this.#setCaptionHits((rendered.captionHits ?? []).filter((hit) => hit.itemId !== LIVE_CAPTION_ITEM_ID));
     pending.add(LIVE_CAPTION_ITEM_ID);
@@ -1020,7 +1042,8 @@ export class PreviewEngine {
         ...notes,
       ]),
     ];
-    const live = plan.live !== undefined;
+    // 「实时预览，导出前要烘焙」只在替身不可用时报：播放中有可用替身的合成也走实时层，但停下来就是替身，不用提醒。
+    const live = plan.live !== undefined && plan.live.standIn !== 'usable';
     if (problems.join('\n') !== this.#problems.join('\n') || live !== this.#liveShown) {
       this.#problems = problems;
       this.#liveShown = live;

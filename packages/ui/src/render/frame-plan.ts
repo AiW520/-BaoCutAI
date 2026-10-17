@@ -21,8 +21,9 @@ export interface FramePlan {
 }
 
 /**
- * 实时合成层：没有可用替身（`standIn` 为 `none` 或 `stale`）的代码包合成，由宿主在沙箱 iframe 里实时画。`matrix` 与视频层同一套约定，
- * 按清单的固有尺寸 `width`×`height` 在实例的框里 contain 适配；宿主按固有尺寸布置页面再缩放。
+ * 实时合成层：由宿主在沙箱 iframe 里实时画的代码包合成。播放中不看替身一律是它；停住时只有没有可用替身（`standIn` 为 `none` 或
+ * `stale`）的才是（动效视频设计 §4.3）。`matrix` 与视频层同一套约定，按清单的固有尺寸 `width`×`height` 在实例的框里 contain 适配；
+ * 宿主按固有尺寸布置页面再缩放。
  */
 export interface LiveLayer {
   itemId: Id;
@@ -35,8 +36,8 @@ export interface LiveLayer {
   opacity: number;
   width: number;
   height: number;
-  /** 为什么没有可用的替身：没有预渲染，或预渲染的来源与代码包版本不一致。 */
-  standIn: 'none' | 'stale';
+  /** 替身的状态：没有预渲染、来源与代码包版本不一致，或可用（只在播放中出现：停下来会画替身，不用提醒烘焙）。 */
+  standIn: 'none' | 'stale' | 'usable';
 }
 
 export interface PlanCanvas {

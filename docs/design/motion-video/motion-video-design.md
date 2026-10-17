@@ -287,7 +287,7 @@ baoyu-design 的 animated-video 把一部动画写成一个 React 树，整体�
 
 | 阶段 | 内容 | 看得见的结果 |
 | --- | --- | --- |
-| 1 | 实时合成层（§4.1、§4.3），只支持「满幅合成 + 上面是原生层」；导入后烘焙转后台（§7.1，已做：`compositions_import` 的 `background`）；替身过期规则（§7.2，已做：导出预检 `EXPORT_PRERENDER_STALE`）；WebGL fixture 走通取帧与像素烘焙（已做，宿主改为开 GPU 合成）、3D 资源进白名单（已做） | 导入一章立刻能在编辑器里播，不等烘焙；WebGL 包有实测记录 |
+| 1 | 实时合成层（§4.1、§4.3），只支持「满幅合成 + 上面是原生层」；播放中一律实时层、停住才画可用替身（§4.3，已做：`render-graph` 的 `LiveOptions.playing`）；导入后烘焙转后台（§7.1，已做：`compositions_import` 的 `background`）；替身过期规则（§7.2，已做：导出预检 `EXPORT_PRERENDER_STALE`）；WebGL fixture 走通取帧与像素烘焙（已做，宿主改为开 GPU 合成）、3D 资源进白名单（已做） | 导入一章立刻能在编辑器里播，不等烘焙；WebGL 包有实测记录 |
 | 2 | 章节表文档与 `chapters_compile`；`compositions_import --chapter`；`Track.role` 与归轨算法；`assets_import --place role` | 智能体按章生成，重做一章下游自动挪位，旁白与配乐分轨 |
 | 3 | 章节页；检查器参数可调；时间线角标与轨道头角色名；声音页分组 | 用户在编辑器里改脚本、点名重做 |
 | 4 | `compositions_preview --chapter` 边界拼图；skill 与 code-scenes 改写；MV 流程验证 | 用一部讲解片与一首歌各走通一遍 |

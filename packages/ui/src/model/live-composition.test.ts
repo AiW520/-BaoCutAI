@@ -100,7 +100,7 @@ test('清单：只认浏览器合成、固有尺寸齐全的', () => {
   expect(liveManifestOf(records, { id: 'ok', revision: '2' })).toBeNull();
 });
 
-test('要实时播的合成：没有可用替身、清单齐全、没拉黑的，按开始时刻排', () => {
+test('要实时播的合成：清单齐全、没拉黑的，按开始时刻排；有可用替身的也在内（播放中照样实时播）', () => {
   const records = assets({
     bundle: { '1': { bundle: manifest('b', '7') } },
     baked: {
@@ -125,6 +125,7 @@ test('要实时播的合成：没有可用替身、清单齐全、没拉黑的�
   expect(picked.map((c) => [c.itemId, c.start, c.end])).toEqual([
     ['early', 0, 2],
     ['stale', 4, 6],
+    ['usable', 10, 12],
     ['late', 20, 22],
   ]);
   expect(picked[0]).toMatchObject({

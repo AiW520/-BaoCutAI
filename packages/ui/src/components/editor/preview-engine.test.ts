@@ -897,14 +897,17 @@ test('字幕场景按样式文档的冻结素材版本加载字节', async () =>
   engine.dispose();
 });
 
-/** 实时合成层用的计划器：开了实时层且这件合成没拉黑时，计划的底层是它；记下每次画是不是透明底，可按要求抛发光错误。 */
+/**
+ * 实时合成层用的计划器（与 render-graph 同一规则）：开了实时层、这件合成没拉黑，且舞台在动或替身不可用时，计划的底层是它；
+ * 记下每次画是不是透明底，可按要求抛发光错误。
+ */
 function livePlanner() {
-  const setLive: { enabled: boolean; blocked: string[] }[] = [];
+  const setLive: { enabled: boolean; playing: boolean; blocked: string[] }[] = [];
   const renders: { frame: number; transparent: boolean }[] = [];
-  const state = { enabled: false, blocked: new Set<string>(), emissive: false };
+  const state = { enabled: false, playing: false, blocked: new Set<string>(), emissive: false, standIn: 'none' as 'none' | 'stale' | 'usable' };
   const planAt = (seconds: number) => {
     const frame = Math.floor(seconds * 30 + 1e-6);
-    const live = state.enabled && !state.blocked.has('comp');
+    const live = state.enabled && !state.blocked.has('comp') && (state.playing || state.standIn !== 'usable');
     return {
       sequenceId: 'seq',
       sequenceRevision: 'r1',
@@ -923,7 +926,7 @@ function livePlanner() {
               opacity: 1,
               width: 1280,
               height: 720,
-              standIn: 'none',
+              standIn: state.standIn,
             },
           }
         : {}),
@@ -934,9 +937,10 @@ function livePlanner() {
     planAt,
     setDocuments: () => {},
     clearPictures: () => {},
-    setLive: (next: { enabled: boolean; blocked: string[] }) => {
+    setLive: (next: { enabled: boolean; playing: boolean; blocked: string[] }) => {
       setLive.push(next);
       state.enabled = next.enabled;
+      state.playing = next.playing;
       state.blocked = new Set(next.blocked);
     },
     render: (seconds: number, _w: number, _h: number, options?: { transparent?: boolean }) => {
@@ -1025,7 +1029,7 @@ test('实时合成层：接上宿主才开实时层；底是实时层的那一�
 
   engine.attachLive(live.host);
   await new Promise((resolve) => setTimeout(resolve, 10));
-  expect(setLive).toEqual([{ enabled: true, blocked: [] }]);
+  expect(setLive).toEqual([{ enabled: true, playing: false, blocked: [] }]);
   expect(renders.at(-1)).toEqual({ frame: 0, transparent: true });
   expect(live.prepared).toEqual([['comp']]);
   expect(live.shown.at(-1)).toEqual(['comp', 0]);
@@ -1035,7 +1039,7 @@ test('实时合成层：接上宿主才开实时层；底是实时层的那一�
 
   engine.attachLive(null);
   await new Promise((resolve) => setTimeout(resolve, 10));
-  expect(setLive.at(-1)).toEqual({ enabled: false, blocked: [] });
+  expect(setLive.at(-1)).toEqual({ enabled: false, playing: false, blocked: [] });
   expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
   expect(live.shown.at(-1)).toEqual([null, -1]);
   expect(seen.at(-1)).toEqual({ kind: 'ready' });
@@ -1066,7 +1070,7 @@ test('实时合成层：宿主报失败的合成拉黑，重送 setLive，下一
   await new Promise((resolve) => setTimeout(resolve, 10));
   live.fail('comp', 'ready-timeout');
   await new Promise((resolve) => setTimeout(resolve, 10));
-  expect(setLive.at(-1)).toEqual({ enabled: true, blocked: ['comp'] });
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: false, blocked: ['comp'] });
   expect(engine.live).toBeNull();
   expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
   expect(live.shown.at(-1)).toEqual([null, 0]);
@@ -1076,7 +1080,7 @@ test('实时合成层：宿主报失败的合成拉黑，重送 setLive，下一
 
   engine.retry();
   await new Promise((resolve) => setTimeout(resolve, 10));
-  expect(setLive.at(-1)).toEqual({ enabled: true, blocked: [] });
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: false, blocked: [] });
   expect(engine.live?.itemId).toBe('comp');
   expect(live.prepared.at(-1)).toEqual(['comp']);
   frames.restore();
@@ -1089,13 +1093,78 @@ test('实时合成层：透明底上有发光像素时这件合成拉黑、重�
   engine.attachLive(live.host);
   await new Promise((resolve) => setTimeout(resolve, 10));
   expect(setLive).toEqual([
-    { enabled: true, blocked: [] },
-    { enabled: true, blocked: ['comp'] },
+    { enabled: true, playing: false, blocked: [] },
+    { enabled: true, playing: false, blocked: ['comp'] },
   ]);
   expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
   expect(engine.live).toBeNull();
   expect(seen.some((status) => status.kind === 'error')).toBe(false);
   expect(seen.at(-1)).toEqual({ kind: 'ready' });
+  frames.restore();
+  engine.dispose();
+});
+
+test('实时合成层：播放与拖动中不看替身一律实时播、不提醒烘焙；停住才画可用的替身，iframe 等画布画上那一帧之后再收起', async () => {
+  const { frames, planner, setLive, renders, state, live, seen, engine } = await liveEngine();
+  state.standIn = 'usable';
+  // 记下画与收起的先后：收起 iframe 必须在画布画上不透明的那一帧之后。
+  const order: string[] = [];
+  const render = planner.render.bind(planner);
+  planner.render = ((...args: Parameters<RenderPlanner['render']>) => {
+    const rendered = render(...args);
+    order.push(rendered.plan.live ? 'render:live' : 'render:opaque');
+    return rendered;
+  }) as RenderPlanner['render'];
+  const show = live.host.show;
+  live.host.show = (layer, frame) => {
+    order.push(layer ? 'show' : 'hide');
+    show(layer, frame);
+  };
+  engine.attachLive(live.host);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  // 停着、替身可用：不切实时层，画不透明底，状态不报 live；有可用替身的合成照样预载。
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: false, blocked: [] });
+  expect(engine.live).toBeNull();
+  expect(renders.at(-1)).toEqual({ frame: 0, transparent: false });
+  expect(seen.at(-1)).toEqual({ kind: 'ready' });
+  expect(live.prepared.at(-1)).toEqual(['comp']);
+
+  // 播放：舞台在动，一律实时层；替身可用，所以不提醒「导出前要烘焙」。
+  engine.play();
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: true, blocked: [] });
+  frames.tick(1000 / 60);
+  expect(engine.live?.itemId).toBe('comp');
+  expect(engine.live?.standIn).toBe('usable');
+  expect(renders.at(-1)?.transparent).toBe(true);
+  expect(live.shown.at(-1)).toEqual(['comp', 0]);
+  expect(seen.at(-1)).toEqual({ kind: 'ready' });
+
+  // 暂停：重送 playing false，计划换回替身；iframe 在画布画上不透明那一帧之后才收起。
+  order.length = 0;
+  engine.pause();
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: false, blocked: [] });
+  expect(engine.live).toBeNull();
+  expect(order).toEqual([]);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(order).toEqual(['render:opaque', 'hide']);
+  expect(renders.at(-1)?.transparent).toBe(false);
+
+  // 停着定位：落地前在动、一律实时层；落地（SCRUB_SETTLE_MS）后换回替身那一帧。
+  engine.seek(1);
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: true, blocked: [] });
+  expect(engine.live?.itemId).toBe('comp');
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(setLive.at(-1)).toEqual({ enabled: true, playing: false, blocked: [] });
+  expect(engine.live).toBeNull();
+  expect(renders.at(-1)).toEqual({ frame: 30, transparent: false });
+  expect(live.shown.at(-1)).toEqual([null, 30]);
+
+  // 替身不可用时停住也是实时层，这时才提醒烘焙。
+  state.standIn = 'stale';
+  engine.retry();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(engine.live?.standIn).toBe('stale');
+  expect(seen.at(-1)).toEqual({ kind: 'ready', live: true });
   frames.restore();
   engine.dispose();
 });
