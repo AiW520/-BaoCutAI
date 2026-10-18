@@ -390,7 +390,7 @@ interface CompositionContext {
 - 只收白名单内的扩展名：`html` `htm` `js` `mjs` `cjs` `css` `json` `map` `txt` `md` `svg` `png` `jpg` `jpeg` `webp` `gif` `avif` `woff` `woff2` `ttf` `otf` `mp3` `wav` `ogg` `m4a` `mp4` `webm` `mov` `wasm` `lock`，3D 资源 `gltf` `glb` `bin` `hdr` `ktx2`，以及有固定名字的清单文件（§2.5）。
 - 上限：4096 个文件，单个文件 64 MiB，合计 256 MiB，相对路径不超过 512 个字符。
 - 静态扫描网络引用：`src`、`href`、`url()`、`@import`、`fetch`、`new URL` 中的 `http(s)://`、`ws(s)://` 与协议相对 URL（`//` 开头）；XML 命名空间 URI 不算。发现即拒绝。
-- 没有 `bundle.manifest.json` 的包，导入方可以按入口页面根元素的 `data-*` 属性（§4.1）或调用方给出的覆盖值合成一份清单。合成的清单写进暂存副本，不写回源目录；`revision` 默认为 `1`（`Revision` 是非负十进制整数字符串，视频格式规范 §1.2）。
+- 没有 `bundle.manifest.json` 的包，导入方可以按入口页面根元素的 `data-*` 属性（§4.1）或调用方给出的覆盖值合成一份清单。调用方没有给 `contract` 时：入口页面，或它用 `<script src>` 引用的包内脚本（模块脚本再顺着静态 `import` 往下），去掉注释后出现 `__baocutCompositions` 的判为 `baocut/1`（§4.1），否则判为 `hyperframes/1`（§4.7）；没被引用的文件不看，运行期才拼出来的注册看不到，要由调用方给出。合成的清单写进暂存副本，不写回源目录；`revision` 默认为 `1`（`Revision` 是非负十进制整数字符串，视频格式规范 §1.2）。
 - 通过的包按 `bundleId/revision` 不可变地存成托管的目录素材（视频格式规范 §4.3），清单放在素材版本的 `bundle` 字段里。
 
 ### 6.2 验证项

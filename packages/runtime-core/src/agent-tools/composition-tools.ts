@@ -66,7 +66,7 @@ const manifestOverrides = z
     contract: z
       .enum(CODE_BUNDLE_CONTRACTS)
       .optional()
-      .describe('作者合同：hyperframes/1 或 baocut/1；不给时页面里出现 __baocutCompositions 判为 baocut/1，否则 hyperframes/1'),
+      .describe('作者合同：hyperframes/1 或 baocut/1；不给时入口页面或它用 script src 引用的本地脚本里出现 __baocutCompositions 判为 baocut/1，否则 hyperframes/1'),
   })
   .optional()
   .describe(

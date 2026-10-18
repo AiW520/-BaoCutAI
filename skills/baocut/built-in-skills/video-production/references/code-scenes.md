@@ -15,7 +15,7 @@
 | 可编辑的视频（默认） | 写成代码包，用 compositions_import 导入。用 `baocut/1` 合同（下面的最小包）：`initialize(context)` 里等图片与字体加载完（`img.decode()`），`renderAt(time, params)` 在一块 `<canvas>` 上画出那一刻（`time` 是 `{ ticks, timescale }`，秒 = `Number(ticks) / timescale`，不是秒数）；全画幅不透明的在根元素写 `data-alpha="false"`。按段落（一段一个场景）切成几个代码包首尾相接，改一段只重新导入那一段（`replace: { itemId }`） |
 | 只要一个视频文件，明说由代码直接渲染、不要可编辑视频 | 在 BaoCut 之外渲染，例如逐帧画好交给 ffmpeg 编码。交付时说明画面不能在编辑器里逐个元素改；之后要可编辑，按上一行重做，不把渲染出的文件当素材导入后再叠加修改 |
 
-整镜整段的画面用 `baocut/1`；叠加在实拍或别的画面上的贴片、标题、字幕条用 `motion-graphics` 的 scaffold（`hyperframes/1`，`window.__timelines` + `seek(秒)`），两种合同不混在一个包里。`baocut/1` 的最小包（根元素的 `data-*` 就是清单，不用另写 `bundle.manifest.json`；`data-composition-id` 与注册用的键相同）。没有清单时，合同按入口 HTML 的文字里有没有 `__baocutCompositions` 判断：注册写在另外的脚本文件里（几段共用一个 `engine.js` 时常这样），入口里不出现这个词，会被当成 `hyperframes/1`，预览与导入等 `window.__timelines` 超时、报 `COMPOSITION_TIMELINE_MISSING`。这时 compositions_preview 与 compositions_import 都带 `manifest: {"contract": "baocut/1"}`（终端里写成 `--manifest '{"contract":"baocut/1"}'`）：
+整镜整段的画面用 `baocut/1`；叠加在实拍或别的画面上的贴片、标题、字幕条用 `motion-graphics` 的 scaffold（`hyperframes/1`，`window.__timelines` + `seek(秒)`），两种合同不混在一个包里。没有清单时，合同按入口 HTML 以及它用 `<script src>` 引用的包内脚本（模块再顺着静态 `import`）里有没有 `__baocutCompositions` 判断，几段共用一个 `engine.js`、注册写在里面也认得出。注册是运行期拼出来的（字符串拼接、`eval`），或者用的是较早的 BaoCut，会被当成 `hyperframes/1`，预览与导入等 `window.__timelines` 超时、报 `COMPOSITION_TIMELINE_MISSING`；这时 compositions_preview 与 compositions_import 都带 `manifest: {"contract": "baocut/1"}`（终端里写成 `--manifest '{"contract":"baocut/1"}'`）。`baocut/1` 的最小包（根元素的 `data-*` 就是清单，不用另写 `bundle.manifest.json`；`data-composition-id` 与注册用的键相同）：
 
 ```html
 <!doctype html>
