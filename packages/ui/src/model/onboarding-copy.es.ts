@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const es: OnboardingMessages = {
-  dialogLabel: 'Te damos la bienvenida a BaoCut',
+  dialogLabel: 'Te damos la bienvenida a Tuzi',
   stepsLabel: 'Pasos de configuración',
   step: {
     agent: 'Conectar un agente',
@@ -12,7 +12,7 @@ export const es: OnboardingMessages = {
     music: 'Generación de música',
   },
   title: {
-    agent: 'Te damos la bienvenida a BaoCut',
+    agent: 'Te damos la bienvenida a Tuzi',
     asr: 'Descargar modelos de reconocimiento de voz',
     tts: 'Descargar modelos de síntesis de voz',
     semantic: 'Instalar la búsqueda semántica',
@@ -21,7 +21,7 @@ export const es: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Describe el vídeo que quieres y un agente transcribe, añade subtítulos, traduce, dobla y edita por ti. BaoCut usa los agentes de este ordenador (como Claude Code o Codex) con tu propia cuenta, sin coste adicional.',
+      'Describe el vídeo que quieres y un agente transcribe, añade subtítulos, traduce, dobla y edita por ti. Tuzi usa los agentes de este ordenador (como Claude Code o Codex) con tu propia cuenta, sin coste adicional.',
     asr: 'Transcribir, añadir subtítulos y recortar vídeos de una persona hablando empiezan por convertir la voz en texto. Los modelos se ejecutan en este ordenador y funcionan sin conexión.',
     tts: 'Los modelos de síntesis de voz leen texto en voz alta, clonan una voz a partir de una grabación y doblan vídeos traducidos. Elige uno o dos para empezar; descarga otros más adelante en Ajustes › Síntesis de voz.',
     semantic:
@@ -64,7 +64,7 @@ export const es: OnboardingMessages = {
 
   agentListLabel: 'Agentes de este ordenador',
   agentChecking: 'Buscando agentes en este ordenador…',
-  agentMissingBody: 'Marca los que quieras y BaoCut los instala en segundo plano. Una vez instalados, inicia sesión una vez con tu cuenta.',
+  agentMissingBody: 'Marca los que quieras y Tuzi los instala en segundo plano. Una vez instalados, inicia sesión una vez con tu cuenta.',
   agentNote:
     'Los agentes marcados aparecen en el menú de agentes de las sesiones nuevas. La instalación se hace en segundo plano, así que no tienes que esperar. Elige el predeterminado o añade más en Ajustes › Proveedores de agentes.',
   agentInstalled: 'Instalado en este ordenador',

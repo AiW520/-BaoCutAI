@@ -22,7 +22,7 @@ export type BackgroundKind = 'download' | 'install' | 'mixed';
 
 /** 首次启动引导的文案（model/onboarding.ts、components/onboarding；英文是键与类型的来源，译文在 `onboarding-copy.<语言>.ts`）。 */
 const en = {
-  dialogLabel: 'Welcome to BaoCut',
+  dialogLabel: 'Welcome to Tuzi',
   stepsLabel: 'Setup steps',
   step: {
     agent: 'Connect an Agent',
@@ -33,7 +33,7 @@ const en = {
     music: 'Music generation',
   },
   title: {
-    agent: 'Welcome to BaoCut',
+    agent: 'Welcome to Tuzi',
     asr: 'Download speech recognition models',
     tts: 'Download speech synthesis models',
     semantic: 'Install semantic search',
@@ -42,7 +42,7 @@ const en = {
   },
   lead: {
     agent:
-      'Describe the video you want, and an Agent transcribes, adds subtitles, translates, makes voice-overs and edits for you. BaoCut uses the Agents on this computer (such as Claude Code or Codex) with your own account, at no extra charge.',
+      'Describe the video you want, and an Agent transcribes, adds subtitles, translates, makes voice-overs and edits for you. Tuzi uses the Agents on this computer (such as Claude Code or Codex) with your own account, at no extra charge.',
     asr: 'Transcribing, adding subtitles and editing talking-head videos all start by turning speech into text. The models run on this computer and work offline.',
     tts: 'Speech synthesis models read text aloud, clone a voice from a recording and make voice-overs for translated videos. Pick one or two to start; download others later in Settings › Speech synthesis.',
     semantic:
@@ -89,7 +89,7 @@ const en = {
 
   agentListLabel: 'Agents on this computer',
   agentChecking: 'Checking for Agents on this computer…',
-  agentMissingBody: 'Check the ones you want and BaoCut installs them in the background. Once installed, sign in once with your existing account.',
+  agentMissingBody: 'Check the ones you want and Tuzi installs them in the background. Once installed, sign in once with your existing account.',
   agentNote:
     'Checked Agents appear in the Agent menu of new sessions. Installing runs in the background, so you don’t have to wait. Choose the default or add more in Settings › Agent providers.',
   agentInstalled: 'Installed on this computer',

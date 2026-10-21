@@ -108,7 +108,7 @@ export const pl: CopyMessages = {
     files: 'Pliki', folders: 'Foldery',
     filesMessage: (paths) => `Pliki i foldery:\n${paths.map(path => JSON.stringify(path)).join('\n')}`,
     pickFailed: (message) => `Nie udało się wybrać plików: ${message}`,
-    webFilesUnsupported: 'Dodaj lokalne pliki i foldery w aplikacji komputerowej BaoCut. Klient Web nie obsługuje jeszcze przesyłania plików.',
+    webFilesUnsupported: 'Dodaj lokalne pliki i foldery w aplikacji komputerowej Tuzi. Klient Web nie obsługuje jeszcze przesyłania plików.',
     /** 原型是「引用章节或文件」；章节、说话人这类数据 Runtime 还没有，只列视频与文件。 */
     mention: "Odwołaj się do wideo lub pliku",
     slash: "Użyj narzędzia",
@@ -158,13 +158,13 @@ export const pl: CopyMessages = {
   recovery: {
     authTitle: (name: string) => `${name} wymaga ponownego logowania`,
     authBody: (name: string) =>
-      `Logowanie odbywa się w oknie agenta ${name}; BaoCut nie przetwarza Twojego konta ani hasła. Po zalogowaniu wróć i wyślij ponownie.`,
+      `Logowanie odbywa się w oknie agenta ${name}; Tuzi nie przetwarza Twojego konta ani hasła. Po zalogowaniu wróć i wyślij ponownie.`,
     openLogin: "Zaloguj się z terminala",
     loginOpened: (command: string) => `Uruchamianie ${command} w terminalu · Po zalogowaniu wróć i wyślij ponownie`,
     loginCopied: "Nie udało się otworzyć terminala. Skopiowano polecenie logowania; wklej je w terminalu, aby uruchomić",
     loginManual: (command: string) => `Nie udało się otworzyć terminala. Uruchom ${command} w terminalu`,
     modelTitle: (model: string | null) => `${model ?? "Ten model"} jest teraz niedostępny`,
-    modelBody: "Wybierz inny model i wyślij ponownie. BaoCut nie zmienia modeli samodzielnie.",
+    modelBody: "Wybierz inny model i wyślij ponownie. Tuzi nie zmienia modeli samodzielnie.",
     pickModel: "Wyślij ponownie z innym modelem",
     resend: "Wyślij ponownie",
     retry: "Spróbuj ponownie",
@@ -630,7 +630,7 @@ export const pl: CopyMessages = {
     blockedTitle: {
       loopback: "Lokalne adresy nie otwierają się tutaj",
       scheme: "Można otworzyć tylko URL http / https",
-      'app-origin': "Stron BaoCut nie można otwierać w karcie internetowej",
+      'app-origin': "Stron Tuzi nie można otwierać w karcie internetowej",
       invalid: "Ten URL jest nieprawidłowy",
     },
     blockedBody: {
@@ -640,10 +640,10 @@ export const pl: CopyMessages = {
       invalid: "Sprawdź zapis URL.",
     },
     backToPage: "Wróć do strony",
-    footer: "Strony otwierają się w oddzielnym środowisku bez dostępu do BaoCut i lokalnych usług; logowania są oddzielone od przeglądarki systemowej.",
+    footer: "Strony otwierają się w oddzielnym środowisku bez dostępu do Tuzi i lokalnych usług; logowania są oddzielone od przeglądarki systemowej.",
     externalShort: "Otwórz zewnętrznie",
     unsupportedTitle: "Nie można tu osadzać stron internetowych",
-    unsupportedBody: "Aplikacja BaoCut na komputerze może bezpośrednio przeglądać sieć; na razie otwórz w przeglądarce.",
+    unsupportedBody: "Aplikacja Tuzi na komputerze może bezpośrednio przeglądać sieć; na razie otwórz w przeglądarce.",
     openInBrowser: "Otwórz w przeglądarce",
     toolsTitle: 'Narzędzia',
     newPageTitle: 'Nowa strona internetowa',
@@ -791,7 +791,7 @@ export const pl: CopyMessages = {
     mcp: {
       name: "Usługa MCP",
       scope: "Tylko ten komputer",
-      desc: "Pozwala innym aplikacjom AI czytać wideo i wywoływać narzędzia BaoCut",
+      desc: "Pozwala innym aplikacjom AI czytać wideo i wywoływać narzędzia Tuzi",
       start: "Uruchom usługę",
       stop: "Zatrzymaj usługę",
       starting: "Uruchamianie…",
@@ -809,7 +809,7 @@ export const pl: CopyMessages = {
     web: {
       name: "Usługa internetowa",
       scope: "Tylko ten komputer",
-      desc: "Otwórz BaoCut Web w przeglądarce, aby edytować te same wideo",
+      desc: "Otwórz Tuzi Web w przeglądarce, aby edytować te same wideo",
       start: "Uruchom usługę",
       stop: "Zatrzymaj usługę",
       starting: "Uruchamianie…",
@@ -818,7 +818,7 @@ export const pl: CopyMessages = {
     'model-api': {
       name: "API modeli",
       scope: "Tylko ten komputer",
-      desc: "Pozwala narzędziom używającym OpenAI API korzystać z modeli BaoCut do transkrypcji, mowy, obrazów i tekstu",
+      desc: "Pozwala narzędziom używającym OpenAI API korzystać z modeli Tuzi do transkrypcji, mowy, obrazów i tekstu",
       start: "Uruchom usługę",
       stop: "Zatrzymaj usługę",
       starting: "Uruchamianie…",
@@ -834,7 +834,7 @@ export const pl: CopyMessages = {
   servicesPage: {
     title: "Usługi",
     overview: "Przegląd usług",
-    lede: "Usługi BaoCut na tym Macu, z którymi mogą łączyć się inne aplikacje i urządzenia. Wszystkie są domyślnie wyłączone i zatrzymują się przy zamknięciu BaoCut.",
+    lede: "Usługi Tuzi na tym Macu, z którymi mogą łączyć się inne aplikacje i urządzenia. Wszystkie są domyślnie wyłączone i zatrzymują się przy zamknięciu Tuzi.",
     allOff: "Żadna nie działa",
     errors: (n: number) => `${n} ${pluralForm('pl', n, {one: "błąd", few: "błędy", many: "błędów", other: "błędu"})}`,
     running: (n: number) => `${n} w trakcie`,
@@ -844,18 +844,18 @@ export const pl: CopyMessages = {
     railAlert: (text: string) => `Usługi, ${text}`,
     railApprovals: (n: number) => `Usługi, ${n} ${pluralForm('pl', n, {one: "prośba", few: "prośby", many: "próśb", other: "prośby"})} – oczekiwanie na Twoje zatwierdzenie`,
     loading: "Wczytywanie stanu…",
-    disconnected: "Brak połączenia z BaoCut Runtime",
+    disconnected: "Brak połączenia z Tuzi Runtime",
     failed: (message: string) => `Nie powiodło się: ${message}`,
     /** Runtime 列出了、但这个版本没有提供的服务（`available: false`）：总览行与详情页说清楚为什么不能起停。 */
-    unavailableDetail: "Ta wersja BaoCut Runtime nie oferuje jeszcze tej usługi",
+    unavailableDetail: "Ta wersja Tuzi Runtime nie oferuje jeszcze tej usługi",
     unavailableTitle: (name: string) => `${name} jest jeszcze niedostępne`,
     notRunning: "Usługa nie działa. Najpierw ją uruchom",
-    mcpRelated: "Chcesz nauczyć Claude Code lub Codex w terminalu sposobów pracy BaoCut? Zainstaluj dla nich Skill BaoCut – usługa nie jest potrzebna. Zobacz",
+    mcpRelated: "Chcesz nauczyć Claude Code lub Codex w terminalu sposobów pracy Tuzi? Zainstaluj dla nich Skill Tuzi – usługa nie jest potrzebna. Zobacz",
     mcpRelatedLink: "Skills",
   },
-  /** BaoCut Runtime 卡（原服务页的一张卡，现在给设置 › 诊断复用）。 */
+  /** Tuzi Runtime 卡（原服务页的一张卡，现在给设置 › 诊断复用）。 */
   runtimeCard: {
-    name: "BaoCut Runtime",
+    name: "Tuzi Runtime",
     version: "Wersja",
     versionValue: (runtime: string, protocol: number | string) => `${runtime} (protokół ${protocol})`,
     pid: "Proces",
@@ -884,8 +884,8 @@ export const pl: CopyMessages = {
     subOff: "Inne urządzenia nie widzą tego Maca.",
     subErrorFallback: "Usługa węzła nie nasłuchuje.",
     errorFix: "Zamknij program używający tego portu, a potem włącz udostępnianie ponownie – lub zatrzymaj, jeśli już go nie potrzebujesz.",
-    foot: "Gdy udostępnianie jest włączone, BaoCut wznawia je przy następnym otwarciu.",
-    footRight: "Udostępnianie zatrzymuje się przy zamknięciu BaoCut.",
+    foot: "Gdy udostępnianie jest włączone, Tuzi wznawia je przy następnym otwarciu.",
+    footRight: "Udostępnianie zatrzymuje się przy zamknięciu Tuzi.",
     privacy: "Dane wejściowe zadania przesyłane są tylko w sieci lokalnej i wracają tylko wyniki; po zakończeniu zadania nic nie zostaje na tym Macu.",
     offHint: "Po rozpoczęciu udostępniania pojawi się 6-cyfrowy kod parowania; wpisz go na drugim urządzeniu, aby połączyć.",
     started: "Rozpoczęto udostępnianie tego Maca",
@@ -898,7 +898,7 @@ export const pl: CopyMessages = {
     pairingHint: (left: string) => `Wpisz ten kod na drugim urządzeniu. Wygaśnie za ${left}.`,
     pairingLocked: (until: string) => `Za dużo błędnych prób; parowanie zablokowane do ${until}. Wygeneruj nowy kod, aby odblokować teraz.`,
     pairingNone:
-      "Obecnie brak kodu parowania. Trzeba wygenerować nowy po użyciu, wygaśnięciu lub ponownym otwarciu BaoCut. Sparowane urządzenia pozostają bez zmian.",
+      "Obecnie brak kodu parowania. Trzeba wygenerować nowy po użyciu, wygaśnięciu lub ponownym otwarciu Tuzi. Sparowane urządzenia pozostają bez zmian.",
     regenerate: "Wygeneruj ponownie",
     generate: "Wygeneruj kod parowania",
     regenerated: "Wygenerowano nowy kod parowania",
@@ -952,8 +952,8 @@ export const pl: CopyMessages = {
     unpairDone: "Usunięto parowanie",
     /** 节点卡上「为什么用不了」：按 `PairedNode.problem` 拼（没有诊断方法，不叫「诊断」）。 */
     problem: {
-      unreachable: "Nie można połączyć z tym komputerem. Upewnij się, że ma otwarty BaoCut z „Udostępnianiem tego Maca”, a oba komputery są w tej samej sieci lokalnej.",
-      version: "Komputery mają niezgodne wersje BaoCut. Zaktualizuj oba do najnowszej wersji.",
+      unreachable: "Nie można połączyć z tym komputerem. Upewnij się, że ma otwarty Tuzi z „Udostępnianiem tego Maca”, a oba komputery są w tej samej sieci lokalnej.",
+      version: "Komputery mają niezgodne wersje Tuzi. Zaktualizuj oba do najnowszej wersji.",
       unpaired: "Parowanie jest nieważne: druga strona cofnęła uprawnienie tego komputera lub inny komputer używa tego adresu. Usuń parowanie i sparuj ponownie.",
     },
     transcribeOff: "Transkrypcja nie jest udostępniana",
@@ -977,7 +977,7 @@ export const pl: CopyMessages = {
     pairErrors: {
       'pairing-code-invalid': "Kod parowania jest błędny lub nieważny. Poproś o nowy kod i spróbuj ponownie.",
       'pairing-locked': "Za dużo błędnych prób; tamten komputer tymczasowo zablokował parowanie. Poproś o kliknięcie „Wygeneruj ponownie”, aby odblokować.",
-      version: "Komputery mają niezgodne wersje BaoCut. Najpierw zaktualizuj oba do najnowszej wersji.",
+      version: "Komputery mają niezgodne wersje Tuzi. Najpierw zaktualizuj oba do najnowszej wersji.",
       'source-not-allowed': "Tamten komputer nie przyjmuje połączeń z adresu tego komputera.",
       lost: "Nie można połączyć z tamtym komputerem. Sprawdź adres i port oraz włączone „Udostępnianie tego Maca”.",
     },
@@ -998,7 +998,7 @@ export const pl: CopyMessages = {
     subtitle: "Sprawdzaj w dowolnej chwili i zaczynaj pracę",
     close: "Zamknij pomoc",
     navLabel: "Kategorie pomocy",
-    navTitle: "Korzystanie z BaoCut",
+    navTitle: "Korzystanie z Tuzi",
     navNote: ["Czytaj tylko to, czego potrzebujesz.", "Zamknij, aby wrócić do pracy."] as [string, string],
     sections: { start: "Szybki start", guide: "Poradniki", keys: "Skróty klawiaturowe", faq: "Częste pytania" },
     searchLabel: "Szukaj w pomocy",

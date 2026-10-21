@@ -51,7 +51,7 @@ export const ko: MainMessages = {
   runtimeExited: (code: number | null) => `Runtime을 시작하지 못했습니다(종료 코드 ${code})`,
   runtimeQuitting: '앱을 종료하는 중입니다',
   quitBusyTitle: (count: number) => `실행 중인 작업이 ${count}개 있습니다`,
-  quitBusyDetail: '지금 종료하면 이 작업이 중단됩니다. 백그라운드에서 계속 실행할 수도 있으며, 작업이 끝나면 BaoCut이 자동으로 중지됩니다.',
+  quitBusyDetail: '지금 종료하면 이 작업이 중단됩니다. 백그라운드에서 계속 실행할 수도 있으며, 작업이 끝나면 Tuzi이 자동으로 중지됩니다.',
   quitKeepRunning: '백그라운드에서 계속 실행',
   quitStop: '중지하고 종료',
   cancel: '취소',

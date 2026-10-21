@@ -52,7 +52,7 @@ export const pl: MainMessages = {
   runtimeExited: (code: number | null) => `Runtime nie został uruchomiony (kod zakończenia ${code})`,
   runtimeQuitting: 'Aplikacja jest zamykana',
   quitBusyTitle: (count: number) => pluralForm('pl', count, { one: `${count} zadanie wciąż trwa`, few: `${count} zadania wciąż trwają`, many: `${count} zadań wciąż trwa`, other: `${count} zadania wciąż trwają` }),
-  quitBusyDetail: 'Jeśli zakończysz teraz, zostaną przerwane. Możesz też pozwolić im działać dalej w tle — BaoCut sam się zatrzyma, gdy się zakończą.',
+  quitBusyDetail: 'Jeśli zakończysz teraz, zostaną przerwane. Możesz też pozwolić im działać dalej w tle — Tuzi sam się zatrzyma, gdy się zakończą.',
   quitKeepRunning: 'Kontynuuj w tle',
   quitStop: 'Zatrzymaj i zakończ',
   cancel: 'Anuluj',

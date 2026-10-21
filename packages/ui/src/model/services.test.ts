@@ -169,7 +169,7 @@ describe('端口', () => {
 
 describe('操作失败的说法', () => {
   it('没有提供与没开着说人话，其余照 Runtime 的消息', () => {
-    expect(serviceErrorMessage(new RpcError('conflict', 'x', { code: 'SERVICE_NOT_AVAILABLE' }))).toBe('这个版本的 BaoCut Runtime 还没有提供这项服务');
+    expect(serviceErrorMessage(new RpcError('conflict', 'x', { code: 'SERVICE_NOT_AVAILABLE' }))).toBe('这个版本的 Tuzi Runtime 还没有提供这项服务');
     expect(serviceErrorMessage(new RpcError('conflict', 'x', { code: 'SERVICE_NOT_RUNNING' }))).toBe('服务没有开着，先启动它');
     expect(serviceErrorMessage(new RpcError('invalid-request', '端口不对'))).toBe('端口不对');
     expect(serviceErrorMessage('坏了')).toBe('坏了');

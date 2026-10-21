@@ -6,7 +6,7 @@ export const tr: GeneralSettingsMessages = {
   languageDesc: "Hemen uygulanır; yeniden başlatma gerekmez.",
   languageSystem: (current) => `Sistem (${current})`,
   appearance: "Görünüm",
-  appearanceDesc: "Yalnızca bu bilgisayardaki BaoCut pencerelerini etkiler.",
+  appearanceDesc: "Yalnızca bu bilgisayardaki Tuzi pencerelerini etkiler.",
   schemeSystem: "Sistem",
   schemeLight: "Açık",
   schemeDark: "Koyu",
@@ -27,7 +27,7 @@ export const tr: GeneralSettingsMessages = {
   downloadsGroup: "İndirmeler ve güncellemeler",
   autoUpdateOn: "Otomatik güncelleme denetimi ve indirme açıldı",
   autoUpdateOff: "Otomatik güncelleme indirme kapatıldı",
-  downloaderWeb: "Tarayıcı bu bilgisayardaki indirme araçlarını denetlemez; BaoCut masaüstü uygulamasında denetleyin.",
+  downloaderWeb: "Tarayıcı bu bilgisayardaki indirme araçlarını denetlemez; Tuzi masaüstü uygulamasında denetleyin.",
 
   sourcesGroup: "İndirme kaynakları ve çevrimdışı",
   strictOffline: "Sıkı çevrimdışı",
@@ -37,7 +37,7 @@ export const tr: GeneralSettingsMessages = {
 
   trashDays: "Çöp sepetinde tutma süresi (gün)",
   trashDaysDesc: (fallback) => `Çöp sepetinde bu süreden uzun kalan, başvurulmayan öğeler ve silinmiş videolar kalıcı silinir (başlangıçta ve ardından her 6 saatte denetlenir). Hâlâ başvurulan öğeler tutulur. Varsayılana${fallback ? ` (${fallback} gün)` : ''} dönmek için temizleyin.`,
-  webNote: "Tarayıcı bu ayarı değiştiremez. Bunu BaoCut masaüstü uygulamasında değiştirin.",
-  webViewOnly: "Tarayıcıda bunu yalnızca görüntüleyebilirsiniz. Değişiklikleri BaoCut masaüstü uygulamasında yapın.",
-  webUnavailable: "Bu, tarayıcıda kullanılamaz. BaoCut masaüstü uygulamasını kullanın.",
+  webNote: "Tarayıcı bu ayarı değiştiremez. Bunu Tuzi masaüstü uygulamasında değiştirin.",
+  webViewOnly: "Tarayıcıda bunu yalnızca görüntüleyebilirsiniz. Değişiklikleri Tuzi masaüstü uygulamasında yapın.",
+  webUnavailable: "Bu, tarayıcıda kullanılamaz. Tuzi masaüstü uygulamasını kullanın.",
 };

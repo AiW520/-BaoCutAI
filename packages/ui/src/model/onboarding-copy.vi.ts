@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const vi: OnboardingMessages = {
-  dialogLabel: 'Chào mừng bạn đến với BaoCut',
+  dialogLabel: 'Chào mừng bạn đến với Tuzi',
   stepsLabel: 'Các bước thiết lập',
   step: {
     agent: 'Kết nối Agent',
@@ -12,7 +12,7 @@ export const vi: OnboardingMessages = {
     music: 'Tạo nhạc',
   },
   title: {
-    agent: 'Chào mừng bạn đến với BaoCut',
+    agent: 'Chào mừng bạn đến với Tuzi',
     asr: 'Tải xuống mô hình nhận dạng giọng nói',
     tts: 'Tải xuống mô hình tổng hợp giọng nói',
     semantic: 'Cài tìm kiếm ngữ nghĩa',
@@ -21,7 +21,7 @@ export const vi: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Mô tả video bạn muốn, Agent sẽ chép lời, thêm phụ đề, dịch, lồng tiếng và biên tập giúp bạn. BaoCut dùng các Agent trên máy tính này (như Claude Code hoặc Codex) bằng tài khoản của chính bạn, không tính thêm phí.',
+      'Mô tả video bạn muốn, Agent sẽ chép lời, thêm phụ đề, dịch, lồng tiếng và biên tập giúp bạn. Tuzi dùng các Agent trên máy tính này (như Claude Code hoặc Codex) bằng tài khoản của chính bạn, không tính thêm phí.',
     asr: 'Chép lời, thêm phụ đề và cắt tỉa video người nói đều bắt đầu từ việc chuyển lời nói thành văn bản. Mô hình chạy trên máy tính này và dùng được cả khi không có mạng.',
     tts: 'Mô hình tổng hợp giọng nói đọc to văn bản, nhân bản giọng từ một bản ghi âm và lồng tiếng cho video đã dịch. Hãy chọn một hai mô hình để bắt đầu; các mô hình khác có thể tải sau trong Cài đặt › Tổng hợp giọng nói.',
     semantic:
@@ -64,7 +64,7 @@ export const vi: OnboardingMessages = {
 
   agentListLabel: 'Agent trên máy tính này',
   agentChecking: 'Đang kiểm tra Agent trên máy tính này…',
-  agentMissingBody: 'Đánh dấu các Agent bạn muốn, BaoCut sẽ cài chúng trong nền. Sau khi cài, đăng nhập một lần bằng tài khoản sẵn có của bạn.',
+  agentMissingBody: 'Đánh dấu các Agent bạn muốn, Tuzi sẽ cài chúng trong nền. Sau khi cài, đăng nhập một lần bằng tài khoản sẵn có của bạn.',
   agentNote:
     'Các Agent đã đánh dấu sẽ xuất hiện trong menu Agent của phiên mới. Việc cài chạy trong nền, nên không cần chờ. Chọn Agent mặc định hoặc thêm Agent khác trong Cài đặt › Nhà cung cấp Agent.',
   agentInstalled: 'Đã cài trên máy tính này',

@@ -36,7 +36,7 @@ export const zhHant: ShellMessages = {
     deleteSessionEllipsis: '刪除對話…',
     deleteTitle: '要刪除這個對話嗎？',
     deleteConfirm: '刪除',
-    deleteBody: '對話記錄會從 BaoCut 中移除，執行中的任務會先停止。專案資料夾中的檔案不受影響。',
+    deleteBody: '對話記錄會從 Tuzi 中移除，執行中的任務會先停止。專案資料夾中的檔案不受影響。',
     deleteFailed: (message) => `無法刪除：${message}`,
     renameTitle: '重新命名對話',
     videosIn: (place) => `${where(place)}的影片`,
@@ -64,7 +64,7 @@ export const zhHant: ShellMessages = {
     noSessions: '還沒有對話。',
     noProjects: '還沒有專案。新增一個，或開啟現有的資料夾；Agent 會在那裡工作。',
     renameProjectTitle: '重新命名專案',
-    renameProjectHint: '只會更改在 BaoCut 中顯示的名稱，資料夾名稱不變。',
+    renameProjectHint: '只會更改在 Tuzi 中顯示的名稱，資料夾名稱不變。',
     toggleSection: (collapsed, label) => `${collapsed ? '展開' : '收合'}${label}`,
     organizeLabel: '整理專案與對話',
     sidebarSettings: '側邊欄設定',
@@ -99,7 +99,7 @@ export const zhHant: ShellMessages = {
     app: '應用程式',
     privacyTitle: '你的資料都留在這台電腦上',
     privacyHint:
-      '對話、專案清單與 Space 標記都存放在資料儲存位置中；專案檔案留在各自的資料夾，BaoCut 不會上傳。Agent 引擎是否連網由引擎自己決定。',
+      '對話、專案清單與 Space 標記都存放在資料儲存位置中；專案檔案留在各自的資料夾，Tuzi 不會上傳。Agent 引擎是否連網由引擎自己決定。',
     dataDir: '資料儲存位置',
     projectsDir: '新專案存放於',
     logsDir: '記錄檔資料夾',
@@ -176,7 +176,7 @@ export const zhHant: ShellMessages = {
     closed: '連線已關閉',
     lost: (reason, retrying) => `${reason}。${retrying ? '正在重新連線…' : ''}`,
     reconnectingEllipsis: '正在重新連線…',
-    title: '未連線到 BaoCut Runtime',
+    title: '未連線到 Tuzi Runtime',
     reconnecting: '正在重新連線',
   },
   videoInfo: {
@@ -195,7 +195,7 @@ export const zhHant: ShellMessages = {
   filePreview: {
     tooLarge: '檔案太大，無法在這裡完整顯示',
     loading: '正在載入預覽',
-    unsupported: 'BaoCut 目前還無法預覽這類檔案。請在資料夾中顯示，再用其他應用程式開啟。',
+    unsupported: 'Tuzi 目前還無法預覽這類檔案。請在資料夾中顯示，再用其他應用程式開啟。',
     failed: (message) => `無法載入預覽：${message}`,
   },
   accessPicker: {

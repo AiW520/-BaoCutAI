@@ -58,7 +58,7 @@ const en = {
     deleteTitle: 'Delete this session?',
     deleteConfirm: 'Delete',
     deleteBody:
-      'The session history will be removed from BaoCut, and any running task will be stopped first. Files in the project folder are not affected.',
+      'The session history will be removed from Tuzi, and any running task will be stopped first. Files in the project folder are not affected.',
     deleteFailed: (message: string) => `Couldn’t delete: ${message}`,
     renameTitle: 'Rename session',
     videosIn: (place: ConversationPlace): string => (place === 'project' ? 'Videos in the project' : 'Videos in the working folder'),
@@ -88,7 +88,7 @@ const en = {
     noSessions: 'No sessions yet.',
     noProjects: 'No projects yet. Create one or open an existing folder; the agent works there.',
     renameProjectTitle: 'Rename project',
-    renameProjectHint: 'Only changes the name shown in BaoCut; the folder name stays the same.',
+    renameProjectHint: 'Only changes the name shown in Tuzi; the folder name stays the same.',
     toggleSection: (collapsed: boolean, label: string) => `${collapsed ? 'Expand' : 'Collapse'} ${label}`,
     organizeLabel: 'Organize projects and sessions',
     sidebarSettings: 'Sidebar settings',
@@ -123,7 +123,7 @@ const en = {
     app: 'App',
     privacyTitle: 'Your data stays on this computer',
     privacyHint:
-      'Sessions, the project list, and Space marks are stored in the data folder; project files stay in their own folders, and BaoCut doesn’t upload them. Whether the agent engine goes online is up to the engine.',
+      'Sessions, the project list, and Space marks are stored in the data folder; project files stay in their own folders, and Tuzi doesn’t upload them. Whether the agent engine goes online is up to the engine.',
     dataDir: 'Data folder',
     projectsDir: 'New projects go in',
     logsDir: 'Logs folder',
@@ -200,7 +200,7 @@ const en = {
     closed: 'Connection closed',
     lost: (reason: string, retrying: boolean) => `${reason}.${retrying ? ' Reconnecting…' : ''}`,
     reconnectingEllipsis: 'Reconnecting…',
-    title: 'Not connected to BaoCut Runtime',
+    title: 'Not connected to Tuzi Runtime',
     reconnecting: 'Reconnecting',
   },
   videoInfo: {
@@ -219,7 +219,7 @@ const en = {
   filePreview: {
     tooLarge: 'The file is too large to show in full here',
     loading: 'Loading preview',
-    unsupported: 'BaoCut can’t preview this kind of file yet. Show it in the folder and open it with another app.',
+    unsupported: 'Tuzi can’t preview this kind of file yet. Show it in the folder and open it with another app.',
     failed: (message: string) => `Couldn’t load the preview: ${message}`,
   },
   accessPicker: {

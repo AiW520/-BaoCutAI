@@ -52,7 +52,7 @@
       </header>
       <div className="help-layout">
         <nav className="help-nav" aria-label="帮助分类">
-          <div className="t-section">使用 BaoCut</div>
+          <div className="t-section">使用 Tuzi</div>
           {sections.map(s => <BCAction key={s.id} className={cx('siderow', !query.trim() && section === s.id && 'is-on')}
             aria-current={!query.trim() && section === s.id ? 'page' : undefined} onClick={() => choose(s.id)}><Ic n={s.icon} className="ic--16" />{s.label}</BCAction>)}
           <div className="spacer" />

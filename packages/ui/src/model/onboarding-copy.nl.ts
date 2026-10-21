@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const nl: OnboardingMessages = {
-  dialogLabel: 'Welkom bij BaoCut',
+  dialogLabel: 'Welkom bij Tuzi',
   stepsLabel: 'Configuratiestappen',
   step: {
     agent: 'Een agent koppelen',
@@ -12,7 +12,7 @@ export const nl: OnboardingMessages = {
     music: 'Muziekgeneratie',
   },
   title: {
-    agent: 'Welkom bij BaoCut',
+    agent: 'Welkom bij Tuzi',
     asr: 'Modellen voor spraakherkenning downloaden',
     tts: 'Modellen voor spraaksynthese downloaden',
     semantic: 'Semantisch zoeken installeren',
@@ -21,7 +21,7 @@ export const nl: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Beschrijf de video die je wilt, en een agent transcribeert, ondertitelt, vertaalt, synchroniseert na en monteert voor je. BaoCut gebruikt de agents op deze computer (zoals Claude Code of Codex) met je eigen account, zonder extra kosten.',
+      'Beschrijf de video die je wilt, en een agent transcribeert, ondertitelt, vertaalt, synchroniseert na en monteert voor je. Tuzi gebruikt de agents op deze computer (zoals Claude Code of Codex) met je eigen account, zonder extra kosten.',
     asr: 'Transcriberen, ondertitelen en praatvideo’s monteren beginnen allemaal met het omzetten van spraak in tekst. De modellen draaien op deze computer en werken offline.',
     tts: 'Modellen voor spraaksynthese lezen tekst voor, klonen een stem uit een opname en synchroniseren vertaalde video’s na. Kies er eerst een of twee; download andere later via Instellingen › Spraaksynthese.',
     semantic:
@@ -64,7 +64,7 @@ export const nl: OnboardingMessages = {
 
   agentListLabel: 'Agents op deze computer',
   agentChecking: 'Agents op deze computer zoeken…',
-  agentMissingBody: 'Vink aan welke je wilt en BaoCut installeert ze op de achtergrond. Log daarna één keer in met je bestaande account.',
+  agentMissingBody: 'Vink aan welke je wilt en Tuzi installeert ze op de achtergrond. Log daarna één keer in met je bestaande account.',
   agentNote:
     'Aangevinkte agents verschijnen in het agentmenu van nieuwe sessies. Installeren gebeurt op de achtergrond, dus je hoeft niet te wachten. Kies de standaard of voeg er meer toe via Instellingen › Agentaanbieders.',
   agentInstalled: 'Geïnstalleerd op deze computer',

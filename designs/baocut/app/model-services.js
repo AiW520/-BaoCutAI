@@ -1,6 +1,6 @@
 /* 「服务」的纯模型 —— §17.6（2026-09-17）。
-   服务 = 这台 Mac 上由 BaoCut 持有、等别人连进来的常驻进程：MCP 服务（外部 AI 应用连进来）、
-   远端算力（局域网里的电脑把转录、配音、出图等活交过来）、Web 服务（浏览器打开 BaoCut Web）。
+   服务 = 这台 Mac 上由 Tuzi 持有、等别人连进来的常驻进程：MCP 服务（外部 AI 应用连进来）、
+   远端算力（局域网里的电脑把转录、配音、出图等活交过来）、Web 服务（浏览器打开 Tuzi Web）。
    它们和「工具」不是一类东西：工具是给一份输入、拿一份输出的一次性活，跑完就没了；
    服务有开 / 关、有地址、有谁连着，要的是「一眼看出开没开、一下能停」。
    这里只算：服务目录、统一的四态（off / starting / stopping / on，外加 error）、状态点与文案、
@@ -9,13 +9,13 @@
   /* 顺序就是侧栏与规格里的顺序。`verb` = 这项服务的起 / 停动词（远端算力沿用 §17.3 的「共享」）。 */
   const SERVICES = [
     {id: 'mcp', name: 'MCP 服务', icon: 'mcp', scope: '仅本机',
-      desc: '让其他 AI 应用读取视频、调用 BaoCut 工具',
+      desc: '让其他 AI 应用读取视频、调用 Tuzi 工具',
       start: '启动服务', stop: '停止服务', starting: '正在启动…', stopping: '正在停止…'},
     {id: 'remote', name: '远端算力', icon: 'remote-compute', scope: '局域网',
       desc: '把这台 Mac 的算力共享给局域网里的其他电脑',
       start: '开始共享', stop: '停止共享', starting: '正在开始…', stopping: '正在停止…'},
     {id: 'web', name: 'Web 服务', icon: 'web', scope: '仅本机',
-      desc: '在浏览器里打开 BaoCut Web，编辑同一批视频',
+      desc: '在浏览器里打开 Tuzi Web，编辑同一批视频',
       start: '启动服务', stop: '停止服务', starting: '正在启动…', stopping: '正在停止…'},
   ];
   const IDS = SERVICES.map((s) => s.id);
@@ -90,7 +90,7 @@
   /* ---------- Web 服务 ---------- */
   const WEB_DEFAULT_PORT = 24320;   // 与 `bcut serve --port` 默认值同（apps/baocut prefs::DEFAULT_SERVE_PORT）
   const RESERVED = {24350: '远端算力'};
-  /** 端口输入 → {port} 或 {error}。只收 1024–65535 的整数；和本机其他 BaoCut 服务撞口的直接说是谁。 */
+  /** 端口输入 → {port} 或 {error}。只收 1024–65535 的整数；和本机其他 Tuzi 服务撞口的直接说是谁。 */
   function parsePort(text) {
     const t = String(text == null ? '' : text).trim();
     if (!/^\d{1,5}$/.test(t)) return {error: '端口要填 1024–65535 之间的数字'};
@@ -107,7 +107,7 @@
   /* 2026-09-27 加第三档「直接放行」：自己用时每次确认太麻烦。第一次用的起点仍是「修改前询问」。 */
   const MCP_ACCESS = [
     {k: 'read', title: '只读', desc: '查看视频信息、文稿与处理状态'},
-    {k: 'ask', title: '修改前询问', desc: '转录、翻译、剪辑、导出与生成前，在 BaoCut 中确认'},
+    {k: 'ask', title: '修改前询问', desc: '转录、翻译、剪辑、导出与生成前，在 Tuzi 中确认'},
     {k: 'auto', title: '直接放行', desc: '写入、任务与生成直接执行，不用确认；适合只有你自己用时'},
   ];
   /** MCP 固定端口：先试这个，被占用才退回随机端口（24320 Web、24350 远端算力）。 */

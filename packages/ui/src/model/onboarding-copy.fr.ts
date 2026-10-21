@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const fr: OnboardingMessages = {
-  dialogLabel: 'Bienvenue dans BaoCut',
+  dialogLabel: 'Bienvenue dans Tuzi',
   stepsLabel: 'Étapes de configuration',
   step: {
     agent: 'Connecter un Agent',
@@ -12,7 +12,7 @@ export const fr: OnboardingMessages = {
     music: 'Génération de musique',
   },
   title: {
-    agent: 'Bienvenue dans BaoCut',
+    agent: 'Bienvenue dans Tuzi',
     asr: 'Télécharger des modèles de reconnaissance vocale',
     tts: 'Télécharger des modèles de synthèse vocale',
     semantic: 'Installer la recherche sémantique',
@@ -21,7 +21,7 @@ export const fr: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Décrivez la vidéo que vous voulez, et un Agent transcrit, sous-titre, traduit, double et monte pour vous. BaoCut utilise les Agents de cet ordinateur (comme Claude Code ou Codex) avec votre propre compte, sans frais supplémentaires.',
+      'Décrivez la vidéo que vous voulez, et un Agent transcrit, sous-titre, traduit, double et monte pour vous. Tuzi utilise les Agents de cet ordinateur (comme Claude Code ou Codex) avec votre propre compte, sans frais supplémentaires.',
     asr: 'Transcrire, sous-titrer et monter une vidéo face caméra commencent toujours par convertir la parole en texte. Les modèles tournent sur cet ordinateur et fonctionnent hors ligne.',
     tts: 'Les modèles de synthèse vocale lisent du texte à voix haute, clonent une voix à partir d’un enregistrement et doublent les vidéos traduites. Choisissez-en un ou deux pour commencer ; téléchargez les autres plus tard dans Réglages › Synthèse vocale.',
     semantic:
@@ -64,7 +64,7 @@ export const fr: OnboardingMessages = {
 
   agentListLabel: 'Agents de cet ordinateur',
   agentChecking: 'Recherche des Agents sur cet ordinateur…',
-  agentMissingBody: 'Cochez ceux que vous voulez et BaoCut les installe en arrière-plan. Une fois installés, connectez-vous une fois avec votre compte existant.',
+  agentMissingBody: 'Cochez ceux que vous voulez et Tuzi les installe en arrière-plan. Une fois installés, connectez-vous une fois avec votre compte existant.',
   agentNote:
     'Les Agents cochés apparaissent dans le menu Agent des nouvelles sessions. L’installation se fait en arrière-plan : inutile d’attendre. Choisissez l’Agent par défaut ou ajoutez-en d’autres dans Réglages › Fournisseurs d’Agents.',
   agentInstalled: 'Installé sur cet ordinateur',

@@ -30,7 +30,7 @@ export const ptBR: AppUpdateMessages = {
   readyWaiting: (version: string) => `${version} baixado; instala após tarefas concluírem`,
   restartAndUpdate: "Reiniciar e atualizar",
   stopWaiting: "Não esperar",
-  readyOnQuit: (version: string) => `${version} baixado; instala ao sair do BaoCut`,
+  readyOnQuit: (version: string) => `${version} baixado; instala ao sair do Tuzi`,
   installing: "Instalando…",
   retry: "Tentar novamente",
   downloadPage: "Ir para a página de download",
@@ -38,7 +38,7 @@ export const ptBR: AppUpdateMessages = {
   waitingRunning: (n: number) =>
     `${pluralForm('pt-BR', n, { one: `${n} tarefa em segundo plano está`, other: `${n} tarefas em segundo plano estão` })} em andamento; instala automaticamente quando ${pluralForm('pt-BR', n, { one: "ela terminar", other: "todas terminarem" })}.`,
   waitingDone: "Tarefas concluídas. Instalando…",
-  tipAvailable: (version: string) => `Nova versão · BaoCut ${version}`,
+  tipAvailable: (version: string) => `Nova versão · Tuzi ${version}`,
   tipVerifying: "Verificando atualização…",
   tipDownloading: (pct: number) => `Baixando atualização · ${pct}%`,
   tipReady: "Atualização baixada · instala ao sair",
@@ -48,11 +48,11 @@ export const ptBR: AppUpdateMessages = {
   downloading: (pct: number) => `Baixando · ${pct}%`,
   titleReady: "Atualização baixada",
   titleAvailable: "Nova versão disponível",
-  current: (version: string) => `Você usa BaoCut ${version}.`,
+  current: (version: string) => `Você usa Tuzi ${version}.`,
   noteOnQuit: "Instala ao sair, sem reiniciar agora.",
   notesTitle: "Novidades",
-  readyToast: (version: string) => `BaoCut ${version} baixado; instala ao sair`,
-  availableToast: (version: string) => `BaoCut ${version} pronto para atualizar`,
+  readyToast: (version: string) => `Tuzi ${version} baixado; instala ao sair`,
+  availableToast: (version: string) => `Tuzi ${version} pronto para atualizar`,
   view: "Ver",
   restartTitle: "Reiniciar e atualizar agora?",
   restartBody: (n: number) =>
@@ -62,6 +62,6 @@ export const ptBR: AppUpdateMessages = {
   waitAndInstall: "Instalar após tarefas concluírem",
   autoRow: {
     label: "Verificar e baixar atualizações automaticamente",
-    desc: "Verifica ao iniciar e a cada 6 horas. Instala ao sair, ou reinicie manualmente para imediato. BaoCut nunca reinicia sozinho.",
+    desc: "Verifica ao iniciar e a cada 6 horas. Instala ao sair, ou reinicie manualmente para imediato. Tuzi nunca reinicia sozinho.",
   },
 };

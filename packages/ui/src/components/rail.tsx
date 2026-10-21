@@ -1,5 +1,6 @@
 import { useMemo, type ComponentType } from 'react';
-import { ActionButton, NotificationBadge, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
+import { NotificationBadge, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
+import { Button } from 'react-aria-components';
 import Clock from '@react-spectrum/s2/icons/Clock';
 import Asset from '@react-spectrum/s2/icons/Asset';
 import GlobeGrid from '@react-spectrum/s2/icons/GlobeGrid';
@@ -44,22 +45,35 @@ const rail = style({
   flexDirection: 'column',
   justifyContent: 'space-between',
   flexShrink: 0,
-  width: 56,
-  paddingY: 8,
+  width: 80,
+  paddingY: 12,
+  backgroundColor: 'gray-50',
 });
 const group = style({ display: 'flex', flexDirection: 'column' });
-/** 每格高 40，图标 20 居中在 32×32 的按钮里。 */
-const cell = style({ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 40 });
+/** Confirmed Tuzi navigation: always-visible labels, with the full name in the tooltip. */
+const cell = style({ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 56 });
+const railButton = style({
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  width: 68, height: 48, padding: 4, borderWidth: 0, borderRadius: 'lg', cursor: 'pointer',
+  backgroundColor: { default: 'transparent', isHovered: 'gray-100', isCurrent: { default: 'blue-100', isHovered: 'blue-200' } },
+  color: { default: 'gray-700', isCurrent: 'blue-1000' },
+  '--iconPrimary': { type: 'fill', value: 'currentColor' },
+  outlineStyle: { default: 'none', isFocusVisible: 'solid' }, outlineWidth: 2, outlineOffset: 0, outlineColor: 'focus-ring',
+  transform: { isPressed: 'scale(0.96)' }, transition: 'default',
+});
+const buttonContent = style({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, minWidth: 0, width: 'full' });
+const buttonLabel = style({ font: 'ui-xs', fontWeight: 'normal', lineHeight: '[14px]', maxWidth: 'full', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
+const badgePosition = style({ position: 'absolute', top: 4, insetEnd: 8, pointerEvents: 'none' });
 const divider = style({ borderWidth: 0, borderTopWidth: 1, borderStyle: 'solid', borderColor: 'gray-200', marginX: 16, marginY: 8 });
-/** 选中：图标左侧一根短指示竖条，没有底色块。 */
+/** Selected entry uses a blue marker and a quiet blue background. */
 const indicator = style({
   position: 'absolute',
-  insetStart: '[9px]',
+  insetStart: '[5px]',
   top: '50%',
-  width: '[2px]',
-  height: 16,
+  width: '[3px]',
+  height: 24,
   borderRadius: 'full',
-  backgroundColor: 'gray-800',
+  backgroundColor: 'blue-800',
   transform: 'translateY(-50%)',
 });
 /**
@@ -93,22 +107,22 @@ export function Rail() {
   const peek = useShellPeekControls();
 
   const button = ({ tab, label, Icon }: RailTab) => {
-    const badge = tab === 'tasks' && running ? <NotificationBadge value={running} /> : null;
+    const badge = tab === 'tasks' && running ? <span className={badgePosition}><NotificationBadge value={running} /></span> : null;
     const name = tab === 'tasks' && running ? S.rail.running(label, running) : tab === 'services' && servicesAlert ? servicesAlert : label;
     return (
       <div key={tab} className={cell} onPointerEnter={() => peek?.peekSidebar(tab)} onPointerLeave={() => peek?.leaveSidebar()}>
         {railTabOf(route) === tab ? <span className={indicator} /> : null}
         <TooltipTrigger placement="end" delay={300}>
-          <ActionButton
-            isQuiet
+          <Button
+            className={(state) => railButton({ ...state, isCurrent: railTabOf(route) === tab })}
             aria-label={name}
             aria-current={railTabOf(route) === tab ? 'page' : undefined}
             onPress={() => goTab(tab)}>
-            <Icon />
-            {badge}
-          </ActionButton>
-          <Tooltip>{label}</Tooltip>
+            <span className={buttonContent}><Icon /><span className={buttonLabel}>{label}</span></span>
+          </Button>
+          <Tooltip>{name}</Tooltip>
         </TooltipTrigger>
+        {badge}
         {tab === 'services' && servicesAlert ? <span className={alertDot} aria-hidden="true" /> : null}
       </div>
     );

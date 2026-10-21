@@ -153,7 +153,7 @@ export function HomeSidebar() {
 
   return (
     <PageSidebar label={S.sidebar.sessions}>
-      <SidebarTitle>BaoCut</SidebarTitle>
+      <SidebarTitle>{S.sidebar.projectsAndSessions}</SidebarTitle>
       <div className={top}>
         <ActionButton
           isQuiet

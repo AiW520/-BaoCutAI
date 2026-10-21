@@ -37,7 +37,7 @@ export const ptBR: ShellMessages = {
     deleteTitle: "Excluir esta sessão?",
     deleteConfirm: "Excluir",
     deleteBody:
-      "Histórico removido do BaoCut, tarefa em andamento parada primeiro. Arquivos do projeto não mudam.",
+      "Histórico removido do Tuzi, tarefa em andamento parada primeiro. Arquivos do projeto não mudam.",
     deleteFailed: (message: string) => `Não foi possível excluir: ${message}`,
     renameTitle: "Renomear sessão",
     videosIn: (place: ConversationPlace): string => (place === 'project' ? "Vídeos no projeto" : "Vídeos na pasta de trabalho"),
@@ -67,7 +67,7 @@ export const ptBR: ShellMessages = {
     noSessions: "Sem sessões ainda.",
     noProjects: "Sem projetos. Crie ou abra pasta existente; o agente trabalha lá.",
     renameProjectTitle: "Renomear projeto",
-    renameProjectHint: "Só muda nome no BaoCut, não a pasta.",
+    renameProjectHint: "Só muda nome no Tuzi, não a pasta.",
     toggleSection: (collapsed: boolean, label: string) => `${collapsed ? "Mostrar" : "Recolher"} ${label}`,
     organizeLabel: "Organizar projetos e sessões",
     sidebarSettings: "Configurações da barra lateral",
@@ -102,7 +102,7 @@ export const ptBR: ShellMessages = {
     app: "Aplicativo",
     privacyTitle: "Seus dados ficam neste computador",
     privacyHint:
-      "Sessões, projetos e marcas do Space na pasta de dados; arquivos do projeto nas próprias pastas. BaoCut não envia. Rede do agente depende dele.",
+      "Sessões, projetos e marcas do Space na pasta de dados; arquivos do projeto nas próprias pastas. Tuzi não envia. Rede do agente depende dele.",
     dataDir: "Pasta de dados",
     projectsDir: "Novos projetos ficam em",
     logsDir: "Pasta de registros",
@@ -179,7 +179,7 @@ export const ptBR: ShellMessages = {
     closed: "Conexão fechada",
     lost: (reason: string, retrying: boolean) => `${reason}.${retrying ? " Reconectando…" : ""}`,
     reconnectingEllipsis: "Reconectando…",
-    title: "Não conectado ao Runtime BaoCut",
+    title: "Não conectado ao Runtime Tuzi",
     reconnecting: "Reconectando",
   },
   videoInfo: {

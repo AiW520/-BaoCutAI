@@ -51,7 +51,7 @@ export const zhHans: MainMessages = {
   runtimeExited: (code: number | null) => `Runtime 启动失败（退出码 ${code}）`,
   runtimeQuitting: '应用正在退出',
   quitBusyTitle: (count: number) => `还有 ${count} 个任务正在进行`,
-  quitBusyDetail: '现在退出会中断这些任务。也可以让它们在后台继续运行，完成后 BaoCut 会自己停止。',
+  quitBusyDetail: '现在退出会中断这些任务。也可以让它们在后台继续运行，完成后 Tuzi 会自己停止。',
   quitKeepRunning: '继续在后台运行',
   quitStop: '停止并退出',
   cancel: '取消',

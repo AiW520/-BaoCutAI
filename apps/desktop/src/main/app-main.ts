@@ -31,6 +31,10 @@ import { desktopRuntimeHeaders, desktopRuntimeResponseHeaders, isDesktopRuntimeR
  */
 export function startDesktopApp(): void {
   installStdioErrorGuards();
+  // Internal Tuzi-branded build; keep package IDs, data paths, protocols, and updater feeds compatible.
+  const existingUserData = app.getPath('userData');
+  app.setName('Tuzi');
+  app.setPath('userData', existingUserData);
   const devServerUrl = process.env.ELECTRON_RENDERER_URL;
   const isDev = !app.isPackaged;
   // 开发态（`npm run dev` / 未打包运行）用带「DEV」标记的图标，和装好的正式版一眼区分；打包后 macOS / Windows
@@ -81,7 +85,7 @@ export function startDesktopApp(): void {
       minWidth: 960,
       minHeight: 600,
       show: false,
-      title: 'BaoCut',
+      title: 'Tuzi',
       icon: devIcon,
       titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
       trafficLightPosition: { x: 18, y: 14 },

@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const ja: OnboardingMessages = {
-  dialogLabel: 'BaoCut へようこそ',
+  dialogLabel: 'Tuzi へようこそ',
   stepsLabel: 'セットアップの手順',
   step: {
     agent: 'Agent を接続',
@@ -12,7 +12,7 @@ export const ja: OnboardingMessages = {
     music: '音楽生成',
   },
   title: {
-    agent: 'BaoCut へようこそ',
+    agent: 'Tuzi へようこそ',
     asr: '音声認識モデルをダウンロード',
     tts: '音声合成モデルをダウンロード',
     semantic: '意味検索をインストール',
@@ -20,7 +20,7 @@ export const ja: OnboardingMessages = {
     music: '音楽生成モデルをダウンロード',
   },
   lead: {
-    agent: '作りたい動画を伝えるだけで、Agent が文字起こし、字幕付け、翻訳、吹き替え、編集をこなします。BaoCut はこのコンピュータにある Agent（Claude Code や Codex など）をあなた自身のアカウントで使うので、追加料金はかかりません。',
+    agent: '作りたい動画を伝えるだけで、Agent が文字起こし、字幕付け、翻訳、吹き替え、編集をこなします。Tuzi はこのコンピュータにある Agent（Claude Code や Codex など）をあなた自身のアカウントで使うので、追加料金はかかりません。',
     asr: '文字起こしも、字幕付けも、トーク動画のカットも、まず話した内容を文字にするところから始まります。モデルはこのコンピュータで動き、オフラインでも使えます。',
     tts: '音声合成モデルは、テキストの読み上げ、録音からの声のクローン、翻訳した動画の吹き替えに使います。まずは 1〜2 個選んでください。ほかのモデルはあとから 設定 › 音声合成 でダウンロードできます。',
     semantic: '話した内容や映像を意味で探します。Space の検索、テーマで素材を選ぶ、映像を合わせる、翻訳メモリで使います。インストールすると、既存の動画のインデックス作成がバックグラウンドで始まります。',
@@ -61,7 +61,7 @@ export const ja: OnboardingMessages = {
 
   agentListLabel: 'このコンピュータの Agent',
   agentChecking: 'このコンピュータの Agent を確認中…',
-  agentMissingBody: '使いたいものにチェックを入れると、BaoCut がバックグラウンドでインストールします。インストール後、お持ちのアカウントで一度サインインすれば使えます。',
+  agentMissingBody: '使いたいものにチェックを入れると、Tuzi がバックグラウンドでインストールします。インストール後、お持ちのアカウントで一度サインインすれば使えます。',
   agentNote: 'チェックした Agent は新しいセッションの Agent メニューに表示されます。インストールはバックグラウンドで進むので、待つ必要はありません。デフォルトの選択や追加は 設定 › Agent プロバイダ で行えます。',
   agentInstalled: 'このコンピュータにインストール済み',
   agentFix: (problem) => `${problem} · 設定 › Agent プロバイダ で解決`,

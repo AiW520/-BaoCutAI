@@ -21,7 +21,7 @@ const en = {
   languageDesc: 'Takes effect right away, no restart needed.',
   languageSystem: (current: string) => `System (${current})`,
   appearance: 'Appearance',
-  appearanceDesc: 'Only affects BaoCut windows on this computer.',
+  appearanceDesc: 'Only affects Tuzi windows on this computer.',
   schemeSystem: 'System',
   schemeLight: 'Light',
   schemeDark: 'Dark',
@@ -44,7 +44,7 @@ const en = {
   downloadsGroup: 'Downloads and updates',
   autoUpdateOn: 'Turned on automatic update checks and downloads',
   autoUpdateOff: 'Turned off automatic update downloads',
-  downloaderWeb: "The browser doesn't check for download tools on this computer; check in the BaoCut desktop app.",
+  downloaderWeb: "The browser doesn't check for download tools on this computer; check in the Tuzi desktop app.",
 
   sourcesGroup: 'Download sources and offline',
   strictOffline: 'Strict offline',
@@ -58,11 +58,11 @@ const en = {
     `Items that have been in Trash longer than this and aren't referenced, and deleted videos, are deleted permanently (checked at startup and every 6 hours after). Items still referenced are kept. Clear it to reset to the default${fallback ? ` of ${fallback} days` : ''}.`,
 
   /** 浏览器里改不了的行（Web 白名单不含 `settings.set`）：置灰，行下写这一句。 */
-  webNote: 'A browser can’t change this setting. Change it in the BaoCut desktop app.',
+  webNote: 'A browser can’t change this setting. Change it in the Tuzi desktop app.',
   /** 浏览器里只能看、不能改的一节：置灰，节下写这一句。 */
-  webViewOnly: 'In a browser you can only view this. Make changes in the BaoCut desktop app.',
+  webViewOnly: 'In a browser you can only view this. Make changes in the Tuzi desktop app.',
   /** 浏览器拿不到数据的一节（Web 订阅不了它的主题，如用户库、数据外发授权）：替换「加载中」。 */
-  webUnavailable: 'This isn’t available in a browser. Use the BaoCut desktop app.',
+  webUnavailable: 'This isn’t available in a browser. Use the Tuzi desktop app.',
 };
 
 export type GeneralSettingsMessages = typeof en;

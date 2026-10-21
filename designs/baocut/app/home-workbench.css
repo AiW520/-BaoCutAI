@@ -1,5 +1,7 @@
 /* Home workbench: a clear entry point, compact task starts and a real continuation list. */
 .bc-rsp-root { --apprail-size: 80px; }
+.ttitle:has(> .tuzi-title-mark) { gap: 6px; }
+.tuzi-title-mark { display: grid; flex: none; width: 20px; height: 20px; place-items: center; border-radius: 4px; background: var(--blue-900); color: var(--gray-25); font-size: 12px; font-weight: 700; }
 .apprail { background: var(--gray-50); padding: 12px 0; }
 .apprail__btn { height: 56px; }
 .apprail__btn::before { left: 5px; width: 3px; height: 24px; background: var(--blue-800); }

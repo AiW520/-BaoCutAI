@@ -10,7 +10,7 @@ export const it: MainMessages = {
   runtimeExited: (code: number | null) => `Il Runtime non è riuscito ad avviarsi (codice di uscita ${code})`,
   runtimeQuitting: 'L’app si sta chiudendo',
   quitBusyTitle: (count: number) => pluralForm('it', count, { one: `${count} attività è ancora in corso`, other: `${count} attività sono ancora in corso` }),
-  quitBusyDetail: 'Se esci ora, verranno interrotte. Puoi anche lasciarle continuare in background; BaoCut si fermerà da solo al termine.',
+  quitBusyDetail: 'Se esci ora, verranno interrotte. Puoi anche lasciarle continuare in background; Tuzi si fermerà da solo al termine.',
   quitKeepRunning: 'Continua in background',
   quitStop: 'Interrompi ed esci',
   cancel: 'Annulla',

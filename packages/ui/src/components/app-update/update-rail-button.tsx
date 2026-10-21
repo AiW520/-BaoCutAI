@@ -11,7 +11,7 @@ import { useAppUpdate } from '../../state/app-update-store.ts';
  * 别的时候这一格不占位。点它打开更新窗。
  */
 
-const cell = style({ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 40 });
+const cell = style({ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 56 });
 const button = style({
   position: 'relative',
   display: 'flex',

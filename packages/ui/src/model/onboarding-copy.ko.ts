@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const ko: OnboardingMessages = {
-  dialogLabel: 'BaoCut에 오신 것을 환영합니다',
+  dialogLabel: 'Tuzi에 오신 것을 환영합니다',
   stepsLabel: '설정 단계',
   step: {
     agent: 'Agent 연결',
@@ -12,7 +12,7 @@ export const ko: OnboardingMessages = {
     music: '음악 생성',
   },
   title: {
-    agent: 'BaoCut에 오신 것을 환영합니다',
+    agent: 'Tuzi에 오신 것을 환영합니다',
     asr: '음성 인식 모델 다운로드',
     tts: '음성 합성 모델 다운로드',
     semantic: '의미 검색 설치',
@@ -20,7 +20,7 @@ export const ko: OnboardingMessages = {
     music: '음악 생성 모델 다운로드',
   },
   lead: {
-    agent: '만들고 싶은 영상을 말하면 Agent가 전사, 자막 추가, 번역, 더빙, 편집을 대신 해 줍니다. BaoCut은 이 컴퓨터에 있는 Agent(Claude Code, Codex 등)를 본인 계정으로 사용하므로 추가 비용이 없습니다.',
+    agent: '만들고 싶은 영상을 말하면 Agent가 전사, 자막 추가, 번역, 더빙, 편집을 대신 해 줍니다. Tuzi은 이 컴퓨터에 있는 Agent(Claude Code, Codex 등)를 본인 계정으로 사용하므로 추가 비용이 없습니다.',
     asr: '전사, 자막 추가, 토킹헤드 영상 다듬기는 모두 말을 텍스트로 바꾸는 데서 시작합니다. 모델은 이 컴퓨터에서 실행되며 오프라인에서도 작동합니다.',
     tts: '음성 합성 모델은 텍스트를 읽어 주고, 녹음으로 목소리를 복제하고, 번역한 영상을 더빙합니다. 우선 한두 개를 골라 시작하고, 나머지는 나중에 설정 › 음성 합성에서 다운로드하세요.',
     semantic: '말한 내용과 화면을 의미로 찾습니다. Space 검색, 주제로 소재 고르기, 화면 맞추기, 번역 메모리가 이 기능을 사용합니다. 설치하면 기존 영상의 색인이 백그라운드에서 만들어집니다.',
@@ -61,7 +61,7 @@ export const ko: OnboardingMessages = {
 
   agentListLabel: '이 컴퓨터의 Agent',
   agentChecking: '이 컴퓨터의 Agent 확인 중…',
-  agentMissingBody: '원하는 항목을 선택하면 BaoCut이 백그라운드에서 설치합니다. 설치가 끝나면 기존 계정으로 한 번 로그인하세요.',
+  agentMissingBody: '원하는 항목을 선택하면 Tuzi이 백그라운드에서 설치합니다. 설치가 끝나면 기존 계정으로 한 번 로그인하세요.',
   agentNote: '선택한 Agent는 새 세션의 Agent 메뉴에 나타납니다. 설치는 백그라운드에서 진행되므로 기다릴 필요가 없습니다. 기본값을 고르거나 더 추가하려면 설정 › Agent 공급자로 이동하세요.',
   agentInstalled: '이 컴퓨터에 설치됨',
   agentFix: (problem) => `${problem} · 설정 › Agent 공급자에서 해결`,

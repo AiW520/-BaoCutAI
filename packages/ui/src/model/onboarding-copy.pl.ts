@@ -4,7 +4,7 @@ import type { OnboardingMessages } from './onboarding-copy.ts';
 const agentsN = (n: number) => `${n} ${pluralForm('pl', n, { one: 'Agenta', few: 'Agentów', many: 'Agentów', other: 'Agenta' })}`;
 
 export const pl: OnboardingMessages = {
-  dialogLabel: 'Witamy w BaoCut',
+  dialogLabel: 'Witamy w Tuzi',
   stepsLabel: 'Kroki konfiguracji',
   step: {
     agent: 'Połącz Agenta',
@@ -15,7 +15,7 @@ export const pl: OnboardingMessages = {
     music: 'Generowanie muzyki',
   },
   title: {
-    agent: 'Witamy w BaoCut',
+    agent: 'Witamy w Tuzi',
     asr: 'Pobierz modele rozpoznawania mowy',
     tts: 'Pobierz modele syntezy mowy',
     semantic: 'Zainstaluj wyszukiwanie semantyczne',
@@ -24,7 +24,7 @@ export const pl: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Opisz, jakie wideo chcesz, a Agent zrobi za Ciebie transkrypcję, napisy, tłumaczenie, dubbing i montaż. BaoCut korzysta z Agentów na tym komputerze (np. Claude Code lub Codex) przez Twoje własne konto, bez dodatkowych opłat.',
+      'Opisz, jakie wideo chcesz, a Agent zrobi za Ciebie transkrypcję, napisy, tłumaczenie, dubbing i montaż. Tuzi korzysta z Agentów na tym komputerze (np. Claude Code lub Codex) przez Twoje własne konto, bez dodatkowych opłat.',
     asr: 'Transkrypcja, napisy i montaż wideo z mówiącą osobą zaczynają się od zamiany mowy na tekst. Modele działają na tym komputerze, także offline.',
     tts: 'Modele syntezy mowy czytają tekst na głos, klonują głos z nagrania i tworzą dubbing do przetłumaczonych filmów. Na początek wybierz jeden lub dwa; pozostałe pobierzesz później w sekcji Ustawienia › Synteza mowy.',
     semantic:
@@ -67,7 +67,7 @@ export const pl: OnboardingMessages = {
 
   agentListLabel: 'Agenci na tym komputerze',
   agentChecking: 'Szukanie Agentów na tym komputerze…',
-  agentMissingBody: 'Zaznacz tych, których chcesz używać, a BaoCut zainstaluje ich w tle. Po instalacji zaloguj się raz swoim dotychczasowym kontem.',
+  agentMissingBody: 'Zaznacz tych, których chcesz używać, a Tuzi zainstaluje ich w tle. Po instalacji zaloguj się raz swoim dotychczasowym kontem.',
   agentNote:
     'Zaznaczeni Agenci pojawią się w menu Agentów nowych sesji. Instalacja działa w tle, więc nie musisz czekać. Domyślnego Agenta wybierzesz, a kolejnych dodasz w sekcji Ustawienia › Dostawcy agentów.',
   agentInstalled: 'Zainstalowany na tym komputerze',

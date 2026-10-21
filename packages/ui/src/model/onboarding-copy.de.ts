@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const de: OnboardingMessages = {
-  dialogLabel: 'Willkommen bei BaoCut',
+  dialogLabel: 'Willkommen bei Tuzi',
   stepsLabel: 'Einrichtungsschritte',
   step: {
     agent: 'Agent verbinden',
@@ -12,7 +12,7 @@ export const de: OnboardingMessages = {
     music: 'Musikerzeugung',
   },
   title: {
-    agent: 'Willkommen bei BaoCut',
+    agent: 'Willkommen bei Tuzi',
     asr: 'Modelle für Spracherkennung herunterladen',
     tts: 'Modelle für Sprachsynthese herunterladen',
     semantic: 'Semantische Suche installieren',
@@ -21,7 +21,7 @@ export const de: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Beschreiben Sie das gewünschte Video, und ein Agent transkribiert, untertitelt, übersetzt, vertont und schneidet es für Sie. BaoCut nutzt die Agenten auf diesem Computer (etwa Claude Code oder Codex) mit Ihrem eigenen Konto, ohne Zusatzkosten.',
+      'Beschreiben Sie das gewünschte Video, und ein Agent transkribiert, untertitelt, übersetzt, vertont und schneidet es für Sie. Tuzi nutzt die Agenten auf diesem Computer (etwa Claude Code oder Codex) mit Ihrem eigenen Konto, ohne Zusatzkosten.',
     asr: 'Transkribieren, Untertiteln und das Schneiden von Sprechvideos beginnen damit, Sprache in Text umzuwandeln. Die Modelle laufen auf diesem Computer und funktionieren offline.',
     tts: 'Sprachsynthesemodelle lesen Text vor, klonen eine Stimme aus einer Aufnahme und vertonen übersetzte Videos. Wählen Sie für den Anfang ein oder zwei aus; weitere laden Sie später unter Einstellungen › Sprachsynthese herunter.',
     semantic:
@@ -64,7 +64,7 @@ export const de: OnboardingMessages = {
 
   agentListLabel: 'Agenten auf diesem Computer',
   agentChecking: 'Agenten auf diesem Computer werden gesucht…',
-  agentMissingBody: 'Wählen Sie die gewünschten aus, und BaoCut installiert sie im Hintergrund. Danach melden Sie sich einmal mit Ihrem vorhandenen Konto an.',
+  agentMissingBody: 'Wählen Sie die gewünschten aus, und Tuzi installiert sie im Hintergrund. Danach melden Sie sich einmal mit Ihrem vorhandenen Konto an.',
   agentNote:
     'Ausgewählte Agenten erscheinen im Agent-Menü neuer Sitzungen. Die Installation läuft im Hintergrund, Sie müssen nicht warten. Den Standard wählen oder weitere hinzufügen können Sie unter Einstellungen › Agentenanbieter.',
   agentInstalled: 'Auf diesem Computer installiert',

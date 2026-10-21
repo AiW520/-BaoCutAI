@@ -92,7 +92,7 @@
           : `${V.metaLine(m)} · ${p.line} · ${V.RUN_LINE}`;
     } else if (v.kind === 'builtin') {
       const b = TTS.builtinRef(v.id);
-      line = b ? `${b.dur} 秒 · 随 BaoCut 自带 · 原文自动带上` : null;
+      line = b ? `${b.dur} 秒 · 随 Tuzi 自带 · 原文自动带上` : null;
     } else if (v.kind === 'file') {
       line = '只这一次，不进音色库 · 5–15 秒、一个人说话的干净录音效果最好';
     } else if (v.kind === 'preset') {

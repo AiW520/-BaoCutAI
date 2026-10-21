@@ -8,7 +8,7 @@
    Web 入口不加载本文件所以没有）与点它打开的更新窗（UpdateWindow，开合也归这个宿主——toast「查看」从这里打开它）。
    2026-10-05：退出即安装、已下载后照常静默检查（更新的 build 作废旧下载）、下载到 100% 后先校验再进已下载，
    规则都在 BC_UPDATE。这里跟着改：检查结果按 BC_UPDATE.afterCheck 跟进（不再无条件下载 / 提醒）；版本信息与
-   缓存路径取当前态里的那一版，不再写死 2.3.0；演示挡位多「模拟退出 BaoCut」与「更新源里有更新的 2.3.1」。
+   缓存路径取当前态里的那一版，不再写死 2.3.0；演示挡位多「模拟退出 Tuzi」与「更新源里有更新的 2.3.1」。
    2026-10-05 晚：「重启并更新」的确认换成停止屏障（InstallBarrier，三个选择，照 packages/ui）；选「等任务结束后安装」
    宿主记下 `waiting`，在跑的数（演示勾「当作没有后台任务在跑」就是 0）到 0 就安装，离开已下载就不等了。
    原型不真停任务：「现在停止并安装」直接安装。 */
@@ -101,7 +101,7 @@
       stop();
       dispatch({type: 'install'});
       timer.current = setTimeout(() => {
-        live.current.app.toast('原型演示：正式版这时退出 BaoCut，换上新版本后重新打开');
+        live.current.app.toast('原型演示：正式版这时退出 Tuzi，换上新版本后重新打开');
         setSt((s) => (s.k === 'installing' ? {k: 'ready', info: s.info, path: U.demoPath(s.info)} : s));
       }, 2000);
     }
@@ -240,7 +240,7 @@
   }
 
   /* ---------- 更新窗（模态，宽 480） ----------
-     头：App 图标 40 + 标题 + 「BaoCut 2.3.0 · Build 57」+ 关闭；正文：当前版本一句、「更新内容」、全部说明（可滚）；
+     头：App 图标 40 + 标题 + 「Tuzi 2.3.0 · Build 57」+ 关闭；正文：当前版本一句、「更新内容」、全部说明（可滚）；
      底栏随态（BC_UPDATE.dialog）。×、Esc、点背景、「稍后」都只关窗；「重启并更新」走与关于页、toast 同一个动作。 */
   function UpdateWindow() {
     const app = useApp();
@@ -329,7 +329,7 @@
         </div>
         <div className="upd-demo__opts">
           <Btn size="s" variant="secondary" disabled={!U.mayAutoCheck(u.st)} onClick={u.autoCheck}>模拟一次自动检查</Btn>
-          <Btn size="s" variant="secondary" onClick={u.quit}>模拟退出 BaoCut</Btn>
+          <Btn size="s" variant="secondary" onClick={u.quit}>模拟退出 Tuzi</Btn>
           <Checkbox on={u.demo.feedNew} onChange={flag('feedNew')} label="更新源里有 2.3.0（Build 57）" />
           <Checkbox on={u.demo.feedNext} onChange={flag('feedNext')} label="更新源里有更新的 2.3.1（Build 58）" />
           <Checkbox on={u.demo.failCheck} onChange={flag('failCheck')} label="让下一次检查失败" />
@@ -351,7 +351,7 @@
       <>
         <div className="t-title" style={{marginBottom: 4}}>关于</div>
         <Card layer className="about-card">
-          <div className="t-heading-sm">BaoCut</div>
+          <div className="t-heading-sm">Tuzi</div>
           <div className="t-detail t-mono">{D.app.version} ({D.app.build})</div>
           <UpdateStatus />
           <div className="t-body-sm about-card__tag">

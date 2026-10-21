@@ -216,12 +216,12 @@
           {headSummary ? <window.ShellSummaryButton /> : null}
         </div>}
         {!single && bare && !tabCount ? <div className={cx('tbar__title tbar__title--mid', dividers.length && 'tbar__title--pane')}
-          style={dividers.length ? {left: dividers[dividers.length - 1]} : undefined}><div className="ttitle">{SURF.name}</div></div> : null}
+          style={dividers.length ? {left: dividers[dividers.length - 1]} : undefined}><div className="ttitle"><span className="tuzi-title-mark" aria-hidden="true">T</span>{SURF.name}</div></div> : null}
         {(hasPane || single) && homeBounds ? <div className="tbar__workspace" style={{left: homeBounds.split, right: homeBounds.right}}><window.WorkspaceTabs /></div> : null}
         <window.WorkspaceViewControls />
       </> : editor && !SURF.appRail ? <MovieTitle editor={editor} />
         : <div className={cx('tbar__title tbar__title--mid', dividers.length && 'tbar__title--pane')}
-            style={dividers.length ? {left: dividers[dividers.length - 1]} : undefined}><div className="ttitle">{SURF.name}</div></div>}
+            style={dividers.length ? {left: dividers[dividers.length - 1]} : undefined}><div className="ttitle"><span className="tuzi-title-mark" aria-hidden="true">T</span>{SURF.name}</div></div>}
       <div className="tbar__acts">
         {SURF.help && sidebar.ghost && !home ? <IconBtn icon="help" tip="帮助中心 · F1" onClick={onHelp} /> : null}
         {editor && !SURF.appRail ? <MovieActions editor={editor} /> : null}

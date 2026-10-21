@@ -6,7 +6,7 @@ export const ptBR: GeneralSettingsMessages = {
   languageDesc: "Efeito imediato, sem reiniciar.",
   languageSystem: (current: string) => `Sistema (${current})`,
   appearance: "Aparência",
-  appearanceDesc: "Só afeta janelas locais do BaoCut.",
+  appearanceDesc: "Só afeta janelas locais do Tuzi.",
   schemeSystem: "Sistema",
   schemeLight: "Claro",
   schemeDark: "Escuro",
@@ -41,7 +41,7 @@ export const ptBR: GeneralSettingsMessages = {
   trashDays: "Dias na Lixeira",
   trashDaysDesc: (fallback: number | null) =>
     `Itens antigos sem referências e vídeos excluídos são apagados permanentemente; verifica ao iniciar e a cada 6 horas. Referenciados mantidos. Limpe para padrão${fallback ? ` de ${fallback} dias` : ""}.`,
-  webNote: "Um navegador não pode alterar esta configuração. Altere-a no app para desktop do BaoCut.",
-  webViewOnly: "No navegador você só pode ver isto. Faça as alterações no app para desktop do BaoCut.",
-  webUnavailable: "Isto não está disponível no navegador. Use o app para desktop do BaoCut.",
+  webNote: "Um navegador não pode alterar esta configuração. Altere-a no app para desktop do Tuzi.",
+  webViewOnly: "No navegador você só pode ver isto. Faça as alterações no app para desktop do Tuzi.",
+  webUnavailable: "Isto não está disponível no navegador. Use o app para desktop do Tuzi.",
 };

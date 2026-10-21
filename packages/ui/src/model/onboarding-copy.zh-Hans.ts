@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const zhHans: OnboardingMessages = {
-  dialogLabel: '欢迎使用 BaoCut',
+  dialogLabel: '欢迎使用 Tuzi',
   stepsLabel: '引导步骤',
   step: {
     agent: '连接 Agent',
@@ -12,7 +12,7 @@ export const zhHans: OnboardingMessages = {
     music: '音乐生成',
   },
   title: {
-    agent: '欢迎使用 BaoCut',
+    agent: '欢迎使用 Tuzi',
     asr: '下载语音识别模型',
     tts: '下载语音合成模型',
     semantic: '安装语义搜索',
@@ -20,7 +20,7 @@ export const zhHans: OnboardingMessages = {
     music: '下载音乐生成模型',
   },
   lead: {
-    agent: '说出想做的视频，Agent 帮你转录、加字幕、翻译、配音和剪辑。BaoCut 调用这台电脑上的 Agent（比如 Claude Code、Codex），用你自己的账号，不另外收费。',
+    agent: '说出想做的视频，Agent 帮你转录、加字幕、翻译、配音和剪辑。Tuzi 调用这台电脑上的 Agent（比如 Claude Code、Codex），用你自己的账号，不另外收费。',
     asr: '转录、加字幕和剪口播，都要先把说的话转成文字。模型装在这台电脑上，不联网也能用。',
     tts: '语音合成模型能把文字念出来、用一段录音克隆声音，也能给视频翻译配音。挑一两只先下，其余以后在 设置 › 语音合成 里下。',
     semantic: '按意思找讲话内容和画面：Space 搜索、写作按主题选材、配画面、翻译记忆都用它。装好后在后台给已有的视频建索引。',
@@ -58,7 +58,7 @@ export const zhHans: OnboardingMessages = {
 
   agentListLabel: '这台电脑上的 Agent',
   agentChecking: '正在检测这台电脑上的 Agent…',
-  agentMissingBody: '勾上想用的，BaoCut 在后台安装；装好后用你已有的账号登录一次就能用。',
+  agentMissingBody: '勾上想用的，Tuzi 在后台安装；装好后用你已有的账号登录一次就能用。',
   agentNote: '勾上的都会出现在新会话的 Agent 菜单里；安装在后台进行，不用等装完。默认用哪一个、装更多，在 设置 › Agent 提供方 里改。',
   agentInstalled: '本机已安装',
   agentFix: (problem) => `${problem} · 在 设置 › Agent 提供方 里处理`,

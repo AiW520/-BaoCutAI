@@ -30,7 +30,7 @@ export const fr: AppUpdateMessages = {
   readyWaiting: (version: string) => `${version} téléchargé ; installation après les tâches en arrière-plan`,
   restartAndUpdate: "Redémarrer et mettre à jour",
   stopWaiting: "Ne pas attendre",
-  readyOnQuit: (version: string) => `${version} téléchargé ; installation automatique en quittant BaoCut`,
+  readyOnQuit: (version: string) => `${version} téléchargé ; installation automatique en quittant Tuzi`,
   installing: "Installation…",
   retry: "Réessayer",
   downloadPage: "Aller à la page de téléchargement",
@@ -38,7 +38,7 @@ export const fr: AppUpdateMessages = {
   waitingRunning: (n: number) =>
     `${pluralForm('fr', n, { one: `${n} tâche en arrière-plan est`, other: `${n} tâches en arrière-plan sont` })} encore en cours ; mise à jour automatique quand ${pluralForm('fr', n, { one: "elle se termine", other: "elles se terminent toutes" })}.`,
   waitingDone: "Tâches terminées. Installation…",
-  tipAvailable: (version: string) => `Nouvelle version · BaoCut ${version}`,
+  tipAvailable: (version: string) => `Nouvelle version · Tuzi ${version}`,
   tipVerifying: "Vérification de la mise à jour…",
   tipDownloading: (pct: number) => `Téléchargement de mise à jour · ${pct}%`,
   tipReady: "Mise à jour téléchargée · installation à la fermeture",
@@ -48,11 +48,11 @@ export const fr: AppUpdateMessages = {
   downloading: (pct: number) => `Téléchargement · ${pct}%`,
   titleReady: "Mise à jour téléchargée",
   titleAvailable: "Nouvelle version disponible",
-  current: (version: string) => `Vous utilisez BaoCut ${version}.`,
-  noteOnQuit: "Installation automatique en quittant BaoCut ; inutile de redémarrer maintenant.",
+  current: (version: string) => `Vous utilisez Tuzi ${version}.`,
+  noteOnQuit: "Installation automatique en quittant Tuzi ; inutile de redémarrer maintenant.",
   notesTitle: "Nouveautés",
-  readyToast: (version: string) => `BaoCut ${version} téléchargé ; installation automatique à la fermeture`,
-  availableToast: (version: string) => `BaoCut ${version} est prêt pour la mise à jour`,
+  readyToast: (version: string) => `Tuzi ${version} téléchargé ; installation automatique à la fermeture`,
+  availableToast: (version: string) => `Tuzi ${version} est prêt pour la mise à jour`,
   view: "Voir",
   restartTitle: "Redémarrer et mettre à jour maintenant ?",
   restartBody: (n: number) =>
@@ -62,6 +62,6 @@ export const fr: AppUpdateMessages = {
   waitAndInstall: "Installer après les tâches",
   autoRow: {
     label: "Rechercher et télécharger les mises à jour automatiquement",
-    desc: "Vérification au lancement puis toutes les 6 heures. Téléchargements installés à la fermeture, ou redémarrage manuel immédiat. BaoCut ne redémarre jamais seul.",
+    desc: "Vérification au lancement puis toutes les 6 heures. Téléchargements installés à la fermeture, ou redémarrage manuel immédiat. Tuzi ne redémarre jamais seul.",
   },
 };

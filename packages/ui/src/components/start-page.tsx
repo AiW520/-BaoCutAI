@@ -46,6 +46,8 @@ import { BriefTokens } from './start/brief-tokens.tsx';
 import { GateCard } from './start/gate-card.tsx';
 import { HomeStarters } from './start/home-starters.tsx';
 import { HomeTemplateShelf } from './start/home-template-shelf.tsx';
+import { RecentProjects } from './start/recent-projects.tsx';
+import { W } from './start/home-workbench-copy.ts';
 import { startDraftKey } from './start/open-home.ts';
 import { ProjectPicker } from './start/project-picker.tsx';
 import { SlotHint } from './start/slot-hint.tsx';
@@ -54,33 +56,34 @@ import { useEditorReference } from './use-editor-reference.ts';
 import { focusPromptEnd } from './use-prompt-value.ts';
 import { useNarrow } from './use-narrow.ts';
 
-// 标题和输入框是这一页唯一的主角：一栏最宽 760，内容不满一屏时整块在视口里居中（上下 auto），模板网格超出一屏时照常滚动。
+// Confirmed Tuzi workbench: left-aligned brief, compact task starts, recent projects and templates.
 const page = style({ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflowY: 'auto' });
 const column = style({
   width: 'full',
-  maxWidth: 760,
+  maxWidth: '[1120px]',
   marginX: 'auto',
-  marginY: 'auto',
-  paddingX: { default: 24, isNarrow: 12 },
+  paddingX: { default: 48, isNarrow: 24 },
   paddingTop: 32,
   paddingBottom: 48,
   boxSizing: 'border-box',
 });
 const title = style({
   margin: 0,
-  marginBottom: 24,
-  fontSize: '[28px]',
+  marginBottom: 8,
+  fontSize: { default: '[32px]', isNarrow: '[28px]' },
   fontWeight: 'bold',
   lineHeight: '[1.3]',
   color: 'gray-900',
-  textAlign: 'center',
+  textAlign: 'start',
 });
+const eyebrow = style({ margin: 0, marginBottom: 8, font: 'ui-sm', fontWeight: 'bold', color: 'blue-1000', letterSpacing: '[0.04em]' });
+const intro = style({ margin: 0, marginBottom: 24, font: 'body', color: 'gray-600' });
 
 /** 「PDF 或文档」能选的文件（原型 `MaterialPlus` 的 accept）。 */
 
 /**
  * 新会话的起始页（产品设计 §3.2.1，原型 page-new.jsx 的 Home）：一句标题、居中的输入框（带素材）、
- * 项目行、Agent 用不了时的指引卡，下面是「快捷开始」一行（点一下把一句提示词放进输入框，行尾新建空白视频）和模板网格。
+ * 项目行、Agent 用不了时的指引卡，下面是快捷开始、最近项目和模板网格。
  * 没有表单，工具从左侧导航进。第一句话发出时才真正建会话，侧栏里点十次「新建会话」不会长出十条空会话。
  */
 export function StartPage({ projectId: routeProjectId }: { projectId: string | null }) {
@@ -141,6 +144,7 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
   // 量外层页面而不是那一栏：栏的左右留白随窄不窄变，量它会来回翻转。
   const pageRef = useRef<HTMLDivElement>(null);
   const narrow = useNarrow(pageRef, 760);
+  const compact = useNarrow(pageRef, 1076);
 
   const patch = (next: Partial<HomeBriefState>) => useStartBrief.getState().patch(draftKey, next);
   const currentBrief = () => useStartBrief.getState().briefs[draftKey] ?? EMPTY_HOME_BRIEF;
@@ -285,7 +289,9 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
       <div className={column({ isNarrow: narrow })}>
         {/* 旧版项目导入在跑 / 留了没导入的（只在桌面端有导入）。 */}
         <LegacyImportBanner />
-        <h1 className={title}>{HOME_COPY.title}</h1>
+        <div className={eyebrow}>{W.eyebrow}</div>
+        <h1 className={title({ isNarrow: narrow })}>{W.title}</h1>
+        <p className={intro}>{W.intro}</p>
         <Composer
           draftKey={draftKey}
           driverId={driverId}
@@ -400,7 +406,8 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
         />
         <SlotHint labels={gate === null || gate.ok ? slots : []} onNext={() => setSlotTick((n) => n + 1)} />
         {guide ? <GateCard guide={guide} /> : null}
-        <HomeStarters target={lastTarget} narrow={narrow} onPick={applyStarter} onBlank={createBlank} />
+        <HomeStarters target={lastTarget} compact={compact} narrow={narrow} onPick={applyStarter} onBlank={createBlank} />
+        <RecentProjects compact={compact} narrow={narrow} />
         <HomeTemplateShelf
           catalog={catalog.templates}
           scene={brief.template}

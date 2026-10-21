@@ -112,7 +112,7 @@
   function BlockedTools({task: t, changeSource}) {
     const app = useApp();
     const busy = app.downloader.state === 'updating';
-    const repair = () => app.confirm({title:'修复开发工具…',body:'确认后会在本机终端运行固定修复步骤，并由终端请求管理员密码。先备份现有 Command Line Tools，再请求 macOS 安装器。安装完成前依赖这些工具的应用可能不可用；取消系统安装不会自动还原，终端保留备份路径和还原指引。这里仅演示，不执行命令。',confirmLabel:'打开终端修复',run:()=>app.toast('演示：完成系统安装后，回到 BaoCut 重新检查环境','notice')});
+    const repair = () => app.confirm({title:'修复开发工具…',body:'确认后会在本机终端运行固定修复步骤，并由终端请求管理员密码。先备份现有 Command Line Tools，再请求 macOS 安装器。安装完成前依赖这些工具的应用可能不可用；取消系统安装不会自动还原，终端保留备份路径和还原指引。这里仅演示，不执行命令。',confirmLabel:'打开终端修复',run:()=>app.toast('演示：完成系统安装后，回到 Tuzi 重新检查环境','notice')});
     return <div className="import-recovery import-recovery--setup" data-issue="blocked">
       <div className="t-title-sm">先更新 macOS 开发者工具，再重新检查</div>
       <p className="t-detail">Homebrew 需要更新版的 Command Line Tools 才能更新 yt-dlp。当前的 yt-dlp 保持可用，其它下载不受影响；也可以改为独立安装，绕开 Homebrew。</p>
@@ -141,11 +141,11 @@
       <div className="row gap8"><Btn size="s" variant="accent" disabled={d.state === 'updating'} onClick={() => blocked ? app.toast('原型只演示检查反馈；真实客户端会重新探测 Homebrew 条件', 'notice') : app.updateDownloader(taskId)}>{d.state === 'updating' ? '正在更新…' : blocked ? '重新检查环境' : issue === 'missing' ? '安装并继续' : issue === 'install' ? '重新安装并继续' : taskId ? '更新工具并重试' : '更新工具'}</Btn>
         <Btn size="s" variant="quiet" disabled={d.state === 'updating'} aria-expanded={options} onClick={()=>setOptions(!options)}>安装选项</Btn></div>
       {options ? <div className="import-tool-options"><window.RSP.RadioGroup label="安装范围" value={String(d.isolated)} isDisabled={d.state === 'updating'} onChange={value => app.setDownloader(x => ({...x, isolated: value === 'true'}))}>
-        <window.RSP.Radio value="false">系统共享（推荐）</window.RSP.Radio><window.RSP.Radio value="true">仅为 BaoCut 独立安装</window.RSP.Radio>
+        <window.RSP.Radio value="false">系统共享（推荐）</window.RSP.Radio><window.RSP.Radio value="true">仅为 Tuzi 独立安装</window.RSP.Radio>
       </window.RSP.RadioGroup><Btn size="s" variant="quiet" disabled={d.state==='updating'} onClick={()=>app.setDownloader(x=>({...x,checked:true,available:true}))}>检查更新</Btn></div> : null}
       {d.state === 'updating' ? <Progress indeterminate /> : d.available && d.version !== '已更新（演示）' ? <p className="t-detail">发现可用更新（演示）。共享更新由原包管理器执行；独立更新校验、自测通过后才切换。</p> : d.checked ? <p className="t-detail">工具检查完成 · yt-dlp、ffmpeg 已就绪（演示）</p> : null}
       {options ? <div className="import-details">
-        {blocked ? <Btn variant="quiet" size="s" onClick={()=>app.confirm({title:'修复开发工具…',body:'确认后会在本机终端运行固定修复步骤，并由终端请求管理员密码。先备份现有 Command Line Tools，再请求 macOS 安装器。安装完成前依赖这些工具的应用可能不可用；取消系统安装不会自动还原，终端保留备份路径和还原指引。这里仅演示，不执行命令。',confirmLabel:'打开终端修复',run:()=>app.toast('演示：完成系统安装后，回到 BaoCut 重新检查环境','notice')})}>修复开发工具…</Btn> : null}
+        {blocked ? <Btn variant="quiet" size="s" onClick={()=>app.confirm({title:'修复开发工具…',body:'确认后会在本机终端运行固定修复步骤，并由终端请求管理员密码。先备份现有 Command Line Tools，再请求 macOS 安装器。安装完成前依赖这些工具的应用可能不可用；取消系统安装不会自动还原，终端保留备份路径和还原指引。这里仅演示，不执行命令。',confirmLabel:'打开终端修复',run:()=>app.toast('演示：完成系统安装后，回到 Tuzi 重新检查环境','notice')})}>修复开发工具…</Btn> : null}
         <p className="t-detail">共享安装由原包管理器维护，兼容性更新会说明开发版渠道。独立副本从官方 nightly 下载、校验并自测；不会覆盖系统安装。</p>
         <p className="t-detail">请在当前下载结束后更新。这里只演示操作与反馈，不修改你的电脑。</p>
       </div> : null}

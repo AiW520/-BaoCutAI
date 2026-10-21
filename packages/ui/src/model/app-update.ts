@@ -29,7 +29,7 @@ const en = {
     verify: 'The downloaded file didn’t pass verification and was deleted.',
     signature: 'The new version’s signature doesn’t match this app, so it wasn’t installed. Install it manually from the download page.',
     install: 'The installation couldn’t finish. Install it manually from the download page.',
-    manual: 'This copy of BaoCut can’t replace itself. The downloaded file and the download page are open; install it manually.',
+    manual: 'This copy of Tuzi can’t replace itself. The downloaded file and the download page are open; install it manually.',
   } as Record<AppUpdateFailure, string>,
   version: (version: string, build: number) => `${version} (Build ${build})`,
   appStore: 'App Store versions are updated by the App Store',
@@ -46,7 +46,7 @@ const en = {
   readyWaiting: (version: string) => `${version} downloaded; it will install when background tasks finish`,
   restartAndUpdate: 'Restart and update',
   stopWaiting: 'Don’t wait',
-  readyOnQuit: (version: string) => `${version} downloaded; it will install automatically when you quit BaoCut`,
+  readyOnQuit: (version: string) => `${version} downloaded; it will install automatically when you quit Tuzi`,
   installing: 'Installing…',
   retry: 'Try again',
   downloadPage: 'Go to download page',
@@ -54,7 +54,7 @@ const en = {
   waitingRunning: (n: number) =>
     `${n === 1 ? '1 background task is' : `${n} background tasks are`} still running; the update installs automatically when ${n === 1 ? 'it finishes' : 'they all finish'}.`,
   waitingDone: 'Background tasks have finished. Installing…',
-  tipAvailable: (version: string) => `New version · BaoCut ${version}`,
+  tipAvailable: (version: string) => `New version · Tuzi ${version}`,
   tipVerifying: 'Verifying update…',
   tipDownloading: (pct: number) => `Downloading update · ${pct}%`,
   tipReady: 'Update downloaded · Installs when you quit',
@@ -64,11 +64,11 @@ const en = {
   downloading: (pct: number) => `Downloading · ${pct}%`,
   titleReady: 'Update downloaded',
   titleAvailable: 'New version available',
-  current: (version: string) => `You’re using BaoCut ${version}.`,
-  noteOnQuit: 'It will install automatically when you quit BaoCut; no need to restart now.',
+  current: (version: string) => `You’re using Tuzi ${version}.`,
+  noteOnQuit: 'It will install automatically when you quit Tuzi; no need to restart now.',
   notesTitle: 'What’s new',
-  readyToast: (version: string) => `BaoCut ${version} downloaded; it will install automatically when you quit`,
-  availableToast: (version: string) => `BaoCut ${version} is ready to update`,
+  readyToast: (version: string) => `Tuzi ${version} downloaded; it will install automatically when you quit`,
+  availableToast: (version: string) => `Tuzi ${version} is ready to update`,
   view: 'View',
   restartTitle: 'Restart and update now?',
   restartBody: (n: number) =>
@@ -78,7 +78,7 @@ const en = {
   waitAndInstall: 'Install when tasks finish',
   autoRow: {
     label: 'Automatically check for and download updates',
-    desc: 'Checks at launch and every 6 hours after that. Downloaded updates install the next time you quit, or you can restart to update right away. BaoCut never restarts on its own.',
+    desc: 'Checks at launch and every 6 hours after that. Downloaded updates install the next time you quit, or you can restart to update right away. Tuzi never restarts on its own.',
   },
 };
 export type AppUpdateMessages = typeof en;
@@ -315,7 +315,7 @@ export function dialog(
           : { left: { error: FAILURE_TEXT[st.failure] }, buttons: [b('downloadPage', M.downloadPage), b('retry', M.retry, 'accent')] };
   return {
     title: st.k === 'ready' ? M.titleReady : M.titleAvailable,
-    sub: `BaoCut ${info.version} · Build ${info.build}`,
+    sub: `Tuzi ${info.version} · Build ${info.build}`,
     current: ctx.current ? M.current(verOf(ctx.current)) : null,
     note: st.k === 'ready' && ctx.waiting == null ? M.noteOnQuit : null,
     notesTitle: M.notesTitle,

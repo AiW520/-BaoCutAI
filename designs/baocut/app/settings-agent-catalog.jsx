@@ -2,7 +2,7 @@
    都能由用户添加。一块可搜索的目录（data.js 的 agent.catalog）每行一颗「添加」，另有「自定义命令…」对话框。
    添加之后它是一张普通的 provider 卡（settings-agent-provider.jsx），没检测到也留在主列表里、带「移除」；
    检测、登录、模型表与内置的一样，检测到才进会话选择器与工具页。
-   单独成段、不并进「更多」：「更多」四家是 BaoCut 自带启动方式与安装说明的；目录里的没有逐家验证过，承诺不同。
+   单独成段、不并进「更多」：「更多」四家是 Tuzi 自带启动方式与安装说明的；目录里的没有逐家验证过，承诺不同。
    搜索、解析、校验与添加 / 移除的规则在 model-agent-catalog.js。 */
 (function () {
   const {useState, useMemo} = React;
@@ -26,7 +26,7 @@
     return <Dialog open title="用自定义命令添加 Agent" width={560} onClose={onClose}
       footer={<><Btn onClick={onClose}>取消</Btn><Btn variant="accent" onClick={add}>添加</Btn></>}>
       <form className="agcat-form" onSubmit={(e) => { e.preventDefault(); add(); }} noValidate>
-        <p className="agcat-form__lede">填它在终端里以 ACP 方式启动的那条命令。BaoCut 直接启动这个程序，不经过终端。</p>
+        <p className="agcat-form__lede">填它在终端里以 ACP 方式启动的那条命令。Tuzi 直接启动这个程序，不经过终端。</p>
         <R.TextField label="名字" placeholder="例如 我的 Agent" value={form.name} autoFocus onChange={set('name')}
           isInvalid={!!err.name} errorMessage={err.name} UNSAFE_className="agcat-form__field" />
         <R.TextField label="id" placeholder="my-agent" value={form.id} onChange={set('id')}
@@ -36,10 +36,10 @@
           description={parts.length > 1 && !err.command ? `会这样启动：程序 ${parts[0]}，参数 ${parts.slice(1).join(' · ')}` : '按空格拆成程序和参数；参数里有空格时用引号括起来。'}
           isInvalid={!!err.command} errorMessage={err.command} UNSAFE_className="agcat-form__field agcat-form__mono" />
         <R.TextArea label="环境变量（可选）" placeholder={'MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\nMY_AGENT_LOG=0'} value={form.env} onChange={set('env')}
-          description="每行一个 KEY=VALUE，只在 BaoCut 启动它时附加。"
+          description="每行一个 KEY=VALUE，只在 Tuzi 启动它时附加。"
           isInvalid={!!err.env} errorMessage={err.env} UNSAFE_className="agcat-form__field agcat-form__mono" />
       </form>
-      <p className="agcat-form__note" role="note"><Ic n="info" className="ic--16" /><span>添加之后 BaoCut 会检测它能不能启动、要不要登录、有哪些模型；检测到之后它才出现在会话里。</span></p>
+      <p className="agcat-form__note" role="note"><Ic n="info" className="ic--16" /><span>添加之后 Tuzi 会检测它能不能启动、要不要登录、有哪些模型；检测到之后它才出现在会话里。</span></p>
     </Dialog>;
   }
 
@@ -73,7 +73,7 @@
     return <section className="agcat-section" aria-labelledby="agcat-title">
       <div className="agset-heading">
         <div><h2 className="t-title-sm" id="agcat-title">添加更多 Agent</h2>
-          <p>其他支持 ACP（Agent Client Protocol）的命令行 Agent 也能接进来。它们没有经过 BaoCut 逐一验证，能不能用以检测结果为准。</p></div>
+          <p>其他支持 ACP（Agent Client Protocol）的命令行 Agent 也能接进来。它们没有经过 Tuzi 逐一验证，能不能用以检测结果为准。</p></div>
         <Btn size="s" variant="quiet" icon="plus" onClick={() => setCustom(true)}>自定义命令…</Btn>
       </div>
       <Card layer className="agcat">

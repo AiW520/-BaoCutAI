@@ -51,7 +51,7 @@ export const ja: MainMessages = {
   runtimeExited: (code: number | null) => `Runtime を起動できませんでした（終了コード ${code}）`,
   runtimeQuitting: 'アプリを終了しています',
   quitBusyTitle: (count: number) => `実行中のタスクが ${count} 件あります`,
-  quitBusyDetail: '今終了すると、これらのタスクは中断されます。バックグラウンドで実行を続けることもできます。完了すると BaoCut は自動的に停止します。',
+  quitBusyDetail: '今終了すると、これらのタスクは中断されます。バックグラウンドで実行を続けることもできます。完了すると Tuzi は自動的に停止します。',
   quitKeepRunning: 'バックグラウンドで実行を続ける',
   quitStop: '停止して終了',
   cancel: 'キャンセル',

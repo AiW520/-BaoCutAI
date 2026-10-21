@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const it: OnboardingMessages = {
-  dialogLabel: 'Ti diamo il benvenuto in BaoCut',
+  dialogLabel: 'Ti diamo il benvenuto in Tuzi',
   stepsLabel: 'Passaggi di configurazione',
   step: {
     agent: 'Collega un agente',
@@ -12,7 +12,7 @@ export const it: OnboardingMessages = {
     music: 'Generazione di musica',
   },
   title: {
-    agent: 'Ti diamo il benvenuto in BaoCut',
+    agent: 'Ti diamo il benvenuto in Tuzi',
     asr: 'Scarica i modelli di riconoscimento vocale',
     tts: 'Scarica i modelli di sintesi vocale',
     semantic: 'Installa la ricerca semantica',
@@ -21,7 +21,7 @@ export const it: OnboardingMessages = {
   },
   lead: {
     agent:
-      'Descrivi il video che vuoi e un agente trascrive, aggiunge i sottotitoli, traduce, doppia e monta per te. BaoCut usa gli agenti di questo computer (come Claude Code o Codex) con il tuo account, senza costi aggiuntivi.',
+      'Descrivi il video che vuoi e un agente trascrive, aggiunge i sottotitoli, traduce, doppia e monta per te. Tuzi usa gli agenti di questo computer (come Claude Code o Codex) con il tuo account, senza costi aggiuntivi.',
     asr: 'Trascrivere, aggiungere sottotitoli e montare video parlati partono tutti dal trasformare il parlato in testo. I modelli girano su questo computer e funzionano offline.',
     tts: 'I modelli di sintesi vocale leggono il testo ad alta voce, clonano una voce da una registrazione e doppiano i video tradotti. Scegline uno o due per iniziare; scarica gli altri più tardi in Impostazioni › Sintesi vocale.',
     semantic:
@@ -64,7 +64,7 @@ export const it: OnboardingMessages = {
 
   agentListLabel: 'Agenti su questo computer',
   agentChecking: 'Ricerca degli agenti su questo computer…',
-  agentMissingBody: 'Seleziona quelli che vuoi e BaoCut li installa in background. Una volta installati, accedi una volta con il tuo account esistente.',
+  agentMissingBody: 'Seleziona quelli che vuoi e Tuzi li installa in background. Una volta installati, accedi una volta con il tuo account esistente.',
   agentNote:
     'Gli agenti selezionati compaiono nel menu degli agenti delle nuove sessioni. L’installazione procede in background, quindi non devi aspettare. Scegli quello predefinito o aggiungine altri in Impostazioni › Provider degli agenti.',
   agentInstalled: 'Installato su questo computer',

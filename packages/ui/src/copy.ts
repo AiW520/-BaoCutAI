@@ -122,7 +122,7 @@ const en = {
     files: 'Files', folders: 'Folders',
     filesMessage: (paths: readonly string[]) => `Files and folders:\n${paths.map(path => JSON.stringify(path)).join('\n')}`,
     pickFailed: (message: string) => `Couldn’t select files: ${message}`,
-    webFilesUnsupported: 'Add local files and folders in BaoCut desktop. Uploads aren’t available in the Web client yet.',
+    webFilesUnsupported: 'Add local files and folders in Tuzi desktop. Uploads aren’t available in the Web client yet.',
     /** @ 补全保留视频与文件引用；不再在 + 菜单里重复列出。 */
     mention: 'Reference a video or file',
     slash: 'Use a tool',
@@ -172,13 +172,13 @@ const en = {
   recovery: {
     authTitle: (name: string) => `${name} needs you to sign in again`,
     authBody: (name: string) =>
-      `You sign in inside ${name}’s own window; BaoCut never handles your account or password. Come back and resend once you’re signed in.`,
+      `You sign in inside ${name}’s own window; Tuzi never handles your account or password. Come back and resend once you’re signed in.`,
     openLogin: 'Sign in from Terminal',
     loginOpened: (command: string) => `Running ${command} in a terminal · Come back and resend once you’re signed in`,
     loginCopied: 'Couldn’t open a terminal. The sign-in command is copied; paste it into a terminal to run it',
     loginManual: (command: string) => `Couldn’t open a terminal. Run ${command} in a terminal`,
     modelTitle: (model: string | null) => `${model ?? 'This model'} isn’t available right now`,
-    modelBody: 'Pick another model and resend. BaoCut won’t switch models on its own.',
+    modelBody: 'Pick another model and resend. Tuzi won’t switch models on its own.',
     pickModel: 'Resend with another model',
     resend: 'Resend',
     retry: 'Try again',
@@ -646,7 +646,7 @@ const en = {
     blockedTitle: {
       loopback: 'Local addresses don’t open here',
       scheme: 'Only http / https URLs can be opened',
-      'app-origin': 'BaoCut’s own pages can’t open in a web tab',
+      'app-origin': 'Tuzi’s own pages can’t open in a web tab',
       invalid: 'This URL isn’t valid',
     },
     blockedBody: {
@@ -656,10 +656,10 @@ const en = {
       invalid: 'Check how the URL is written.',
     },
     backToPage: 'Back to page',
-    footer: 'Pages open in a separate environment that can’t reach BaoCut or local services; sign-ins are kept apart from your system browser.',
+    footer: 'Pages open in a separate environment that can’t reach Tuzi or local services; sign-ins are kept apart from your system browser.',
     externalShort: 'Open externally',
     unsupportedTitle: 'Web pages can’t be embedded here',
-    unsupportedBody: 'The BaoCut desktop app can browse the web directly; for now, open it in a browser.',
+    unsupportedBody: 'The Tuzi desktop app can browse the web directly; for now, open it in a browser.',
     openInBrowser: 'Open in browser',
     toolsTitle: 'Tools',
     newPageTitle: 'New web page',
@@ -809,7 +809,7 @@ const en = {
     mcp: {
       name: 'MCP service',
       scope: 'This computer only',
-      desc: 'Lets other AI apps read videos and call BaoCut tools',
+      desc: 'Lets other AI apps read videos and call Tuzi tools',
       start: 'Start service',
       stop: 'Stop service',
       starting: 'Starting…',
@@ -827,7 +827,7 @@ const en = {
     web: {
       name: 'Web service',
       scope: 'This computer only',
-      desc: 'Open BaoCut Web in a browser to edit the same videos',
+      desc: 'Open Tuzi Web in a browser to edit the same videos',
       start: 'Start service',
       stop: 'Stop service',
       starting: 'Starting…',
@@ -836,7 +836,7 @@ const en = {
     'model-api': {
       name: 'Model API',
       scope: 'This computer only',
-      desc: 'Lets tools that speak the OpenAI API use BaoCut’s models to transcribe, voice, make images, and generate text',
+      desc: 'Lets tools that speak the OpenAI API use Tuzi’s models to transcribe, voice, make images, and generate text',
       start: 'Start service',
       stop: 'Stop service',
       starting: 'Starting…',
@@ -852,7 +852,7 @@ const en = {
   servicesPage: {
     title: 'Services',
     overview: 'Services overview',
-    lede: 'Services BaoCut provides on this Mac for other apps and devices to connect to. All are off by default and stop when you quit BaoCut.',
+    lede: 'Services Tuzi provides on this Mac for other apps and devices to connect to. All are off by default and stop when you quit Tuzi.',
     allOff: 'None running',
     errors: (n: number) => (n === 1 ? '1 error' : `${n} errors`),
     running: (n: number) => `${n} running`,
@@ -862,18 +862,18 @@ const en = {
     railAlert: (text: string) => `Services, ${text}`,
     railApprovals: (n: number) => (n === 1 ? 'Services, 1 request awaiting your approval' : `Services, ${n} requests awaiting your approval`),
     loading: 'Loading status…',
-    disconnected: 'Not connected to the BaoCut Runtime',
+    disconnected: 'Not connected to the Tuzi Runtime',
     failed: (message: string) => `That didn’t work: ${message}`,
     /** Runtime 列出了、但这个版本没有提供的服务（`available: false`）：总览行与详情页说清楚为什么不能起停。 */
-    unavailableDetail: 'This version of the BaoCut Runtime doesn’t provide this service yet',
+    unavailableDetail: 'This version of the Tuzi Runtime doesn’t provide this service yet',
     unavailableTitle: (name: string) => `${name} isn’t available yet`,
     notRunning: 'The service isn’t running. Start it first',
-    mcpRelated: 'Want Claude Code or Codex in your terminal to learn BaoCut’s workflows? Install BaoCut’s skill for them — no service needed. See',
+    mcpRelated: 'Want Claude Code or Codex in your terminal to learn Tuzi’s workflows? Install Tuzi’s skill for them — no service needed. See',
     mcpRelatedLink: 'Skills',
   },
-  /** BaoCut Runtime 卡（原服务页的一张卡，现在给设置 › 诊断复用）。 */
+  /** Tuzi Runtime 卡（原服务页的一张卡，现在给设置 › 诊断复用）。 */
   runtimeCard: {
-    name: 'BaoCut Runtime',
+    name: 'Tuzi Runtime',
     version: 'Version',
     versionValue: (runtime: string, protocol: number | string) => `${runtime} (protocol ${protocol})`,
     pid: 'Process',
@@ -902,8 +902,8 @@ const en = {
     subOff: 'Other devices can’t see this Mac.',
     subErrorFallback: 'The node service isn’t listening.',
     errorFix: 'Quit the program using this port, then start sharing again — or stop if you no longer want to share.',
-    foot: 'While sharing is on, BaoCut resumes sharing the next time it opens.',
-    footRight: 'Sharing stops when you quit BaoCut.',
+    foot: 'While sharing is on, Tuzi resumes sharing the next time it opens.',
+    footRight: 'Sharing stops when you quit Tuzi.',
     privacy: 'Task inputs travel only on your local network and only results go back; nothing stays on this Mac after a task ends.',
     offHint: 'Once sharing starts, a 6-digit pairing code appears; enter it on the other device to connect.',
     started: 'Started sharing this Mac',
@@ -916,7 +916,7 @@ const en = {
     pairingHint: (left: string) => `Enter this code on the other device. It expires in ${left}.`,
     pairingLocked: (until: string) => `Too many wrong attempts; pairing is locked until ${until}. Generate a new code to unlock it now.`,
     pairingNone:
-      'No pairing code available right now. A code must be generated again after it’s used once, expires, or BaoCut reopens. Paired devices aren’t affected.',
+      'No pairing code available right now. A code must be generated again after it’s used once, expires, or Tuzi reopens. Paired devices aren’t affected.',
     regenerate: 'Regenerate',
     generate: 'Generate pairing code',
     regenerated: 'New pairing code generated',
@@ -970,8 +970,8 @@ const en = {
     unpairDone: 'Unpaired',
     /** 节点卡上「为什么用不了」：按 `PairedNode.problem` 拼（没有诊断方法，不叫「诊断」）。 */
     problem: {
-      unreachable: 'Can’t reach this computer. Make sure it has BaoCut open with “Share this Mac” on, and both computers are on the same local network.',
-      version: 'The two computers run incompatible BaoCut versions. Update both to the latest version.',
+      unreachable: 'Can’t reach this computer. Make sure it has Tuzi open with “Share this Mac” on, and both computers are on the same local network.',
+      version: 'The two computers run incompatible Tuzi versions. Update both to the latest version.',
       unpaired: 'The pairing is no longer valid: the other side revoked this computer, or a different computer now uses this address. Unpair, then pair again.',
     },
     transcribeOff: 'Transcription not offered',
@@ -995,7 +995,7 @@ const en = {
     pairErrors: {
       'pairing-code-invalid': 'The pairing code is wrong or no longer valid. Ask them to generate a new one and try again.',
       'pairing-locked': 'Too many wrong attempts; that computer has locked pairing for now. Ask them to click “Regenerate” to unlock it.',
-      version: 'The two computers run incompatible BaoCut versions. Update both to the latest version first.',
+      version: 'The two computers run incompatible Tuzi versions. Update both to the latest version first.',
       'source-not-allowed': 'That computer doesn’t accept connections from this computer’s address.',
       lost: 'Can’t reach that computer. Check the address and port, and make sure “Share this Mac” is on there.',
     },
@@ -1016,7 +1016,7 @@ const en = {
     subtitle: 'Look things up any time and get going',
     close: 'Close Help',
     navLabel: 'Help categories',
-    navTitle: 'Using BaoCut',
+    navTitle: 'Using Tuzi',
     navNote: ['Read only what you need.', 'Close it to get back to your work.'] as [string, string],
     sections: { start: 'Quick start', guide: 'Guides', keys: 'Keyboard shortcuts', faq: 'FAQ' },
     searchLabel: 'Search Help',

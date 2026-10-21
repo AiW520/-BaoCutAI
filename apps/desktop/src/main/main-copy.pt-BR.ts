@@ -10,7 +10,7 @@ export const ptBR: MainMessages = {
   runtimeExited: (code: number | null) => `O Runtime não iniciou (código de saída ${code})`,
   runtimeQuitting: 'O app está sendo encerrado',
   quitBusyTitle: (count: number) => pluralForm('pt-BR', count, { one: `${count} tarefa ainda está em andamento`, other: `${count} tarefas ainda estão em andamento` }),
-  quitBusyDetail: 'Se você sair agora, elas serão interrompidas. Você também pode deixá-las continuar em segundo plano; o BaoCut para sozinho quando elas terminarem.',
+  quitBusyDetail: 'Se você sair agora, elas serão interrompidas. Você também pode deixá-las continuar em segundo plano; o Tuzi para sozinho quando elas terminarem.',
   quitKeepRunning: 'Continuar em segundo plano',
   quitStop: 'Parar e sair',
   cancel: 'Cancelar',

@@ -1,7 +1,7 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const tr: OnboardingMessages = {
-  dialogLabel: 'BaoCut’a hoş geldiniz',
+  dialogLabel: 'Tuzi’a hoş geldiniz',
   stepsLabel: 'Kurulum adımları',
   step: {
     agent: 'Ajan bağlayın',
@@ -12,7 +12,7 @@ export const tr: OnboardingMessages = {
     music: 'Müzik oluşturma',
   },
   title: {
-    agent: 'BaoCut’a hoş geldiniz',
+    agent: 'Tuzi’a hoş geldiniz',
     asr: 'Konuşma tanıma modellerini indirin',
     tts: 'Konuşma sentezi modellerini indirin',
     semantic: 'Anlamsal aramayı yükleyin',
@@ -21,7 +21,7 @@ export const tr: OnboardingMessages = {
   },
   lead: {
     agent:
-      'İstediğiniz videoyu anlatın; Ajan sizin için yazıya döker, altyazı ekler, çevirir, seslendirir ve düzenler. BaoCut bu bilgisayardaki Ajanları (Claude Code veya Codex gibi) kendi hesabınızla kullanır; ek ücret yoktur.',
+      'İstediğiniz videoyu anlatın; Ajan sizin için yazıya döker, altyazı ekler, çevirir, seslendirir ve düzenler. Tuzi bu bilgisayardaki Ajanları (Claude Code veya Codex gibi) kendi hesabınızla kullanır; ek ücret yoktur.',
     asr: 'Yazıya dökme, altyazı ekleme ve konuşma videolarını kısaltma, konuşmayı metne çevirmekle başlar. Modeller bu bilgisayarda çalışır ve çevrimdışı da kullanılabilir.',
     tts: 'Konuşma sentezi modelleri metni sesli okur, bir kayıttan ses klonlar ve çevrilmiş videoları seslendirir. Başlamak için bir iki tane seçin; diğerlerini daha sonra Ayarlar › Konuşma sentezi bölümünden indirebilirsiniz.',
     semantic:
@@ -64,7 +64,7 @@ export const tr: OnboardingMessages = {
 
   agentListLabel: 'Bu bilgisayardaki Ajanlar',
   agentChecking: 'Bu bilgisayardaki Ajanlar denetleniyor…',
-  agentMissingBody: 'İstediklerinizi işaretleyin, BaoCut bunları arka planda yüklesin. Yüklendikten sonra mevcut hesabınızla bir kez oturum açın.',
+  agentMissingBody: 'İstediklerinizi işaretleyin, Tuzi bunları arka planda yüklesin. Yüklendikten sonra mevcut hesabınızla bir kez oturum açın.',
   agentNote:
     'İşaretlenen Ajanlar yeni oturumların Ajan menüsünde görünür. Yükleme arka planda çalışır, beklemeniz gerekmez. Varsayılanı seçmek veya daha fazlasını eklemek için Ayarlar › Ajan sağlayıcıları bölümüne gidin.',
   agentInstalled: 'Bu bilgisayarda yüklü',

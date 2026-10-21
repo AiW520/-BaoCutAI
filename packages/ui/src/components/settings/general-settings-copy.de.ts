@@ -6,7 +6,7 @@ export const de: GeneralSettingsMessages = {
   languageDesc: "Sofort wirksam; kein Neustart nötig.",
   languageSystem: (current: string) => `System (${current})`,
   appearance: "Aussehen",
-  appearanceDesc: "Betrifft nur BaoCut-Fenster auf diesem Computer.",
+  appearanceDesc: "Betrifft nur Tuzi-Fenster auf diesem Computer.",
   schemeSystem: "System",
   schemeLight: "Hell",
   schemeDark: "Dunkel",
@@ -29,7 +29,7 @@ export const de: GeneralSettingsMessages = {
   downloadsGroup: "Downloads und Aktualisierungen",
   autoUpdateOn: "Automatische Updateprüfung und Downloads aktiviert",
   autoUpdateOff: "Automatische Updatedownloads deaktiviert",
-  downloaderWeb: "Der Browser prüft keine Downloadwerkzeuge auf diesem Computer; in der BaoCut-Desktop-App prüfen.",
+  downloaderWeb: "Der Browser prüft keine Downloadwerkzeuge auf diesem Computer; in der Tuzi-Desktop-App prüfen.",
 
   sourcesGroup: "Downloadquellen und Offline",
   strictOffline: "Strikter Offlinemodus",
@@ -41,7 +41,7 @@ export const de: GeneralSettingsMessages = {
   trashDays: "Aufbewahrungstage im Papierkorb",
   trashDaysDesc: (fallback: number | null) =>
     `Ältere nicht referenzierte Papierkorbeinträge und gelöschte Videos werden dauerhaft gelöscht (Prüfung beim Start und danach alle 6 Stunden). Referenzierte Einträge bleiben erhalten. Leeren stellt den Standard wieder her${fallback ? ` von ${fallback} Tage` : ""}.`,
-  webNote: "Im Browser lässt sich diese Einstellung nicht ändern. Ändern Sie sie in der BaoCut-Desktop-App.",
-  webViewOnly: "Im Browser können Sie dies nur ansehen. Änderungen nehmen Sie in der BaoCut-Desktop-App vor.",
-  webUnavailable: "Im Browser ist dies nicht verfügbar. Verwenden Sie die BaoCut-Desktop-App.",
+  webNote: "Im Browser lässt sich diese Einstellung nicht ändern. Ändern Sie sie in der Tuzi-Desktop-App.",
+  webViewOnly: "Im Browser können Sie dies nur ansehen. Änderungen nehmen Sie in der Tuzi-Desktop-App vor.",
+  webUnavailable: "Im Browser ist dies nicht verfügbar. Verwenden Sie die Tuzi-Desktop-App.",
 };

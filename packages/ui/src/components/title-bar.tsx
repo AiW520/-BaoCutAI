@@ -38,7 +38,8 @@ const titleArea = style({
   paddingX: 48,
   pointerEvents: 'none',
 });
-const title = style({ font: 'ui', fontWeight: 'bold', color: 'gray-800' });
+const title = style({ display: 'inline-flex', alignItems: 'center', gap: '[6px]', font: 'ui', fontWeight: 'bold', color: 'gray-800' });
+const titleMark = style({ display: 'grid', placeItems: 'center', width: 20, height: 20, borderRadius: 'default', backgroundColor: 'blue-900', color: 'gray-25', font: 'ui-xs', fontWeight: 'bold' });
 /** 右侧的动作（原型 .tbar__acts）：压在居中的应用名之上。 */
 const acts = style({ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 4, marginStart: 'auto' });
 const divider = style({
@@ -80,7 +81,7 @@ export function TitleBar({ platform }: { platform: string }) {
           侧栏收起、它从左缘铺开时按钮的 no-drag 才压得住它（否则点开合钮只会拖动窗口）。 */}
       {homeMode ? null : (
         <div className={titleArea} style={{ left: dividers.at(-1) ?? 0 }}>
-          <span className={title}>BaoCut</span>
+          <span className={title}><span className={titleMark} aria-hidden="true">T</span>Tuzi</span>
         </div>
       )}
       {/* `data-shell-peek-keep`：在导航区按下不关侧栏浮层（开合钮自己处理）。 */}

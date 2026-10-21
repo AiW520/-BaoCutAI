@@ -110,7 +110,7 @@ describe('设置 › 关于', () => {
     const verify = view({ k: 'downloading', info, pct: 100 }, ctx);
     expect([verify.line, verify.progress, labels(verify)]).toEqual(['正在校验 2.3.0…', 100, ['取消']]);
     const ready = view({ k: 'ready', info, path: '/x.zip' }, ctx);
-    expect(ready.line).toBe('2.3.0 已下载，退出 BaoCut 时自动安装');
+    expect(ready.line).toBe('2.3.0 已下载，退出 Tuzi 时自动安装');
     expect(ready.actions[0]).toEqual({ k: 'restart', label: '重启并更新', variant: 'accent', disabled: false });
     expect(labels(view({ k: 'installing', info }, ctx))).toEqual(['正在安装…(禁用)']);
     const err = view({ k: 'error', failure: 'check', info: null }, ctx);
@@ -164,7 +164,7 @@ describe('设置 › 关于', () => {
 
 describe('rail 上的更新按钮', () => {
   it('显示表：每一行', () => {
-    expect(sideButton({ k: 'available', info })).toEqual({ visible: true, glyph: 'download', dot: 'white', tip: '有新版本 · BaoCut 2.3.0' });
+    expect(sideButton({ k: 'available', info })).toEqual({ visible: true, glyph: 'download', dot: 'white', tip: '有新版本 · Tuzi 2.3.0' });
     expect(sideButton({ k: 'available', info, systemUnmet: '27.0' })).toEqual({ visible: false });
     expect(sideButton({ k: 'downloading', info, pct: 42 })).toEqual({ visible: true, glyph: 'ring', pct: 42, dot: null, tip: '正在下载更新 · 42%' });
     expect(sideButton({ k: 'downloading', info, pct: 100 })).toEqual({
@@ -200,20 +200,20 @@ describe('更新窗', () => {
   it('头部、正文与全部说明（不截 6 行）', () => {
     const d = dialog({ k: 'available', info }, { lang: 'zh-Hans', current });
     expect(d?.title).toBe('有新版本');
-    expect(d?.sub).toBe('BaoCut 2.3.0 · Build 57');
-    expect(d?.current).toBe('你现在用的是 BaoCut 2.2.1（Build 56）。');
+    expect(d?.sub).toBe('Tuzi 2.3.0 · Build 57');
+    expect(d?.current).toBe('你现在用的是 Tuzi 2.2.1（Build 56）。');
     expect(d?.notesTitle).toBe('更新内容');
     expect(d?.notes).toHaveLength(7);
     expect(dialog({ k: 'available', info }, { lang: 'de', current })?.notes[0]).toMatch(/^Settings › About/);
     expect(d?.note).toBeNull();
     const ready = dialog({ k: 'ready', info, path: '/x.zip' }, { lang: 'zh-Hans', current });
-    expect([ready?.title, ready?.note]).toEqual(['更新已下载', '退出 BaoCut 时会自动安装，不用现在重启。']);
+    expect([ready?.title, ready?.note]).toEqual(['更新已下载', '退出 Tuzi 时会自动安装，不用现在重启。']);
     const readyWaiting = (waiting: number | null | undefined) =>
       dialog({ k: 'ready', info, path: '/x.zip' }, { lang: 'zh-Hans', current, waiting })?.note;
     expect(readyWaiting(3)).toBeNull();
     expect(readyWaiting(0)).toBeNull();
-    expect(readyWaiting(null)).toBe('退出 BaoCut 时会自动安装，不用现在重启。');
-    expect(readyWaiting(undefined)).toBe('退出 BaoCut 时会自动安装，不用现在重启。');
+    expect(readyWaiting(null)).toBe('退出 Tuzi 时会自动安装，不用现在重启。');
+    expect(readyWaiting(undefined)).toBe('退出 Tuzi 时会自动安装，不用现在重启。');
     expect(dialog({ k: 'downloading', info, pct: 42 }, { lang: 'zh-Hans', current })?.note).toBeNull();
     expect(dialog({ k: 'error', failure: 'verify', info }, { lang: 'zh-Hans', current })?.title).toBe('有新版本');
   });
@@ -257,8 +257,8 @@ describe('更新窗', () => {
 
 describe('toast', () => {
   it('已下载与可以更新了', () => {
-    expect(readyToast(info)).toEqual({ text: 'BaoCut 2.3.0 已下载，退出时自动安装', action: '重启并更新' });
-    expect(availableToast(info)).toEqual({ text: 'BaoCut 2.3.0 可以更新了', action: '查看' });
+    expect(readyToast(info)).toEqual({ text: 'Tuzi 2.3.0 已下载，退出时自动安装', action: '重启并更新' });
+    expect(availableToast(info)).toEqual({ text: 'Tuzi 2.3.0 可以更新了', action: '查看' });
   });
 });
 
