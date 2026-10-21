@@ -48,6 +48,9 @@ test('记录：停在哪一步、这次引导里开始下载了哪些', () => {
   assert.equal(OB.recordText(null), '没有记录');
   assert.equal(OB.recordText(OB.record('esc', 'semantic')), '在「语义搜索」退出');
   assert.equal(OB.recordText(OB.record('done', 'music', ['a', 'b'])), '已走完 · 下载了 2 个');
+  assert.equal(OB.recordText({state: 'skipped', step: 'choose', mode: null}), '在选择使用方式退出');
+  assert.equal(OB.recordText({state: 'skipped', step: 'tuzi-api', mode: 'api', defaults: {}}), '在 Tuzi API 配置退出');
+  assert.equal(OB.recordText({state: 'done', step: 'tuzi-api', mode: 'api', defaults: {text: 'gpt-4o-mini', image: 'gpt-image-2'}}), '已完成 Tuzi API 配置 · 验证了 2 项');
 });
 
 test('原型的模拟启动：?onboarding=1 是全新安装，?onboarding=installed 是老用户升级', () => {

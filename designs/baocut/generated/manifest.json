@@ -144,6 +144,7 @@
       "app/model-dub.js",
       "app/model-local-models.js",
       "app/model-onboarding.js",
+      "app/model-onboarding-mode.js",
       "app/model-download-sources.js",
       "app/model-local-check.js",
       "app/model-daoyazi.js",
@@ -201,6 +202,7 @@
       "app/legacy-import-task.jsx",
       "app/agent-setup-runs.jsx",
       "app/onboarding.jsx",
+      "app/onboarding-mode.jsx",
       "app/home-templates.jsx",
       "app/composer-insert-menu.jsx",
       "app/new-agent.jsx",
@@ -475,12 +477,13 @@
       "app/agent-cards.css",
       "app/legacy-import.css",
       "app/onboarding.css",
+      "app/onboarding-mode.css",
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=d2516f8ef579",
-    "css": "generated/app.css?v=b7816be1170e",
-    "bytes": 4458898
+    "js": "generated/app.js?v=93832a6e2c87",
+    "css": "generated/app.css?v=9830c9dd9171",
+    "bytes": 4473402
   },
   "web": {
     "file": "BaoCutWeb.html",

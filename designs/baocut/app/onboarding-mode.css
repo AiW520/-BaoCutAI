@@ -1,0 +1,40 @@
+/* Tuzi dual-path onboarding, product-design §7.6. Layout only; controls remain Spectrum 2. */
+.onb-mode__intro { margin: 0 0 8px; color: var(--gray-900); font-size: 20px; font-weight: 700; line-height: 1.4; }
+.onb-mode__choices { margin-top: 24px; }
+.onb-mode__choices > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; }
+.onb-mode__choices > div > .onb-mode__choice { width: auto; }
+.onb-mode__choice { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--gray-50); text-align: start; cursor: pointer; }
+.onb-mode__choice:hover { background: var(--gray-75); }
+.onb-mode__choice.is-on { border-color: var(--blue-800); background: var(--blue-100); box-shadow: inset 0 0 0 1px var(--blue-800); }
+.onb-mode__choice:focus-within { outline: 2px solid var(--blue-800); outline-offset: 2px; }
+.onb-mode__icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 10px; background: var(--gray-100); color: var(--gray-800); }
+.onb-mode__choice.is-on .onb-mode__icon { background: var(--blue-200); color: var(--blue-1000); }
+.onb-mode__choice-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--gray-900); font-size: 18px; font-weight: 700; }
+.onb-mode__choice-desc { color: var(--gray-800); font-size: 14px; line-height: 1.5; }
+.onb-mode__points { flex: 1; color: var(--gray-600); font-size: 12px; line-height: 1.8; }
+.onb-mode__choice-end { display: flex; align-items: center; justify-content: space-between; gap: 8px; align-self: stretch; padding-top: 8px; color: var(--gray-800); font-size: 12px; font-weight: 600; }
+.onb-mode__form { display: flex; flex-direction: column; gap: 16px; }
+.onb-mode__field { width: 100%; }
+.onb-mode__endpoint { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; border-radius: 10px; background: var(--gray-50); color: var(--gray-800); }
+.onb-mode__endpoint > div { display: flex; flex: 1; flex-direction: column; gap: 4px; }
+.onb-mode__endpoint code { color: var(--gray-600); font-size: 12px; overflow-wrap: anywhere; }
+.onb-mode__notice { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 10px; background: var(--gray-50); color: var(--gray-600); }
+.onb-mode__notice > svg { flex: none; margin-top: 2px; }
+.onb-mode__notice p { margin: 0; font-size: 12px; line-height: 1.6; }
+.onb-mode__preview { margin: 20px 0 0; padding-top: 12px; border-top: 1px solid var(--gray-100); color: var(--gray-600); font-size: 12px; line-height: 1.5; }
+.onb-mode__demo { color: var(--gray-600); font-size: 12px; line-height: 1.5; }
+.onb-mode__demo summary { cursor: pointer; }
+.onb-mode__demo p { margin-bottom: 0; }
+.onb-mode__connected { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: var(--green-100); color: var(--green-1000); font-size: 14px; font-weight: 600; }
+.onb-mode__connected small { display: block; margin-top: 4px; color: var(--gray-700); font-size: 12px; font-weight: 400; line-height: 1.5; }
+.onb-mode__capabilities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.onb-mode__capability { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 8px; min-width: 0; padding: 12px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--gray-50); }
+.onb-mode__capability p { flex-basis: 100%; margin: 0; color: var(--gray-600); font-size: 12px; line-height: 1.5; }
+.onb-mode__model { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; color: var(--gray-700); font-size: 12px; }
+.onb-mode__model code { overflow-wrap: anywhere; }
+.onb-mode__capability .onb-mode__limited { color: var(--orange-1000); }
+.onb-mode__summary { display: flex; flex-direction: column; gap: 16px; }
+.onb-mode__summary dl { margin: 0; }
+.onb-mode__summary dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--gray-100); color: var(--gray-800); font-size: 14px; }
+.onb-mode__summary dd { margin: 0; color: var(--gray-600); }
+@media (max-width: 680px) { .onb-mode__choices > div, .onb-mode__capabilities { grid-template-columns: minmax(0, 1fr); } }

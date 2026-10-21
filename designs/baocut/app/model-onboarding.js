@@ -55,6 +55,12 @@
 
   function recordText(rec) {
     if (!decided(rec)) return '没有记录';
+    if (rec.mode === 'api' || rec.step === 'tuzi-api' || rec.step === 'choose') {
+      if (rec.step === 'choose') return '在选择使用方式退出';
+      const n = Object.keys(rec.defaults || {}).length;
+      const head = rec.state === 'done' ? '已完成 Tuzi API 配置' : '在 Tuzi API 配置退出';
+      return head + (n ? ` · 验证了 ${n} 项` : '');
+    }
     const head = rec.state === 'done' ? '已走完' : `在「${stepOf(rec.step).label}」退出`;
     const n = (rec.downloaded || []).length;
     return head + (n ? ` · 下载了 ${n} 个` : '');

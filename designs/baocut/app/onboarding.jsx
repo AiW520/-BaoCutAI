@@ -1,5 +1,5 @@
-/* 首次启动引导（2026-10-16 用户要求；步骤、记录与算法在 model-onboarding.js）。只在 App 入口挂（main.jsx），Web 不加载。
-   一个 S2 对话框，顶上是步骤条，六步：
+/* 首次启动双路径引导（product-design §7.6）。只在 App 入口挂（main.jsx），Web 不加载。
+   先由 onboarding-mode.jsx 选择 Tuzi API 或本机模型。这里保留本机路线的六步：
    - 连接 Agent：一句欢迎，然后是 设置 › Agent 提供方 主列表那六家，每家一行、都能勾（2026-10-16 用户要求：一家不够）。
      装好的勾上就是启用（立刻生效）；没装、能用 Homebrew / npm 装的勾上就在后台安装，装好后在它自己的终端里登录一次；
      要先处理的（登录过期、版本过旧、跑不起来）与只有官方脚本的不给勾，处理与安装说明在设置里。
@@ -174,6 +174,7 @@
     const [agentPicks, setAgentPicks] = useState([]); // Agent 一步勾上、等按「后台安装」的那几家（没装的默认不勾：要用的是自己的订阅）
     const [picks, setPicks] = useState({});   // 每一步的勾选：第一次翻到时按默认值起，之后记住
     const [semPick, setSemPick] = useState(true);
+    const [localMode, setLocalMode] = useState(false);
     const speakers = {};
     ((D.models || {}).local || []).forEach((m) => { speakers[m.id] = m.speakers; });
     const on = OB.installTable(models, comps, app.modelInstalled, fresh, got);
@@ -291,6 +292,18 @@
     });
     const unsupported = (what) => <p className="onb-note"><Ic n="info" className="ic--14" />这台电脑不支持本机{what}，这一步可以直接跳过。</p>;
 
+    if (!localMode) return <window.OnboardingModeDialog
+      onLocal={() => setLocalMode(true)}
+      onClose={(stage) => {
+        app.closeOnboarding({...OB.record('exit', stage === 'choose' ? 'choose' : 'tuzi-api', queued.filter((q) => !q.agent).map((q) => q.id)), mode: stage === 'choose' ? null : 'api'});
+        if (bg) app.toast(bg, 'neutral', {label: '查看后台任务', run: () => app.go({r: 'tasks'})});
+      }}
+      onComplete={(record, agent) => {
+        app.closeOnboarding(record);
+        app.go(agent ? {r: 'settings', sec: 'agent'} : {r: 'tools'});
+        app.toast('原型预览已完成，未发送请求或保存 API Key。');
+      }} />;
+
     return (
       <S.DialogContainer onDismiss={() => close('esc')}>
         <S.Dialog size="L" aria-label="欢迎使用 Tuzi">
@@ -339,6 +352,7 @@
           <S.Footer>
             <div className="onb-foot">
               <Btn variant="quiet" onClick={() => close('exit')}>退出引导</Btn>
+              <Btn variant="quiet" onClick={() => setLocalMode(false)}>重新选择使用方式</Btn>
               {bg ? <span className="onb-bg" role="status"><Ic n="download" className="ic--14" />{bg}</span> : null}
             </div>
           </S.Footer>
