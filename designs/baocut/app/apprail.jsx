@@ -1,7 +1,7 @@
-/* App rail（2026-10-01，product-design §2.1–§2.2）—— 只在 App 入口加载。
-   上组 Home / Space / 工具，分隔线下方服务 / 后台任务，底部设置（按用户截图调整 §2.1）。
-   宽 56，**只有图标**：名字放进 tooltip（hover 或键盘聚焦时出现），读屏走按钮的 aria-label。
-   选中 = 图标左侧一根短指示竖条 + 图标变深（gray-800），没有底色块；hover 才有一块浅圆角底。
+/* App rail（product-design §2.1）：只在 App 入口加载。
+   Home / Space / Skills / 工具置顶；服务与任务分组显示；设置固定在底部。
+   标签常显以降低仅图标导航的识别成本，Tooltip 仍保留完整状态说明和键盘入口。
+   选中 = 蓝色短指示条与浅蓝底；其余入口使用中性底色。
 
    S2 没有图标导航 rail 的外框；布局与选中指示条遵守 app frame。
    交互使用 S2 ActionButton、Tooltip 与 NotificationBadge。
@@ -19,7 +19,7 @@
         <Tip label={label || tab.label} side="right">
           <window.RSP.ActionButton isQuiet size="M" UNSAFE_className="apprail__ic"
             aria-current={on ? 'page' : undefined} aria-label={label || tab.label} onPress={onPress}>
-            <Icon />
+            <Icon /><window.RSP.Text><span className="apprail__label">{tab.label}</span></window.RSP.Text>
           </window.RSP.ActionButton>
         </Tip>
         {badge}

@@ -151,6 +151,7 @@
       "app/data.js",
       "app/model-semantic.js",
       "app/model-agent-projects.js",
+      "app/model-home-workbench.js",
       "app/model-space.js",
       "app/model-space-tools.js",
       "app/model-space-search.js",
@@ -270,6 +271,7 @@
       "app/agent-thread.jsx",
       "app/page-agent.jsx",
       "app/apprail.jsx",
+      "app/home-workbench.jsx",
       "app/home-sidebar.jsx",
       "app/page-archived.jsx",
       "app/home-session.jsx",
@@ -459,6 +461,7 @@
       "app/media-preview.css",
       "app/media-preview-image.css",
       "app/apprail.css",
+      "app/home-workbench.css",
       "app/space.css",
       "app/space-search.css",
       "app/home-slides.css",
@@ -475,9 +478,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=df4768ca4059",
-    "css": "generated/app.css?v=35ac827fbcc9",
-    "bytes": 4455369
+    "js": "generated/app.js?v=5990dc2e3de2",
+    "css": "generated/app.css?v=c3b59dbf1e78",
+    "bytes": 4458878
   },
   "web": {
     "file": "BaoCutWeb.html",

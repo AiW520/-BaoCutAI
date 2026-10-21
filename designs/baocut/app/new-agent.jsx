@@ -1,5 +1,4 @@
-/* Home 创建区（product-design §3.2.1）：Agent 输入框、项目，输入框下面的「快捷开始」一行，以及 AI 闸门的引导卡。
-   模板网格在 home-templates.jsx。 */
+/* Home 创建区（product-design §3.2.1）：Agent 输入框、快捷开始、最近项目与模板入口。 */
 (function () {
   const {useState, useRef, useEffect} = React;
   const T = window.BC_HOME_TEMPLATES;
@@ -9,13 +8,10 @@
   const R = window.RSP;
   const A = R.AI;
 
-  /* 快捷开始（product-design §3.2.1：主入口是输入框，这些只是可选的起点）：处理已有视频或音频的几件常见事。
-     点一下只把一句提示词放进输入框，不展开表单、不发送；素材照常从输入框的「+」或拖放加。条目与提示词在 BC_NEW.homeStarters。
-     它们比模板常用，所以排在模板前面、做成和模板卡同宽的带色卡片：上面一幅按色系画的小插画，下面是名字。
-     标题行尾的「新建空白视频」不是提示词：不经过 Agent，直接建一部空白视频进编辑器。 */
-  /* 插画里的小色块（<i>）各几块：画法在 new-project.css 的 .home-quick__screen--<k>。 */
-  const STARTER_ART = {sub: 2, trans: 4, clean: 9, a2v: 7};
+  /* 快捷开始：只填入可编辑的提示词，不直接发送；新建空白视频直接进入编辑器。 */
   function HomeStarters({items, onPick, onBlank}) {
+    const N = window.BC_NEW;
+    const R = window.RSP;
     return <section className="home-quick" aria-label="快捷开始">
       <div className="home-shelf__hd">
         <h2 className="home-shelf__title">快捷开始</h2>
@@ -26,12 +22,10 @@
         </R.TooltipTrigger>
       </div>
       <div className="home-quick__grid">
-        {items.map(x => <button key={x.k} type="button" className={`home-quick__card home-quick__card--${x.hue}`} title={x.tip} aria-label={x.title} onClick={() => onPick(x)}>
-          <span className="home-quick__art" aria-hidden="true">
-            <span className={`home-quick__screen home-quick__screen--${x.k}`}>{Array.from({length: STARTER_ART[x.k] || 0}, (_, i) => <i key={i} />)}</span>
-          </span>
-          <span className="home-quick__name">{x.title}</span>
-        </button>)}
+        {items.map(x => <R.ActionButton key={x.k} isQuiet size="M" UNSAFE_className={`home-quick__card home-quick__card--${x.hue}`} title={x.tip} aria-label={x.title} onPress={() => onPick(x)}>
+          <span className="home-quick__art" aria-hidden="true"><Ic n={x.icon} className="ic--20" /></span>
+          <span className="home-quick__copy"><span className="home-quick__name">{x.title}</span><span className="home-quick__desc">{N.goal(x.goal).desc}</span></span>
+        </R.ActionButton>)}
       </div>
     </section>;
   }

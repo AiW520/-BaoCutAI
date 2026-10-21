@@ -215,7 +215,7 @@
     const sel = route.r === 'agent' ? IA.hrefFor(route) : null;
     return (
       <div className="hside hside--home" style={{width: sidebar.width || sidebar.last}}>
-        <h2 className="app-section-title">BaoCut</h2>
+        <h2 className="app-section-title">项目与会话</h2>
         <div className="hside__top">
           <R.ActionButton isQuiet size="M" UNSAFE_className="hside__new"
             onPress={() => app.go({r: 'home'})}>

@@ -231,7 +231,9 @@
           {/* 旧版项目导入在跑 / 留了没导入的（legacy-import-task.jsx，只在 App） */}
           {window.LegacyImportBanner ? <window.LegacyImportBanner /> : null}
           <div className="newp__hd newp__hd--hero">
-            <div className="greet">想做个什么视频？</div>
+            <div className="home-create__eyebrow">你的创作工作台</div>
+            <h1 className="greet">把灵感，变成下一部作品。</h1>
+            <p className="home-create__intro">描述你的想法，拖入素材，或继续上次的创作。</p>
           </div>
           <window.NewAgentHero text={text} onText={setText} files={files} onFiles={setFiles} media={media} mediaAttachment={mediaAttachment} onMedia={setMedia}
             recent={recent} onRecent={pickRecent} skill={skill} onSkill={setSkillId}
@@ -239,6 +241,7 @@
             sel={sel} onSel={setSelPatch} ready={agentReady} can={aCan} busy={busy} onSubmit={startAgent} />
           <window.NewGateCard guide={N.gateGuide(route.goal, aGate)} avail={app.agentAvail} />
           <window.HomeStarters items={N.homeStarters({targetName: seed.targetName})} onPick={applyStarter} onBlank={() => createBlank()} />
+          <window.RecentProjects />
           <window.HomeTemplateShelf scene={scene} onScene={pickScene} onExample={applyExample} shelf={tplMem && tplMem.recent} downloaded={T.downloaded(tplMem)} />
         </div>
       </Page>

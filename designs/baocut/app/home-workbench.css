@@ -1,0 +1,68 @@
+/* Home workbench: a clear entry point, compact task starts and a real continuation list. */
+.bc-rsp-root { --apprail-size: 80px; }
+.apprail { background: var(--gray-50); padding: 12px 0; }
+.apprail__btn { height: 56px; }
+.apprail__btn::before { left: 5px; width: 3px; height: 24px; background: var(--blue-800); }
+.apprail__ic { width: 68px; height: 48px; flex-direction: column; gap: 2px; border-radius: 10px; color: var(--gray-700); }
+.apprail__ic [data-rsp-slot="text"] { display: block; max-width: 100%; overflow: hidden; color: inherit; font-size: 11px; font-weight: 500; line-height: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.apprail__ic > svg { flex: none; }
+.apprail__btn:hover .apprail__ic { background: var(--gray-100); }
+.apprail__btn:active .apprail__ic { transform: scale(0.96); }
+.apprail__btn.is-on { color: var(--blue-1000); }
+.apprail__btn.is-on .apprail__ic { background: var(--blue-100); box-shadow: inset 0 0 0 1px var(--blue-200); }
+.apprail__btn::before { transition: opacity var(--ease); }
+.apprail__divider { margin-block: var(--spacing-200); }
+.apprail__badge { right: 10px; }
+.apprail__badge--dot { right: 20px; }
+.apprail__upd { height: 56px; }
+.apprail__upd > .tipw { height: 48px; }
+.apprail__upd .apprail__ic { width: 48px; }
+.apprail__upd .tip--top { left: 50%; transform: translateX(-50%); }
+
+.page__in:has(> .home-create) { max-width: 1200px; padding: 32px clamp(20px, 4vw, 56px) 48px; }
+.home-create { box-sizing: border-box; width: 100%; max-width: 1120px; margin: 0 auto; padding: 0; container: hwb / inline-size; display: flex; flex-direction: column; gap: 24px; }
+.home-create .newp__hd--hero { padding-bottom: 0; text-align: start; }
+.home-create .greet { max-width: none; margin: 0; font-size: 32px; font-weight: 800; }
+.home-create__eyebrow { margin-bottom: 8px; color: var(--blue-1000); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; }
+.home-create__intro { margin: 8px 0 0; color: var(--gray-600); font-size: 16px; line-height: 1.5; }
+.home-create .nhero { grid-area: hero; margin: 0; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.home-create > .ngate { grid-area: gate; margin: 0; }
+.home-create > .home-quick { width: 100%; margin: 0; padding: 20px 0 0; border-top: 2px solid var(--gray-100); background: transparent; box-shadow: none; }
+.home-create > .hwb-recent { width: 100%; padding: 20px 0 0; border-top: 2px solid var(--gray-100); }
+.home-create > .home-shelf { width: 100%; margin: 0; padding-top: 4px; }
+.home-create .home-quick__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.home-create .home-quick__card { box-sizing: border-box; min-height: 88px; flex-direction: row; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--gray-100); border-radius: 10px; background: var(--gray-50); }
+.home-create .home-quick__card:hover { background: var(--gray-75); }
+.home-create .home-quick__art { display: flex; flex: none; align-items: center; justify-content: center; width: 40px; height: 40px; aspect-ratio: auto; border-radius: 10px; background: var(--gray-100); color: var(--gray-800); }
+.home-create .home-quick__art > .ic { width: 16px; height: 16px; }
+.home-create .home-quick__copy { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.home-create .home-quick__name { min-width: 0; padding: 0; font-size: 14px; font-weight: 600; }
+.home-create .home-quick__desc { display: -webkit-box; overflow: hidden; color: var(--gray-600); font-size: 12px; line-height: 18px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.hwb-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.hwb-section-head h2 { margin: 0; color: var(--gray-900); font-size: 18px; font-weight: 700; line-height: 24px; }
+.hwb-section-head p { margin: 4px 0 0; color: var(--gray-600); font-size: 12px; line-height: 18px; }
+.hwb-projects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hwb-project { display: flex; min-width: 0; min-height: 144px; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--gray-100); border-radius: 10px; background: var(--gray-50); }
+.hwb-project__mark { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 10px; background: var(--blue-100); color: var(--blue-1000); }
+.hwb-project__mark--1 { background: var(--purple-200); color: var(--purple-1000); }
+.hwb-project__mark--2 { background: var(--seafoam-200); color: var(--seafoam-1000); }
+.hwb-project__mark svg { width: 16px; height: 16px; }
+.hwb-project__body { display: flex; min-width: 0; flex: 1; align-self: stretch; flex-direction: column; gap: 4px; }
+.hwb-project__body h3 { overflow: hidden; margin: 0; color: var(--gray-900); font-size: 16px; font-weight: 700; line-height: 22px; text-overflow: ellipsis; white-space: nowrap; }
+.hwb-project__meta, .hwb-project__movie, .hwb-project__status { display: flex; min-width: 0; align-items: center; gap: 6px; overflow: hidden; margin: 0; color: var(--gray-600); font-size: 12px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.hwb-project__movie svg { width: 16px; height: 16px; flex: none; }
+.hwb-project > button { align-self: stretch; justify-content: space-between; color: var(--gray-800); }
+.hwb-project > button svg { width: 16px; height: 16px; }
+.hwb-empty { display: flex; min-height: 112px; flex-direction: column; align-items: flex-start; justify-content: center; padding: 16px; border-radius: 10px; background: var(--gray-50); color: var(--gray-600); }
+.hwb-empty > svg { width: 20px; height: 20px; color: var(--gray-700); }
+.hwb-empty p { margin: 8px 0 4px; font-size: 14px; }
+@container hwb (max-width: 980px) {
+  .hwb-projects { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-create .home-quick__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container hwb (max-width: 680px) {
+  .home-create { padding: 24px 16px 32px; gap: 20px; }
+  .home-create .greet { font-size: 28px; }
+  .hwb-projects, .home-create .home-quick__grid { grid-template-columns: minmax(0, 1fr); }
+  .hwb-project { min-height: 112px; }
+}
