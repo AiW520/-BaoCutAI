@@ -6,7 +6,9 @@ const root = path.resolve(__dirname, '..');
 
 test('Vite serves all prototype entries and legacy assets without rewriting classic scripts', async () => {
   const {createServer} = await import('vite');
-  const server = await createServer({configFile: path.join(root, 'vite.config.mjs'), logLevel: 'silent', server: {port: 0}});
+  // Vite resolves port 0 to its default. Permit a free alternate port without
+  // requiring another project's development server to stop.
+  const server = await createServer({configFile: path.join(root, 'vite.config.mjs'), logLevel: 'silent', server: {port: 4339, strictPort: false}});
   try {
     await server.listen();
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;

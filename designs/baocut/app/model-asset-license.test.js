@@ -20,7 +20,7 @@ test('所有分发的原型素材有许可、固定出处和相符的字节摘�
     assert.equal(bytes.length, item.bytes, item.file);
     assert.ok(['MIT', 'CC0-1.0', 'CC-BY-4.0'].includes(item.license), item.file);
     assert.ok(item.sources.length && item.author && item.url.startsWith('https://'), item.file);
-    assert.equal(!!item.animated, item.file.startsWith('anim/'));
+    assert.equal(!!item.animated, item.file.split(path.sep).join('/').startsWith('anim/'));
     assert.equal(item.motion, null);
     if (item.animated) {
       assert.equal(item.license, 'CC-BY-4.0');
