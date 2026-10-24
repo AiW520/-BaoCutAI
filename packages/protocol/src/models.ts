@@ -906,6 +906,8 @@ export interface ProviderRefreshStatus {
   ok: boolean;
   /** 取到的模型个数；失败时没有。 */
   models?: number;
+  /** IDs actually returned by the provider. Discovery does not verify model capabilities. */
+  modelIds?: string[];
   /** 取到的音色个数（有音色列表的供应商）；失败时没有。 */
   voices?: number;
   error?: string;

@@ -607,7 +607,7 @@ describe('OnlineProviderSource 的文本能力与刷新', () => {
       await source.configure({ providerId: 'openai', enabled: true, credential: OPENAI_KEY });
       await source.configure({ providerId: 'elevenlabs', enabled: true, credential: ELEVENLABS_KEY });
       const status = await source.refresh('openai');
-      expect(status).toMatchObject({ ok: true, models: 2 });
+      expect(status).toMatchObject({ ok: true, models: 2, modelIds: ['gpt-6.1-sol', 'gpt-image-2'] });
       expect(Date.parse(status.at)).not.toBeNaN();
       const openai = (await source.describe('openai', 'view'))!;
       expect(openai.config!.refreshed).toEqual(status);
@@ -641,6 +641,7 @@ describe('OnlineProviderSource 的文本能力与刷新', () => {
       await source.configure({ providerId: 'openai', enabled: true, credential: OPENAI_KEY });
       const status = await source.refresh('openai');
       expect(status.ok).toBe(false);
+      expect(status.modelIds).toBeUndefined();
       expect(status.error).toBeTruthy();
       expect(status.error).not.toContain(OPENAI_KEY);
       const view = (await source.describe('openai', 'view'))!;
@@ -661,7 +662,9 @@ describe('OnlineProviderSource 的文本能力与刷新', () => {
       let models = (await source.describe('openai', 'view'))!.capabilities.generateText!.models;
       expect(models.filter((m) => m.available === false)).toHaveLength(2);
       fail = true;
-      expect(await source.refresh('openai')).toMatchObject({ ok: false });
+      const failed = await source.refresh('openai');
+      expect(failed).toMatchObject({ ok: false });
+      expect(failed.modelIds).toBeUndefined();
       models = (await source.describe('openai', 'view'))!.capabilities.generateText!.models;
       expect(models.every((m) => m.available !== false)).toBe(true);
     });
