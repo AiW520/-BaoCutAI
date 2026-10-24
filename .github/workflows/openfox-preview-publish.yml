@@ -1,0 +1,43 @@
+name: Publish validated OpenFox preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful desktop-windows run built from its workflow commit
+        required: true
+        type: string
+      tag:
+        description: New openfox-vX.Y.Z-preview.N tag
+        required: true
+        type: string
+      notes:
+        description: Release notes
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: openfox-preview-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - name: Verify artifacts and publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PREVIEW_RUN_ID: ${{ inputs.run_id }}
+          PREVIEW_TAG: ${{ inputs.tag }}
+          PREVIEW_NOTES: ${{ inputs.notes }}
+        run: python3 tools/openfox-brand/publish-preview.py
