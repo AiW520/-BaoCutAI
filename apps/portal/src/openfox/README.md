@@ -12,7 +12,7 @@ directly from disk, using relative asset paths. The standalone site is separate
 from the upstream Cloudflare portal and does not consume upstream release feeds.
 
 The Windows card links directly to the validated installer and portable ZIP in
-this fork's `openfox-v3.8.0-preview.2` prerelease. It identifies version 3.8.0 Preview 2 as an
+this fork's `openfox-v3.8.0-preview.3` prerelease. It identifies version 3.8.0 Preview 3 as an
 unsigned x64 CPU test build. The macOS card remains unavailable. When updating
 downloads, verify the release assets and checksums before changing the page.
 Never advertise an upstream BaoCut binary as an OpenFox download.
@@ -26,3 +26,9 @@ configured.
 The supplied poster determines the palette and fox imagery. To regenerate icons,
 install Pillow and run `python tools/openfox-brand/render.py` from the repository
 root. The original poster lives next to that script as `source.png`.
+
+Preview publishing uses `.github/workflows/openfox-preview-publish.yml`. It accepts
+a successful `desktop-windows` run built from its workflow commit and a new preview
+tag. It checks the source, CPU installation checks, package sizes and SHA-256 before
+publishing, without routing large binaries through a local workstation. Existing
+releases are never overwritten. Update this page only after publishing succeeds.
