@@ -11,11 +11,11 @@ Open http://127.0.0.1:8788. Stop with Ctrl+C. The built `index.html` also opens
 directly from disk, using relative asset paths. The standalone site is separate
 from the upstream Cloudflare portal and does not consume upstream release feeds.
 
-The page intentionally says packages are pending and links to this fork's
-Releases and Windows workflow. A workflow artifact is a test candidate, not a
-published release. Update download status and URLs only after validating and
-publishing an OpenFox package. Never advertise an upstream BaoCut binary as an
-OpenFox download.
+The Windows card links directly to the validated installer and portable ZIP in
+this fork's `openfox-v3.8.0-preview.1` prerelease. It identifies version 3.8.0 as an
+unsigned x64 CPU test build. The macOS card remains unavailable. When updating
+downloads, verify the release assets and checksums before changing the page.
+Never advertise an upstream BaoCut binary as an OpenFox download.
 
 The static page is deployed to https://aiw520.github.io/-BaoCutAI/ by
 `.github/workflows/openfox-pages.yml`. Changes to this directory on `main`

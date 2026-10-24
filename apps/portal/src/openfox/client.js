@@ -1,5 +1,5 @@
 // Progressive enhancement only. Release availability is intentionally explicit;
-// a successful CI candidate is not a published release or an automatic update.
+// download links point to validated prerelease assets, not an automatic update.
 document.querySelectorAll('a[href^="#"]').forEach((link) => {
   link.addEventListener('click', () => {
     const id = link.getAttribute('href')?.slice(1);
