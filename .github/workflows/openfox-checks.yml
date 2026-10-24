@@ -21,7 +21,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - name: Check installer identity and localized web copy
-        run: npx vitest run apps/desktop/src/main/app-update-rules.test.ts apps/desktop/src/main/app-update-install.test.ts apps/web/src/web-host-copy.test.ts
+        run: npx vitest run apps/desktop/src/main/app-update-rules.test.ts apps/desktop/src/main/app-update-install.test.ts apps/web/src/web-host-copy.test.ts tools/third-party-notices.test.ts packages/ui/src/model/model-check.test.ts packages/ui/src/model/models-install.test.ts packages/ui/src/model/semantic-folders.test.ts packages/ui/src/model/services.test.ts packages/ui/src/components/models/models-copy.test.ts packages/ui/src/components/settings/agent-setup.test.ts
       - name: Build local download page
         run: npm run build:download
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f

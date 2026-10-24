@@ -145,7 +145,7 @@ describe('行尾的快捷按钮', () => {
 });
 
 describe('端口', () => {
-  it('只收 1024–65535 的整数；和别的 BaoCut 服务撞口时说是谁', () => {
+  it('只收 1024–65535 的整数；和别的 开胡-OpenFox 服务撞口时说是谁', () => {
     expect(parsePort(' 8080 ', 'web', {})).toEqual({ port: 8080 });
     expect(parsePort('80', 'web', {}).error).toBe('端口要填 1024–65535 之间的数字');
     expect(parsePort('70000', 'web', {}).error).toBe('端口要填 1024–65535 之间的数字');
@@ -169,7 +169,7 @@ describe('端口', () => {
 
 describe('操作失败的说法', () => {
   it('没有提供与没开着说人话，其余照 Runtime 的消息', () => {
-    expect(serviceErrorMessage(new RpcError('conflict', 'x', { code: 'SERVICE_NOT_AVAILABLE' }))).toBe('这个版本的 Tuzi Runtime 还没有提供这项服务');
+    expect(serviceErrorMessage(new RpcError('conflict', 'x', { code: 'SERVICE_NOT_AVAILABLE' }))).toBe('这个版本的 开胡-OpenFox Runtime 还没有提供这项服务');
     expect(serviceErrorMessage(new RpcError('conflict', 'x', { code: 'SERVICE_NOT_RUNNING' }))).toBe('服务没有开着，先启动它');
     expect(serviceErrorMessage(new RpcError('invalid-request', '端口不对'))).toBe('端口不对');
     expect(serviceErrorMessage('坏了')).toBe('坏了');
@@ -199,7 +199,7 @@ describe('浏览器会话', () => {
   });
 });
 
-describe('BaoCut Runtime', () => {
+describe('开胡-OpenFox Runtime', () => {
   it('只有协议不兼容才算出错', () => {
     expect(runtimeTone('connected')).toBe('on');
     expect(runtimeTone('disconnected')).toBe('off');

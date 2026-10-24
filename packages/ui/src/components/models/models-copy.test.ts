@@ -35,7 +35,7 @@ describe('模型页文案随界面语言切换', () => {
     setLocale('zh-Hans');
     expect(MODELS_PAGE_COPY.title).toBe('模型');
     expect(KIND_ITEMS[0]!.label).toBe('语音识别 · ASR');
-    expect(MY_VOICES_COPY.exportFailedExists('x')).toBe('没能导出：x。BaoCut 不覆盖已有的文件：换个名字或位置再导出。');
+    expect(MY_VOICES_COPY.exportFailedExists('x')).toBe('没能导出：x。开胡-OpenFox 不覆盖已有的文件：换个名字或位置再导出。');
     expect(TTS_LOCAL_COPY.handoffFrom('Qwen3-TTS')).toBe('从「Qwen3-TTS」的试听过来 · 录一段或从视频里取，存好后带你回去');
     expect(quoted('你好')).toBe('「你好」');
   });

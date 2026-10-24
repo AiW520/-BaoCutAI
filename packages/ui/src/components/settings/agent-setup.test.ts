@@ -147,11 +147,11 @@ describe('问题条与排查', () => {
       cta: '运行排查',
     });
     const outdated = agentProblem(driver({ state: 'outdated', version: '0.100.0' }));
-    expect(outdated).toMatchObject({ action: 'upgrade', title: 'Codex CLI 0.100.0 太旧，BaoCut 无法驱动' });
+    expect(outdated).toMatchObject({ action: 'upgrade', title: 'Codex CLI 0.100.0 太旧，开胡-OpenFox 无法驱动' });
     expect(outdated?.body).toContain('至少需要 0.120.0');
     const signedOut = agentProblem(driver({ state: 'signed-out' }));
     expect(signedOut).toMatchObject({ action: 'login', cta: '打开终端登录', tone: 'notice' });
-    expect(signedOut?.body).toBe('登录在 Codex CLI 自己的窗口里完成，BaoCut 不经手你的账号和密码。登录后回到这里检查。');
+    expect(signedOut?.body).toBe('登录在 Codex CLI 自己的窗口里完成，开胡-OpenFox 不经手你的账号和密码。登录后回到这里检查。');
     expect(outdated?.cta).toBe('升级到 0.120.0');
     expect(agentProblem(driver({ state: 'outdated', version: '0.100.0', latestVersion: '0.131.0' }))?.cta).toBe('升级到 0.131.0');
   });
@@ -177,7 +177,7 @@ describe('问题条与排查', () => {
   it('排查只看第一条红的，后面的标「上一步通过后再检查」', () => {
     const steps = diagnose(driver({ state: 'outdated', version: '0.100.0' }));
     expect(steps.map((s) => s.state)).toEqual(['ok', 'ok', 'fail', 'skip', 'skip']);
-    expect(diagnosisVerdict(steps)).toEqual({ ok: false, text: '卡在「BaoCut 支持这个版本」：当前 0.100.0，最低要求 0.120.0' });
+    expect(diagnosisVerdict(steps)).toEqual({ ok: false, text: '卡在「开胡-OpenFox 支持这个版本」：当前 0.100.0，最低要求 0.120.0' });
     const missing = diagnose(driver({ state: 'not-installed', version: null, executable: null }));
     expect(missing.map((s) => s.state)).toEqual(['fail', 'skip', 'skip', 'skip', 'skip']);
     expect(missing[0]?.detail).toBe('在常见安装位置和 PATH 里都没找到 codex');
@@ -318,7 +318,7 @@ describe('默认模型与强度', () => {
     expect(selectedModelKey(driver({ defaultModel: 'a' }))).toBe('a');
   });
 
-  it('BaoCut 写的模型说明带引用：按界面的语言重新生成，不用 Runtime 写下时的语言', () => {
+  it('开胡-OpenFox 写的模型说明带引用：按界面的语言重新生成，不用 Runtime 写下时的语言', () => {
     const descriptionRef = { key: 'driversClaude.fromSettings', params: { key: 'ANTHROPIC_MODEL' } };
     const models = [model('gw', { description: 'From Claude Code settings (env.ANTHROPIC_MODEL)', descriptionRef })];
     expect(modelChoices(driver({ models }))[1]?.description).toBe('来自 Claude Code 设置（env.ANTHROPIC_MODEL）');

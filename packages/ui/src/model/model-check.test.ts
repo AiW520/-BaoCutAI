@@ -180,7 +180,7 @@ describe('没通过', () => {
         code !== 'APP_FILE_MISSING' && code !== 'MODEL_OUT_OF_MEMORY' && code !== 'MODEL_WORKER_FAILED',
       );
     }
-    expect(checkLineView(failedState('APP_FILE_MISSING'), ALL, NOW)!.todo).toMatch(/重新安装 BaoCut/);
+    expect(checkLineView(failedState('APP_FILE_MISSING'), ALL, NOW)!.todo).toMatch(/重新安装 开胡-OpenFox/);
     expect(checkLineView(failedState('MODEL_FILES_DAMAGED'), ALL, NOW)!.actions[0]).toMatchObject({
       k: 'repair',
       label: '修复…',
@@ -250,7 +250,7 @@ describe('检查没能开始', () => {
     const state = checkState({ bundle: tts(), jobs: [], subject: 'synthesize', rejection: offline });
     const view = checkLineView(state, ALL, NOW)!;
     expect(view.head).toBe('检查没能开始：');
-    expect(view.text).toBe('BaoCut 的后台服务没有响应。');
+    expect(view.text).toBe('开胡-OpenFox 的后台服务没有响应。');
     expect(view.actions.map((a) => a.k)).toEqual(['recheck', 'details']);
     expect(tryNotice(state, ALL)).toBeNull();
   });
@@ -263,7 +263,7 @@ describe('检查没能开始', () => {
 
     const odd = rejectionOf(new RpcError('conflict', 'nope', { code: 'BRAND_NEW' }), ago(0));
     expect(checkLineView(checkState({ bundle: tts(), jobs: [], subject: 'synthesize', rejection: odd }), ALL, NOW)!.text).toBe(
-      'BaoCut 没有接受这次检查。',
+      '开胡-OpenFox 没有接受这次检查。',
     );
     expect(rejectionOf(new RpcError('invalid-request', 'bad')).code).toBeNull();
   });
@@ -276,7 +276,7 @@ describe('检查没能开始', () => {
     const state = checkState({ bundle: bundle(ASR), jobs: [], subject: 'transcribe', rejection: r });
     const view = checkLineView(state, ALL, NOW)!;
     expect(view.head).toBe('检查没通过：');
-    expect(view.todo).toMatch(/重新安装 BaoCut/);
+    expect(view.todo).toMatch(/重新安装 开胡-OpenFox/);
     expect(checkDetailLines(state, ASR, NOW).join('\n')).not.toMatch(/Applications/);
   });
 
@@ -387,7 +387,7 @@ describe('试用面板', () => {
     expect(err.text).toMatch(/没合成出来/);
     expect(err.actions[0]).toMatchObject({ k: 'check', label: '检查模型', primary: true });
     expect(tryFailureView({ kind: 'modelError', canCheck: false }).actions).toEqual([{ k: 'retry', label: '重试', primary: true }]);
-    expect(tryFailureView({ kind: 'appFileMissing', canCheck: true }).todo).toMatch(/重新安装 BaoCut/);
+    expect(tryFailureView({ kind: 'appFileMissing', canCheck: true }).todo).toMatch(/重新安装 开胡-OpenFox/);
     expect(tryFailureView({ kind: 'other', message: '超时', canCheck: true }).text).toBe('没合成出来：超时。');
     expect(tryFailureView({ kind: 'other', message: '超时', notStarted: true, canCheck: true })).toMatchObject({
       text: '没能开始合成：超时',

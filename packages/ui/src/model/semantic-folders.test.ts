@@ -24,14 +24,14 @@ describe('设置里的索引文件夹', () => {
     });
   });
 
-  it('画面没开时：有 BaoCut 视频的按文字建，没有的写画面没开', () => {
-    expect(folderRowView(folder({}, { videos: 1, videoFiles: 3 }), false).line).toBe('文字按里面的 BaoCut 视频建');
+  it('画面没开时：有 开胡-OpenFox 视频的按文字建，没有的写画面没开', () => {
+    expect(folderRowView(folder({}, { videos: 1, videoFiles: 3 }), false).line).toBe('文字按里面的 开胡-OpenFox 视频建');
     expect(folderRowView(folder({}, { videoFiles: 3 }), false).line).toBe('画面索引没开，视频素材与图片还没建');
   });
 
   it('只扫了前面的、读不了、旧版视频各写一句；文件夹不在时写找不到并说明索引留着', () => {
     const big = folderRowView(folder({ issue: { kind: 'truncated', limit: 2000 } }, { videos: 1, duplicates: 1, legacy: 2 }), true);
-    expect(big.what).toBe('1 部 BaoCut 视频 · 1 部已在项目里 · 2 部旧版视频不读');
+    expect(big.what).toBe('1 部 开胡-OpenFox 视频 · 1 部已在项目里 · 2 部旧版视频不读');
     expect(big.notes).toHaveLength(2);
     expect(big.notes[0]).toContain('2000');
     expect(folderRowView(folder({ issue: { kind: 'unreadable', limit: null } }), true).notes).toEqual(['读不了这个文件夹，检查一下权限。']);

@@ -176,7 +176,7 @@ describe('存放位置', () => {
     const view = installFolderView(plan({ dir: dir({ path: SSD }) }));
     expect(view).toMatchObject({ path: SSD, chip: null, canChange: true, picked: true, note: '只用于这次下载，模型目录不变。' });
     const withTools = installFolderView(plan({ dir: dir({ path: SSD }), components: [...plan().components, release] }));
-    expect(withTools!.note).toBe('只用于这次下载，模型目录不变。工具与运行库装在 BaoCut 的工具目录，不放在这里。');
+    expect(withTools!.note).toBe('只用于这次下载，模型目录不变。工具与运行库装在 开胡-OpenFox 的工具目录，不放在这里。');
   });
 
   it('环境变量锁定、接着暂停的下载：不能更改，并说明原因', () => {

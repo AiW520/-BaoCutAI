@@ -47,6 +47,7 @@ describe('license and third-party notice distribution', () => {
       writeFileSync(resolve(directory, 'index.html'), '<html><body></body></html>');
       writeFileSync(resolve(directory, 'THIRD_PARTY_NOTICES.md'), '# Notices');
       writeFileSync(resolve(directory, 'LICENSE'), readFileSync(resolve(root, 'LICENSE')));
+      writeFileSync(resolve(directory, 'OPENFOX_NOTICES.md'), readFileSync(resolve(root, 'OPENFOX_NOTICES.md')));
       await expect(build({
         configFile: false, root: directory, logLevel: 'silent', plugins: [thirdPartyNotices(directory)],
       })).rejects.toThrow('speech-swift.txt');
@@ -68,7 +69,7 @@ describe('license and third-party notice distribution', () => {
   });
 
   it('retains attribution and modification notices in every listed implementation file', () => {
-    const notices = readFileSync(resolve(root, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+    const notices = readFileSync(resolve(root, 'THIRD_PARTY_NOTICES.md'), 'utf8').replaceAll('\r\n', '\n');
     const section = notices.split('## speech-swift\n')[1]?.split('\n## ')[0];
     expect(section).toBeDefined();
     for (const row of section!.split('\n').filter(line => line.startsWith('| `'))) {
