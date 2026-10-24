@@ -5,7 +5,7 @@
 /* Keep the neutral row highlight consistent with the chat navigation. */
 .setpage__nav [data-settings-row] { margin-top: var(--spacing-50); border-radius: 8px; }
 .setpage__nav [data-settings-row][data-hovered] { background: var(--gray-75); }
-.setpage__nav [data-settings-row][data-current] { background: var(--gray-100); }
+.setpage__nav [data-settings-row][data-current] { background: var(--blue-100); }
 .setpage__main { flex: 1 1 auto; min-width: 0; overflow-y: auto; container: settings / inline-size; }
 .setpage__in { width: 100%; max-width: 960px; margin-inline: auto; padding: 32px; }
 .setpage__title { margin: 0 0 var(--spacing-700); font-size: 22px; font-weight: 700; color: var(--gray-900); }

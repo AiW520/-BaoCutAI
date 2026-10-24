@@ -10,14 +10,14 @@ import { TemplateLibrary } from './template-library.tsx';
 
 const section = style({ marginTop: 32 });
 // 标题行与网格也给起始页的「快捷开始」那一节用（home-starters.tsx），两节的标题与卡片列对齐。
-export const shelfHead = style({ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24, marginBottom: '[6px]' });
+export const shelfHead = style({ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24, marginBottom: 12 });
 export const shelfHeading = style({ margin: 0, flexGrow: 1, font: 'ui', fontWeight: 'bold', color: 'gray-900' });
 // 卡片自带 6px 内边距：网格向两侧各探出 6px，封面的边才和输入框对齐。
 export const shelfGrid = style({
   display: 'grid',
   gridTemplateColumns: { default: '[repeat(4, minmax(0, 1fr))]', isNarrow: '[repeat(2, minmax(0, 1fr))]' },
-  rowGap: 12,
-  columnGap: 4,
+  rowGap: 16,
+  columnGap: 8,
   marginX: '[-6px]',
 });
 // 卡片的底、标题与小字同「全部模板」里的卡片（template-library.tsx）；挂上的场景模板换成蓝底，封面上再标「已选」。

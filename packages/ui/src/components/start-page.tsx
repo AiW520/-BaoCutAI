@@ -63,7 +63,7 @@ const column = style({
   maxWidth: '[1120px]',
   marginX: 'auto',
   paddingX: { default: 48, isNarrow: 24 },
-  paddingTop: 32,
+  paddingTop: 40,
   paddingBottom: 48,
   boxSizing: 'border-box',
 });
@@ -71,13 +71,13 @@ const title = style({
   margin: 0,
   marginBottom: 8,
   fontSize: { default: '[32px]', isNarrow: '[28px]' },
-  fontWeight: 'bold',
+  fontWeight: 'medium',
   lineHeight: '[1.3]',
   color: 'gray-900',
   textAlign: 'start',
 });
 const eyebrow = style({ margin: 0, marginBottom: 8, font: 'ui-sm', fontWeight: 'bold', color: 'blue-1000', letterSpacing: '[0.04em]' });
-const intro = style({ margin: 0, marginBottom: 24, font: 'body', color: 'gray-600' });
+const intro = style({ margin: 0, marginBottom: 32, font: 'body', color: 'gray-600' });
 
 /** 「PDF 或文档」能选的文件（原型 `MaterialPlus` 的 accept）。 */
 

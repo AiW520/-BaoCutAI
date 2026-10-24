@@ -53,10 +53,10 @@
    这里只管网格、选中态与焦点环。列数跟着这一节自己的宽度走（.home-shelf 是容器），窄了降为三列、两列；
    「全部模板」弹窗渲染在这一节外面，不受容器的包含块影响。 */
 .home-shelf { margin-top: 32px; container: home-shelf / inline-size; }
-.home-shelf__hd { display: flex; align-items: center; gap: 8px; min-height: 24px; margin-bottom: 6px; }
+.home-shelf__hd { display: flex; align-items: center; gap: 8px; min-height: 24px; margin-bottom: 12px; }
 .home-shelf__title { margin: 0; font-size: 14px; font-weight: 700; color: var(--gray-900); }
 /* 卡片自带 6px 内边距：网格向两侧各探出 6px，封面的边才和输入框对齐。 */
-.home-shelf__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 4px; margin: 0 -6px; }
+.home-shelf__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 8px; margin: 0 -6px; }
 .home-shelf__grid .home-shelf__card:focus-visible { outline-offset: 2px; }
 .home-shelf__card.is-on { background: var(--blue-100); }
 .home-shelf__card.is-on .home-tpl-thumb { outline: 2px solid var(--blue-800); outline-offset: -2px; }

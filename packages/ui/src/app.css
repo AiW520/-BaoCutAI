@@ -670,3 +670,8 @@ svg[role='img'][viewBox='0 0 20 20']:not(
   transform: scale(0.2916667);
   transform-origin: top left;
 }
+
+/* Keep the start prompt quiet at rest; Spectrum retains focus and drop feedback. */
+[data-composer-start] > div > [role='group'][data-state='idle']:not([data-focus-within]):not([data-drop-target]) > [data-variant='subtle'] {
+  box-shadow: var(--bc-composer-shadow);
+}

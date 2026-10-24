@@ -34,7 +34,7 @@ const aside = style({
   borderStyle: 'solid',
   borderColor: 'gray-100',
   '--bc-row-hover': { type: 'backgroundColor', value: 'gray-75' },
-  '--bc-row-current': { type: 'backgroundColor', value: 'gray-100' },
+  '--bc-row-current': { type: 'backgroundColor', value: 'blue-100' },
 });
 const title = style({ flexShrink: 0, marginX: 8, marginTop: 0, marginBottom: 16, fontSize: '[18px]', fontWeight: 'bold', lineHeight: '[24px]', color: 'gray-900' });
 /** 侧栏里可滚动的那一段（SideNav）。 */

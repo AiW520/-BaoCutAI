@@ -11,12 +11,12 @@ import { useSpace } from '../../state/space-store.ts';
 import { S } from '../shell-copy.ts';
 import { W } from './home-workbench-copy.ts';
 
-const section = style({ marginTop: 24, paddingTop: 24, borderTopWidth: 2, borderTopStyle: 'solid', borderTopColor: 'gray-100' });
+const section = style({ marginTop: 32, paddingTop: 24, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: 'gray-100' });
 const head = style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 });
 const heading = style({ margin: 0, fontSize: '[18px]', lineHeight: '[24px]', fontWeight: 'bold', color: 'gray-900' });
 const note = style({ margin: 0, marginTop: 4, font: 'ui-sm', color: 'gray-600' });
-const grid = style({ display: 'grid', gridTemplateColumns: { default: '[repeat(3, minmax(0, 1fr))]', isCompact: '[repeat(2, minmax(0, 1fr))]', isNarrow: '[minmax(0, 1fr)]' }, gap: 12 });
-const card = style({ display: 'flex', flexDirection: 'column', alignItems: 'start', gap: 12, padding: 16, minWidth: 0, borderWidth: 1, borderStyle: 'solid', borderColor: 'gray-100', borderRadius: 'lg', backgroundColor: 'gray-50' });
+const grid = style({ display: 'grid', gridTemplateColumns: { default: '[repeat(3, minmax(0, 1fr))]', isCompact: '[repeat(2, minmax(0, 1fr))]', isNarrow: '[minmax(0, 1fr)]' }, gap: 16 });
+const card = style({ display: 'flex', flexDirection: 'column', alignItems: 'start', gap: 16, padding: 20, minWidth: 0, borderWidth: 1, borderStyle: 'solid', borderColor: 'gray-100', borderRadius: 'lg', backgroundColor: 'gray-25', boxShadow: 'emphasized' });
 const mark = style({ display: 'grid', placeItems: 'center', size: 36, borderRadius: 'lg', backgroundColor: { tone: { blue: 'blue-100', purple: 'purple-200', seafoam: 'seafoam-200' } }, color: 'gray-900' });
 const content = style({ display: 'flex', flexDirection: 'column', gap: 4, alignSelf: 'stretch', flexGrow: 1, minWidth: 0 });
 const projectName = style({ margin: 0, font: 'ui', fontWeight: 'bold', color: 'gray-900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });

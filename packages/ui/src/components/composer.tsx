@@ -126,6 +126,7 @@ import { useDraftBrand } from '../state/draft-brand-store.ts';
 import { loadBrands } from '../runtime/skill-commands.ts';
 
 const wrap = style({
+  '--bc-composer-shadow': { type: 'boxShadow', value: 'emphasized' },
   // PromptTokenField 的提示是输入区自己的 :empty::before，默认继承正文色；app.css 拿这个变量把它降到 gray-500（原型 spectrum.css）。
   '--bc-prompt-placeholder': { type: 'color', value: 'gray-500' },
   flexShrink: 0,

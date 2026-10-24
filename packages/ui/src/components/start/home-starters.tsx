@@ -9,8 +9,8 @@ import { HOME_COPY } from '../../copy.ts';
 import { homeStarters, type HomeStarter } from '../../model/home-starters.ts';
 import { shelfHead, shelfHeading } from './home-template-shelf.tsx';
 
-const section = style({ marginTop: 24, paddingTop: 24, borderTopWidth: 2, borderTopStyle: 'solid', borderTopColor: 'gray-100' });
-const grid = style({ display: 'grid', gridTemplateColumns: { default: '[repeat(4, minmax(0, 1fr))]', isCompact: '[repeat(2, minmax(0, 1fr))]', isNarrow: '[minmax(0, 1fr)]' }, gap: 8 });
+const section = style({ marginTop: 32, paddingTop: 24, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: 'gray-100' });
+const grid = style({ display: 'grid', gridTemplateColumns: { default: '[repeat(4, minmax(0, 1fr))]', isCompact: '[repeat(2, minmax(0, 1fr))]', isNarrow: '[minmax(0, 1fr)]' }, gap: 12 });
 // Compact task cards use neutral surfaces and the existing prompt-only actions.
 const card = style({
   display: 'flex',
@@ -18,8 +18,8 @@ const card = style({
   alignItems: 'start',
   gap: 12,
   width: 'full',
-  padding: 12,
-  minHeight: '[88px]',
+  padding: 16,
+  minHeight: '[104px]',
   boxSizing: 'border-box',
   textAlign: 'start',
   borderStyle: 'solid',
@@ -27,7 +27,9 @@ const card = style({
   borderColor: 'gray-100',
   borderRadius: 'lg',
   cursor: 'pointer',
-  backgroundColor: { default: 'gray-50', ':hover': 'gray-75' },
+  backgroundColor: { default: 'gray-25', ':hover': 'blue-100' },
+  boxShadow: 'emphasized',
+  transition: 'default',
   outlineStyle: { default: 'none', ':focus-visible': 'solid' },
   outlineWidth: 2,
   outlineOffset: 2,
@@ -39,7 +41,7 @@ const name = style({
   fontWeight: 'bold',
   color: 'gray-900',
 });
-const art = style({ display: 'grid', placeItems: 'center', size: 40, flexShrink: 0, borderRadius: 'lg', backgroundColor: 'gray-100', color: 'gray-800' });
+const art = style({ display: 'grid', placeItems: 'center', size: 40, flexShrink: 0, borderRadius: 'lg', backgroundColor: 'blue-100', color: 'blue-1000' });
 const copy = style({ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 4 });
 const description = style({ font: 'ui-sm', color: 'gray-600', lineClamp: 2 });
 const STARTER_ICONS = { sub: Captions, trans: Translate, clean: Microphone, a2v: MusicNote };
