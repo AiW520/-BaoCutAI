@@ -12,7 +12,7 @@ directly from disk, using relative asset paths. The standalone site is separate
 from the upstream Cloudflare portal and does not consume upstream release feeds.
 
 The Windows card links directly to the validated installer and portable ZIP in
-this fork's `openfox-v3.8.0-preview.1` prerelease. It identifies version 3.8.0 as an
+this fork's `openfox-v3.8.0-preview.2` prerelease. It identifies version 3.8.0 Preview 2 as an
 unsigned x64 CPU test build. The macOS card remains unavailable. When updating
 downloads, verify the release assets and checksums before changing the page.
 Never advertise an upstream BaoCut binary as an OpenFox download.
