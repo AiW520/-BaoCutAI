@@ -135,7 +135,7 @@ export function resolveRuntimeLaunch(
   return null;
 }
 
-/** 装好的 BaoCut 应用可能在的位置（Windows 的 NSIS 按用户安装、macOS 的 Applications）。 */
+/** 装好的 OpenFox 应用可能在的位置（Windows 的 NSIS 按用户安装、macOS 的 Applications）。 */
 export function packagedApps(
   env: NodeJS.ProcessEnv,
   platform: NodeJS.Platform,
@@ -147,24 +147,24 @@ export function packagedApps(
   const own = paths.basename(archive) === 'app.asar' && (platform === 'darwin' || platform === 'win32')
     ? [{
         executable: platform === 'darwin'
-          ? paths.resolve(archive, '..', '..', 'MacOS', 'BaoCut')
-          : paths.resolve(archive, '..', '..', 'BaoCut.exe'),
+          ? paths.resolve(archive, '..', '..', 'MacOS', 'OpenFox')
+          : paths.resolve(archive, '..', '..', 'OpenFox.exe'),
         resources: paths.dirname(archive),
       }]
     : [];
   if (platform === 'win32') {
     const roots = [
-      env.LOCALAPPDATA && path.win32.join(env.LOCALAPPDATA, 'Programs', 'BaoCut'),
-      env.ProgramFiles && path.win32.join(env.ProgramFiles, 'BaoCut'),
+      env.LOCALAPPDATA && path.win32.join(env.LOCALAPPDATA, 'Programs', 'openfox'),
+      env.ProgramFiles && path.win32.join(env.ProgramFiles, 'OpenFox'),
     ];
     return [...own, ...roots
       .filter((root): root is string => Boolean(root))
-      .map((root) => ({ executable: path.win32.join(root, 'BaoCut.exe'), resources: path.win32.join(root, 'resources') }))];
+      .map((root) => ({ executable: path.win32.join(root, 'OpenFox.exe'), resources: path.win32.join(root, 'resources') }))];
   }
   if (platform === 'darwin') {
     return [...own, ...['/Applications', path.posix.join(os.homedir().replaceAll('\\', '/'), 'Applications')].map((dir) => ({
-      executable: path.posix.join(dir, 'BaoCut.app', 'Contents', 'MacOS', 'BaoCut'),
-      resources: path.posix.join(dir, 'BaoCut.app', 'Contents', 'Resources'),
+      executable: path.posix.join(dir, 'OpenFox.app', 'Contents', 'MacOS', 'OpenFox'),
+      resources: path.posix.join(dir, 'OpenFox.app', 'Contents', 'Resources'),
     }))];
   }
   return [];

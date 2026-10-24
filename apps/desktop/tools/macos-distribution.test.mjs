@@ -89,8 +89,9 @@ test('local archives verify the extracted bundle and disk image and record check
     return '';
   };
   try {
-    const report = await archiveLocalMac({ app: path.join(output, 'mac/BaoCut.app'), output,
+    const report = await archiveLocalMac({ app: path.join(output, 'mac/OpenFox.app'), output,
       stem: 'BaoCut-3.3.0-x86_64-apple-darwin-local', version: '3.3.0', build: 0, appId: 'com.baocut.app' }, run);
+    assert.equal(report.verifiedApp, path.join(output, 'verified-extraction', 'OpenFox.app'));
     assert.equal(report.local, true);
     assert.equal(report.notarized, false);
     assert.equal(report.signature, 'ad-hoc');

@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { PRODUCT_NAME } from '../src/main/app-update-rules.ts';
 import { fileURLToPath } from 'node:url';
 
-const WINDOWS_LAUNCHER = '@echo off\r\nsetlocal\r\nset ELECTRON_RUN_AS_NODE=1\r\n"%~dp0BaoCut.exe" "%~dp0resources\\app.asar\\out\\main\\cli.js" %*\r\nexit /b %errorlevel%\r\n';
+const WINDOWS_LAUNCHER = `@echo off\r\nsetlocal\r\nset ELECTRON_RUN_AS_NODE=1\r\n"%~dp0${PRODUCT_NAME}.exe" "%~dp0resources\\app.asar\\out\\main\\cli.js" %*\r\nexit /b %errorlevel%\r\n`;
 
 /** Stage launchers as extraFiles: macOS paths are relative to Contents, Windows to the app root. */
 export function stageDesktopCli(directory, platform) {
@@ -15,7 +16,7 @@ export function stageDesktopCli(directory, platform) {
     // Contents/MacOS must contain signable Mach-O code, not a shell script whose
     // signature lives in extended attributes and can disappear during archiving.
     const source = fileURLToPath(new URL('./desktop-cli-mac.c', import.meta.url));
-    execFileSync('xcrun', ['clang', '-arch', process.arch === 'x64' ? 'x86_64' : 'arm64', '-Os', '-Wall', '-Wextra', '-Werror', '-mmacosx-version-min=14.0', source, '-o', file], {stdio: 'pipe'});
+    execFileSync('xcrun', ['clang', '-arch', process.arch === 'x64' ? 'x86_64' : 'arm64', '-Os', `-DDESKTOP_EXECUTABLE="${PRODUCT_NAME}"`, '-Wall', '-Wextra', '-Werror', '-mmacosx-version-min=14.0', source, '-o', file], {stdio: 'pipe'});
   } else {
     writeFileSync(file, WINDOWS_LAUNCHER, {mode: 0o755});
   }

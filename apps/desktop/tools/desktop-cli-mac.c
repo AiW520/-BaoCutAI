@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   if (slash == NULL) return 126;
   *slash = '\0';
   char electron[PATH_MAX], entry[PATH_MAX];
-  int electron_size = snprintf(electron, sizeof(electron), "%s/BaoCut", resolved);
+  int electron_size = snprintf(electron, sizeof(electron), "%s/%s", resolved, DESKTOP_EXECUTABLE);
   int entry_size = snprintf(entry, sizeof(entry), "%s/../Resources/app.asar/out/main/cli.js", resolved);
   if (electron_size < 0 || (size_t)electron_size >= sizeof(electron) ||
       entry_size < 0 || (size_t)entry_size >= sizeof(entry)) {

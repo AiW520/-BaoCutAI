@@ -17,7 +17,7 @@ import {
 
 describe('Runtime 的入口与版本门', () => {
   it.each(['darwin', 'win32', 'linux'] as const)('%s 打包后的资源位置与桌面端一致', (platform) => {
-    const resources = path.join(os.tmpdir(), 'BaoCut', 'resources');
+    const resources = path.join(os.tmpdir(), 'OpenFox', 'resources');
     const env = packagedResourceEnv(resources, platform);
     expect(env).toEqual(desktopResourceEnv(packagedResources(resources), platform));
     expect(env.PMETAL_METALLIB_PATH).toBe(platform === 'darwin' ? path.join(resources, 'bin', 'mlx.metallib') : undefined);
@@ -51,10 +51,10 @@ describe('Runtime 的入口与版本门', () => {
   it('装好的应用：Windows 按用户安装的位置，macOS 的 Applications', () => {
     const [win] = packagedApps({ LOCALAPPDATA: 'C:\\Users\\a\\AppData\\Local' }, 'win32');
     expect(win).toEqual({
-      executable: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\BaoCut.exe',
-      resources: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources',
+      executable: 'C:\\Users\\a\\AppData\\Local\\Programs\\openfox\\OpenFox.exe',
+      resources: 'C:\\Users\\a\\AppData\\Local\\Programs\\openfox\\resources',
     });
-    expect(packagedApps({}, 'darwin')[0]?.executable).toBe('/Applications/BaoCut.app/Contents/MacOS/BaoCut');
+    expect(packagedApps({}, 'darwin')[0]?.executable).toBe('/Applications/OpenFox.app/Contents/MacOS/OpenFox');
   });
 
   it('接口版本不同：退出码 3，说明哪一边要更新', () => {
@@ -118,20 +118,21 @@ describe('CLI shipped inside a relocated desktop app', () => {
   it('prefers its own Runtime and skills over another installed app', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-cli-own-app-'));
     try {
-      const contents = path.join(dir,'Moved app','BaoCut.app','Contents');
-      const resources = path.join(contents,'Resources');
+      const platform = process.platform === 'win32' ? 'win32' : 'darwin';
+      const contents = path.join(dir,'Moved app','OpenFox.app','Contents');
+      const resources = path.join(contents, platform === 'win32' ? 'resources' : 'Resources');
       const from = path.join(resources,'app.asar','out','main');
-      const executable = path.join(contents,'MacOS','BaoCut');
+      const executable = platform === 'win32' ? path.join(contents,'OpenFox.exe') : path.join(contents,'MacOS','OpenFox');
       fs.mkdirSync(from,{recursive:true}); fs.mkdirSync(path.dirname(executable),{recursive:true}); fs.writeFileSync(executable,'fixture');
       fs.mkdirSync(path.join(resources,'skills'),{recursive:true});
-      expect(packagedApps({},'darwin',from)[0]).toEqual({executable,resources});
-      expect(resolveRuntimeLaunch({},'darwin',from)).toEqual({command:executable,args:[path.join(resources,'app.asar','out','main','runtime.js'),'--credential-store','keychain'],env:{ELECTRON_RUN_AS_NODE:'1',...packagedResourceEnv(resources,'darwin')},source:'packaged'});
-      expect(resolveAgentSkillsDir({},'darwin',from)).toBe(path.join(resources,'skills'));
-      expect(resolveRuntimeLaunch({BAOCUT_RUNTIME_ENTRY:'/explicit/runtime.js'},'darwin',from)?.source).toBe('env');
+      expect(packagedApps({},platform,from)[0]).toEqual({executable,resources});
+      expect(resolveRuntimeLaunch({},platform,from)).toEqual({command:executable,args:[path.join(resources,'app.asar','out','main','runtime.js'),'--credential-store','keychain'],env:{ELECTRON_RUN_AS_NODE:'1',...packagedResourceEnv(resources,platform)},source:'packaged'});
+      expect(resolveAgentSkillsDir({},platform,from)).toBe(path.join(resources,'skills'));
+      expect(resolveRuntimeLaunch({BAOCUT_RUNTIME_ENTRY:'/explicit/runtime.js'},platform,from)?.source).toBe('env');
     } finally { fs.rmSync(dir,{recursive:true,force:true}); }
   });
   it('derives a portable Windows app before standard install directories', () => {
-    const from = String.raw`D:\Portable Apps\BaoCut\resources\app.asar\out\main`;
-    expect(packagedApps({LOCALAPPDATA:String.raw`C:\Users\test\Local`},'win32',from)[0]).toEqual({executable:String.raw`D:\Portable Apps\BaoCut\BaoCut.exe`,resources:String.raw`D:\Portable Apps\BaoCut\resources`});
+    const from = String.raw`D:\Portable Apps\OpenFox\resources\app.asar\out\main`;
+    expect(packagedApps({LOCALAPPDATA:String.raw`C:\Users\test\Local`},'win32',from)[0]).toEqual({executable:String.raw`D:\Portable Apps\OpenFox\OpenFox.exe`,resources:String.raw`D:\Portable Apps\OpenFox\resources`});
   });
 });

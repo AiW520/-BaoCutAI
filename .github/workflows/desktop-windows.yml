@@ -132,6 +132,10 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         run: npm ci --no-audit --no-fund
 
+      - name: Test bundled CLI launchers
+        if: steps.gate.outputs.skip != 'true'
+        run: node --experimental-strip-types --test apps/desktop/tools/desktop-cli.test.mjs
+
       - name: Install Rust
         if: steps.gate.outputs.skip != 'true'
         uses: dtolnay/rust-toolchain@032958afbdc797a9164d3bc0b56325c1308924a5 # action 1.97.1
@@ -145,6 +149,7 @@ jobs:
         uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
         with:
           key: desktop-${{ matrix.variant }}-ggml-avx2-short-ninja
+          cache-on-failure: true
 
       # nvcc 与 whisper.cpp 的 CMake 构建需要 cl.exe 在 PATH（rustc 自己找得到 MSVC，这些构建脚本找不到；同 v2 的 Windows 构建）。
       - name: Enter the MSVC developer environment

@@ -135,16 +135,16 @@ export async function distributeMac({ app, output, stem, version, build, appId, 
   const extracted = path.join(output, 'verified-extraction');
   mkdirSync(extracted);
   runMac('ditto', ['-x', '-k', zip, extracted]);
-  const verifiedApp = path.join(extracted, 'BaoCut.app');
+  const verifiedApp = path.join(extracted, path.basename(app));
   verifyMacIdentity(verifiedApp, expected);
   runMac('xcrun', ['stapler', 'validate', verifiedApp]);
   runMac('spctl', ['--assess', '--type', 'execute', '--verbose=4', verifiedApp]);
   const dmgRoot = path.join(output, 'dmg-root');
   mkdirSync(dmgRoot);
-  runMac('ditto', [app, path.join(dmgRoot, 'BaoCut.app')]);
+  runMac('ditto', [app, path.join(dmgRoot, path.basename(app))]);
   runMac('ln', ['-s', '/Applications', path.join(dmgRoot, 'Applications')]);
   const dmg = path.join(output, `${stem}.dmg`);
-  runMac('hdiutil', ['create', '-volname', `BaoCut ${version}`, '-srcfolder', dmgRoot, '-ov', '-format', 'ULFO', dmg]);
+  runMac('hdiutil', ['create', '-volname', `${path.basename(app, '.app')} ${version}`, '-srcfolder', dmgRoot, '-ov', '-format', 'ULFO', dmg]);
   runMac('codesign', ['--sign', signingSha1, '--timestamp', ...(keychain ? ['--keychain', keychain] : []), dmg]);
   const dmgRaw = runMac('xcrun', ['notarytool', 'submit', dmg, '--keychain-profile', profile,
     ...(keychain ? ['--keychain', keychain] : []), '--wait', '--output-format', 'json']);
@@ -176,14 +176,14 @@ export async function archiveLocalMac({ app, output, stem, version, build, appId
   const extracted = path.join(output, 'verified-extraction');
   mkdirSync(extracted);
   run('ditto', ['-x', '-k', zip, extracted]);
-  const verifiedApp = path.join(extracted, 'BaoCut.app');
+  const verifiedApp = path.join(extracted, path.basename(app));
   verify(verifiedApp);
   const dmgRoot = path.join(output, 'dmg-root');
   mkdirSync(dmgRoot);
-  run('ditto', [verifiedApp, path.join(dmgRoot, 'BaoCut.app')]);
+  run('ditto', [verifiedApp, path.join(dmgRoot, path.basename(app))]);
   run('ln', ['-s', '/Applications', path.join(dmgRoot, 'Applications')]);
   const dmg = path.join(output, `${stem}.dmg`);
-  run('hdiutil', ['create', '-volname', `BaoCut ${version}`, '-srcfolder', dmgRoot, '-format', 'ULFO', dmg]);
+  run('hdiutil', ['create', '-volname', `${path.basename(app, '.app')} ${version}`, '-srcfolder', dmgRoot, '-format', 'ULFO', dmg]);
   run('hdiutil', ['verify', dmg]);
   const portable = { format: 'zip', ...await facts(zip) };
   const installer = { format: 'dmg', ...await facts(dmg) };
