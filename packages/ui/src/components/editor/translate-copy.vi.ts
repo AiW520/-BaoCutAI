@@ -133,7 +133,7 @@ export const viTranslate: TranslateMessages = {
   termsUnify: 'Dùng bản dịch trong bảng thuật ngữ',
   termsUnified: (n: number) => `Đã thống nhất ${n} chỗ theo bảng thuật ngữ`,
   cut: (n) => `Hình của ${n} câu gốc đã bị cắt khỏi video`,
-  webHint: 'Dịch lại cần gọi mô hình hoặc Agent: hãy bắt đầu từ Agent hoặc ứng dụng BaoCut',
+  webHint: 'Dịch lại cần gọi mô hình hoặc Agent: hãy bắt đầu từ Agent hoặc ứng dụng OpenFox',
   refreshing: (n) => (n === null ? 'Đang dịch lại…' : `Đang dịch lại ${n} câu…`),
   aiMenu: 'Dịch lại và dịch',
   directAll: (n) => `Dịch lại ${n} câu này bằng API mô hình`,

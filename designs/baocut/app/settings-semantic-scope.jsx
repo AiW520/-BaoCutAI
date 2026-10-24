@@ -3,12 +3,12 @@
    · 位置（「索引」卡片里的一行）：现在的路径、更改… / 在文件夹中显示 / 恢复默认。更改时二选一：把现有索引移过去，或在新位置重新建
      （旧的删掉）；没有「只切换位置」——留在原处的索引没人用。移动期间索引停着，按意思找退回精确文字。关键帧缓存不搬。
      产品里选文件夹走系统面板；原型借用模型目录那几个演示文件夹（BC_MODELSDIR.FOLDERS）。Web 不能选 Runtime 那台电脑上的文件夹，只显示路径。
-   · 索引文件夹（「索引范围」里项目下面）：项目之外再加的只读扫描目录。添加前写清会建什么：Tuzi 视频按讲话内容与画面，
-     其他视频文件与图片只按画面，Tuzi 导出记录认得出的成片跳过，和项目里同一部的视频按项目那一份建；画面关着时只有 Tuzi
+   · 索引文件夹（「索引范围」里项目下面）：项目之外再加的只读扫描目录。添加前写清会建什么：OpenFox 视频按讲话内容与画面，
+     其他视频文件与图片只按画面，OpenFox 导出记录认得出的成片跳过，和项目里同一部的视频按项目那一份建；画面关着时只有 OpenFox
      视频会建。每个文件夹可以在文件夹中显示、重新索引、移除（移除只删它的索引，不动文件）。扫描用 Space 的上限（深 6 层、
      2000 个文件），超了写明只扫了前面的；文件夹不在（外置盘没接上）时索引留着，接上后接着用。不跟着文件夹实时变化：
      启动时、添加时与「重新索引」时扫。Web 只列出，不能添加、显示或移除（选不了 Runtime 那台电脑上的文件夹）。
-   · 范围（2026-10-13 待确认）：缺省就是所有 Tuzi 项目，新建的自动加入，不再逐个列出；只列排除的项目（「排除项目…」勾选，
+   · 范围（2026-10-13 待确认）：缺省就是所有 OpenFox 项目，新建的自动加入，不再逐个列出；只列排除的项目（「排除项目…」勾选，
      排除后删掉它们的索引、Space 里只能按字面找到，「恢复」排回队里重建），以及在 Space 里单独设了「不索引」的条目。 */
 (function () {
   const {useState, useRef, useEffect} = React;
@@ -130,7 +130,7 @@
           <Btn variant="accent" disabled={!ok} onClick={() => onAdd(f)}>添加</Btn>
         </>}>
         <div className="mdir-dlg">
-          <p className="t-detail">项目之外的视频素材也能按意思找到。Tuzi 只读这个文件夹，不改、不移动、不删里面的文件；里面的视频与图片会出现在 Space 里，来源写这个文件夹。</p>
+          <p className="t-detail">项目之外的视频素材也能按意思找到。OpenFox 只读这个文件夹，不改、不移动、不删里面的文件；里面的视频与图片会出现在 Space 里，来源写这个文件夹。</p>
           <p className="t-detail-xs">产品里这一步是系统的文件夹面板；原型用下面几个位置代替。</p>
           <R.RadioGroup label="选择文件夹" value={sel} onChange={setSel}>
             {choices.map((c) => (
@@ -146,7 +146,7 @@
           {ok && !visual && (f.counts.clips || f.counts.images) ? (
             <R.InlineAlert variant="informative">
               <R.Heading>视频素材与图片要按画面建</R.Heading>
-              <R.Content>它们没有文稿，只能按画面找。打开画面索引之后才会建；现在加进来，只有里面的 Tuzi 视频会建索引。</R.Content>
+              <R.Content>它们没有文稿，只能按画面找。打开画面索引之后才会建；现在加进来，只有里面的 OpenFox 视频会建索引。</R.Content>
             </R.InlineAlert>
           ) : null}
         </div>
@@ -289,7 +289,7 @@
         <div className="semset__proj">
           <div className="semset__projh">
             <Ic n="folder" className="ic--16" />
-            <b className="grow">所有 Tuzi 项目</b>
+            <b className="grow">所有 OpenFox 项目</b>
             <span className="t-detail-xs">{cov}</span>
           </div>
           <div className="semset__chs">

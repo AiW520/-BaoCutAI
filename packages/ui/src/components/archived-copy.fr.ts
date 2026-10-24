@@ -16,7 +16,7 @@ export const fr: ArchivedMessages = {
   deleteAll: 'Tout supprimer',
   deleteAllTitle: (n) => pluralForm('fr', n, { one: `Supprimer ${n} session archivée ?`, other: `Supprimer les ${n} sessions archivées ?` }),
   deleteAllBody:
-    'Leur historique sera supprimé de BaoCut et toute tâche en cours sera d’abord arrêtée. Cette action est irréversible. Les fichiers des dossiers de projet ne sont pas touchés.',
+    'Leur historique sera supprimé de OpenFox et toute tâche en cours sera d’abord arrêtée. Cette action est irréversible. Les fichiers des dossiers de projet ne sont pas touchés.',
   restored: (title) => `« ${title} » restauré`,
   open: 'Ouvrir',
   restoreFailed: (message) => `Impossible de restaurer : ${message}`,

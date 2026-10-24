@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonJa: CommonMessages = {
   copied: (label: string) => `${label} をコピーしました`,
   copyFailed: 'コピーできませんでした。テキストを選択して手動でコピーしてください。',
-  autostart: 'BaoCut を開いたときに開始',
-  stopsWithApp: 'BaoCut を終了すると、サービスも停止します。',
+  autostart: 'OpenFox を開いたときに開始',
+  stopsWithApp: 'OpenFox を終了すると、サービスも停止します。',
   portLabel: 'ポート',
   portIdle: (port: number) =>
     `既定は ${port} です。使用中の場合は別のポートを選んでください。サービスは「開始できませんでした」となり、自動でポートを切り替えることはありません。`,
@@ -14,7 +14,7 @@ export const commonJa: CommonMessages = {
   errorFix: '別のポートを試すか、そのポートを使用しているアプリを終了してください。',
   resetPort: '既定のポートを使用',
   portReset: (port: number) => `ポートを既定の ${port} に戻しました`,
-  unavailableSub: 'このバージョンの BaoCut Runtime はこのサービスをまだ提供していないため、開始できません。',
+  unavailableSub: 'このバージョンの OpenFox Runtime はこのサービスをまだ提供していないため、開始できません。',
   started: (name: string) => `${name} を開始しました`,
   stopped: (name: string) => `${name} を停止しました`,
   startFailed: (reason: string) => `開始できませんでした：${reason}`,
@@ -39,13 +39,13 @@ export const commonJa: CommonMessages = {
 };
 
 export const clientsJa: ClientsMessages = {
-  lede: '接続する各アプリに、専用のトークンを発行します。トークンが表示されるのは作成時の 1 回だけで、BaoCut が保存するのはそのフィンガープリントのみです。不要になったら撤回すると、そのアプリはすぐに接続できなくなります。',
+  lede: '接続する各アプリに、専用のトークンを発行します。トークンが表示されるのは作成時の 1 回だけで、OpenFox が保存するのはそのフィンガープリントのみです。不要になったら撤回すると、そのアプリはすぐに接続できなくなります。',
   empty: 'クライアントはまだありません。作成してから、接続したいアプリにそのトークンを入力してください。',
   create: 'クライアントを作成',
   createTitle: 'クライアントを作成',
   nameLabel: 'アプリ名',
   namePlaceholder: '例：Claude Desktop',
-  nameDesc: 'BaoCut で呼び出し元を区別するためだけに使います。リクエストの履歴と承認には、この名前が表示されます。',
+  nameDesc: 'OpenFox で呼び出し元を区別するためだけに使います。リクエストの履歴と承認には、この名前が表示されます。',
   confirmCreate: '作成',
   cancel: 'キャンセル',
   done: '完了',
@@ -82,7 +82,7 @@ export const approvalCardJa: ApprovalCardMessages = {
 
 export const mcpJa: McpMessages = {
   title: 'MCP サービス',
-  lede: 'BaoCut が MCP サーバとなり、ほかの AI アプリの Agent に一連のツールを提供します。動画の一覧表示と確認、文字起こしの読み取り、編集、文字起こしと書き出しの開始、このコンピュータで使えるモデルによる音声合成と画像生成ができます。既定ではオフです。既定ではすべての動画を公開しますが、一部の動画だけを公開することもできます。',
+  lede: 'OpenFox が MCP サーバとなり、ほかの AI アプリの Agent に一連のツールを提供します。動画の一覧表示と確認、文字起こしの読み取り、編集、文字起こしと書き出しの開始、このコンピュータで使えるモデルによる音声合成と画像生成ができます。既定ではオフです。既定ではすべての動画を公開しますが、一部の動画だけを公開することもできます。',
   on: 'MCP サービス実行中',
   off: 'MCP サービスは開始されていません',
   error: 'MCP サービスを開始できませんでした',
@@ -118,7 +118,7 @@ export const mcpJa: McpMessages = {
 
 export const modelApiJa: ModelApiMessages = {
   title: 'モデル API',
-  lede: 'OpenAI API に対応したツール（SDK、コマンドラインツール、ほかのアプリ）から、BaoCut が使えるモデルで文字起こし、音声合成、画像生成、テキスト生成を行えるようにします。待ち受けはこのコンピュータ上のみです。既定ではこのコンピュータ上のモデルだけを使い、クラウド、LAN ノード、Agent はそれぞれオンにする必要があります。',
+  lede: 'OpenAI API に対応したツール（SDK、コマンドラインツール、ほかのアプリ）から、OpenFox が使えるモデルで文字起こし、音声合成、画像生成、テキスト生成を行えるようにします。待ち受けはこのコンピュータ上のみです。既定ではこのコンピュータ上のモデルだけを使い、クラウド、LAN ノード、Agent はそれぞれオンにする必要があります。',
   on: 'モデル API 実行中',
   off: 'モデル API は開始されていません',
   error: 'モデル API を開始できませんでした',
@@ -134,7 +134,7 @@ export const modelApiJa: ModelApiMessages = {
   needKeyFixed: 'このバージョンでは API キー（クライアントのトークン）は常に必須で、オフにできません。キーはアプリごとに発行され、個別に撤回できます。',
   levels: {
     read: 'モデルの一覧表示（GET /v1/models）のみ可能です。生成リクエストは拒否されます',
-    ask: '生成リクエストを 1 件ずつ BaoCut で確認します。50 秒以内に応答がない場合は拒否されます',
+    ask: '生成リクエストを 1 件ずつ OpenFox で確認します。50 秒以内に応答がない場合は拒否されます',
     auto: '生成リクエストを確認なしで実行します。ご自身だけが使う場合に適しています',
   },
   routingTitle: 'ルーティング',
@@ -173,11 +173,11 @@ export const modelApiJa: ModelApiMessages = {
 
 export const webJa: WebMessages = {
   title: 'Web サービス',
-  lede: 'この Mac のブラウザで BaoCut Web を開き、同じ動画を編集できます。サービスはこのコンピュータ上でのみ待ち受けるため、ネットワーク上のほかのデバイスからはアクセスできません。',
+  lede: 'この Mac のブラウザで OpenFox Web を開き、同じ動画を編集できます。サービスはこのコンピュータ上でのみ待ち受けるため、ネットワーク上のほかのデバイスからはアクセスできません。',
   on: 'Web サービス実行中',
   off: 'Web サービスは開始されていません',
   error: 'Web サービスを開始できませんでした',
-  offSub: '開始すると、ブラウザで BaoCut Web を開けます。',
+  offSub: '開始すると、ブラウザで OpenFox Web を開けます。',
   open: 'ブラウザで開く',
   copyLink: 'サインインリンクをコピー',
   linkLabel: 'サインインリンク',

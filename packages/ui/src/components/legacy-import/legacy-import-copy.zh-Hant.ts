@@ -2,7 +2,7 @@ import type { LegacyImportMessages } from './legacy-import-copy.ts';
 
 export const zhHant: LegacyImportMessages = {
   title: '匯入舊版專案？',
-  lead: (n) => `這台電腦上有 ${n} 個舊版 BaoCut 的專案。匯入後可以在新版裡繼續編輯，舊檔案留在原處，不會改動。`,
+  lead: (n) => `這台電腦上有 ${n} 個舊版 OpenFox 的專案。匯入後可以在新版裡繼續編輯，舊檔案留在原處，不會改動。`,
   found: '找到的舊版專案',
   destination: '匯入到',
   resetDefault: '改回預設',

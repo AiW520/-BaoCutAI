@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'Thiếu tệp đi kèm BaoCut; không phải vấn đề mô hình',
-    todo: 'Cài lại BaoCut sẽ khắc phục. Mô hình đã tải không bị ảnh hưởng.',
+    text: 'Thiếu tệp đi kèm OpenFox; không phải vấn đề mô hình',
+    todo: 'Cài lại OpenFox sẽ khắc phục. Mô hình đã tải không bị ảnh hưởng.',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: 'Tệp mô hình bị hỏng', todo: 'Sửa sẽ tải lại tệp hỏng.' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -22,7 +22,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   MODEL_OUT_OF_MEMORY: () => ({ text: 'Không đủ bộ nhớ nên không tải được mô hình', todo: 'Đóng mô hình lớn hoặc ứng dụng tốn bộ nhớ khác rồi kiểm tra lại.' }),
   MODEL_WORKER_FAILED: () => ({
     text: 'Tiến trình nền chạy mô hình gặp lỗi',
-    todo: 'Kiểm tra lại. Nếu vẫn xảy ra, khởi động lại BaoCut hoặc sao chép chi tiết kỹ thuật gửi cho chúng tôi.',
+    todo: 'Kiểm tra lại. Nếu vẫn xảy ra, khởi động lại OpenFox hoặc sao chép chi tiết kỹ thuật gửi cho chúng tôi.',
   }),
 };
 
@@ -74,7 +74,7 @@ export const vi: ModelCheckMessages = {
     todo: 'Kiểm tra lại. Nếu vẫn xảy ra, sao chép chi tiết kỹ thuật và gửi cho chúng tôi.',
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: 'Dịch vụ nền BaoCut không phản hồi', todo: 'Kiểm tra lại sau. Nếu vẫn xảy ra, khởi động lại BaoCut.' },
+    RUNTIME_UNREACHABLE: { text: 'Dịch vụ nền OpenFox không phản hồi', todo: 'Kiểm tra lại sau. Nếu vẫn xảy ra, khởi động lại OpenFox.' },
     MODEL_IN_USE: { text: 'Tác vụ khác đang dùng mô hình này', todo: 'Chờ tác vụ hoàn tất hoặc hủy trong Tác vụ nền rồi kiểm tra lại.' },
     MODEL_UNAVAILABLE: { text: 'Hiện không dùng được mô hình này', todo: 'Sửa hoặc bật lại trước rồi kiểm tra lại.' },
     RESOURCE_ADMISSION_UNSATISFIABLE: { text: 'Máy tính này không đủ bộ nhớ để chạy mô hình', todo: 'Chuyển mô hình nhỏ hơn.' },
@@ -82,7 +82,7 @@ export const vi: ModelCheckMessages = {
     OFFLINE_STRICT: { text: 'Chế độ ngoại tuyến nghiêm ngặt bật', todo: 'Tắt chế độ ngoại tuyến nghiêm ngặt trong Cài đặt rồi kiểm tra lại.' },
   },
   notStartedUnknown: {
-    text: 'BaoCut không nhận kiểm tra này',
+    text: 'OpenFox không nhận kiểm tra này',
     todo: 'Kiểm tra lại sau. Nếu vẫn xảy ra, sao chép chi tiết kỹ thuật và gửi cho chúng tôi.',
   },
   detail: {

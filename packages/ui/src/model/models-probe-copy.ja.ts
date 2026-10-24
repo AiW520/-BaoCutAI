@@ -1,7 +1,7 @@
 import type { ModelsProbeMessages } from './models-probe-copy.ts';
 
 export const ja: ModelsProbeMessages = {
-  speechText: 'こんにちは。BaoCut の音声合成テストです。',
+  speechText: 'こんにちは。OpenFox の音声合成テストです。',
   noResult: 'タスクは完了しましたが、結果が返ってきませんでした。',
   failed: 'タスクが失敗しました。',
   cancelled: 'タスクはキャンセルされました。',

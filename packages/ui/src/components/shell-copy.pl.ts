@@ -7,6 +7,7 @@ export const pl: ShellMessages = {
   list: (items) => items.join(", "),
   separator: ", ",
   common: {
+    productName: 'OpenFox',
     cancel: "Anuluj",
     save: "Zapisz",
     rename: "Zmień nazwę",
@@ -37,7 +38,7 @@ export const pl: ShellMessages = {
     deleteSessionEllipsis: "Usuń sesję…",
     deleteTitle: "Usunąć tę sesję?",
     deleteConfirm: "Usuń",
-    deleteBody: "Historia sesji zostanie usunięta z Tuzi, trwające zadanie najpierw zatrzymane. Pliki projektu bez zmian.",
+    deleteBody: "Historia sesji zostanie usunięta z OpenFox, trwające zadanie najpierw zatrzymane. Pliki projektu bez zmian.",
     deleteFailed: (message) => `Nie udało się usunąć: ${message}`,
     renameTitle: "Zmień nazwę sesji",
     videosIn: (place) => (place === 'project' ? "Wideo projektu" : "Wideo folderu roboczego"),
@@ -65,7 +66,7 @@ export const pl: ShellMessages = {
     noSessions: "Nie ma jeszcze sesji.",
     noProjects: "Nie ma jeszcze projektów. Utwórz lub otwórz folder; agent pracuje w nim.",
     renameProjectTitle: "Zmień nazwę projektu",
-    renameProjectHint: "Zmienia tylko nazwę w Tuzi, nazwa folderu bez zmian.",
+    renameProjectHint: "Zmienia tylko nazwę w OpenFox, nazwa folderu bez zmian.",
     toggleSection: (collapsed, label) => `${collapsed ? "Rozwiń" : "Zwiń"} ${label}`,
     organizeLabel: "Organizuj projekty i sesje",
     sidebarSettings: "Ustawienia paska bocznego",
@@ -99,7 +100,7 @@ export const pl: ShellMessages = {
     shortcutForward: "Naprzód",
     app: "Aplikacja",
     privacyTitle: "Dane pozostają na komputerze",
-    privacyHint: "Sesje, lista projektów i oznaczenia Space w folderze danych; pliki projektów w swoich folderach, Tuzi nie wysyła ich. Dostęp online agenta zależy od silnika.",
+    privacyHint: "Sesje, lista projektów i oznaczenia Space w folderze danych; pliki projektów w swoich folderach, OpenFox nie wysyła ich. Dostęp online agenta zależy od silnika.",
     dataDir: "Folder danych",
     projectsDir: "Nowe projekty trafiają do",
     logsDir: "Folder dzienników",
@@ -176,7 +177,7 @@ export const pl: ShellMessages = {
     closed: "Połączenie zamknięte",
     lost: (reason, retrying) => `${reason}.${retrying ? " Łączenie ponowne…" : ""}`,
     reconnectingEllipsis: "Łączenie ponowne…",
-    title: "Brak połączenia z Runtime Tuzi",
+    title: "Brak połączenia z Runtime OpenFox",
     reconnecting: "Łączenie ponowne",
   },
   videoInfo: {
@@ -195,7 +196,7 @@ export const pl: ShellMessages = {
   filePreview: {
     tooLarge: "Plik zbyt duży do pełnego wyświetlenia",
     loading: "Wczytywanie podglądu",
-    unsupported: "Tuzi nie pokazuje jeszcze tego typu pliku. Pokaż w folderze i otwórz inną aplikacją.",
+    unsupported: "OpenFox nie pokazuje jeszcze tego typu pliku. Pokaż w folderze i otwórz inną aplikacją.",
     failed: (message) => `Nie udało się wczytać podglądu: ${message}`,
   },
   accessPicker: {

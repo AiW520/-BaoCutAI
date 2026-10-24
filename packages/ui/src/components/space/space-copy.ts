@@ -83,7 +83,7 @@ const en = {
   newFromPackageHint: 'A .baocut exported elsewhere, with all its assets inside',
   pickPackageTitle: 'Choose a portable package',
   pickPackageButton: 'Open',
-  pickPackageFilter: 'BaoCut portable package',
+  pickPackageFilter: 'OpenFox portable package',
   openPackage: 'Open as new video',
   packageBlocked: (reason: string) => `Open as new video: ${reason}`,
   packageOpening: (name: string) => `Opening "${name}"…`,
@@ -133,7 +133,7 @@ const en = {
   reexport: 'Export again from the source video',
   noPreviewVideo: 'Videos open in the editor.',
   // 索引文件夹里的条目（检索规格 §9.1）
-  inIndexFolder: (folder: string | null): string => (folder ? `In the index folder “${folder}” and read-only: BaoCut doesn't change, move or delete this file.` : "In an index folder and read-only: BaoCut doesn't change, move or delete this file."),
+  inIndexFolder: (folder: string | null): string => (folder ? `In the index folder “${folder}” and read-only: OpenFox doesn't change, move or delete this file.` : "In an index folder and read-only: OpenFox doesn't change, move or delete this file."),
 
   // 能力（origin.capability）
   capability: {
@@ -253,7 +253,7 @@ const en = {
         ? `Answer from my videos that aren’t in a project: ${question}`
         : `Answer from my videos: ${question}`,
   hitsNoneSemantic: 'Nothing said in videos is about this. Try other words.',
-  // 画面通道（检索规格 §9.1、§11；设计稿 space-search.jsx）：BaoCut 视频的那一刻，或索引文件夹里的视频文件与图片
+  // 画面通道（检索规格 §9.1、§11；设计稿 space-search.jsx）：OpenFox 视频的那一刻，或索引文件夹里的视频文件与图片
   hitsTitleBoth: 'Said or seen in videos',
   hitsTitleVisual: 'Seen in videos and images',
   hitsNoneVisual: 'Nothing said or seen matches this. Try other words.',

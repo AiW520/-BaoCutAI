@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonKo: CommonMessages = {
   copied: (label: string) => `${label} 복사됨`,
   copyFailed: '복사하지 못했습니다. 텍스트를 선택해 직접 복사하세요.',
-  autostart: 'BaoCut을 열 때 자동으로 시작',
-  stopsWithApp: 'BaoCut을 종료하면 서비스도 함께 멈춥니다.',
+  autostart: 'OpenFox을 열 때 자동으로 시작',
+  stopsWithApp: 'OpenFox을 종료하면 서비스도 함께 멈춥니다.',
   portLabel: '포트',
   portIdle: (port: number) =>
     `기본값은 ${port}입니다. 사용 중이면 다른 포트를 고르세요. 서비스는 “시작 실패”로 표시되며 스스로 포트를 바꾸지 않습니다.`,
@@ -14,7 +14,7 @@ export const commonKo: CommonMessages = {
   errorFix: '다른 포트로 다시 시도하거나, 그 포트를 쓰는 앱을 먼저 종료하세요.',
   resetPort: '기본 포트 사용',
   portReset: (port: number) => `포트를 기본값 ${port}(으)로 되돌렸습니다`,
-  unavailableSub: '이 버전의 BaoCut Runtime은 아직 이 서비스를 제공하지 않아 시작할 수 없습니다.',
+  unavailableSub: '이 버전의 OpenFox Runtime은 아직 이 서비스를 제공하지 않아 시작할 수 없습니다.',
   started: (name: string) => `${name} 시작됨`,
   stopped: (name: string) => `${name} 멈춤`,
   startFailed: (reason: string) => `시작하지 못했습니다: ${reason}`,
@@ -39,13 +39,13 @@ export const commonKo: CommonMessages = {
 };
 
 export const clientsKo: ClientsMessages = {
-  lede: '연결할 앱마다 토큰을 하나씩 발급하세요. 토큰은 만들 때 한 번만 표시되며, BaoCut은 지문만 저장합니다. 더 이상 필요 없으면 철회하세요. 그 앱은 바로 연결이 끊깁니다.',
+  lede: '연결할 앱마다 토큰을 하나씩 발급하세요. 토큰은 만들 때 한 번만 표시되며, OpenFox은 지문만 저장합니다. 더 이상 필요 없으면 철회하세요. 그 앱은 바로 연결이 끊깁니다.',
   empty: '아직 클라이언트가 없습니다. 하나를 만든 뒤, 연결할 앱에 그 토큰을 입력하세요.',
   create: '클라이언트 만들기',
   createTitle: '클라이언트 만들기',
   nameLabel: '앱 이름',
   namePlaceholder: '예: Claude Desktop',
-  nameDesc: 'BaoCut에서 누가 호출하는지 구별하는 데만 쓰입니다. 요청 기록과 승인에 이 이름이 표시됩니다.',
+  nameDesc: 'OpenFox에서 누가 호출하는지 구별하는 데만 쓰입니다. 요청 기록과 승인에 이 이름이 표시됩니다.',
   confirmCreate: '만들기',
   cancel: '취소',
   done: '완료',
@@ -84,7 +84,7 @@ export const approvalCardKo: ApprovalCardMessages = {
 
 export const mcpKo: McpMessages = {
   title: 'MCP 서비스',
-  lede: 'BaoCut이 MCP 서버가 되어 다른 AI 앱의 Agent에게 도구를 제공합니다. 영상 목록 보기와 조회, 전사본 읽기, 편집, 전사와 내보내기 시작, 그리고 이 컴퓨터에서 쓸 수 있는 모델로 음성 합성과 이미지 생성을 할 수 있습니다. 기본으로 꺼져 있습니다. 기본으로 모든 영상을 공유하며, 일부만 공유할 수도 있습니다.',
+  lede: 'OpenFox이 MCP 서버가 되어 다른 AI 앱의 Agent에게 도구를 제공합니다. 영상 목록 보기와 조회, 전사본 읽기, 편집, 전사와 내보내기 시작, 그리고 이 컴퓨터에서 쓸 수 있는 모델로 음성 합성과 이미지 생성을 할 수 있습니다. 기본으로 꺼져 있습니다. 기본으로 모든 영상을 공유하며, 일부만 공유할 수도 있습니다.',
   on: 'MCP 서비스 실행 중',
   off: 'MCP 서비스 시작 안 됨',
   error: 'MCP 서비스를 시작하지 못했습니다',
@@ -120,7 +120,7 @@ export const mcpKo: McpMessages = {
 
 export const modelApiKo: ModelApiMessages = {
   title: '모델 API',
-  lede: 'OpenAI API를 쓰는 도구(SDK, 명령줄 도구, 다른 앱)가 BaoCut에서 쓸 수 있는 모델로 전사, 음성 합성, 이미지 생성, 텍스트 생성을 하게 합니다. 이 컴퓨터에서만 수신 대기합니다. 기본으로 이 컴퓨터의 모델만 쓰며, 클라우드, LAN 노드, Agent는 각각 켜야 합니다.',
+  lede: 'OpenAI API를 쓰는 도구(SDK, 명령줄 도구, 다른 앱)가 OpenFox에서 쓸 수 있는 모델로 전사, 음성 합성, 이미지 생성, 텍스트 생성을 하게 합니다. 이 컴퓨터에서만 수신 대기합니다. 기본으로 이 컴퓨터의 모델만 쓰며, 클라우드, LAN 노드, Agent는 각각 켜야 합니다.',
   on: '모델 API 실행 중',
   off: '모델 API 시작 안 됨',
   error: '모델 API를 시작하지 못했습니다',
@@ -136,7 +136,7 @@ export const modelApiKo: ModelApiMessages = {
   needKeyFixed: '이 버전에서는 API 키(클라이언트 토큰)가 항상 필요하며 끌 수 없습니다. 앱마다 하나씩 받으며, 개별로 철회할 수 있습니다.',
   levels: {
     read: '모델 목록만 볼 수 있습니다(GET /v1/models). 생성 요청은 거부됩니다.',
-    ask: '생성 요청마다 BaoCut에서 확인합니다. 50초 안에 아무도 응답하지 않으면 거부됩니다.',
+    ask: '생성 요청마다 OpenFox에서 확인합니다. 50초 안에 아무도 응답하지 않으면 거부됩니다.',
     auto: '생성 요청을 확인 없이 실행합니다. 혼자만 쓸 때 알맞습니다.',
   },
   routingTitle: '라우팅',
@@ -175,11 +175,11 @@ export const modelApiKo: ModelApiMessages = {
 
 export const webKo: WebMessages = {
   title: 'Web 서비스',
-  lede: '이 Mac의 브라우저에서 BaoCut Web을 열어 같은 영상을 편집합니다. 서비스는 이 컴퓨터에서만 수신 대기하므로, 네트워크의 다른 기기에서는 접근할 수 없습니다.',
+  lede: '이 Mac의 브라우저에서 OpenFox Web을 열어 같은 영상을 편집합니다. 서비스는 이 컴퓨터에서만 수신 대기하므로, 네트워크의 다른 기기에서는 접근할 수 없습니다.',
   on: 'Web 서비스 실행 중',
   off: 'Web 서비스 시작 안 됨',
   error: 'Web 서비스를 시작하지 못했습니다',
-  offSub: '시작하면 브라우저에서 BaoCut Web을 열 수 있습니다.',
+  offSub: '시작하면 브라우저에서 OpenFox Web을 열 수 있습니다.',
   open: '브라우저에서 열기',
   copyLink: '로그인 링크 복사',
   linkLabel: '로그인 링크',

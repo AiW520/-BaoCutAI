@@ -10,7 +10,7 @@ export const pl: MediaMessages = {
   panelTitle: (kind: PlaceableKind) => ({ video: "Wideo", image: "Obrazy", audio: "Dźwięk" })[kind],
   undo: "Cofnij",
   readOnly: "Wideo jest tylko do odczytu",
-  revealManaged: "Zebrany w folderze wideo i zarządzany przez BaoCut; brak osobnej lokalizacji pliku",
+  revealManaged: "Zebrany w folderze wideo i zarządzany przez OpenFox; brak osobnej lokalizacji pliku",
   revealUnknown: "Nie można znaleźć zapisanej lokalizacji pliku",
   uses: "Gdzie używane",
   usesNone: "Jeszcze nie używane na osi czasu",

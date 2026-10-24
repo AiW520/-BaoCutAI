@@ -25,7 +25,7 @@ const en = {
   causes: {
     missing: 'The file may have been moved, renamed or deleted, or it may be on a drive that’s been disconnected.',
     changed: 'The file at this location is no longer the one that was imported (its size doesn’t match). It may have been overwritten or exported again.',
-    'outside-project': 'The recorded location is outside the project folder that holds this video, and BaoCut doesn’t read files there.',
+    'outside-project': 'The recorded location is outside the project folder that holds this video, and OpenFox doesn’t read files there.',
   } satisfies Record<MissingAsset['reason'], string>,
   unplayable: (error: string) => `The player can’t open this file: ${error}.`,
   /** 字幕照常播（预览的时钟不依赖媒体）；缺的是画面与原声，或者只是一段声音。 */
@@ -37,8 +37,8 @@ const en = {
   body: (cause: string, tail: string) => `${cause} ${tail}`,
   volume: (volume: string) => `The file is on “${volume}”. Connect that drive and it will recover automatically.`,
   more: (count: number) => `${count} more video or audio ${count === 1 ? 'asset' : 'assets'} can’t be played either.`,
-  relinkHint: 'Choose the original file to recover it. BaoCut checks the contents, and a file with different contents can’t be relinked.',
-  desktopOnly: 'To recover it, open this video in the BaoCut desktop app and use “Relink…” on the canvas to choose the original file.',
+  relinkHint: 'Choose the original file to recover it. OpenFox checks the contents, and a file with different contents can’t be relinked.',
+  desktopOnly: 'To recover it, open this video in the OpenFox desktop app and use “Relink…” on the canvas to choose the original file.',
   managed: 'This file was stored in the video folder, so it can’t be relinked to another location.',
   oldRevision: 'The timeline uses an older version of this asset; only the current version can be relinked.',
   relink: 'Relink…',

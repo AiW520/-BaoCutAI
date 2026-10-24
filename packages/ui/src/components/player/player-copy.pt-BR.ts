@@ -13,5 +13,5 @@ export const ptBR: PlayerMessages = {
   overlay: 'Sobrepor legendas', showTip: 'Mostrar legendas (C)', hideTip: 'Ocultar legendas (C)', rateCurrent: (rate) => `Velocidade de reprodução ${rate}×`, rate: 'Velocidade de reprodução', rateNormal: '1× (Normal)',
   mute: 'Silenciar', unmute: 'Ativar som', muteTip: 'Silenciar (M)', unmuteTip: 'Ativar som (M)', volume: 'Volume', fullscreen: 'Tela cheia', exitFullscreen: 'Sair da tela cheia', fullscreenTip: 'Tela cheia (F)', exitFullscreenTip: 'Sair da tela cheia (F)',
   position: 'Posição de reprodução', backToCurrent: 'Voltar à linha atual',
-  mediaError: { aborted: 'O carregamento foi interrompido', network: 'Ocorreu um erro ao ler o arquivo', decode: 'A decodificação falhou; o arquivo pode estar danificado', unsupported: 'O BaoCut ainda não pode reproduzir o formato ou codec deste arquivo', other: 'Não foi possível reproduzir este arquivo' },
+  mediaError: { aborted: 'O carregamento foi interrompido', network: 'Ocorreu um erro ao ler o arquivo', decode: 'A decodificação falhou; o arquivo pode estar danificado', unsupported: 'O OpenFox ainda não pode reproduzir o formato ou codec deste arquivo', other: 'Não foi possível reproduzir este arquivo' },
 };

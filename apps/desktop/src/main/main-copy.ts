@@ -74,7 +74,7 @@ const en = {
 
   // ---- 退出时自己起的 Runtime 还有活（quit-prompt.ts，架构设计 §2.2）----
   quitBusyTitle: (count: number) => (count === 1 ? '1 task is still running' : `${count} tasks are still running`),
-  quitBusyDetail: 'Quitting now interrupts them. You can keep them running in the background instead; Tuzi stops by itself after they finish.',
+  quitBusyDetail: 'Quitting now interrupts them. You can keep them running in the background instead; OpenFox stops by itself after they finish.',
   quitKeepRunning: 'Keep Running in Background',
   quitStop: 'Stop and Quit',
   cancel: 'Cancel',

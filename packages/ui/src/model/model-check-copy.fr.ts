@@ -9,11 +9,11 @@ const outputWrong: Record<CheckSubject, string> = {
  music: 'Le modèle fonctionne mais ce qu’il génère est presque silencieux',
 };
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
- APP_FILE_MISSING: () => ({ text: 'Un fichier de BaoCut manque ; ce n’est pas un problème de modèle', todo: 'Réinstallez BaoCut. Modèles déjà téléchargés inchangés.' }),
+ APP_FILE_MISSING: () => ({ text: 'Un fichier de OpenFox manque ; ce n’est pas un problème de modèle', todo: 'Réinstallez OpenFox. Modèles déjà téléchargés inchangés.' }),
  MODEL_FILES_DAMAGED: () => ({ text: 'Fichiers du modèle endommagés', todo: 'Réparer retélécharge les fichiers endommagés.' }),
  MODEL_OUTPUT_WRONG: (subject) => ({ text: outputWrong[subject], todo: 'Réparez d’abord. Si cela persiste, copiez les détails techniques et envoyez-les-nous.' }),
  MODEL_OUT_OF_MEMORY: () => ({ text: 'Mémoire insuffisante pour charger le modèle', todo: 'Fermez autres grands modèles ou applications gourmandes, puis vérifiez.' }),
- MODEL_WORKER_FAILED: () => ({ text: 'Le processus du modèle en arrière-plan a échoué', todo: 'Vérifiez à nouveau. Si cela persiste, redémarrez BaoCut ou envoyez-nous les détails techniques.' }),
+ MODEL_WORKER_FAILED: () => ({ text: 'Le processus du modèle en arrière-plan a échoué', todo: 'Vérifiez à nouveau. Si cela persiste, redémarrez OpenFox ou envoyez-nous les détails techniques.' }),
 };
 
 export const fr: ModelCheckMessages = {
@@ -62,8 +62,8 @@ export const fr: ModelCheckMessages = {
 
   notStarted: {
     RUNTIME_UNREACHABLE: {
-      text: "Le service BaoCut en arrière-plan ne répond pas",
-      todo: "Vérifiez plus tard. Si cela persiste, redémarrez BaoCut.",
+      text: "Le service OpenFox en arrière-plan ne répond pas",
+      todo: "Vérifiez plus tard. Si cela persiste, redémarrez OpenFox.",
     },
     MODEL_IN_USE: {
       text: "Une autre tâche utilise ce modèle",
@@ -78,7 +78,7 @@ export const fr: ModelCheckMessages = {
     OFFLINE_STRICT: { text: "Hors ligne strict activé", todo: "Désactivez ce mode dans Réglages, puis vérifiez." },
   } as Record<string, CheckSentence>,
   notStartedUnknown: {
-    text: "BaoCut a refusé cette vérification",
+    text: "OpenFox a refusé cette vérification",
     todo: "Vérifiez plus tard. Si cela persiste, copiez les détails techniques et envoyez-les-nous.",
   } as CheckSentence,
 

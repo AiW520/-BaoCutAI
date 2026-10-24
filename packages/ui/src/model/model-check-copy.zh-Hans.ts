@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'BaoCut 自带的一个文件不见了，不是模型的问题',
-    todo: '重新安装 BaoCut 可以解决，已下载的模型不受影响。',
+    text: '开胡-OpenFox 自带的一个文件不见了，不是模型的问题',
+    todo: '重新安装 开胡-OpenFox 可以解决，已下载的模型不受影响。',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: '模型文件损坏了', todo: '修复会重新下载坏掉的文件。' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -22,7 +22,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   MODEL_OUT_OF_MEMORY: () => ({ text: '内存不够，模型没能加载', todo: '关掉别的大模型或占内存的应用，再检查一次。' }),
   MODEL_WORKER_FAILED: () => ({
     text: '运行模型的后台进程出错了',
-    todo: '再检查一次；一直这样就重启 BaoCut，或复制技术详情发给我们。',
+    todo: '再检查一次；一直这样就重启 开胡-OpenFox，或复制技术详情发给我们。',
   }),
 };
 
@@ -75,7 +75,7 @@ export const zhHans: ModelCheckMessages = {
     todo: '再检查一次；一直这样就复制技术详情发给我们。',
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: 'BaoCut 的后台服务没有响应', todo: '稍后再检查一次；一直这样就重启 BaoCut。' },
+    RUNTIME_UNREACHABLE: { text: '开胡-OpenFox 的后台服务没有响应', todo: '稍后再检查一次；一直这样就重启 开胡-OpenFox。' },
     MODEL_IN_USE: { text: '这只模型正在被别的任务使用', todo: '等那个任务结束，或在后台任务里取消它，再检查。' },
     MODEL_UNAVAILABLE: { text: '这只模型现在用不了', todo: '先修复它，或重新启用后再检查。' },
     RESOURCE_ADMISSION_UNSATISFIABLE: { text: '这台电脑的内存不够跑这只模型', todo: '换一只小一点的模型。' },
@@ -83,7 +83,7 @@ export const zhHans: ModelCheckMessages = {
     OFFLINE_STRICT: { text: '严格离线模式开着', todo: '在设置里关掉严格离线后再检查。' },
   },
   notStartedUnknown: {
-    text: 'BaoCut 没有接受这次检查',
+    text: '开胡-OpenFox 没有接受这次检查',
     todo: '稍后再检查一次；一直这样就复制技术详情发给我们。',
   },
   detail: {

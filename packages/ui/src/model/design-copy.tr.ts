@@ -8,9 +8,9 @@ export const tr: DesignMessages = {
   frameTitle: (name) => `Tasarım düzenleyici: ${name}`,
   opening: 'Tasarım açılıyor…',
   unavailableTitle: 'Tasarım düzenleyici kullanılamıyor',
-  unavailableBody: 'Bu BaoCut sürümünde tasarım düzenleyici yok. Tasarım dosyaları hâlâ klasöründe.',
+  unavailableBody: 'Bu OpenFox sürümünde tasarım düzenleyici yok. Tasarım dosyaları hâlâ klasöründe.',
   hostBlockedTitle: 'Tasarım düzenleyici bu adreste açılamıyor',
-  hostBlockedBody: 'Tasarımları düzenlemek için BaoCut Web’i 127.0.0.1 veya localhost adresinde açın. Tasarım dosyaları hâlâ klasöründe.',
+  hostBlockedBody: 'Tasarımları düzenlemek için OpenFox Web’i 127.0.0.1 veya localhost adresinde açın. Tasarım dosyaları hâlâ klasöründe.',
   openFailed: (reason) => `Tasarım açılamadı: ${reason}`,
   open: 'Tasarımı aç',
   openCard: (name) => `“${name}” tasarımını aç`,
@@ -40,5 +40,5 @@ export const tr: DesignMessages = {
   exportDialogButton: 'Dışa aktar',
   exportSaved: (path) => `Kaydedildi: ${path}`,
   exportFailed: (reason) => `Dışa aktarılan dosya kaydedilemedi: ${reason}`,
-  exportUnsupported: (name) => `BaoCut “${name}” dosyasını kaydedemiyor: bu dosya türü desteklenmiyor`,
+  exportUnsupported: (name) => `OpenFox “${name}” dosyasını kaydedemiyor: bu dosya türü desteklenmiyor`,
 };

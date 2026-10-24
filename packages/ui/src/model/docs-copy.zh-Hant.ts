@@ -6,7 +6,7 @@ export const zhHant: DocsMessages = {
   frameTitle: (name) => `協作文件編輯器：${name}`,
   opening: '正在開啟協作文件…',
   unavailableTitle: '協作文件編輯器無法使用',
-  unavailableBody: '這個版本的 BaoCut 沒有附帶協作文件編輯器。協作文件的檔案仍在它的資料夾裡。',
+  unavailableBody: '這個版本的 OpenFox 沒有附帶協作文件編輯器。協作文件的檔案仍在它的資料夾裡。',
   openFailed: (reason) => `無法開啟這份協作文件：${reason}`,
   open: '開啟協作文件',
   openCard: (name) => `開啟協作文件「${name}」`,

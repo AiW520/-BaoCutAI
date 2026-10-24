@@ -6,6 +6,7 @@ export const ko: ShellMessages = {
   list: (items) => items.join(', '),
   separator: ', ',
   common: {
+    productName: 'OpenFox',
     cancel: '취소',
     save: '저장',
     rename: '이름 변경',
@@ -36,7 +37,7 @@ export const ko: ShellMessages = {
     deleteSessionEllipsis: '세션 삭제…',
     deleteTitle: '이 세션을 삭제할까요?',
     deleteConfirm: '삭제',
-    deleteBody: '세션 기록이 Tuzi에서 삭제되며, 실행 중인 작업은 먼저 중지됩니다. 프로젝트 폴더의 파일은 영향을 받지 않습니다.',
+    deleteBody: '세션 기록이 OpenFox에서 삭제되며, 실행 중인 작업은 먼저 중지됩니다. 프로젝트 폴더의 파일은 영향을 받지 않습니다.',
     deleteFailed: (message) => `삭제하지 못했습니다: ${message}`,
     renameTitle: '세션 이름 변경',
     videosIn: (place) => `${where(place)}의 영상`,
@@ -64,7 +65,7 @@ export const ko: ShellMessages = {
     noSessions: '아직 세션이 없습니다.',
     noProjects: '아직 프로젝트가 없습니다. 새로 만들거나 기존 폴더를 여세요. Agent가 그 폴더에서 작업합니다.',
     renameProjectTitle: '프로젝트 이름 변경',
-    renameProjectHint: 'Tuzi에 표시되는 이름만 바뀌며 폴더 이름은 그대로입니다.',
+    renameProjectHint: 'OpenFox에 표시되는 이름만 바뀌며 폴더 이름은 그대로입니다.',
     toggleSection: (collapsed, label) => `${label} ${collapsed ? '펼치기' : '접기'}`,
     organizeLabel: '프로젝트 및 세션 정리',
     sidebarSettings: '사이드바 설정',
@@ -99,7 +100,7 @@ export const ko: ShellMessages = {
     app: '앱',
     privacyTitle: '데이터는 이 컴퓨터에 보관됩니다',
     privacyHint:
-      '세션, 프로젝트 목록, Space 표시는 데이터 폴더에 저장되고, 프로젝트 파일은 각자의 폴더에 있으며 Tuzi은 이를 업로드하지 않습니다. Agent 엔진의 온라인 연결 여부는 엔진이 정합니다.',
+      '세션, 프로젝트 목록, Space 표시는 데이터 폴더에 저장되고, 프로젝트 파일은 각자의 폴더에 있으며 OpenFox은 이를 업로드하지 않습니다. Agent 엔진의 온라인 연결 여부는 엔진이 정합니다.',
     dataDir: '데이터 폴더',
     projectsDir: '새 프로젝트 위치',
     logsDir: '로그 폴더',
@@ -176,7 +177,7 @@ export const ko: ShellMessages = {
     closed: '연결이 닫혔습니다',
     lost: (reason, retrying) => `${reason}.${retrying ? ' 다시 연결하는 중…' : ''}`,
     reconnectingEllipsis: '다시 연결하는 중…',
-    title: 'Tuzi Runtime에 연결되지 않음',
+    title: 'OpenFox Runtime에 연결되지 않음',
     reconnecting: '다시 연결하는 중',
   },
   videoInfo: {
@@ -195,7 +196,7 @@ export const ko: ShellMessages = {
   filePreview: {
     tooLarge: '파일이 너무 커서 여기에 전체를 표시할 수 없습니다',
     loading: '미리 보기 불러오는 중',
-    unsupported: 'Tuzi에서는 아직 이 형식의 파일을 미리 볼 수 없습니다. 폴더에서 보기로 연 뒤 다른 앱으로 여세요.',
+    unsupported: 'OpenFox에서는 아직 이 형식의 파일을 미리 볼 수 없습니다. 폴더에서 보기로 연 뒤 다른 앱으로 여세요.',
     failed: (message) => `미리 보기를 불러오지 못했습니다: ${message}`,
   },
   accessPicker: {

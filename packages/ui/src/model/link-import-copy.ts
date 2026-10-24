@@ -55,11 +55,11 @@ const en = {
   issue: {
     TOOL_NOT_INSTALLED: {
       title: 'Set up once, then just paste',
-      body: 'BaoCut needs the video download tool yt-dlp to read this site. Install it, then start this import again.',
+      body: 'OpenFox needs the video download tool yt-dlp to read this site. Install it, then start this import again.',
     },
     TOOL_CONSENT_REQUIRED: {
       title: 'Your consent is needed to use the download tool',
-      body: 'The download tool is already on this computer. BaoCut uses it to download videos from websites only after you agree.',
+      body: 'The download tool is already on this computer. OpenFox uses it to download videos from websites only after you agree.',
     },
     TOOL_UNAVAILABLE: {
       title: 'The download tool can’t run',
@@ -71,7 +71,7 @@ const en = {
     },
     OFFLINE_STRICT: {
       title: 'Can’t download from links in strict offline mode',
-      body: 'In strict offline mode BaoCut doesn’t go online. Download the video in your browser first, then choose the local file.',
+      body: 'In strict offline mode OpenFox doesn’t go online. Download the video in your browser first, then choose the local file.',
     },
     LINK_UNSUPPORTED: {
       title: 'This source isn’t supported yet',
@@ -83,7 +83,7 @@ const en = {
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: 'Couldn’t read browser cookies',
-      body: 'Make sure you’re signed in in the browser. If its database is locked, quit the browser completely (including anything running in the background), and check keychain permissions (for Safari, allow BaoCut under Full Disk Access). On Windows, Chrome, Edge and Brave cookies protected by app-bound encryption can’t be read; check Firefox instead. Or check another browser under Settings › Video downloader and download again.',
+      body: 'Make sure you’re signed in in the browser. If its database is locked, quit the browser completely (including anything running in the background), and check keychain permissions (for Safari, allow OpenFox under Full Disk Access). On Windows, Chrome, Edge and Brave cookies protected by app-bound encryption can’t be read; check Firefox instead. Or check another browser under Settings › Video downloader and download again.',
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: 'yt-dlp needs an update',
@@ -143,14 +143,14 @@ const en = {
   toolSource: {
     system: 'Installed on the system',
     user: 'Chosen by you',
-    managed: 'Downloaded by BaoCut',
-    bundled: 'Bundled with BaoCut',
+    managed: 'Downloaded by OpenFox',
+    bundled: 'Bundled with OpenFox',
     env: 'Set by an environment variable',
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Version ${version} · about ${size}` : `Version ${version}`),
   factFrom: (host: string) => `Downloaded from ${host}`,
   factLicense: (license: string) => `${license} license`,
-  factIsolated: 'Kept in BaoCut’s own folder, run only after its checksum is verified; the system isn’t changed',
+  factIsolated: 'Kept in OpenFox’s own folder, run only after its checksum is verified; the system isn’t changed',
   factInstalledWith: (method: string) => `Installed with ${method}`,
 
   cardChecking: 'Checking the download tool…',
@@ -161,18 +161,18 @@ const en = {
   cardInstallingBody: 'Download → verify → test run. When it’s done this shows “Ready”.',
   cardUpdating: 'Updating the download tool…',
   cardUpdatingBody: 'Output appears below the command; the version is checked again when it’s done.',
-  cardBlockedWhy: 'BaoCut can’t download it for you on this computer.',
+  cardBlockedWhy: 'OpenFox can’t download it for you on this computer.',
   cardMissing: 'The download tool isn’t installed',
   cardMissingBody: (why: string) => `${endSentence(why)} You can install yt-dlp yourself, then click “Check again” or choose its location.`,
   cardInstall: 'Set up once, then just paste',
-  cardInstallBody: 'BaoCut needs the video download tool yt-dlp to read video sites. Once you agree, it downloads the tool and remembers your consent, so importing from links won’t ask again.',
+  cardInstallBody: 'OpenFox needs the video download tool yt-dlp to read video sites. Once you agree, it downloads the tool and remembers your consent, so importing from links won’t ask again.',
   cardInstallAction: 'Agree and install',
   cardOutdatedReason: (reason: string | null, version: string | null, minVersion: string | null) =>
     endSentence(reason ?? `Version ${version ?? 'unknown'} is older than the required ${minVersion ?? ''}`),
   cardOutdated: 'The download tool needs an update',
   cardOutdatedBlocked: (reason: string, why: string) => `${reason} ${why}`,
-  cardOutdatedRunnable: 'It wasn’t downloaded by BaoCut; you can update it the way it was installed with the command below.',
-  cardOutdatedManual: 'It wasn’t downloaded by BaoCut. Update it in Terminal following the instructions below, then click “Check again”.',
+  cardOutdatedRunnable: 'It wasn’t downloaded by OpenFox; you can update it the way it was installed with the command below.',
+  cardOutdatedManual: 'It wasn’t downloaded by OpenFox. Update it in Terminal following the instructions below, then click “Check again”.',
   cardOutdatedUpdate: (reason: string) => `${reason} Update it before you start.`,
   cardUpdateAction: 'Agree and update',
   cardBroken: 'The download tool can’t run',
@@ -180,10 +180,10 @@ const en = {
   cardReinstallAction: 'Agree and reinstall',
   cardConsentRevoked: 'You withdrew consent for the download tool',
   cardConsent: 'Your consent is needed to use the download tool',
-  cardConsentBody: 'BaoCut uses it to download videos from websites only after you agree. Your consent is kept in the Runtime, so importing from links won’t ask again.',
+  cardConsentBody: 'OpenFox uses it to download videos from websites only after you agree. Your consent is kept in the Runtime, so importing from links won’t ask again.',
   cardConsentAction: 'Agree and use',
   cardReady: 'The download tool is ready',
-  cardReadyBody: 'When you start, BaoCut checks the link and gets the video info first, then downloads.',
+  cardReadyBody: 'When you start, OpenFox checks the link and gets the video info first, then downloads.',
 };
 
 export type LinkImportMessages = typeof en;

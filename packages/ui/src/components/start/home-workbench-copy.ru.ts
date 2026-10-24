@@ -2,7 +2,7 @@ import { pluralForm } from '@baocut/protocol';
 import type { WorkbenchMessages } from './home-workbench-copy.ts';
 
 export const ru: WorkbenchMessages = {
-  eyebrow: "Tuzi · Творческая мастерская",
+  eyebrow: "OpenFox · Творческая мастерская",
   title: "Превратите идею в новое видео.",
   intro: "Опишите идею, добавьте материалы или продолжите работу.",
   recentTitle: "Недавние проекты",

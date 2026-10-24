@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 /** BaoCut 许可、源码声明与第三方原始许可的分发清单；桌面、Web 构建和安装包共用。 */
 export const DISTRIBUTED_NOTICES = [
   { source: 'LICENSE', fileName: 'LICENSE' },
+  { source: 'OPENFOX_NOTICES.md', fileName: 'OPENFOX_NOTICES.md' },
   { source: 'THIRD_PARTY_NOTICES.md', fileName: 'THIRD_PARTY_NOTICES.md' },
   { source: 'crates/model-runtime/licenses/speech-swift.txt', fileName: 'crates/model-runtime/licenses/speech-swift.txt' },
   { source: 'packages/models/licenses/audio.cpp.txt', fileName: 'packages/models/licenses/audio.cpp.txt' },

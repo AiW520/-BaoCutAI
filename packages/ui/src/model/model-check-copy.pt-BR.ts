@@ -3,7 +3,7 @@ import type { CheckSentence, CheckSubject, ModelCheckMessages, TrySubject } from
 
 const outputWrong: Record<CheckSubject, string> = { transcribe: 'O modelo executa, mas não reconhece a fala da amostra', synthesize: 'O modelo executa, mas o áudio sintetizado está incorreto', image: 'O modelo executa, mas a imagem está incorreta', separate: 'O modelo executa, mas voz e fundo não foram separados', music: 'O modelo executa, mas o que gera é quase silêncio' };
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
- APP_FILE_MISSING: () => ({ text: 'Falta um arquivo do BaoCut, não é problema do modelo', todo: 'Reinstale o BaoCut; modelos baixados não mudam.' }),
+ APP_FILE_MISSING: () => ({ text: 'Falta um arquivo do OpenFox, não é problema do modelo', todo: 'Reinstale o OpenFox; modelos baixados não mudam.' }),
  MODEL_FILES_DAMAGED: () => ({ text: 'Arquivos do modelo danificados', todo: 'Reparar baixa os arquivos danificados novamente.' }),
  MODEL_OUTPUT_WRONG: (subject) => ({ text: outputWrong[subject], todo: 'Repare primeiro. Se persistir, copie detalhes técnicos e envie.' }),
  MODEL_OUT_OF_MEMORY: () => ({ text: 'Memória insuficiente para carregar o modelo', todo: 'Feche modelos grandes ou aplicativos pesados e verifique.' }),
@@ -57,7 +57,7 @@ export const ptBR: ModelCheckMessages = {
   notStarted: {
     RUNTIME_UNREACHABLE: {
       text: "Serviço em segundo plano não responde",
-      todo: "Verifique depois. Se persistir, reinicie BaoCut.",
+      todo: "Verifique depois. Se persistir, reinicie OpenFox.",
     },
     MODEL_IN_USE: {
       text: "Outra tarefa usa este modelo",
@@ -72,7 +72,7 @@ export const ptBR: ModelCheckMessages = {
     OFFLINE_STRICT: { text: "Off-line estrito ativo", todo: "Desative nas Configurações, depois verifique." },
   } as Record<string, CheckSentence>,
   notStartedUnknown: {
-    text: "BaoCut não aceitou este teste",
+    text: "OpenFox não aceitou este teste",
     todo: "Verifique depois; se persistir, copie detalhes técnicos e envie.",
   } as CheckSentence,
 

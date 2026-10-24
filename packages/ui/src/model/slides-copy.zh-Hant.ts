@@ -6,7 +6,7 @@ export const zhHant: SlidesMessages = {
   frameTitle: (name) => `投影片編輯器：${name}`,
   opening: '正在開啟投影片…',
   unavailableTitle: '投影片編輯器無法使用',
-  unavailableBody: '這個版本的 BaoCut 沒有附帶投影片編輯器。投影片的檔案仍在它的資料夾裡。',
+  unavailableBody: '這個版本的 OpenFox 沒有附帶投影片編輯器。投影片的檔案仍在它的資料夾裡。',
   openFailed: (reason) => `無法開啟這份投影片：${reason}`,
   open: '開啟投影片',
   openCard: (name) => `開啟投影片「${name}」`,

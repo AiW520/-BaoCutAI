@@ -25,7 +25,7 @@ export const pl: SpeakersMessages = {
   startHint: "Po ukończeniu otwiera się strona przeglądu – tylko to narzędzie potwierdza się przed zastosowaniem.",
   readOnly: "Wideo tylko do odczytu, nie można rozpoznać mówców.",
   web: "Nie można rozpoznać mówców w przeglądarce",
-  webBody: "Rozpoznawanie używa lokalnego modelu na komputerze. Użyj aplikacji komputerowej BaoCut.",
+  webBody: "Rozpoznawanie używa lokalnego modelu na komputerze. Użyj aplikacji komputerowej OpenFox.",
 
   submitting: "Przesyłanie…",
   queued: "W kolejce…",

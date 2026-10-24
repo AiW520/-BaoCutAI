@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonPl: CommonMessages = {
   copied: (label: string) => `${label} skopiowano`,
   copyFailed: "Nie udało się skopiować. Zaznacz tekst i skopiuj go ręcznie.",
-  autostart: "Uruchamiaj przy otwieraniu BaoCut",
-  stopsWithApp: "Usługa zatrzymuje się po zamknięciu BaoCut.",
+  autostart: "Uruchamiaj przy otwieraniu OpenFox",
+  stopsWithApp: "Usługa zatrzymuje się po zamknięciu OpenFox.",
   portLabel: "Port",
   portIdle: (port: number) => `Domyślnie: ${port}. Jeśli port jest zajęty, wybierz inny: usługa pokaże „Nie udało się uruchomić” i sama nie zmieni portu.`,
   portLive: "Zmiana portu uruchamia usługę ponownie na nowym porcie. Obecne połączenia zostaną przerwane.",
@@ -13,7 +13,7 @@ export const commonPl: CommonMessages = {
   errorFix: "Wybierz inny port lub zamknij aplikację, która go używa.",
   resetPort: "Użyj domyślnego portu",
   portReset: (port: number) => `Przywrócono domyślny port: ${port}`,
-  unavailableSub: "Ta wersja BaoCut Runtime nie udostępnia jeszcze tej usługi, więc nie można jej uruchomić.",
+  unavailableSub: "Ta wersja OpenFox Runtime nie udostępnia jeszcze tej usługi, więc nie można jej uruchomić.",
   started: (name: string) => `${name} uruchomiona`,
   stopped: (name: string) => `${name} zatrzymana`,
   startFailed: (reason: string) => `Nie udało się uruchomić: ${reason}`,
@@ -38,13 +38,13 @@ export const commonPl: CommonMessages = {
 };
 
 export const clientsPl: ClientsMessages = {
-  lede: "Nadaj każdej łączącej się aplikacji własny token. Token jest pokazywany tylko raz, przy tworzeniu, a BaoCut przechowuje tylko jego odcisk. Unieważnij go, gdy nie jest potrzebny, a aplikacja od razu utraci połączenie.",
+  lede: "Nadaj każdej łączącej się aplikacji własny token. Token jest pokazywany tylko raz, przy tworzeniu, a OpenFox przechowuje tylko jego odcisk. Unieważnij go, gdy nie jest potrzebny, a aplikacja od razu utraci połączenie.",
   empty: "Nie ma jeszcze klientów. Utwórz klienta i wpisz jego token w aplikacji, którą chcesz połączyć.",
   create: "Utwórz klienta",
   createTitle: "Utwórz klienta",
   nameLabel: "Nazwa aplikacji",
   namePlaceholder: "Na przykład Claude Desktop",
-  nameDesc: "Służy tylko do rozróżniania klientów w BaoCut. Historia żądań i zatwierdzenia pokazują tę nazwę.",
+  nameDesc: "Służy tylko do rozróżniania klientów w OpenFox. Historia żądań i zatwierdzenia pokazują tę nazwę.",
   confirmCreate: "Utwórz",
   cancel: "Anuluj",
   done: "Gotowe",
@@ -81,7 +81,7 @@ export const approvalCardPl: ApprovalCardMessages = {
 
 export const mcpPl: McpMessages = {
   title: "Usługa MCP",
-  lede: "BaoCut działa jako serwer MCP i udostępnia agentom innych aplikacji AI narzędzia: listę i podgląd wideo, odczyt transkrypcji, edycję, uruchamianie transkrypcji i eksportu oraz syntezę mowy i generowanie obrazów za pomocą modeli dostępnych na tym komputerze. Domyślnie wyłączone. Domyślnie udostępniane są wszystkie wideo; można też wybrać tylko niektóre.",
+  lede: "OpenFox działa jako serwer MCP i udostępnia agentom innych aplikacji AI narzędzia: listę i podgląd wideo, odczyt transkrypcji, edycję, uruchamianie transkrypcji i eksportu oraz syntezę mowy i generowanie obrazów za pomocą modeli dostępnych na tym komputerze. Domyślnie wyłączone. Domyślnie udostępniane są wszystkie wideo; można też wybrać tylko niektóre.",
   on: "Usługa MCP działa",
   off: "Usługa MCP nie została uruchomiona",
   error: "Nie udało się uruchomić usługi MCP",
@@ -113,7 +113,7 @@ export const mcpPl: McpMessages = {
 
 export const modelApiPl: ModelApiMessages = {
   title: "API modeli",
-  lede: "Pozwala narzędziom obsługującym OpenAI API (SDK, narzędzia wiersza poleceń, inne aplikacje) używać modeli dostępnych BaoCut do transkrypcji, syntezy mowy oraz generowania obrazów i tekstu. Nasłuchuje tylko na tym komputerze. Domyślnie używa tylko modeli na tym komputerze; chmurę, węzły LAN i agentów trzeba włączyć osobno.",
+  lede: "Pozwala narzędziom obsługującym OpenAI API (SDK, narzędzia wiersza poleceń, inne aplikacje) używać modeli dostępnych OpenFox do transkrypcji, syntezy mowy oraz generowania obrazów i tekstu. Nasłuchuje tylko na tym komputerze. Domyślnie używa tylko modeli na tym komputerze; chmurę, węzły LAN i agentów trzeba włączyć osobno.",
   on: "API modeli działa",
   off: "API modeli nie zostało uruchomione",
   error: "Nie udało się uruchomić API modeli",
@@ -128,7 +128,7 @@ export const modelApiPl: ModelApiMessages = {
   needKeyFixed: "W tej wersji klucz API (token klienta) jest wymagany i nie można go wyłączyć. Każda aplikacja otrzymuje własny klucz, który można osobno unieważnić.",
   levels: {
     read: "Można tylko pobierać listę modeli (GET /v1/models). Żądania generowania są odrzucane.",
-    ask: "Potwierdzaj każde żądanie generowania w BaoCut. Brak odpowiedzi przez 50 sekund oznacza odrzucenie.",
+    ask: "Potwierdzaj każde żądanie generowania w OpenFox. Brak odpowiedzi przez 50 sekund oznacza odrzucenie.",
     auto: "Żądania generowania działają bez potwierdzenia. Najlepiej, gdy jesteś jedynym użytkownikiem.",
   },
   routingTitle: "Routing",
@@ -164,11 +164,11 @@ export const modelApiPl: ModelApiMessages = {
 
 export const webPl: WebMessages = {
   title: "Usługa internetowa",
-  lede: "Otwórz BaoCut Web w przeglądarce na tym Macu i edytuj te same wideo. Usługa nasłuchuje tylko na tym komputerze; inne urządzenia w sieci nie mogą się połączyć.",
+  lede: "Otwórz OpenFox Web w przeglądarce na tym Macu i edytuj te same wideo. Usługa nasłuchuje tylko na tym komputerze; inne urządzenia w sieci nie mogą się połączyć.",
   on: "Usługa Web działa",
   off: "Usługa Web nie została uruchomiona",
   error: "Nie udało się uruchomić usługi Web",
-  offSub: "Po uruchomieniu możesz otworzyć BaoCut Web w przeglądarce.",
+  offSub: "Po uruchomieniu możesz otworzyć OpenFox Web w przeglądarce.",
   open: "Otwórz w przeglądarce",
   copyLink: "Skopiuj link logowania",
   linkLabel: "Link logowania",

@@ -30,10 +30,10 @@ const en = {
   opening: 'Opening design…',
   /** 这台机器没有构建编辑器（`design.open` 的 `editorAvailable` 为 false）。 */
   unavailableTitle: 'Design editor unavailable',
-  unavailableBody: 'This build of BaoCut doesn’t include the design editor. The design files are still in their folder.',
+  unavailableBody: 'This build of OpenFox doesn’t include the design editor. The design files are still in their folder.',
   /** Web 端的页面不在 127.0.0.1 或 localhost 上，换不到另一个回环主机名（§6.2）。 */
   hostBlockedTitle: 'Design editor unavailable at this address',
-  hostBlockedBody: 'Open BaoCut Web at 127.0.0.1 or localhost to edit designs. The design files are still in their folder.',
+  hostBlockedBody: 'Open OpenFox Web at 127.0.0.1 or localhost to edit designs. The design files are still in their folder.',
   openFailed: (reason: string) => `Couldn’t open the design: ${reason}`,
   /** Space 的条目菜单与查看框里的按钮。 */
   open: 'Open design',
@@ -80,7 +80,7 @@ const en = {
   exportSaved: (path: string) => `Saved to ${path}`,
   exportFailed: (reason: string) => `Couldn’t save the exported file: ${reason}`,
   /** 编辑器要存的文件类型不在允许的范围里。 */
-  exportUnsupported: (name: string) => `BaoCut can’t save “${name}”: this file type isn’t supported`,
+  exportUnsupported: (name: string) => `OpenFox can’t save “${name}”: this file type isn’t supported`,
 };
 export type DesignMessages = typeof en;
 export const DESIGN = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es, fr, de, nl, 'pt-BR': ptBR, it, ru, pl, tr, vi });

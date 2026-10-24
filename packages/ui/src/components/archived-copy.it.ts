@@ -16,7 +16,7 @@ export const it: ArchivedMessages = {
   deleteAll: 'Elimina tutte',
   deleteAllTitle: (n) => pluralForm('it', n, { one: `Eliminare ${n} sessione archiviata?`, other: `Eliminare tutte le ${n} sessioni archiviate?` }),
   deleteAllBody:
-    'La loro cronologia verrà rimossa da BaoCut e le attività in corso verranno prima interrotte. L’operazione non si può annullare. I file nelle cartelle dei progetti non vengono toccati.',
+    'La loro cronologia verrà rimossa da OpenFox e le attività in corso verranno prima interrotte. L’operazione non si può annullare. I file nelle cartelle dei progetti non vengono toccati.',
   restored: (title) => `«${title}» ripristinata`,
   open: 'Apri',
   restoreFailed: (message) => `Impossibile ripristinare: ${message}`,

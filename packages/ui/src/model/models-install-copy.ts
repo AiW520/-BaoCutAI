@@ -51,7 +51,7 @@ const en = {
   remedyIntegrity: `The files from the download source didn't match the manifest's size or sha256, and the bad files were deleted. Switch to another download source (${SOURCE}), then download again.`,
   remedySource: (env: string) =>
     `The download source doesn't have this file or denied access. Check that the mirror set in ${SOURCE} (or the ${env} environment variable) is complete, or switch to another source.`,
-  remedyManifest: "This model package's built-in manifest is missing a trusted sha256, so it can't be installed until BaoCut is updated.",
+  remedyManifest: "This model package's built-in manifest is missing a trusted sha256, so it can't be installed until OpenFox is updated.",
   remedyOffline: 'Strict offline mode is on, so nothing is downloaded. To download, turn off strict offline mode in Settings first.',
   remedySizeChanged: 'The download size changed. Confirm again with the new plan.',
   remedyInUse:
@@ -91,13 +91,13 @@ const en = {
     pickTitle: 'Choose where to save this download',
     reset: 'Use the models folder',
     pickedNote: 'Only for this download; the models folder stays the same.',
-    toolsNote: "Tools and runtimes go in BaoCut's tools folder, not here.",
+    toolsNote: "Tools and runtimes go in OpenFox's tools folder, not here.",
     envNote: 'The models folder is set by the BAOCUT_MODELS_DIR environment variable, so downloads go there.',
     fixedNote: 'The paused download resumes in the folder where it started.',
     missingTitle: "Can't find this folder",
     missingText: "This folder doesn't exist. This also happens when an external drive isn't connected; connect it, or choose another folder.",
     notWritableTitle: "This folder isn't writable",
-    notWritableText: "BaoCut doesn't have permission to write to this folder. Choose another folder, or change its permissions first.",
+    notWritableText: "OpenFox doesn't have permission to write to this folder. Choose another folder, or change its permissions first.",
   },
   /** 模型行：下载时放在了模型目录以外（`path` 已缩短）。 */
   storedAt: (path: string) => `Stored in ${path} · outside the models folder`,

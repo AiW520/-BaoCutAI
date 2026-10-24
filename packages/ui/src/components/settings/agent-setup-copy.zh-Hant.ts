@@ -19,13 +19,13 @@ export const zhHant: AgentSetupMessages = {
     `${detail ? `${detail} ` : ''}常見原因是 Node.js 被解除安裝或升級，或檔案權限有變動。執行檢查可以找出是哪一步出錯。`,
   errorCta: '執行檢查',
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} 版本太舊，BaoCut 無法驅動` : `這個版本的 ${name} 太舊，BaoCut 無法驅動`,
+    version ? `${name} ${version} 版本太舊，OpenFox 無法驅動` : `這個版本的 ${name} 太舊，OpenFox 無法驅動`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `需要 ${minVersion} 或更新版本。`}升級只會更新這個命令列工具，你的帳號和它本身的設定都不受影響。`,
   outdatedCta: (version: string) => `升級到 ${version}`,
   signedOutTitle: (name: string) => `${name} 需要重新登入`,
   signedOutBody: (name: string) =>
-    `登入是在 ${name} 自己的視窗中完成，BaoCut 不會經手你的帳號或密碼。登入後回到這裡檢查。`,
+    `登入是在 ${name} 自己的視窗中完成，OpenFox 不會經手你的帳號或密碼。登入後回到這裡檢查。`,
   signedOutCta: '開啟終端機登入',
 
   stepSkipped: '上一步通過後才會檢查',
@@ -34,7 +34,7 @@ export const zhHant: AgentSetupMessages = {
   stepRun: '能夠啟動',
   stepRunOk: (command: string, version: string) => `${command} --version 回傳 ${version}`,
   stepRunFail: '無法啟動',
-  stepVersion: 'BaoCut 支援此版本',
+  stepVersion: 'OpenFox 支援此版本',
   stepVersionOk: (version: string, min: string) => `${version}，最低需求 ${min}`,
   stepVersionFail: (version: string, min: string) => `目前為 ${version}，最低需求 ${min}`,
   stepLogin: '已登入你的帳號',
@@ -50,13 +50,13 @@ export const zhHant: AgentSetupMessages = {
 
   readyTitle: '準備就緒',
   readyBody: (name: string, model: string, plan: string) =>
-    `新對話會使用 ${name} · ${model}。它使用這台電腦上已安裝的 ${name} 和你自己的 ${plan}，BaoCut 不會另外收費。`,
+    `新對話會使用 ${name} · ${model}。它使用這台電腦上已安裝的 ${name} 和你自己的 ${plan}，OpenFox 不會另外收費。`,
   readyCta: '開始對話',
   attentionBody: (name: string) =>
     `它已經安裝在這台電腦上，不需要重新安裝。原因和解決方法在下方「${name}」那一列。`,
   attentionCta: '檢視問題',
   offTitle: (name: string) => `${name} 已安裝，但已停用`,
-  offBody: '啟用後，只要一句話就能把工作從 BaoCut 交給它。',
+  offBody: '啟用後，只要一句話就能把工作從 OpenFox 交給它。',
   offCta: (name: string) => `啟用 ${name}`,
   missingTitle: '這台電腦上還沒有偵測到 Agent',
   missingBodyMany: '安裝下方任何一個，並用你已有的帳號登入即可，不需要全部安裝。',

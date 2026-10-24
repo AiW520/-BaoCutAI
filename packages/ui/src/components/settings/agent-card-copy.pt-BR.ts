@@ -57,14 +57,14 @@ export const ptBR: AgentCardMessages = {
   nowDefault: (name: string) => `Novas sessões usam ${name}`,
   version: (version: string | null) => (version ? `Versão · v${version}` : "Versão"),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `Você pode atualizar para ${latest}. ` : ""}${min ? `BaoCut exige ao menos ${min}. ` : ""}Atualiza só a ferramenta; conta e configurações próprias não mudam. ${source}`,
+    `${latest ? `Você pode atualizar para ${latest}. ` : ""}${min ? `OpenFox exige ao menos ${min}. ` : ""}Atualiza só a ferramenta; conta e configurações próprias não mudam. ${source}`,
   account: "Conta",
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? "Não conectado ou login expirado" : (account ?? "Conectado")}. Usa sua própria ${plan}; sem cobrança extra do BaoCut. Login feito no terminal.`,
+    `${signedOut ? "Não conectado ou login expirado" : (account ?? "Conectado")}. Usa sua própria ${plan}; sem cobrança extra do OpenFox. Login feito no terminal.`,
   loginInTerminal: "Abrir terminal para entrar",
   switchAccount: "Trocar conta…",
   location: "Local de instalação",
-  locationDesc: "BaoCut chama este programa diretamente e nunca instala outra cópia.",
+  locationDesc: "OpenFox chama este programa diretamente e nunca instala outra cópia.",
   realLocation: "Local real",
   setLocation: "Definir local manualmente",
   troubleshoot: "Diagnosticar",
@@ -77,7 +77,7 @@ export const ptBR: AgentCardMessages = {
     `Instalado com “${label}”; atualize do mesmo modo. Outros métodos só instalam outra cópia.`,
   sourceUnknown: "Atualize pelo mesmo método de instalação.",
   scriptInstall:
-    "Este comando baixa e executa script oficial. BaoCut não executa scripts da internet; copie e execute num terminal.",
+    "Este comando baixa e executa script oficial. OpenFox não executa scripts da internet; copie e execute num terminal.",
   scriptUpgrade: "Este comando baixa e executa script oficial. Copie e execute num terminal.",
   copyUpgrade: "Copie o comando e execute no terminal; volte e verifique novamente.",
   runnableHint: "Clique ▶ à esquerda para executar aqui, saída abaixo. Ou copie e execute no terminal.",
@@ -87,7 +87,7 @@ export const ptBR: AgentCardMessages = {
   needs: (needs: string) => `Exige ${needs} neste computador.`,
 
   installIntro: (name: string, plan: string) =>
-    `${name} é assistente de IA na linha de comando local, conectado com ${plan} que você já tem. BaoCut só chama: sem custo extra ou chave API no BaoCut.`,
+    `${name} é assistente de IA na linha de comando local, conectado com ${plan} que você já tem. OpenFox só chama: sem custo extra ou chave API no OpenFox.`,
   stepInstall: "Instalar neste computador",
   stepInstallOfficial: "Instalar neste computador seguindo as instruções oficiais",
 
@@ -95,7 +95,7 @@ export const ptBR: AgentCardMessages = {
     createElement(Fragment, null, "Instale pelas instruções oficiais. Depois, ", command, " deve executar no terminal."),
   stepLogin: "Entrar na sua conta",
   stepLoginBody:
-    "Após instalar, execute abaixo no terminal e entre no navegador quando pedido. Janela própria, BaoCut não trata conta ou senha.",
+    "Após instalar, execute abaixo no terminal e entre no navegador quando pedido. Janela própria, OpenFox não trata conta ou senha.",
   stepBack: "Voltar aqui",
   stepBackBody: "Pronto após detectar instalação e login.",
   detecting: "Verificando…",

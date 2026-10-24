@@ -162,7 +162,7 @@ const en = {
   termsUnify: 'Use glossary translations',
   termsUnified: (n: number) => `Changed ${n} ${n === 1 ? 'place' : 'places'} to the glossary translation`,
   cut: (n: number) => `${n} original ${n === 1 ? 'sentence has' : 'sentences have'} been cut from the video`,
-  webHint: 'Retranslating calls a model or the Agent: start it from the Agent or the BaoCut app',
+  webHint: 'Retranslating calls a model or the Agent: start it from the Agent or the OpenFox app',
   refreshing: (n: number | null) => (n === null ? 'Retranslating…' : `Retranslating ${sentences(n)}…`),
   aiMenu: 'Retranslate and translate',
   directAll: (n: number) => (n === 1 ? 'Retranslate this 1 sentence with the model API' : `Retranslate these ${n} sentences with the model API`),

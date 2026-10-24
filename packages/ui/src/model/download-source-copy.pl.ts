@@ -19,7 +19,7 @@ export const pl: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Pobieraj z serwera lustrzanego ${base}.`,
   msNote: "Nieliczne pliki, których nie ma w ModelScope (whisper.cpp), nadal pochodzą z Hugging Face. Każdy plik jest sprawdzany wbudowaną sumą kontrolną.",
   envNote: (name: string) => `Jeśli ustawiono zmienną środowiskową ${name}, używana jest ona.`,
-  webNote: "W przeglądarce nie można zmienić źródeł pobierania. Ustaw je w aplikacji BaoCut na komputer.",
+  webNote: "W przeglądarce nie można zmienić źródeł pobierania. Ustaw je w aplikacji OpenFox na komputer.",
   lead:
     "Możesz zapisać kilka źródeł i wybrać po jednym dla każdego rodzaju. Źródło można też zmienić w oknie pobierania, co zmienia wybór tutaj. Każdy plik jest sprawdzany wbudowaną sumą kontrolną, niezależnie od źródła.",
   editAria: (name: string) => `Edytuj „${name}”`,

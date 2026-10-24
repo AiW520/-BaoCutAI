@@ -70,20 +70,20 @@
     </>;
   }
 
-  /* 用户添加的（目录或自定义命令，product-design §7.6）：Tuzi 没有它的安装命令，只知道怎么启动它。
+  /* 用户添加的（目录或自定义命令，product-design §7.6）：OpenFox 没有它的安装命令，只知道怎么启动它。
      由 npx / uvx 现取现用的不用单独装；其余按它自己的说明装好，回来点检测。 */
   function AddedInstallPanel({h, onCopy, onDetect, busy}) {
     const app = useApp();
     return <div className="agp-install">
-      <div className="agp-note"><Ic n="info" className="ic--16" /><span>{h.name} 经 ACP（Agent Client Protocol）接入。Tuzi 没有逐一验证过它：怎么安装、用哪个账号登录，以它自己的说明为准。</span></div>
+      <div className="agp-note"><Ic n="info" className="ic--16" /><span>{h.name} 经 ACP（Agent Client Protocol）接入。OpenFox 没有逐一验证过它：怎么安装、用哪个账号登录，以它自己的说明为准。</span></div>
       <ol className="agset-steps">
-        {h.launcher ? <li><b>不用单独安装</b><p>Tuzi 启动它时由 {h.launcher} 自动下载 <code>{h.spec}</code>，需要这台电脑上已有 {h.launcherNeeds}。</p></li>
+        {h.launcher ? <li><b>不用单独安装</b><p>OpenFox 启动它时由 {h.launcher} 自动下载 <code>{h.spec}</code>，需要这台电脑上已有 {h.launcherNeeds}。</p></li>
           : <li><b>按官方说明安装到这台电脑</b><p>装好后终端里应当能运行 <code>{h.cmd}</code>。</p>
             {h.docs ? <Btn size="s" icon="link" onClick={() => app.toast('原型演示：在浏览器中打开 ' + h.docs)}>打开官方说明</Btn> : null}</li>}
-        <li><b>Tuzi 用这条命令启动它</b>
+        <li><b>OpenFox 用这条命令启动它</b>
           <div className="agset-code"><code>{C.launchLine(h)}</code><IconBtn icon="copy" size="s" tip="复制启动命令" onClick={onCopy} /></div></li>
-        <li><b>需要登录的话，在它自己那里登录</b><p>按它的说明在终端里完成。登录在它自己的窗口里进行，Tuzi 不经手你的账号和密码。</p></li>
-        <li><b>检测</b><p>Tuzi 会启动它一次，确认能连上、是否需要登录，并取到它的模型列表。</p>
+        <li><b>需要登录的话，在它自己那里登录</b><p>按它的说明在终端里完成。登录在它自己的窗口里进行，OpenFox 不经手你的账号和密码。</p></li>
+        <li><b>检测</b><p>OpenFox 会启动它一次，确认能连上、是否需要登录，并取到它的模型列表。</p>
           <Btn size="s" disabled={busy} onClick={onDetect}>{busy ? '正在检测…' : '检测'}</Btn></li>
       </ol>
     </div>;
@@ -92,26 +92,26 @@
   function InstallPanel({h, plan, method, setMethod, onInstall, onCopy, onRecheck, busy, runner}) {
     const app = useApp();
     return <div className="agp-install">
-      <div className="agp-note"><Ic n="info" className="ic--16" /><span>{h.name} 是{h.by && h.by !== h.name ? ' ' + h.by + ' 的' : ''}命令行 AI 助手，装在你自己的电脑上，用你已有的 <b>{h.plan}</b> 登录。Tuzi 只是调用它，不另外收费，也不用在 Tuzi 里填 API key。</span></div>
+      <div className="agp-note"><Ic n="info" className="ic--16" /><span>{h.name} 是{h.by && h.by !== h.name ? ' ' + h.by + ' 的' : ''}命令行 AI 助手，装在你自己的电脑上，用你已有的 <b>{h.plan}</b> 登录。OpenFox 只是调用它，不另外收费，也不用在 OpenFox 里填 API key。</span></div>
       {h.caveat ? <div className="agp-note is-notice"><Ic n="alert" className="ic--16" /><span>{h.caveat}</span></div> : null}
       <ol className="agset-steps">
-        {!plan ? <li><b>按官方说明安装到这台电脑</b><p>Tuzi 还没有一条可以稳妥替你运行的 {h.name} 安装命令。按{h.by ? ' ' + h.by + ' ' : '它'}官方的说明装好，装完终端里应当能运行 <code>{h.cmd}</code>。</p>
+        {!plan ? <li><b>按官方说明安装到这台电脑</b><p>OpenFox 还没有一条可以稳妥替你运行的 {h.name} 安装命令。按{h.by ? ' ' + h.by + ' ' : '它'}官方的说明装好，装完终端里应当能运行 <code>{h.cmd}</code>。</p>
           {h.docs ? <Btn size="s" icon="link" onClick={() => app.toast('原型演示：在浏览器中打开 ' + h.docs)}>打开官方说明</Btn> : null}</li>
         : <li><b>安装到这台电脑</b><p>{S.runnable(plan) ? '点命令左边的 ▶ 直接运行，输出会显示在下面；也可以复制后在终端里自己运行。' : '复制下面这条命令，在终端里运行。'}</p>
           {S.installMethods(h, false).length > 1 ? <Segmented size="s" className="agp-methods" value={method} onChange={(k) => { if (!runner.running) setMethod(k); }}
             items={S.installMethods(h, false).map((m) => ({k: m.k, label: m.label}))} /> : null}
           <CmdRun plan={plan} runner={runner} copyTip="复制安装命令" onCopy={onCopy} onRun={onInstall} />
           {S.runnable(plan) ? null
-            : <p className="agp-hint">这条命令会从官方网站下载并运行脚本。Tuzi 不替你运行来自网络的脚本：请复制后在终端里自己运行。</p>}
+            : <p className="agp-hint">这条命令会从官方网站下载并运行脚本。OpenFox 不替你运行来自网络的脚本：请复制后在终端里自己运行。</p>}
         </li>}
         {plan && h.docs ? <li><b>其他系统的安装方法</b><p>Windows 请按官方说明安装。</p>
           <Btn size="s" icon="link" onClick={() => app.toast('原型演示：在浏览器中打开 ' + h.docs)}>打开官方说明</Btn></li> : null}
-        <li><b>登录你的账号</b><p>{h.loginHint || <>装好后在终端里运行 <code>{h.cmd}</code>，按它的提示在浏览器里登录。</>}登录在它自己的窗口里完成，Tuzi 不经手你的账号和密码。</p></li>
+        <li><b>登录你的账号</b><p>{h.loginHint || <>装好后在终端里运行 <code>{h.cmd}</code>，按它的提示在浏览器里登录。</>}登录在它自己的窗口里完成，OpenFox 不经手你的账号和密码。</p></li>
         <li><b>回到这里</b><p>检测到安装并登录后，它会自动启用。</p>
           <Btn size="s" disabled={busy} onClick={onRecheck}>{busy ? '正在检测…' : '我已装好，重新检测'}</Btn></li>
       </ol>
       <BCDisclosure className="agset-disclosure" title={<> 已经装好，但检测不到？ </>}>
-        <p>Tuzi 会查找 PATH 和常见安装位置（Homebrew、npm 全局目录、~/.local/bin）。用版本管理器（nvm、asdf、mise）装的有时不在这些位置里，可以手动指给 Tuzi。</p>
+        <p>OpenFox 会查找 PATH 和常见安装位置（Homebrew、npm 全局目录、~/.local/bin）。用版本管理器（nvm、asdf、mise）装的有时不在这些位置里，可以手动指给 OpenFox。</p>
         <Btn size="s" onClick={() => app.toast('原型演示：正式版会打开可执行文件选择器')}>手动指定位置…</Btn></BCDisclosure>
     </div>;
   }
@@ -284,13 +284,13 @@
               {S.runnable(plan) ? null
                 : <p className="agp-hint">这条命令会从官方网站下载并运行脚本，请复制后在终端里自己运行。</p>}
             </> : null}</div>
-          <div className="agset-detailrow"><div><b>账号</b><p>{h.added ? `${h.loggedIn === false ? '未登录或登录已过期。' : ''}登录与计费都在 ${h.name} 自己那里，Tuzi 不经手你的账号，也不额外收费。`
-              : `${h.loggedIn === false ? '未登录或登录已过期' : h.account}。用的是你自己的订阅，Tuzi 不额外收费。`}</p></div>
+          <div className="agset-detailrow"><div><b>账号</b><p>{h.added ? `${h.loggedIn === false ? '未登录或登录已过期。' : ''}登录与计费都在 ${h.name} 自己那里，OpenFox 不经手你的账号，也不额外收费。`
+              : `${h.loggedIn === false ? '未登录或登录已过期' : h.account}。用的是你自己的订阅，OpenFox 不额外收费。`}</p></div>
             <Btn size="s" disabled={busy} onClick={login}>{h.loggedIn === false ? '打开终端登录' : '换一个账号…'}</Btn></div>
-          <div className="agset-detailrow"><div><b>安装位置</b><code className="agset-path">{h.bin}</code><p>Tuzi 直接调用你电脑上的这个程序，不会另装一份。</p></div>
+          <div className="agset-detailrow"><div><b>安装位置</b><code className="agset-path">{h.bin}</code><p>OpenFox 直接调用你电脑上的这个程序，不会另装一份。</p></div>
             <IconBtn icon="copy" size="s" tip="复制路径" onClick={() => copy(h.bin, '路径')} /></div>
           {h.launch ? <div className="agset-detailrow"><div><b>启动命令</b><code className="agset-path">{C.launchLine(h)}</code>
-            <p>Tuzi 经 ACP（Agent Client Protocol）用这条命令启动它。</p></div>
+            <p>OpenFox 经 ACP（Agent Client Protocol）用这条命令启动它。</p></div>
             <IconBtn icon="copy" size="s" tip="复制启动命令" onClick={() => copy(C.launchLine(h), '启动命令')} /></div> : null}
           <div className="agset-detailrow"><div><b>排查</b><p>逐项检查安装、版本、登录和模型列表，告诉你卡在哪一步。</p></div>
             <div className="row gap8">

@@ -121,7 +121,7 @@ export const ptBRDub: DubMessages = {
   grantAction: "Autorizar e iniciar",
   grantRetryAction: "Autorizar e tentar novamente",
   grantDialogTitle: "Autorizar compartilhamento de dados",
-  grantDialogIntro: "Após confirmar, o BaoCut registra a autorização e continua a dublagem:",
+  grantDialogIntro: "Após confirmar, o OpenFox registra a autorização e continua a dublagem:",
   grantConfirm: "Autorizar e continuar",
   grantCancel: "Agora não",
   granting: "Autorizando…",

@@ -51,7 +51,7 @@ export const zhHant: MainMessages = {
   runtimeExited: (code: number | null) => `Runtime 無法啟動（結束代碼 ${code}）`,
   runtimeQuitting: '應用程式正在結束',
   quitBusyTitle: (count: number) => `還有 ${count} 個任務正在進行`,
-  quitBusyDetail: '現在結束會中斷這些任務。也可以讓它們在背景繼續執行，完成後 Tuzi 會自行停止。',
+  quitBusyDetail: '現在結束會中斷這些任務。也可以讓它們在背景繼續執行，完成後 OpenFox 會自行停止。',
   quitKeepRunning: '繼續在背景執行',
   quitStop: '停止並結束',
   cancel: '取消',

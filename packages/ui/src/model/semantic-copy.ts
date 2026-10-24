@@ -244,8 +244,8 @@ const en = {
   /** 设置页「索引范围」一组（检索规格 §11.3）。 */
   scope: {
     group: 'Index scope',
-    lead: 'Videos in every BaoCut project are indexed by what was said and what’s on screen; sounds come in a later version. You can exclude projects you don’t want indexed. Exported videos aren’t indexed separately: searching finds the video they were exported from.',
-    all: 'All BaoCut projects',
+    lead: 'Videos in every OpenFox project are indexed by what was said and what’s on screen; sounds come in a later version. You can exclude projects you don’t want indexed. Exported videos aren’t indexed separately: searching finds the video they were exported from.',
+    all: 'All OpenFox projects',
     allLine: (projects: number, excluded: number) =>
       `${projects === 1 ? '1 project' : `${projects} projects`}${excluded ? `, ${excluded} excluded` : ''} · new projects are added automatically`,
     outside: 'Videos outside projects are indexed too.',
@@ -309,13 +309,13 @@ const en = {
     reindexDesc: 'Scan it again and rebuild its index',
     remove: 'Remove',
     removeDesc: 'Delete its index; the files stay',
-    videos: (n: number) => (n === 1 ? '1 BaoCut video' : `${n} BaoCut videos`),
+    videos: (n: number) => (n === 1 ? '1 OpenFox video' : `${n} OpenFox videos`),
     videoFiles: (n: number) => (n === 1 ? '1 video file' : `${n} video files`),
     images: (n: number) => (n === 1 ? '1 image' : `${n} images`),
     nothing: 'No videos or images found yet',
     exportsSkipped: (n: number) => (n === 1 ? '1 export skipped' : `${n} exports skipped`),
     duplicates: (n: number) => (n === 1 ? '1 already in a project' : `${n} already in projects`),
-    legacy: (n: number) => (n === 1 ? '1 older BaoCut video not read' : `${n} older BaoCut videos not read`),
+    legacy: (n: number) => (n === 1 ? '1 older OpenFox video not read' : `${n} older OpenFox videos not read`),
     listSeparator: ', ',
     separator: ' · ',
     missing: 'Can’t find this folder',
@@ -324,21 +324,21 @@ const en = {
     truncatedNoteNoLimit: 'Too many files: only the first ones were scanned. Add a subfolder instead.',
     unreadableNote: 'Can’t read this folder. Check its permissions.',
     legacyNote:
-      'Older BaoCut videos have to be upgraded before they can be read, and upgrading changes them, so they aren’t read here. Move one into a project and open it in BaoCut once to upgrade it.',
+      'Older OpenFox videos have to be upgraded before they can be read, and upgrading changes them, so they aren’t read here. Move one into a project and open it in OpenFox once to upgrade it.',
     visualReady: 'Visuals ready',
     visualProgress: (done: number, total: number) => `Visuals: ${done} of ${total} done`,
-    textOnly: 'Its BaoCut videos are indexed by speech',
+    textOnly: 'Its OpenFox videos are indexed by speech',
     visualOff: 'Visual index is off, so video files and images aren’t indexed yet',
     addTitle: 'Add index folder',
     addBody:
-      'Videos outside your projects can also be found by meaning. BaoCut only reads this folder: it doesn’t change, move or delete anything in it. Its videos and images appear in Space with this folder as the source.',
+      'Videos outside your projects can also be found by meaning. OpenFox only reads this folder: it doesn’t change, move or delete anything in it. Its videos and images appear in Space with this folder as the source.',
     addWhat: (visual: boolean): string =>
       visual
-        ? 'BaoCut videos are indexed by speech and visuals; other video files and images by visuals. Exports BaoCut recorded are skipped, and videos that are also in a project use the project’s copy.'
-        : 'BaoCut videos are indexed by speech; other video files and images need the visual index. Exports BaoCut recorded are skipped, and videos that are also in a project use the project’s copy.',
+        ? 'OpenFox videos are indexed by speech and visuals; other video files and images by visuals. Exports OpenFox recorded are skipped, and videos that are also in a project use the project’s copy.'
+        : 'OpenFox videos are indexed by speech; other video files and images need the visual index. Exports OpenFox recorded are skipped, and videos that are also in a project use the project’s copy.',
     visualOffTitle: 'Video files and images are indexed by visuals',
     visualOffBody:
-      'They have no transcript, so they can only be found by what’s on screen. They’re indexed once the visual index is on; until then only the BaoCut videos in this folder are indexed.',
+      'They have no transcript, so they can only be found by what’s on screen. They’re indexed once the visual index is on; until then only the OpenFox videos in this folder are indexed.',
     confirmAdd: 'Add',
     addedToast: (name: string) => `Added “${name}”. Scanning and indexing in the background.`,
     reindexedToast: (name: string) => `Rescanning “${name}” and rebuilding its index`,

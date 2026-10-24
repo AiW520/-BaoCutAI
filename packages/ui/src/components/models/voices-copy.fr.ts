@@ -76,10 +76,10 @@ export const fr: VoicesMessages = {
     exportButton: "Exporter",
     exported: (path: string) => `Exporté vers ${path}`,
     exportFailed: (text: string) => `Impossible d’exporter : ${text}`,
-    exportExists: "BaoCut n’écrase aucun fichier existant. Choisissez un autre nom ou emplacement et réexportez.",
+    exportExists: "OpenFox n’écrase aucun fichier existant. Choisissez un autre nom ou emplacement et réexportez.",
 
     exportFailedExists: (text: string) =>
-      `Impossible d’exporter : ${text}. BaoCut n’écrase aucun fichier existant. Choisissez un autre nom ou emplacement et réexportez.`,
+      `Impossible d’exporter : ${text}. OpenFox n’écrase aucun fichier existant. Choisissez un autre nom ou emplacement et réexportez.`,
 
     deleteTitle: (name: string) => `Supprimer « ${name} » ?`,
     deleteConfirm: "Supprimer",
@@ -139,7 +139,7 @@ La voix est toujours ici. Réessayez plus tard ou supprimez seulement l’enregi
     reading: "Lecture de l’audio…",
     readFailed: message => `Impossible de lire cet audio : ${message}`,
     micFailed: message => `Impossible de démarrer le micro : ${message}`,
-    micDenied: "BaoCut ne peut pas utiliser le micro. Autorisez-le dans les réglages du système ou importez un enregistrement.",
+    micDenied: "OpenFox ne peut pas utiliser le micro. Autorisez-le dans les réglages du système ou importez un enregistrement.",
     sampleShort: (seconds, min) => `Seulement ${seconds} secondes ; il en faut au moins ${min}. Recommencez.`,
     sampleLocal: "Suffisant pour les moteurs locaux · un peu plus long et les fournisseurs cloud pourront aussi l’utiliser",
     sampleOk: target => `Suffisant · ${target} secondes, c’est idéal`,

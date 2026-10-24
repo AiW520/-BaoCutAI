@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'Отсутствует файл BaoCut; это не проблема модели',
-    todo: 'Переустановка BaoCut решит проблему. Скачанные модели не затронуты.',
+    text: 'Отсутствует файл OpenFox; это не проблема модели',
+    todo: 'Переустановка OpenFox решит проблему. Скачанные модели не затронуты.',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: 'Файлы модели повреждены', todo: 'Восстановление скачает повреждённые файлы заново.' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -22,7 +22,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   MODEL_OUT_OF_MEMORY: () => ({ text: 'Недостаточно памяти, модель не загружена', todo: 'Закройте другие большие модели или приложения с большим потреблением памяти и проверьте снова.' }),
   MODEL_WORKER_FAILED: () => ({
     text: 'Ошибка фонового процесса модели',
-    todo: 'Проверьте снова. При повторении перезапустите BaoCut или скопируйте технические сведения и отправьте нам.',
+    todo: 'Проверьте снова. При повторении перезапустите OpenFox или скопируйте технические сведения и отправьте нам.',
   }),
 };
 
@@ -75,7 +75,7 @@ export const ru: ModelCheckMessages = {
     todo: "Проверьте снова. При повторении скопируйте технические сведения и отправьте нам.",
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: "Фоновый сервис BaoCut не отвечает", todo: "Проверьте позже. При повторении перезапустите BaoCut." },
+    RUNTIME_UNREACHABLE: { text: "Фоновый сервис OpenFox не отвечает", todo: "Проверьте позже. При повторении перезапустите OpenFox." },
     MODEL_IN_USE: { text: "Другая задача использует модель", todo: "Дождитесь завершения задачи или отмените в фоновых задачах, затем проверьте." },
     MODEL_UNAVAILABLE: { text: "Эту модель сейчас нельзя использовать", todo: "Сначала восстановите или включите, затем проверьте." },
     RESOURCE_ADMISSION_UNSATISFIABLE: { text: "На компьютере мало памяти для модели", todo: "Выберите меньшую модель." },
@@ -83,7 +83,7 @@ export const ru: ModelCheckMessages = {
     OFFLINE_STRICT: { text: "Строгий офлайн включён", todo: "Отключите строгий офлайн в настройках, затем проверьте." },
   },
   notStartedUnknown: {
-    text: "BaoCut не принял проверку",
+    text: "OpenFox не принял проверку",
     todo: "Проверьте позже. При повторении скопируйте технические сведения и отправьте нам.",
   },
   detail: {

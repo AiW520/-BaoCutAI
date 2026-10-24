@@ -20,7 +20,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 const en = {
   /** 测试合成念的一句（显示在对话框里，也发给模型念）。 */
-  speechText: 'Hello, this is a BaoCut speech synthesis test.',
+  speechText: 'Hello, this is a OpenFox speech synthesis test.',
   noResult: 'The task finished, but no result came back.',
   failed: 'The task failed.',
   cancelled: 'The task was cancelled.',

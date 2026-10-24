@@ -147,7 +147,7 @@ export const zhHans: ModelsMessages = {
     customTag: '自建',
     emptyProviders: '这一类还没有云端服务商；可以添加一家 OpenAI-compatible 的自建服务。',
     noCloud: '这一类没有云端模型。',
-    webNote: '浏览器里不能连接服务商、更换密钥、添加服务商或模型、刷新目录，也不能更改默认模型与参数；测试模型仍然可以。其余请在 BaoCut 桌面应用里操作。',
+    webNote: '浏览器里不能连接服务商、更换密钥、添加服务商或模型、刷新目录，也不能更改默认模型与参数；测试模型仍然可以。其余请在 开胡-OpenFox 桌面应用里操作。',
   },
   textParams: {
     effort: '推理强度',

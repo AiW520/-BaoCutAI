@@ -18,7 +18,7 @@ export const ko: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `미러 ${base}에서 다운로드합니다.`,
   msNote: "ModelScope에 없는 일부 파일(whisper.cpp)은 계속 Hugging Face에서 다운로드합니다. 모든 파일은 내장된 체크섬으로 확인합니다.",
   envNote: (name: string) => `${name} 환경 변수가 설정되어 있으면 그 값을 사용합니다.`,
-  webNote: "브라우저에서는 다운로드 소스를 변경할 수 없습니다. BaoCut 데스크톱 앱에서 설정하세요.",
+  webNote: "브라우저에서는 다운로드 소스를 변경할 수 없습니다. OpenFox 데스크톱 앱에서 설정하세요.",
   lead: "여러 소스를 저장해 두고 종류별로 하나씩 골라 사용할 수 있습니다. 다운로드 대화상자에서도 바꿀 수 있으며, 그러면 여기 선택도 바뀝니다. 어디에서 받든 모든 파일은 내장된 체크섬으로 확인합니다.",
   editAria: (name: string) => `“${name}” 편집`,
   removeAria: (name: string) => `“${name}” 삭제`,

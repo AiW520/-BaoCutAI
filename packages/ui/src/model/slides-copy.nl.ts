@@ -8,7 +8,7 @@ export const nl: SlidesMessages = {
   frameTitle: (name) => `Dia-editor: ${name}`,
   opening: "Dia's openen…",
   unavailableTitle: 'Dia-editor niet beschikbaar',
-  unavailableBody: "Deze versie van BaoCut bevat de dia-editor niet. De bestanden van de dia's staan nog in hun map.",
+  unavailableBody: "Deze versie van OpenFox bevat de dia-editor niet. De bestanden van de dia's staan nog in hun map.",
   openFailed: (reason) => `Kan dia's niet openen: ${reason}`,
   open: "Dia's openen",
   openCard: (name) => `Dia's ‘${name}’ openen`,

@@ -193,7 +193,7 @@ export const ru: ExportMessages = {
   editors: "Экспортировать в редактор",
   xmemlName: "Premiere Pro / DaVinci Resolve",
   xmemlMeta: "FCP7 XML (.xml)",
-  portableName: "Переносимый пакет BaoCut",
+  portableName: "Переносимый пакет OpenFox",
   portableMeta: ".baocut · видео, все документы и материалы в одном файле",
   plannedTarget: "Этот вид файла проекта ещё недоступен",
   jianyingName: "Черновик Jianying",

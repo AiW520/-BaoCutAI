@@ -47,7 +47,7 @@ export const de: PlayerMessages = {
     aborted: "Laden unterbrochen",
     network: "Beim Lesen der Datei ist ein Fehler aufgetreten",
     decode: "Decodierung fehlgeschlagen; möglicherweise ist die Datei beschädigt",
-    unsupported: "BaoCut kann Format oder Codec dieser Datei noch nicht abspielen",
+    unsupported: "OpenFox kann Format oder Codec dieser Datei noch nicht abspielen",
     other: "Diese Datei konnte nicht abgespielt werden",
   },
 };

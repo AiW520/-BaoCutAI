@@ -45,7 +45,7 @@ export const zhHans: PlayerMessages = {
     aborted: '加载被中断了',
     network: '读取文件时出错了',
     decode: '解码失败，文件可能已经损坏',
-    unsupported: '这个文件的格式或编码在 BaoCut 里还不能播放',
+    unsupported: '这个文件的格式或编码在 开胡-OpenFox 里还不能播放',
     other: '没能播放这个文件',
   },
 };

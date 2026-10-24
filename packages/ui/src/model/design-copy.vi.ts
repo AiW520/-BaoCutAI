@@ -8,9 +8,9 @@ export const vi: DesignMessages = {
   frameTitle: (name) => `Trình chỉnh sửa thiết kế: ${name}`,
   opening: 'Đang mở bản thiết kế…',
   unavailableTitle: 'Không dùng được trình chỉnh sửa thiết kế',
-  unavailableBody: 'Bản BaoCut này không kèm trình chỉnh sửa thiết kế. Các tệp thiết kế vẫn nằm trong thư mục của chúng.',
+  unavailableBody: 'Bản OpenFox này không kèm trình chỉnh sửa thiết kế. Các tệp thiết kế vẫn nằm trong thư mục của chúng.',
   hostBlockedTitle: 'Không mở được trình chỉnh sửa thiết kế ở địa chỉ này',
-  hostBlockedBody: 'Hãy mở BaoCut Web bằng 127.0.0.1 hoặc localhost để chỉnh sửa bản thiết kế. Các tệp thiết kế vẫn nằm trong thư mục của chúng.',
+  hostBlockedBody: 'Hãy mở OpenFox Web bằng 127.0.0.1 hoặc localhost để chỉnh sửa bản thiết kế. Các tệp thiết kế vẫn nằm trong thư mục của chúng.',
   openFailed: (reason) => `Không mở được bản thiết kế: ${reason}`,
   open: 'Mở bản thiết kế',
   openCard: (name) => `Mở bản thiết kế “${name}”`,
@@ -40,5 +40,5 @@ export const vi: DesignMessages = {
   exportDialogButton: 'Xuất',
   exportSaved: (path) => `Đã lưu vào ${path}`,
   exportFailed: (reason) => `Không lưu được tệp đã xuất: ${reason}`,
-  exportUnsupported: (name) => `BaoCut không lưu được “${name}”: loại tệp này không được hỗ trợ`,
+  exportUnsupported: (name) => `OpenFox không lưu được “${name}”: loại tệp này không được hỗ trợ`,
 };

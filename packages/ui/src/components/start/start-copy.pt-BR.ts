@@ -7,7 +7,7 @@ export const ptBR: StartMessages = {
     pickTitle: "Escolher yt-dlp",
     pickButton: "Usar este",
     pickFailed: (message: string) => `Arquivo não utilizável: ${message}`,
-    manualUpdate: "BaoCut não pode atualizar esta cópia agora. Execute o comando do cartão no terminal",
+    manualUpdate: "OpenFox não pode atualizar esta cópia agora. Execute o comando do cartão no terminal",
     commandChanged: "O comando mudou. Verifique o novo antes de executar",
     updateFailed: (message: string) => `Não foi possível iniciar atualização: ${message}`,
     stopFailed: (message: string) => `Não foi possível parar atualização: ${message}`,

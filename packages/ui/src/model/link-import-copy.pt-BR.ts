@@ -28,11 +28,11 @@ export const ptBR: LinkImportMessages = {
   issue: {
     TOOL_NOT_INSTALLED: {
       title: "Configurar uma vez e colar",
-      body: "BaoCut exige yt-dlp para este site. Instale e repita a importação.",
+      body: "OpenFox exige yt-dlp para este site. Instale e repita a importação.",
     },
     TOOL_CONSENT_REQUIRED: {
       title: "Consentimento necessário para a ferramenta",
-      body: "Ferramenta já instalada. BaoCut só usa para baixar após consentimento.",
+      body: "Ferramenta já instalada. OpenFox só usa para baixar após consentimento.",
     },
     TOOL_UNAVAILABLE: {
       title: "Ferramenta não executável",
@@ -44,7 +44,7 @@ export const ptBR: LinkImportMessages = {
     },
     OFFLINE_STRICT: {
       title: "Links indisponíveis no off-line estrito",
-      body: "BaoCut não usa rede neste modo. Baixe no navegador, depois escolha arquivo local.",
+      body: "OpenFox não usa rede neste modo. Baixe no navegador, depois escolha arquivo local.",
     },
     LINK_UNSUPPORTED: {
       title: "Origem ainda não aceita",
@@ -116,14 +116,14 @@ export const ptBR: LinkImportMessages = {
   toolSource: {
     system: "Instalado no sistema",
     user: "Escolhido por você",
-    managed: "Baixado pelo BaoCut",
-    bundled: "Incluído no BaoCut",
+    managed: "Baixado pelo OpenFox",
+    bundled: "Incluído no OpenFox",
     env: "Definido por variável de ambiente",
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Versão ${version} · cerca de ${size}` : `Versão ${version}`),
   factFrom: (host: string) => `Baixado de ${host}`,
   factLicense: (license: string) => `${license}: licença`,
-  factIsolated: "Mantido na pasta do BaoCut, só executa após checksum; sistema inalterado",
+  factIsolated: "Mantido na pasta do OpenFox, só executa após checksum; sistema inalterado",
   factInstalledWith: (method: string) => `Instalado com ${method}`,
 
   cardChecking: "Verificando ferramenta…",
@@ -134,18 +134,18 @@ export const ptBR: LinkImportMessages = {
   cardInstallingBody: "Baixar → verificar → testar. Mostra “Pronto” ao concluir.",
   cardUpdating: "Atualizando ferramenta…",
   cardUpdatingBody: "Saída sob o comando; versão reverificada ao concluir.",
-  cardBlockedWhy: "BaoCut não pode baixar por você neste computador.",
+  cardBlockedWhy: "OpenFox não pode baixar por você neste computador.",
   cardMissing: "Ferramenta não instalada",
   cardMissingBody: (why: string) => `${endSentence(why)} Instale yt-dlp e clique “Verificar novamente” ou escolha local.`,
   cardInstall: "Configurar uma vez e colar",
-  cardInstallBody: "BaoCut precisa de yt-dlp. Após consentir, baixa e lembra, sem perguntar novamente.",
+  cardInstallBody: "OpenFox precisa de yt-dlp. Após consentir, baixa e lembra, sem perguntar novamente.",
   cardInstallAction: "Concordar e instalar",
   cardOutdatedReason: (reason: string | null, version: string | null, minVersion: string | null) =>
     endSentence(reason ?? `Versão ${version ?? "desconhecida"} é inferior à exigida ${minVersion ?? ""}`),
   cardOutdated: "Ferramenta precisa atualizar",
   cardOutdatedBlocked: (reason: string, why: string) => `${reason} ${why}`,
-  cardOutdatedRunnable: "Não baixado pelo BaoCut; atualize pelo método original com o comando abaixo.",
-  cardOutdatedManual: "Não baixado pelo BaoCut. Atualize no Terminal conforme abaixo, depois “Verificar novamente”.",
+  cardOutdatedRunnable: "Não baixado pelo OpenFox; atualize pelo método original com o comando abaixo.",
+  cardOutdatedManual: "Não baixado pelo OpenFox. Atualize no Terminal conforme abaixo, depois “Verificar novamente”.",
   cardOutdatedUpdate: (reason: string) => `${reason} Atualize antes de iniciar.`,
   cardUpdateAction: "Concordar e atualizar",
   cardBroken: "Ferramenta não executável",
@@ -153,7 +153,7 @@ export const ptBR: LinkImportMessages = {
   cardReinstallAction: "Concordar e reinstalar",
   cardConsentRevoked: "Você retirou consentimento à ferramenta",
   cardConsent: "Consentimento necessário para a ferramenta",
-  cardConsentBody: "BaoCut só baixa após concordar. Consentimento no Runtime; links não perguntam de novo.",
+  cardConsentBody: "OpenFox só baixa após concordar. Consentimento no Runtime; links não perguntam de novo.",
   cardConsentAction: "Concordar e usar",
   cardReady: "Ferramenta pronta",
   cardReadyBody: "Ao iniciar, verifica link e informações antes de baixar.",

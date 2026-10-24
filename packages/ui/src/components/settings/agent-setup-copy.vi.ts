@@ -21,13 +21,13 @@ export const vi: AgentSetupMessages = {
     `${detail ? `${detail} ` : ""}Thường do Node.js bị gỡ hoặc nâng cấp, hay quyền tệp thay đổi. Chạy kiểm tra có thể xác định bước lỗi.`,
   errorCta: "Chạy kiểm tra",
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} quá cũ để BaoCut điều khiển` : `Phiên bản này của ${name} quá cũ để BaoCut điều khiển`,
+    version ? `${name} ${version} quá cũ để OpenFox điều khiển` : `Phiên bản này của ${name} quá cũ để OpenFox điều khiển`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `Cần ${minVersion} trở lên. `}Nâng cấp chỉ cập nhật công cụ dòng lệnh này; tài khoản và cài đặt riêng của nó vẫn giữ nguyên.`,
   outdatedCta: (version: string) => `Nâng cấp lên ${version}`,
   signedOutTitle: (name: string) => `${name} yêu cầu bạn đăng nhập lại`,
   signedOutBody: (name: string) =>
-    `Đăng nhập diễn ra trong cửa sổ riêng của ${name}; BaoCut không xử lý tài khoản hay mật khẩu của bạn. Quay lại đây để kiểm tra sau khi đăng nhập.`,
+    `Đăng nhập diễn ra trong cửa sổ riêng của ${name}; OpenFox không xử lý tài khoản hay mật khẩu của bạn. Quay lại đây để kiểm tra sau khi đăng nhập.`,
   signedOutCta: "Mở terminal để đăng nhập",
 
   stepSkipped: "Kiểm tra khi bước trước thành công",
@@ -36,7 +36,7 @@ export const vi: AgentSetupMessages = {
   stepRun: "Khởi động được",
   stepRunOk: (command: string, version: string) => `${command} --version trả về ${version}`,
   stepRunFail: "Khởi động thất bại",
-  stepVersion: "Phiên bản được BaoCut hỗ trợ",
+  stepVersion: "Phiên bản được OpenFox hỗ trợ",
   stepVersionOk: (version: string, min: string) => `${version}, tối thiểu ${min}`,
   stepVersionFail: (version: string, min: string) => `Hiện tại ${version}, tối thiểu ${min}`,
   stepLogin: "Đã đăng nhập tài khoản của bạn",
@@ -52,13 +52,13 @@ export const vi: AgentSetupMessages = {
 
   readyTitle: "Sẵn sàng",
   readyBody: (name: string, model: string, plan: string) =>
-    `Phiên mới dùng ${name} · ${model}. Chạy trên ${name} đã cài trên máy tính này với ${plan} của bạn; BaoCut không thu thêm phí.`,
+    `Phiên mới dùng ${name} · ${model}. Chạy trên ${name} đã cài trên máy tính này với ${plan} của bạn; OpenFox không thu thêm phí.`,
   readyCta: "Bắt đầu phiên",
   attentionBody: (name: string) =>
     `Đã cài trên máy tính này nên không cần cài lại. Nguyên nhân và cách sửa ở hàng “${name}” bên dưới.`,
   attentionCta: "Xem vấn đề",
   offTitle: (name: string) => `${name} đã cài nhưng đang tắt`,
-  offBody: "Bật để giao việc từ BaoCut bằng một câu.",
+  offBody: "Bật để giao việc từ OpenFox bằng một câu.",
   offCta: (name: string) => `Bật ${name}`,
   missingTitle: "Chưa phát hiện Agent trên máy tính này",
   missingBodyMany: "Cài một Agent bên dưới và đăng nhập bằng tài khoản bạn đã có. Không cần cài tất cả.",

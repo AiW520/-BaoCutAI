@@ -29,7 +29,7 @@ export const ko: ModelsInstallMessages = {
     '다운로드 소스에서 받은 파일이 매니페스트의 크기 또는 sha256과 일치하지 않아 잘못된 파일을 삭제했습니다. 다른 다운로드 소스(설정 › 일반의 다운로드 소스)로 바꾼 뒤 다시 다운로드하세요.',
   remedySource:
     (env) => `다운로드 소스에 이 파일이 없거나 접근이 거부되었습니다. 설정 › 일반의 다운로드 소스(또는 ${env} 환경 변수)에 지정한 미러가 완전한지 확인하거나 다른 소스로 바꾸세요.`,
-  remedyManifest: '이 모델 패키지의 내장 매니페스트에 신뢰할 수 있는 sha256이 없어, BaoCut이 업데이트될 때까지 설치할 수 없습니다.',
+  remedyManifest: '이 모델 패키지의 내장 매니페스트에 신뢰할 수 있는 sha256이 없어, OpenFox이 업데이트될 때까지 설치할 수 없습니다.',
   remedyOffline: '엄격한 오프라인 모드가 켜져 있어 아무것도 다운로드하지 않습니다. 다운로드하려면 먼저 설정에서 엄격한 오프라인 모드를 끄세요.',
   remedySizeChanged: '다운로드 크기가 바뀌었습니다. 새 계획으로 다시 확인하세요.',
   remedyInUse:
@@ -63,13 +63,13 @@ export const ko: ModelsInstallMessages = {
     pickTitle: '이번 다운로드를 저장할 위치 선택',
     reset: '모델 폴더로 되돌리기',
     pickedNote: '이번 다운로드에만 사용하며 모델 폴더는 바뀌지 않습니다.',
-    toolsNote: '도구 및 런타임은 여기가 아니라 BaoCut의 도구 폴더에 설치됩니다.',
+    toolsNote: '도구 및 런타임은 여기가 아니라 OpenFox의 도구 폴더에 설치됩니다.',
     envNote: '모델 폴더가 BAOCUT_MODELS_DIR 환경 변수로 지정되어 있어 다운로드는 그곳에 저장됩니다.',
     fixedNote: '일시 중지된 다운로드는 처음 시작한 폴더에서 이어집니다.',
     missingTitle: '이 폴더를 찾을 수 없습니다',
     missingText: '이 폴더가 없습니다. 외장 드라이브가 연결되지 않았을 때도 이렇게 됩니다. 연결하거나 다른 폴더를 선택하세요.',
     notWritableTitle: '이 폴더에 쓸 수 없습니다',
-    notWritableText: 'BaoCut에 이 폴더의 쓰기 권한이 없습니다. 다른 폴더를 선택하거나 먼저 권한을 변경하세요.',
+    notWritableText: 'OpenFox에 이 폴더의 쓰기 권한이 없습니다. 다른 폴더를 선택하거나 먼저 권한을 변경하세요.',
   },
   storedAt: (path) => `${path}에 저장됨 · 모델 폴더 밖`,
 };

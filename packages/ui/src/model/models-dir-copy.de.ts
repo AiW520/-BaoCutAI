@@ -12,7 +12,7 @@ export const de: ModelsDirMessages = {
     envChip: "Umgebungsvariable",
     change: "Ändern…",
     restore: "Standard wiederherstellen",
-    envNote: "Durch BAOCUT_MODELS_DIR festgelegt. Zum Ändern die Umgebungsvariable anpassen und BaoCut neu starten.",
+    envNote: "Durch BAOCUT_MODELS_DIR festgelegt. Zum Ändern die Umgebungsvariable anpassen und OpenFox neu starten.",
     shareHint:
       "Bei Nutzung dieses Ordners durch andere Apps löscht das Entfernen eines Modells seine Dateien auch für diese Apps.",
     blockedPrefix: "Derzeit nicht änderbar:",
@@ -28,10 +28,10 @@ export const de: ModelsDirMessages = {
     confirmMove: "Verschieben und ändern",
     confirmSwitch: "Speicherort ändern",
     movingLabel: "Modelle werden verschoben",
-    stayOpen: "BaoCut währenddessen nicht beenden",
+    stayOpen: "OpenFox währenddessen nicht beenden",
     missingDir:
       "Ordner nicht vorhanden (auch bei getrenntem externem Laufwerk). Nach Verbindung funktionieren Modelle wieder; alternativ anderen Speicherort wählen.",
-    notWritableDir: "BaoCut hat keine Schreibberechtigung für diesen Ordner; Modelle können nicht darin heruntergeladen werden.",
+    notWritableDir: "OpenFox hat keine Schreibberechtigung für diesen Ordner; Modelle können nicht darin heruntergeladen werden.",
     loading: "Modellordner wird gelesen…",
     pickFailed: (message: string) => `Ordner konnte nicht ausgewählt werden: ${message}`,
     same: "Dies ist bereits der aktuelle Modellordner",
@@ -51,7 +51,7 @@ export const de: ModelsDirMessages = {
   missingText: "Ordner nicht vorhanden, möglicherweise externes Laufwerk getrennt. Verbinden und erneut auswählen.",
   notWritableTitle: "Dieser Ordner ist nicht beschreibbar",
   notWritableText:
-    "BaoCut hat keine Schreibberechtigung; Modelle können nicht dort heruntergeladen werden. Beschreibbaren Ort wählen oder Berechtigungen ändern.",
+    "OpenFox hat keine Schreibberechtigung; Modelle können nicht dort heruntergeladen werden. Beschreibbaren Ort wählen oder Berechtigungen ändern.",
   nestedTitle: "Hier nicht möglich",
   nestedText:
     "Neuer Speicherort und aktueller Modellordner enthalten einander. Ordner wählen, der weder darin liegt noch ihn enthält.",

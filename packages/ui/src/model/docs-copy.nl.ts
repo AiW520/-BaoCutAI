@@ -8,7 +8,7 @@ export const nl: DocsMessages = {
   frameTitle: (name) => `Editor voor samenwerkingsdocumenten: ${name}`,
   opening: 'Samenwerkingsdocument openen…',
   unavailableTitle: 'Editor voor samenwerkingsdocumenten niet beschikbaar',
-  unavailableBody: 'Deze versie van BaoCut bevat de editor voor samenwerkingsdocumenten niet. De bestanden van het document staan nog in hun map.',
+  unavailableBody: 'Deze versie van OpenFox bevat de editor voor samenwerkingsdocumenten niet. De bestanden van het document staan nog in hun map.',
   openFailed: (reason) => `Kan samenwerkingsdocument niet openen: ${reason}`,
   open: 'Samenwerkingsdocument openen',
   openCard: (name) => `Samenwerkingsdocument ‘${name}’ openen`,

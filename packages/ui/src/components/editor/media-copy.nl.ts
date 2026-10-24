@@ -8,7 +8,7 @@ export const nl: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => ({ video: "Video", image: "Afbeeldingen", audio: "Audio" })[kind],
   undo: "Ongedaan maken",
   readOnly: "De video is alleen-lezen",
-  revealManaged: "Verzameld in de videomap en beheerd door BaoCut; heeft geen afzonderlijke bestandslocatie",
+  revealManaged: "Verzameld in de videomap en beheerd door OpenFox; heeft geen afzonderlijke bestandslocatie",
   revealUnknown: "Kan de geregistreerde locatie van dit bestand niet vinden",
   uses: "Waar gebruikt",
   usesNone: "Nog niet gebruikt op de tijdlijn",

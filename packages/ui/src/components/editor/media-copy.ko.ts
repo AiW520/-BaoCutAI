@@ -8,7 +8,7 @@ export const ko: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => noun[kind],
   undo: '실행 취소',
   readOnly: '영상이 읽기 전용입니다',
-  revealManaged: '영상 폴더로 모아 BaoCut이 관리하므로 별도의 파일 위치가 없습니다',
+  revealManaged: '영상 폴더로 모아 OpenFox이 관리하므로 별도의 파일 위치가 없습니다',
   revealUnknown: '이 파일에 기록된 위치를 찾을 수 없습니다',
   uses: '사용 위치',
   usesNone: '아직 타임라인에서 사용하지 않았습니다',

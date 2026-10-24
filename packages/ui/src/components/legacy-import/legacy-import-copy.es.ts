@@ -5,8 +5,8 @@ export const es: LegacyImportMessages = {
   title: '¿Importar proyectos de una versión anterior?',
   lead: (n) =>
     pluralForm('es', n, {
-      one: `Hay ${n} proyecto de una versión anterior de BaoCut en este ordenador. Impórtalo para seguir editándolo en esta versión. Los archivos originales se quedan donde están, sin cambios.`,
-      other: `Hay ${n} proyectos de una versión anterior de BaoCut en este ordenador. Impórtalos para seguir editándolos en esta versión. Los archivos originales se quedan donde están, sin cambios.`,
+      one: `Hay ${n} proyecto de una versión anterior de OpenFox en este ordenador. Impórtalo para seguir editándolo en esta versión. Los archivos originales se quedan donde están, sin cambios.`,
+      other: `Hay ${n} proyectos de una versión anterior de OpenFox en este ordenador. Impórtalos para seguir editándolos en esta versión. Los archivos originales se quedan donde están, sin cambios.`,
     }),
   found: 'Proyectos encontrados',
   destination: 'Importar en',
@@ -14,7 +14,7 @@ export const es: LegacyImportMessages = {
   change: 'Cambiar…',
   pickTitle: 'Elige dónde importar',
   destinationNote: 'Esta carpeta aparece como un proyecto en Home, y cada proyecto anterior pasa a ser un vídeo dentro de él.',
-  hint: 'Si lo omites, se te volverá a preguntar la próxima vez que se inicie BaoCut. Marca «No volver a recordar» para no importarlos nunca.',
+  hint: 'Si lo omites, se te volverá a preguntar la próxima vez que se inicie OpenFox. Marca «No volver a recordar» para no importarlos nunca.',
   never: 'No volver a recordar',
   skip: 'Omitir',
   import: 'Importar',
@@ -24,7 +24,7 @@ export const es: LegacyImportMessages = {
       other: `Importando ${n} proyectos anteriores en segundo plano`,
     }),
   neverDone: 'No se te volverá a recordar que importes proyectos anteriores. Los archivos originales se quedan como están.',
-  skipped: 'Omitido. Se te volverá a preguntar la próxima vez que se inicie BaoCut.',
+  skipped: 'Omitido. Se te volverá a preguntar la próxima vez que se inicie OpenFox.',
   failed: (message) => `No se pudo importar: ${message}`,
   settingsTitle: "Recuperación de ajustes de una versión anterior",
   settingsLeadAdopted: "Durante la actualización se adoptó la carpeta de modelos anterior. La instalación verifica los archivos existentes con el manifiesto actual y descarga solo los que faltan o están dañados.",

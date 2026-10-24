@@ -16,7 +16,7 @@ export const nl: ArchivedMessages = {
   deleteAll: 'Alles verwijderen',
   deleteAllTitle: (n) => pluralForm('nl', n, { one: `${n} gearchiveerde sessie verwijderen?`, other: `Alle ${n} gearchiveerde sessies verwijderen?` }),
   deleteAllBody:
-    'De geschiedenis van deze sessies wordt uit BaoCut verwijderd en lopende taken worden eerst gestopt. Dit kan niet ongedaan worden gemaakt. Bestanden in projectmappen blijven onaangetast.',
+    'De geschiedenis van deze sessies wordt uit OpenFox verwijderd en lopende taken worden eerst gestopt. Dit kan niet ongedaan worden gemaakt. Bestanden in projectmappen blijven onaangetast.',
   restored: (title) => `‘${title}’ hersteld`,
   open: 'Openen',
   restoreFailed: (message) => `Kan niet herstellen: ${message}`,

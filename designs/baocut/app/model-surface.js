@@ -12,7 +12,7 @@
 (function () {
   const CAPS = {
     app: {
-      id: 'app', name: 'Tuzi',
+      id: 'app', name: 'OpenFox',
       ai: true,          // AI 入口：工具页（product-design §5.10）、面板里的重跑 / 翻译 / 配音 / 智能裁剪 / 生成语音
       agent: true,       // Agent 抽屉、会话、交给 Agent
       pages: true,       // 新建项目 / 我的项目 / 后台任务 / 工具 / 服务 / 设置
@@ -36,7 +36,7 @@
       exportNextToSource: true,
     },
     web: {
-      id: 'web', name: 'Tuzi Web',
+      id: 'web', name: 'OpenFox Web',
       ai: false, agent: false, pages: false, help: false, windowChrome: false,
       importMedia: true, flashFix: false, remote: false,
       sidebarDefaultOpen: false, appRail: false, fontDownloads: false, reveal: false, exportNextToSource: false,
@@ -69,7 +69,7 @@
     };
 
     /** 没有 AI 入口的表面上，面板里原本放按钮的地方改说这句话（去处，不是歉意） */
-    const aiElsewhere = (what) => `${what}从 Agent 或 Tuzi App 发起，结果会同步到这里`;
+    const aiElsewhere = (what) => `${what}从 Agent 或 OpenFox App 发起，结果会同步到这里`;
 
     return Object.assign({}, caps, {isWeb, rail, landingTab, storageKey, normalizeRoute, aiElsewhere});
   }

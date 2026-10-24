@@ -9,7 +9,7 @@ export const ptBR: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => ({ video: "Vídeo", image: "Imagens", audio: "Áudio" })[kind],
   undo: "Desfazer",
   readOnly: "Vídeo em leitura apenas",
-  revealManaged: "Coletado na pasta do vídeo e gerenciado pelo BaoCut; sem local separado",
+  revealManaged: "Coletado na pasta do vídeo e gerenciado pelo OpenFox; sem local separado",
   revealUnknown: "Local registrado do arquivo não encontrado",
   uses: "Onde é usado",
   usesNone: "Ainda não usado na linha do tempo",

@@ -7,6 +7,7 @@ export const ru: ShellMessages = {
   list: (items) => items.join(", "),
   separator: ", ",
   common: {
+    productName: 'OpenFox',
     cancel: "Отмена",
     save: "Сохранить",
     rename: "Переименовать",
@@ -37,7 +38,7 @@ export const ru: ShellMessages = {
     deleteSessionEllipsis: "Удалить сессию…",
     deleteTitle: "Удалить эту сессию?",
     deleteConfirm: "Удалить",
-    deleteBody: "История сессии удалится из Tuzi, выполняющаяся задача сначала остановится. Файлы проекта не затронуты.",
+    deleteBody: "История сессии удалится из OpenFox, выполняющаяся задача сначала остановится. Файлы проекта не затронуты.",
     deleteFailed: (message) => `Не удалось удалить: ${message}`,
     renameTitle: "Переименовать сессию",
     videosIn: (place) => (place === 'project' ? "Видео проекта" : "Видео рабочей папки"),
@@ -65,7 +66,7 @@ export const ru: ShellMessages = {
     noSessions: "Сессий ещё нет.",
     noProjects: "Проектов ещё нет. Создайте или откройте папку; агент работает в ней.",
     renameProjectTitle: "Переименовать проект",
-    renameProjectHint: "Меняет только имя в Tuzi, имя папки сохраняется.",
+    renameProjectHint: "Меняет только имя в OpenFox, имя папки сохраняется.",
     toggleSection: (collapsed, label) => `${collapsed ? "Развернуть" : "Свернуть"} ${label}`,
     organizeLabel: "Организовать проекты и сессии",
     sidebarSettings: "Настройки боковой панели",
@@ -99,7 +100,7 @@ export const ru: ShellMessages = {
     shortcutForward: "Вперед",
     app: "Приложение",
     privacyTitle: "Ваши данные остаются на компьютере",
-    privacyHint: "Сессии, список проектов и отметки Space в папке данных; файлы проектов в своих папках, Tuzi не отправляет их. Сетевой доступ агента определяется движком.",
+    privacyHint: "Сессии, список проектов и отметки Space в папке данных; файлы проектов в своих папках, OpenFox не отправляет их. Сетевой доступ агента определяется движком.",
     dataDir: "Папка данных",
     projectsDir: "Новые проекты сохраняются в",
     logsDir: "Папка журналов",
@@ -176,7 +177,7 @@ export const ru: ShellMessages = {
     closed: "Соединение закрыто",
     lost: (reason, retrying) => `${reason}.${retrying ? " Переподключение…" : ""}`,
     reconnectingEllipsis: "Переподключение…",
-    title: "Нет подключения к Runtime Tuzi",
+    title: "Нет подключения к Runtime OpenFox",
     reconnecting: "Переподключение",
   },
   videoInfo: {
@@ -195,7 +196,7 @@ export const ru: ShellMessages = {
   filePreview: {
     tooLarge: "Файл слишком большой для полного отображения",
     loading: "Загрузка предпросмотра",
-    unsupported: "Tuzi пока не показывает этот вид файла. Покажите в папке и откройте другим приложением.",
+    unsupported: "OpenFox пока не показывает этот вид файла. Покажите в папке и откройте другим приложением.",
     failed: (message) => `Не удалось загрузить предпросмотр: ${message}`,
   },
   accessPicker: {

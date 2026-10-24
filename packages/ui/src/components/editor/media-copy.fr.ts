@@ -9,7 +9,7 @@ export const fr: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => ({ video: "Vidéo", image: "Images", audio: "Audio" })[kind],
   undo: "Annuler",
   readOnly: "La vidéo est en lecture seule",
-  revealManaged: "Rassemblé dans le dossier vidéo et géré par BaoCut ; aucun emplacement de fichier séparé",
+  revealManaged: "Rassemblé dans le dossier vidéo et géré par OpenFox ; aucun emplacement de fichier séparé",
   revealUnknown: "Emplacement enregistré pour ce fichier introuvable",
   uses: "Où il est utilisé",
   usesNone: "Pas encore utilisé sur la timeline",

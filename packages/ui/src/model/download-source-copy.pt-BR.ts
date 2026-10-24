@@ -19,7 +19,7 @@ export const ptBR: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Baixar do espelho em ${base}.`,
   msNote: "Os poucos arquivos que o ModelScope não tem (whisper.cpp) continuam vindo do Hugging Face. Cada arquivo é conferido com sua soma de verificação integrada.",
   envNote: (name: string) => `Se a variável de ambiente ${name} estiver definida, ela é usada no lugar.`,
-  webNote: "Um navegador não pode alterar as fontes de download. Configure isso no app para desktop do BaoCut.",
+  webNote: "Um navegador não pode alterar as fontes de download. Configure isso no app para desktop do OpenFox.",
   lead:
     "Você pode manter várias fontes e escolher uma de cada tipo para usar. A caixa de download também permite trocá-la, o que muda a escolha aqui. Cada arquivo é conferido com sua soma de verificação integrada, venha de onde vier.",
   editAria: (name: string) => `Editar “${name}”`,

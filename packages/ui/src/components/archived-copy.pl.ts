@@ -22,7 +22,7 @@ export const pl: ArchivedMessages = {
       other: `Usunąć ${n} zarchiwizowanej sesji?`,
     }),
   deleteAllBody:
-    'Ich historia zostanie usunięta z BaoCut, a trwające zadania najpierw zatrzymane. Tej operacji nie można cofnąć. Pliki w folderach projektów pozostaną bez zmian.',
+    'Ich historia zostanie usunięta z OpenFox, a trwające zadania najpierw zatrzymane. Tej operacji nie można cofnąć. Pliki w folderach projektów pozostaną bez zmian.',
   restored: (title) => `Przywrócono „${title}”`,
   open: 'Otwórz',
   restoreFailed: (message) => `Nie udało się przywrócić: ${message}`,

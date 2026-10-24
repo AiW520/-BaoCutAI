@@ -1,3 +1,15 @@
+# 开胡-OpenFox
+
+基于 BaoCut 的修改版本，非官方发行版。品牌与安装包说明见 [修改版声明](OPENFOX_NOTICES.md)。原始许可及版权声明保留。
+
+本地下载页：运行 `npm run build:download`，再运行 `python -m http.server 8788 --bind 127.0.0.1 --directory apps/portal/dist-openfox`，打开 http://127.0.0.1:8788 。页面显示安装包待发布，并保留本仓库 Releases 入口。
+
+Windows x64 测试包：在本仓库 Actions 手动运行 `desktop-windows`，仅选择 CPU，build 留空；构建经过解包、安装及覆盖升级自检后，下载工作流产物 `openfox-desktop-windows-x64-cpu`。测试包不自动更新，未签名；完整构建需要原生工具链。
+
+以下保留上游使用文档，其中原版下载地址指向 BaoCut，不能作为 OpenFox 品牌安装包。
+
+---
+
 <p align="center">
   <img src="apps/desktop/build/icon.png" alt="BaoCut" width="128">
 </p>

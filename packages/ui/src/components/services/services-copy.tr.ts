@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonTr: CommonMessages = {
   copied: (label) => `${label} kopyalandı`,
   copyFailed: "Kopyalanamadı. Metni seçip kendiniz kopyalayın.",
-  autostart: "BaoCut açılınca başlat",
-  stopsWithApp: "BaoCut'tan çıktığınızda hizmet de durur.",
+  autostart: "OpenFox açılınca başlat",
+  stopsWithApp: "OpenFox'tan çıktığınızda hizmet de durur.",
   portLabel: "Port",
   portIdle: (port) => `Varsayılan ${port}. Kullanımdaysa başka port seçin: hizmet “Başlatılamadı” gösterir, kendisi port değiştirmez.`,
   portLive: "Portu değiştirmek hizmeti yeni portta yeniden başlatır; mevcut bağlantılar kesilir.",
@@ -13,7 +13,7 @@ export const commonTr: CommonMessages = {
   errorFix: "Başka port deneyin veya kullanan uygulamayı kapatın.",
   resetPort: "Varsayılan portu kullan",
   portReset: (port) => `Port varsayılan ${port} olarak sıfırlandı`,
-  unavailableSub: "Bu BaoCut Runtime sürümü henüz bu hizmeti sunmuyor; başlatılamaz.",
+  unavailableSub: "Bu OpenFox Runtime sürümü henüz bu hizmeti sunmuyor; başlatılamaz.",
   started: (name) => `${name} başlatıldı`,
   stopped: (name) => `${name} durduruldu`,
   startFailed: (reason) => `Başlamadı: ${reason}`,
@@ -38,13 +38,13 @@ export const commonTr: CommonMessages = {
 };
 
 export const clientsTr: ClientsMessages = {
-  lede: "Bağlanan her uygulamaya kendi jetonunu verin. Jeton yalnızca oluşturulurken gösterilir; BaoCut yalnızca parmak izini tutar. Gerekmediğinde iptal edin, uygulama hemen ayrılır.",
+  lede: "Bağlanan her uygulamaya kendi jetonunu verin. Jeton yalnızca oluşturulurken gösterilir; OpenFox yalnızca parmak izini tutar. Gerekmediğinde iptal edin, uygulama hemen ayrılır.",
   empty: "Henüz istemci yok. Oluşturup jetonunu bağlanacak uygulamaya girin.",
   create: "İstemci oluştur",
   createTitle: "İstemci oluştur",
   nameLabel: "Uygulama adı",
   namePlaceholder: "Örneğin Claude Desktop",
-  nameDesc: "Yalnızca BaoCut içinde çağıranları ayırmak için kullanılır. İstek geçmişi ve onaylar bu adı gösterir.",
+  nameDesc: "Yalnızca OpenFox içinde çağıranları ayırmak için kullanılır. İstek geçmişi ve onaylar bu adı gösterir.",
   confirmCreate: "Oluştur",
   cancel: "İptal",
   done: "Tamamlandı",
@@ -81,7 +81,7 @@ export const approvalCardTr: ApprovalCardMessages = {
 
 export const mcpTr: McpMessages = {
   title: "MCP hizmeti",
-  lede: "BaoCut MCP sunucusu olarak diğer AI uygulamalarının ajanlarına araçlar verir: video listeleme ve görüntüleme, döküm okuma, düzenleme, yazıya dökme ve dışa aktarma başlatma, bu bilgisayardaki modellerle konuşma sentezi veya görsel oluşturma. Varsayılan kapalı. Varsayılan tüm videolar paylaşılır; yalnızca bazılarını da seçebilirsiniz.",
+  lede: "OpenFox MCP sunucusu olarak diğer AI uygulamalarının ajanlarına araçlar verir: video listeleme ve görüntüleme, döküm okuma, düzenleme, yazıya dökme ve dışa aktarma başlatma, bu bilgisayardaki modellerle konuşma sentezi veya görsel oluşturma. Varsayılan kapalı. Varsayılan tüm videolar paylaşılır; yalnızca bazılarını da seçebilirsiniz.",
   on: "MCP hizmeti çalışıyor",
   off: "MCP hizmeti başlatılmadı",
   error: "MCP hizmeti başlatılamadı",
@@ -113,7 +113,7 @@ export const mcpTr: McpMessages = {
 
 export const modelApiTr: ModelApiMessages = {
   title: "Model API",
-  lede: "OpenAI API kullanan araçlar (SDK, komut satırı, diğer uygulamalar) BaoCut modelleriyle yazıya döksün, konuşma sentezlesin, görsel ve metin oluştursun. Yalnızca bu bilgisayarda dinler. Varsayılan yalnızca yerel modellerdir; bulut, LAN düğümleri ve ajanlar ayrı açılmalıdır.",
+  lede: "OpenAI API kullanan araçlar (SDK, komut satırı, diğer uygulamalar) OpenFox modelleriyle yazıya döksün, konuşma sentezlesin, görsel ve metin oluştursun. Yalnızca bu bilgisayarda dinler. Varsayılan yalnızca yerel modellerdir; bulut, LAN düğümleri ve ajanlar ayrı açılmalıdır.",
   on: "Model API çalışıyor",
   off: "Model API başlatılmadı",
   error: "Model API başlatılamadı",
@@ -128,7 +128,7 @@ export const modelApiTr: ModelApiMessages = {
   needKeyFixed: "Bu sürümde API anahtarı (istemci jetonu) her zaman gerekli; kapatılamaz. Her uygulama ayrı alır ve ayrı iptal edilebilir.",
   levels: {
     read: "Yalnızca model listeler (GET /v1/models). Oluşturma istekleri reddedilir.",
-    ask: "Her oluşturma isteğini BaoCut içinde onaylayın. 50 saniyede yanıt yoksa reddedilir.",
+    ask: "Her oluşturma isteğini OpenFox içinde onaylayın. 50 saniyede yanıt yoksa reddedilir.",
     auto: "Oluşturma istekleri onaysız çalışır. Yalnızca siz kullanıyorsanız uygundur.",
   },
   routingTitle: "Yönlendirme",
@@ -164,11 +164,11 @@ export const modelApiTr: ModelApiMessages = {
 
 export const webTr: WebMessages = {
   title: "Web hizmeti",
-  lede: "Bu Mac üzerindeki tarayıcıda BaoCut Web açıp aynı videoları düzenleyin. Yalnızca bu bilgisayarda dinler; ağınızdaki diğer cihazlar erişemez.",
+  lede: "Bu Mac üzerindeki tarayıcıda OpenFox Web açıp aynı videoları düzenleyin. Yalnızca bu bilgisayarda dinler; ağınızdaki diğer cihazlar erişemez.",
   on: "Web hizmeti çalışıyor",
   off: "Web hizmeti başlatılmadı",
   error: "Web hizmeti başlatılamadı",
-  offSub: "Başlatıldıktan sonra BaoCut Web'i bir tarayıcıda açabilirsiniz.",
+  offSub: "Başlatıldıktan sonra OpenFox Web'i bir tarayıcıda açabilirsiniz.",
   open: "Tarayıcıda aç",
   copyLink: "Giriş bağlantısını kopyala",
   linkLabel: "Giriş bağlantısı",

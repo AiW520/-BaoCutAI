@@ -40,7 +40,7 @@ const en = {
   msNote:
     'The few files ModelScope doesn’t have (whisper.cpp) still come from Hugging Face. Every file is checked against its built-in checksum.',
   envNote: (name: string) => `If the ${name} environment variable is set, it’s used instead.`,
-  webNote: 'A browser can’t change download sources. Set them in the BaoCut desktop app.',
+  webNote: 'A browser can’t change download sources. Set them in the OpenFox desktop app.',
   lead:
     'You can keep several sources and pick one of each kind to use. The download dialog can switch it too, which changes the choice here. Every file is checked against its built-in checksum wherever it comes from.',
   editAria: (name: string) => `Edit “${name}”`,

@@ -14,7 +14,7 @@ export const zhHans: ArchivedMessages = {
   deleteNamed: (title) => `删除「${title}」`,
   deleteAll: '全部删除',
   deleteAllTitle: (n) => `删除全部 ${n} 个已归档会话？`,
-  deleteAllBody: '这些会话记录会从 BaoCut 里删掉，正在运行的任务会先停止，不能撤销。项目文件夹里的文件不受影响。',
+  deleteAllBody: '这些会话记录会从 开胡-OpenFox 里删掉，正在运行的任务会先停止，不能撤销。项目文件夹里的文件不受影响。',
   restored: (title) => `已恢复「${title}」`,
   open: '打开',
   restoreFailed: (message) => `没能恢复：${message}`,

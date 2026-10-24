@@ -38,7 +38,7 @@ export const de: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join(", "),
     cloneHint: "5–15 Sekunden klare Sprache verwenden: eine Person, ohne Hintergrundmusik. WAV, MP3, M4A, FLAC oder eine Videodatei sind geeignet.",
     yourFile: (name: string) => `Ihre Aufnahme · ${name}`,
-    sampleFile: (label: string) => `Beispielaufnahme · ${label} · in BaoCut enthalten; keine Dateisuche nötig`,
+    sampleFile: (label: string) => `Beispielaufnahme · ${label} · in OpenFox enthalten; keine Dateisuche nötig`,
     pickFile: "Aufnahme wählen…",
     changeFile: "Wählen Sie ein anderes…",
     useSample: "Beispielaufnahme verwenden",

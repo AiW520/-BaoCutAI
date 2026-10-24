@@ -322,10 +322,10 @@ try {
     path.join(appDir, 'package.json'),
     `${JSON.stringify(
       {
-        name: 'baocut',
+        name: 'openfox',
         productName: PRODUCT_NAME,
         version: desktop.version,
-        description: 'BaoCut',
+        description: 'OpenFox modified edition of BaoCut',
         author: { name: PRODUCT_NAME },
         license: 'SEE LICENSE IN LICENSE',
         main: 'out/main/index.js',

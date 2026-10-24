@@ -59,7 +59,7 @@ export const ja: SpaceMessages = {
   newFromPackageHint: 'ほかの場所で書き出した .baocut。素材はすべてパッケージに含まれています',
   pickPackageTitle: 'ポータブルパッケージを選択',
   pickPackageButton: '開く',
-  pickPackageFilter: 'BaoCut ポータブルパッケージ',
+  pickPackageFilter: 'OpenFox ポータブルパッケージ',
   openPackage: '新しい動画として開く',
   packageBlocked: (reason: string) => `新しい動画として開く：${reason}`,
   packageOpening: (name: string) => `「${name}」を開いています…`,
@@ -108,7 +108,7 @@ export const ja: SpaceMessages = {
   changedBody: 'この結果は以前のバージョンの動画に対応しています。引き続き使えますが、現在の動画は反映していません。',
   reexport: '元の動画からもう一度書き出す',
   noPreviewVideo: '動画はエディタで開きます。',
-  inIndexFolder: (folder: string | null) => (folder ? `インデックスフォルダー「${folder}」内のため読み取り専用です。BaoCut はこのファイルを変更、移動、削除しません。` : 'インデックスフォルダー内のため読み取り専用です。BaoCut はこのファイルを変更、移動、削除しません。'),
+  inIndexFolder: (folder: string | null) => (folder ? `インデックスフォルダー「${folder}」内のため読み取り専用です。OpenFox はこのファイルを変更、移動、削除しません。` : 'インデックスフォルダー内のため読み取り専用です。OpenFox はこのファイルを変更、移動、削除しません。'),
 
   // 能力（origin.capability）
   capability: {

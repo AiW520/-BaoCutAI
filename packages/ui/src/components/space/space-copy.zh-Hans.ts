@@ -57,7 +57,7 @@ export const zhHans: SpaceMessages = {
   newFromPackageHint: '别处导出的 .baocut，素材都在包里',
   pickPackageTitle: '选择便携包',
   pickPackageButton: '打开',
-  pickPackageFilter: 'BaoCut 便携包',
+  pickPackageFilter: '开胡-OpenFox 便携包',
   openPackage: '打开成新视频',
   packageBlocked: (reason: string) => `打开成新视频：${reason}`,
   packageOpening: (name: string) => `正在打开「${name}」…`,
@@ -105,7 +105,7 @@ export const zhHans: SpaceMessages = {
   changedBody: '这个结果对应的是当时的视频版本，仍然可用，但不再代表当前的视频。',
   reexport: '回到来源视频重新导出',
   noPreviewVideo: '视频在编辑器里打开。',
-  inIndexFolder: (folder: string | null) => (folder ? `在索引文件夹「${folder}」里，只读：BaoCut 不改、不移动、不删这个文件。` : '在索引文件夹里，只读：BaoCut 不改、不移动、不删这个文件。'),
+  inIndexFolder: (folder: string | null) => (folder ? `在索引文件夹「${folder}」里，只读：开胡-OpenFox 不改、不移动、不删这个文件。` : '在索引文件夹里，只读：开胡-OpenFox 不改、不移动、不删这个文件。'),
 
   // 能力（origin.capability）
   capability: {

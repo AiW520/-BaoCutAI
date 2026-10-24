@@ -8,9 +8,9 @@ export const fr: DesignMessages = {
   frameTitle: (name) => `Éditeur de design : ${name}`,
   opening: 'Ouverture du design…',
   unavailableTitle: 'Éditeur de design indisponible',
-  unavailableBody: 'Cette version de BaoCut ne comprend pas l’éditeur de design. Les fichiers du design restent dans leur dossier.',
+  unavailableBody: 'Cette version de OpenFox ne comprend pas l’éditeur de design. Les fichiers du design restent dans leur dossier.',
   hostBlockedTitle: 'L’éditeur de design ne peut pas s’ouvrir à cette adresse',
-  hostBlockedBody: 'Ouvrez BaoCut Web sur 127.0.0.1 ou localhost pour modifier des designs. Les fichiers du design restent dans leur dossier.',
+  hostBlockedBody: 'Ouvrez OpenFox Web sur 127.0.0.1 ou localhost pour modifier des designs. Les fichiers du design restent dans leur dossier.',
   openFailed: (reason) => `Impossible d’ouvrir le design : ${reason}`,
   open: 'Ouvrir le design',
   openCard: (name) => `Ouvrir le design « ${name} »`,
@@ -40,5 +40,5 @@ export const fr: DesignMessages = {
   exportDialogButton: 'Exporter',
   exportSaved: (path) => `Enregistré dans ${path}`,
   exportFailed: (reason) => `Impossible d’enregistrer le fichier exporté : ${reason}`,
-  exportUnsupported: (name) => `BaoCut ne peut pas enregistrer « ${name} » : ce type de fichier n’est pas pris en charge`,
+  exportUnsupported: (name) => `OpenFox ne peut pas enregistrer « ${name} » : ce type de fichier n’est pas pris en charge`,
 };

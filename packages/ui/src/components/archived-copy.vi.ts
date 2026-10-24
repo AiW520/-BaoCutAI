@@ -15,7 +15,7 @@ export const vi: ArchivedMessages = {
   deleteAll: 'Xóa tất cả',
   deleteAllTitle: (n) => (n === 1 ? 'Xóa 1 phiên đã lưu trữ?' : `Xóa tất cả ${n} phiên đã lưu trữ?`),
   deleteAllBody:
-    'Lịch sử của các phiên này sẽ bị xóa khỏi BaoCut, tác vụ đang chạy sẽ được dừng trước. Không thể hoàn tác. Tệp trong thư mục dự án không bị ảnh hưởng.',
+    'Lịch sử của các phiên này sẽ bị xóa khỏi OpenFox, tác vụ đang chạy sẽ được dừng trước. Không thể hoàn tác. Tệp trong thư mục dự án không bị ảnh hưởng.',
   restored: (title) => `Đã khôi phục “${title}”`,
   open: 'Mở',
   restoreFailed: (message) => `Không khôi phục được: ${message}`,

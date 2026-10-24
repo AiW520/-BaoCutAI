@@ -38,7 +38,7 @@ export const ko: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join(', '),
     cloneHint: '잡음 없는 음성 5–15초를 넣어 주세요. 한 사람만 말하고 배경 음악이 없어야 합니다. WAV, MP3, M4A, FLAC 또는 영상 파일 모두 쓸 수 있습니다.',
     yourFile: (name: string) => `내 녹음 · ${name}`,
-    sampleFile: (label: string) => `샘플 녹음 · ${label} · BaoCut에 포함되어 있어 파일을 찾을 필요가 없습니다`,
+    sampleFile: (label: string) => `샘플 녹음 · ${label} · OpenFox에 포함되어 있어 파일을 찾을 필요가 없습니다`,
     pickFile: '녹음 선택…',
     changeFile: '다른 녹음 선택…',
     useSample: '샘플 녹음 사용',

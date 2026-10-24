@@ -6,7 +6,7 @@ export const zhHans: SlidesMessages = {
   frameTitle: (name) => `幻灯片编辑器：${name}`,
   opening: '正在打开幻灯片…',
   unavailableTitle: '幻灯片编辑器不可用',
-  unavailableBody: '这个版本的 BaoCut 没有带幻灯片编辑器。幻灯片的文件仍在它的文件夹里。',
+  unavailableBody: '这个版本的 开胡-OpenFox 没有带幻灯片编辑器。幻灯片的文件仍在它的文件夹里。',
   openFailed: (reason) => `打不开这份幻灯片：${reason}`,
   open: '打开幻灯片',
   openCard: (name) => `打开幻灯片「${name}」`,

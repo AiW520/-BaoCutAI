@@ -2,7 +2,7 @@ import type { LegacyImportMessages } from './legacy-import-copy.ts';
 
 export const zhHans: LegacyImportMessages = {
   title: '导入旧版项目？',
-  lead: (n) => `这台电脑上有 ${n} 个旧版 BaoCut 的项目。导入后可以在新版里继续编辑，旧文件留在原处，不会改动。`,
+  lead: (n) => `这台电脑上有 ${n} 个旧版 开胡-OpenFox 的项目。导入后可以在新版里继续编辑，旧文件留在原处，不会改动。`,
   found: '发现的旧版项目',
   destination: '导入到',
   resetDefault: '改回默认',

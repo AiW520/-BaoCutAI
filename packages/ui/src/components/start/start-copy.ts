@@ -22,7 +22,7 @@ const en = {
     pickTitle: 'Choose yt-dlp',
     pickButton: 'Use this',
     pickFailed: (message: string) => `This file can’t be used: ${message}`,
-    manualUpdate: 'BaoCut can’t update this copy of yt-dlp right now. Run the command on the card in a terminal',
+    manualUpdate: 'OpenFox can’t update this copy of yt-dlp right now. Run the command on the card in a terminal',
     commandChanged: 'The update command has changed. Check the new command before running it',
     updateFailed: (message: string) => `Couldn’t start the update: ${message}`,
     stopFailed: (message: string) => `Couldn’t stop the update: ${message}`,

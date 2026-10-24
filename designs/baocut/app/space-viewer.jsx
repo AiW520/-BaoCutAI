@@ -146,7 +146,7 @@
     // 产物的文件路径相对它的项目目录；已经是绝对路径（外接盘、未归类）的照写
     const abs = /^[/~]/.test(it.file || '');
     const path = it.kind === 'movie' ? (d ? AP.moviePath(d, mv) : '')
-      : abs ? it.file : `${d ? d.path : '~/Tuzi/未归类/'}${it.file || it.name}`;
+      : abs ? it.file : `${d ? d.path : '~/OpenFox/未归类/'}${it.file || it.name}`;
 
     const save = () => {
       const rec = app.saveVersion(it, route === 'text' ? {text, lines: text.split('\n').filter(Boolean).length} : null);
@@ -270,7 +270,7 @@
               ) : null}
             </dl>
             {it.lib ? (
-              <p className="t-detail-xs">{`在索引文件夹「${it.libName || it.lib}」里，只读：Tuzi 不改、不移动、不删这个文件。`}</p>
+              <p className="t-detail-xs">{`在索引文件夹「${it.libName || it.lib}」里，只读：OpenFox 不改、不移动、不删这个文件。`}</p>
             ) : null}
             {it.status === 'missing' ? (
               <R.InlineAlert variant="negative">

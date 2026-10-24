@@ -6,18 +6,18 @@ export const zhHant: AgentMessages = {
   pageTitle: 'Agent 供應商',
   factsLabel: 'Agent 如何運作',
   permissionsTitle: 'Agent 權限',
-  lede: 'Agent 是安裝在你電腦上的 AI 程式設計助理，例如 Claude Code 或 Codex。BaoCut 直接呼叫它，一句話就能完成轉錄、翻譯和剪輯。',
+  lede: 'Agent 是安裝在你電腦上的 AI 程式設計助理，例如 Claude Code 或 Codex。OpenFox 直接呼叫它，一句話就能完成轉錄、翻譯和剪輯。',
   facts: [
-    { key: 'cli', title: '使用你已有的', body: 'BaoCut 呼叫這台電腦上的命令列 Agent，不會另外安裝自己的一份。' },
-    { key: 'plan', title: '使用你自己的訂閱', body: '不必另外付費給 BaoCut，也不必填寫 API 金鑰。' },
+    { key: 'cli', title: '使用你已有的', body: 'OpenFox 呼叫這台電腦上的命令列 Agent，不會另外安裝自己的一份。' },
+    { key: 'plan', title: '使用你自己的訂閱', body: '不必另外付費給 OpenFox，也不必填寫 API 金鑰。' },
     { key: 'ask', title: '修改前先詢問', body: '寫入影片前會停下來等你同意，你也可以隨時還原。' },
   ],
 
   providersHeading: '這台電腦上的 Agent',
   providersHint:
-    'BaoCut 會找出已安裝的 Agent。有一個能用就夠了，不需要全部安裝。拿不定主意就選 Claude Code 或 Codex。內建的只能停用；你新增的可以移除。',
+    'OpenFox 會找出已安裝的 Agent。有一個能用就夠了，不需要全部安裝。拿不定主意就選 Claude Code 或 Codex。內建的只能停用；你新增的可以移除。',
   providersMeta: (checked: string | null, builtin: number, added: number, found: number) =>
-    `${checked ? `${checked}檢查過 · ` : ''}BaoCut 內建 ${builtin} 個 Agent${added ? `，你新增了 ${added} 個` : ''}；這台電腦上偵測到 ${found} 個`,
+    `${checked ? `${checked}檢查過 · ` : ''}OpenFox 內建 ${builtin} 個 Agent${added ? `，你新增了 ${added} 個` : ''}；這台電腦上偵測到 ${found} 個`,
   statusLabel: 'Agent 狀態',
   scanDone: (n: number) => (n ? `檢查完成 · 這台電腦上有 ${n} 個 Agent` : '檢查完成 · 沒有找到已安裝的 Agent'),
   scanFailed: (message: string) => `無法重新檢查：${message}`,
@@ -39,15 +39,15 @@ export const zhHant: AgentMessages = {
     collapse: '隱藏',
   },
 
-  fullAccessOnly: '它無法逐步請求核准，所以 BaoCut 只能以「完全存取」模式執行它：執行指令或修改檔案前不會先詢問你。',
+  fullAccessOnly: '它無法逐步請求核准，所以 OpenFox 只能以「完全存取」模式執行它：執行指令或修改檔案前不會先詢問你。',
 
   untested: {
-    body: '這個 Agent 尚未在實機上的 BaoCut 中完成過完整對話。偵測、登入和模型清單照常運作；對話中遇到問題時，請以它自己的說明文件為準。',
+    body: '這個 Agent 尚未在實機上的 OpenFox 中完成過完整對話。偵測、登入和模型清單照常運作；對話中遇到問題時，請以它自己的說明文件為準。',
   },
 
   catalog: {
     heading: '新增更多 Agent',
-    hint: '其他支援 ACP（Agent Client Protocol）的命令列 Agent 也可以新增。BaoCut 沒有逐一驗證它們，能否使用以檢查結果為準。',
+    hint: '其他支援 ACP（Agent Client Protocol）的命令列 Agent 也可以新增。OpenFox 沒有逐一驗證它們，能否使用以檢查結果為準。',
     custom: '自訂指令…',
     search: '搜尋可新增的 Agent',
     searchPlaceholder: '依名稱、說明或指令搜尋',
@@ -60,12 +60,12 @@ export const zhHant: AgentMessages = {
     empty: (query: string) => `目錄中沒有符合「${query}」的項目。不在清單中的 Agent，可以輸入它的啟動指令來新增。`,
     landed: (name: string, custom: boolean) => `已新增 ${name}${custom ? '（自訂指令）' : ''} · 偵測到之後就能在對話中使用`,
     addFailed: (message: string) => `無法新增：${message}`,
-    webNote: '瀏覽器中無法新增或移除 Agent，因為這會決定這台電腦上執行哪些指令。請改用 BaoCut 桌面應用程式。',
+    webNote: '瀏覽器中無法新增或移除 Agent，因為這會決定這台電腦上執行哪些指令。請改用 OpenFox 桌面應用程式。',
   },
 
   customDialog: {
     title: '用自訂指令新增 Agent',
-    lede: '輸入在終端機中以 ACP 模式啟動它的指令。BaoCut 會直接啟動這個程式，不經過終端機。',
+    lede: '輸入在終端機中以 ACP 模式啟動它的指令。OpenFox 會直接啟動這個程式，不經過終端機。',
     name: '名稱',
     namePlaceholder: '例如：我的 Agent',
     id: 'id',
@@ -77,8 +77,8 @@ export const zhHant: AgentMessages = {
     commandParts: (exe: string, args: string[]) => `將以此方式啟動：程式 ${exe}，引數 ${args.join(' · ')}`,
     env: '環境變數（選填）',
     envPlaceholder: 'MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\nMY_AGENT_LOG=0',
-    envHint: '每行一個 KEY=VALUE，只在 BaoCut 啟動它時加入。',
-    note: '新增後，BaoCut 會檢查它能否啟動、是否需要登入，以及有哪些模型。偵測到之後，它才會出現在對話中。',
+    envHint: '每行一個 KEY=VALUE，只在 OpenFox 啟動它時加入。',
+    note: '新增後，OpenFox 會檢查它能否啟動、是否需要登入，以及有哪些模型。偵測到之後，它才會出現在對話中。',
     cancel: '取消',
     submit: '新增',
     exists: (id: string) => `已經有 Agent 使用「${id}」。請改用其他 id。`,
@@ -93,29 +93,29 @@ export const zhHant: AgentMessages = {
     subLauncher: (launcher: string, needs: string) => `尚未檢查 · 啟動時由 ${launcher} 下載；需要 ${needs}`,
     subMissing: (command: string) => `尚未檢查 · 在這台電腦上找不到 ${command}`,
     note: (name: string) =>
-      `${name} 透過 ACP（Agent Client Protocol）連線。BaoCut 沒有驗證過它：如何安裝、用哪個帳號登入，請以它自己的說明文件為準。`,
+      `${name} 透過 ACP（Agent Client Protocol）連線。OpenFox 沒有驗證過它：如何安裝、用哪個帳號登入，請以它自己的說明文件為準。`,
     noInstall: '不需要另外安裝',
     noInstallBody: (launcher: string, spec: string, needs: string) =>
-      `BaoCut 啟動它時，${launcher} 會自動下載 ${spec}。這台電腦上需要有 ${needs}。`,
+      `OpenFox 啟動它時，${launcher} 會自動下載 ${spec}。這台電腦上需要有 ${needs}。`,
     install: '依照官方說明安裝到這台電腦',
     installBody: (command: string) => `安裝完成後，應該能在終端機中執行 ${command}。`,
     docs: '開啟官方說明',
-    launch: 'BaoCut 用這個指令啟動它',
+    launch: 'OpenFox 用這個指令啟動它',
     launchCopy: '啟動指令',
     envNote: (keys: string[]) => `啟動時會加入環境變數 ${keys.join('、')}（這裡不顯示值）。`,
     login: '如果需要登入，請透過它登入',
-    loginBody: '在終端機中依照它的說明操作。登入在它自己的視窗中完成，BaoCut 不會經手你的帳號或密碼。',
+    loginBody: '在終端機中依照它的說明操作。登入在它自己的視窗中完成，OpenFox 不會經手你的帳號或密碼。',
     detectStep: '檢查',
-    detectBody: 'BaoCut 會啟動它一次，確認能連線、是否需要登入，並取得它的模型清單。',
+    detectBody: 'OpenFox 會啟動它一次，確認能連線、是否需要登入，並取得它的模型清單。',
     launchRow: '啟動指令',
-    launchRowHint: 'BaoCut 透過 ACP（Agent Client Protocol）用這個指令啟動它。',
+    launchRowHint: 'OpenFox 透過 ACP（Agent Client Protocol）用這個指令啟動它。',
     versionPinned: (spec: string) => `啟動指令固定為 ${spec}。要更換版本，請移除後用自訂指令重新新增。`,
     versionOwn: '要升級，請依照它自己的說明操作，然後在這裡重新檢查。',
     account: (name: string, signedOut: boolean) =>
-      `${signedOut ? '尚未登入，或登入已過期。' : ''}登入與計費都在 ${name} 中進行；BaoCut 不會經手你的帳號，也不會另外收費。`,
+      `${signedOut ? '尚未登入，或登入已過期。' : ''}登入與計費都在 ${name} 中進行；OpenFox 不會經手你的帳號，也不會另外收費。`,
     removeTitle: (name: string) => `要移除 ${name} 嗎？`,
     removeBody: (name: string) =>
-      `${name} 會從 BaoCut 的 Agent 清單中移除，它的啟用狀態與預設模型也會一併清除。如果新對話預設使用它，會改由其他可用的 Agent 接手。正在使用它的任務會結束。這台電腦上安裝的程式不受影響，之後也可以重新新增。`,
+      `${name} 會從 OpenFox 的 Agent 清單中移除，它的啟用狀態與預設模型也會一併清除。如果新對話預設使用它，會改由其他可用的 Agent 接手。正在使用它的任務會結束。這台電腦上安裝的程式不受影響，之後也可以重新新增。`,
     removed: (name: string) => `已移除 ${name}`,
     removeFailed: (message: string) => `無法移除：${message}`,
   },
@@ -141,13 +141,13 @@ export const zhHant: AgentMessages = {
   faq: [
     {
       key: 'cost',
-      title: '需要另外付費或訂閱 BaoCut 嗎？',
-      body: '不需要。Agent 使用你已有的 Claude 或 ChatGPT 訂閱，費用和額度都在那邊計算。BaoCut 不附帶自己的模型、不收集金鑰，也不透過雲端中轉任何內容。沒有這類訂閱也可以不用 Agent，BaoCut 的其他功能照常運作。',
+      title: '需要另外付費或訂閱 OpenFox 嗎？',
+      body: '不需要。Agent 使用你已有的 Claude 或 ChatGPT 訂閱，費用和額度都在那邊計算。OpenFox 不附帶自己的模型、不收集金鑰，也不透過雲端中轉任何內容。沒有這類訂閱也可以不用 Agent，OpenFox 的其他功能照常運作。',
     },
     {
       key: 'account',
-      title: 'BaoCut 看得到我的帳號和密碼嗎？',
-      body: '看不到。登入在 Agent 自己的視窗中完成，BaoCut 只會啟動你電腦上的那個程式，並把影片交給它。修改影片前它會先詢問你；規則在「設定 › 隱私與權限」中。',
+      title: 'OpenFox 看得到我的帳號和密碼嗎？',
+      body: '看不到。登入在 Agent 自己的視窗中完成，OpenFox 只會啟動你電腦上的那個程式，並把影片交給它。修改影片前它會先詢問你；規則在「設定 › 隱私與權限」中。',
     },
     {
       key: 'cloud',
@@ -157,8 +157,8 @@ export const zhHant: AgentMessages = {
     },
     {
       key: 'terminal',
-      title: '想在終端機中用這些 Agent 操作 BaoCut？',
-      body: '在 BaoCut 中進行對話不需要額外設定。要在終端機或其他應用程式中使用，請為它們安裝 BaoCut Skill；詳見 Skills 頁面底部。',
+      title: '想在終端機中用這些 Agent 操作 OpenFox？',
+      body: '在 OpenFox 中進行對話不需要額外設定。要在終端機或其他應用程式中使用，請為它們安裝 OpenFox Skill；詳見 Skills 頁面底部。',
       link: 'skills',
     },
   ],
@@ -187,7 +187,7 @@ export const zhHant: AgentMessages = {
     desc: '啟動時與執行期間，定期更新每個已啟用 Agent 自己的模型清單。關閉後，仍可在各 Agent 的詳細資訊中手動重新整理。',
   },
   executableHint:
-    'BaoCut 會在 PATH 和常見的安裝位置（Homebrew、npm 全域資料夾、~/.local/bin）中尋找。用版本管理工具（nvm、asdf、mise）安裝的有時在其他位置；請在這裡輸入執行檔的完整路徑。留空則回到自動尋找。',
+    'OpenFox 會在 PATH 和常見的安裝位置（Homebrew、npm 全域資料夾、~/.local/bin）中尋找。用版本管理工具（nvm、asdf、mise）安裝的有時在其他位置；請在這裡輸入執行檔的完整路徑。留空則回到自動尋找。',
   techPanel: '技術資訊與位置',
   techTitle: 'Agent 技術資訊',
   techSubtitle: '版本、路徑與可用模型',
@@ -220,7 +220,7 @@ export const zhHant: AgentMessages = {
     confirmUpgrade: (name: string) => `要執行 ${name} 的升級指令嗎？`,
     confirmRun: '執行',
     cancel: '取消',
-    confirmBefore: 'BaoCut 會在這台電腦上執行下面的指令。輸出會顯示在指令下方，你可以隨時停止。',
+    confirmBefore: 'OpenFox 會在這台電腦上執行下面的指令。輸出會顯示在指令下方，你可以隨時停止。',
     confirmAfter: '需要密碼的指令在這裡會失敗；這類指令請改在終端機中執行。',
     restored: (name: string) => `${name} 已回到自動尋找`,
     switched: (path: string) => `已改用 ${path}`,
@@ -235,7 +235,7 @@ export const zhHant: AgentMessages = {
   },
 
   skills: {
-    lede: 'Skill 是一個資料夾（一份 SKILL.md，加上選用的參考檔案），用來教 BaoCut 中的 Agent 以特定方式做事。開關開啟時，Agent 認為與任務相關就會自行使用；關閉時，只有在你從輸入框的「+」中選取它時才會使用。開啟或關閉、新增或移除 Skill，都會從下一個新的 Agent 對話開始生效。',
+    lede: 'Skill 是一個資料夾（一份 SKILL.md，加上選用的參考檔案），用來教 OpenFox 中的 Agent 以特定方式做事。開關開啟時，Agent 認為與任務相關就會自行使用；關閉時，只有在你從輸入框的「+」中選取它時才會使用。開啟或關閉、新增或移除 Skill，都會從下一個新的 Agent 對話開始生效。',
     search: '搜尋 Skills',
     filter: '依來源篩選',
     tab: (label: string, count: number) => `${label} ${count}`,
@@ -246,15 +246,15 @@ export const zhHant: AgentMessages = {
     loading: '正在載入 Skills…',
     loadFailed: (message: string) => `無法載入 Skills：${message}`,
     retry: '重試',
-    disconnected: '未連線到 BaoCut Runtime。連線後會列出 Skills。',
+    disconnected: '未連線到 OpenFox Runtime。連線後會列出 Skills。',
     emptyTitle: '還沒有 Skill',
     emptyBody:
       '這裡還沒有可用的 Skill。可以新增你寫好的 Skill 資料夾，或從 GitHub 匯入別人分享的 Skill。第三方 Skill 匯入後預設為關閉；請先看過內容再開啟。',
-    emptyWeb: '這裡還沒有可用的 Skill。在瀏覽器中只能檢視與開關 Skill；新增與匯入請在 BaoCut 桌面應用程式中進行。',
+    emptyWeb: '這裡還沒有可用的 Skill。在瀏覽器中只能檢視與開關 Skill；新增與匯入請在 OpenFox 桌面應用程式中進行。',
     noMatch: (query: string) => `找不到與「${query}」相關的 Skill`,
     noMatchHint: '試試其他字詞，或切換到「全部」。',
     noneInTab: (label: string) => `還沒有${label} Skill`,
-    webNote: '在瀏覽器中可以檢視與開關 Skill；新增、匯入與移除請在 BaoCut 桌面應用程式中進行。',
+    webNote: '在瀏覽器中可以檢視與開關 Skill；新增、匯入與移除請在 OpenFox 桌面應用程式中進行。',
     view: (name: string) => `檢視 ${name}`,
     enable: (name: string) => `啟用 ${name}`,
     toggledOn: (name: string) => `已開啟「${name}」：從下一個新對話開始，Agent 認為相關時會自行使用它`,
@@ -266,9 +266,9 @@ export const zhHant: AgentMessages = {
     diagnosticsHint: '這些資料夾不是可用的 Skill，已略過。修正後回到這個頁面即可重新載入。',
     diagnosticCode: { invalid: '格式無效', 'duplicate-id': '名稱重複', 'builtin-conflict': '與內建 Skill 同名' },
     diagnosticLine: (dir: string, reason: string, issue: string) => `${dir} · ${reason}：${issue}`,
-    externalTitle: '在終端機或其他應用程式的 Agent 中使用 BaoCut',
+    externalTitle: '在終端機或其他應用程式的 Agent 中使用 OpenFox',
     externalBody:
-      '上面這些 Skill 是給 BaoCut 中的 Agent 使用的。若要讓終端機中的 Claude Code 或 Codex 學會用 BaoCut 轉錄、翻譯、剪輯和匯出，請為它們安裝 BaoCut Skill。一鍵安裝到這些 Agent 的全域位置，以及查看安裝位置、是否需要更新，將在之後的版本提供。',
+      '上面這些 Skill 是給 OpenFox 中的 Agent 使用的。若要讓終端機中的 Claude Code 或 Codex 學會用 OpenFox 轉錄、翻譯、剪輯和匯出，請為它們安裝 OpenFox Skill。一鍵安裝到這些 Agent 的全域位置，以及查看安裝位置、是否需要更新，將在之後的版本提供。',
   },
 
   skillDetail: {
@@ -276,7 +276,7 @@ export const zhHant: AgentMessages = {
     stateOn: '開啟：Agent 認為相關時會自行使用它。',
     stateOff: '關閉：只有在你從輸入框的「+」中選取時才會使用。',
     thirdPartyNote:
-      '第三方 Skill 來自別人分享的儲存庫：開啟前請先看過內容。BaoCut 不會執行 Skill 中的任何檔案，Skill 也無法擴大 Agent 的權限。',
+      '第三方 Skill 來自別人分享的儲存庫：開啟前請先看過內容。OpenFox 不會執行 Skill 中的任何檔案，Skill 也無法擴大 Agent 的權限。',
     source: '來源',
     location: '位置',
     version: '版本',

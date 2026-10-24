@@ -8,7 +8,7 @@ export const ko: DocsMessages = {
   frameTitle: (name) => `공동 문서 편집기: ${name}`,
   opening: '공동 문서 여는 중…',
   unavailableTitle: '공동 문서 편집기를 사용할 수 없음',
-  unavailableBody: '이 BaoCut 빌드에는 공동 문서 편집기가 포함되어 있지 않습니다. 공동 문서 파일은 폴더에 그대로 있습니다.',
+  unavailableBody: '이 OpenFox 빌드에는 공동 문서 편집기가 포함되어 있지 않습니다. 공동 문서 파일은 폴더에 그대로 있습니다.',
   openFailed: (reason) => `공동 문서를 열 수 없습니다: ${reason}`,
   open: '공동 문서 열기',
   openCard: (name) => `공동 문서 “${name}” 열기`,

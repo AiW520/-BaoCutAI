@@ -2,7 +2,7 @@ import { pluralForm } from '@baocut/protocol';
 import type { WorkbenchMessages } from './home-workbench-copy.ts';
 
 export const zhHant: WorkbenchMessages = {
-  eyebrow: "Tuzi · 創作工作台",
+  eyebrow: "OpenFox · 創作工作台",
   title: "把靈感，變成下一部作品。",
   intro: "描述你的想法，拖入素材，或繼續上次的創作。",
   recentTitle: "最近的專案",

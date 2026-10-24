@@ -31,7 +31,7 @@ const en = {
   opening: 'Opening doc…',
   /** 这台机器没有构建编辑器（`docs.open` 的 `editorAvailable` 为 false）。 */
   unavailableTitle: 'Docs editor unavailable',
-  unavailableBody: 'This build of BaoCut doesn’t include the docs editor. The doc’s files are still in their folder.',
+  unavailableBody: 'This build of OpenFox doesn’t include the docs editor. The doc’s files are still in their folder.',
   openFailed: (reason: string) => `Couldn’t open the doc: ${reason}`,
   /** Space 的条目菜单与查看框里的按钮。 */
   open: 'Open doc',

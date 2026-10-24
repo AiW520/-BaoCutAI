@@ -6,7 +6,7 @@ export const zhHantDub: DubMessages = {
   title: '翻譯配音',
   back: '返回',
   web: '翻譯配音需要桌面版',
-  webBody: '在瀏覽器中開啟的 BaoCut 不提供固定流程（pipelines.*），因此無法在這裡開始翻譯配音。請在桌面版中開啟這部影片。',
+  webBody: '在瀏覽器中開啟的 OpenFox 不提供固定流程（pipelines.*），因此無法在這裡開始翻譯配音。請在桌面版中開啟這部影片。',
   summary: (language: string, count: number | null, translate: boolean) =>
     `${translate ? `先翻譯成${language}，再` : `使用現有的${language}譯文，`}${count === null ? '' : `為 ${count} 句`}逐句合成語音，將每句對齊到原句的時間，並作為一組配音寫入時間軸`,
   language: '配音語言',
@@ -116,7 +116,7 @@ export const zhHantDub: DubMessages = {
   grantAction: '授權並開始',
   grantRetryAction: '授權並重試',
   grantDialogTitle: '授權資料外傳',
-  grantDialogIntro: '確認後，BaoCut 會記錄這項授權並繼續配音：',
+  grantDialogIntro: '確認後，OpenFox 會記錄這項授權並繼續配音：',
   grantConfirm: '授權並繼續',
   grantCancel: '暫時不要',
   granting: '正在授權…',

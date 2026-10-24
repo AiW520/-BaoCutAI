@@ -21,7 +21,7 @@ import { vi } from './local-models-copy.vi.ts';
 const en = {
   install: {
     /** 浏览器里（Web 白名单不含 `models.install` 等安装管理与 `models.setDefault`）：页面顶上写这一句，这些按钮置灰。 */
-    webNote: 'A browser can’t download, check, repair or remove local models, or change the default model. Do this in the BaoCut desktop app.',
+    webNote: 'A browser can’t download, check, repair or remove local models, or change the default model. Do this in the OpenFox desktop app.',
     availableNote:
       'Before downloading, you’ll see how much will be downloaded and how much disk space is left. You can pause a download; what’s already downloaded is kept and resumes next time.',
     download: 'Download',

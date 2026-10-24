@@ -206,8 +206,8 @@ export const nl: SemanticMessages = {
   },
   scope: {
     group: 'Indexbereik',
-    lead: 'Video’s in alle BaoCut-projecten worden geïndexeerd op wat er gezegd is en wat er in beeld is; geluiden komen in een latere versie. Projecten die je niet wilt indexeren, kun je uitsluiten. Geëxporteerde video’s worden niet apart geïndexeerd: zoeken vindt de video waaruit ze zijn geëxporteerd.',
-    all: 'Alle BaoCut-projecten',
+    lead: 'Video’s in alle OpenFox-projecten worden geïndexeerd op wat er gezegd is en wat er in beeld is; geluiden komen in een latere versie. Projecten die je niet wilt indexeren, kun je uitsluiten. Geëxporteerde video’s worden niet apart geïndexeerd: zoeken vindt de video waaruit ze zijn geëxporteerd.',
+    all: 'Alle OpenFox-projecten',
     allLine: (projects, excluded) => `${projects === 1 ? '1 project' : `${projects} projecten`}${excluded ? `, ${excluded} uitgesloten` : ''} · nieuwe projecten worden automatisch toegevoegd`,
     outside: 'Video’s buiten projecten worden ook geïndexeerd.',
     excludedGroup: 'Uitgesloten projecten',
@@ -268,13 +268,13 @@ export const nl: SemanticMessages = {
     reindexDesc: 'Scant hem opnieuw en bouwt de index opnieuw op',
     remove: 'Verwijderen',
     removeDesc: 'Verwijdert de index; de bestanden blijven',
-    videos: (n) => (n === 1 ? '1 BaoCut-video' : `${n} BaoCut-video’s`),
+    videos: (n) => (n === 1 ? '1 OpenFox-video' : `${n} OpenFox-video’s`),
     videoFiles: (n) => (n === 1 ? '1 videobestand' : `${n} videobestanden`),
     images: (n) => (n === 1 ? '1 afbeelding' : `${n} afbeeldingen`),
     nothing: 'Nog geen video’s of afbeeldingen gevonden',
     exportsSkipped: (n) => (n === 1 ? '1 export overgeslagen' : `${n} exports overgeslagen`),
     duplicates: (n) => (n === 1 ? '1 staat al in een project' : `${n} staan al in projecten`),
-    legacy: (n) => (n === 1 ? '1 oudere BaoCut-video niet gelezen' : `${n} oudere BaoCut-video’s niet gelezen`),
+    legacy: (n) => (n === 1 ? '1 oudere OpenFox-video niet gelezen' : `${n} oudere OpenFox-video’s niet gelezen`),
     listSeparator: ', ',
     separator: ' · ',
     missing: 'Deze map is niet te vinden',
@@ -284,21 +284,21 @@ export const nl: SemanticMessages = {
     truncatedNoteNoLimit: 'Te veel bestanden: alleen de eerste zijn gescand. Voeg in plaats daarvan een submap toe.',
     unreadableNote: 'Deze map kan niet worden gelezen. Controleer de rechten.',
     legacyNote:
-      'Oudere BaoCut-video’s moeten eerst worden bijgewerkt voordat ze gelezen kunnen worden, en bijwerken verandert ze, dus ze worden hier niet gelezen. Verplaats er een naar een project en open het één keer in BaoCut om het bij te werken.',
+      'Oudere OpenFox-video’s moeten eerst worden bijgewerkt voordat ze gelezen kunnen worden, en bijwerken verandert ze, dus ze worden hier niet gelezen. Verplaats er een naar een project en open het één keer in OpenFox om het bij te werken.',
     visualReady: 'Beeld is klaar',
     visualProgress: (done, total) => `Beeld: ${done} van ${total} klaar`,
-    textOnly: 'De BaoCut-video’s erin worden geïndexeerd op wat er gezegd is',
+    textOnly: 'De OpenFox-video’s erin worden geïndexeerd op wat er gezegd is',
     visualOff: 'De beeldindex staat uit, dus videobestanden en afbeeldingen worden nog niet geïndexeerd',
     addTitle: 'Geïndexeerde map toevoegen',
     addBody:
-      'Video’s buiten je projecten zijn dan ook op betekenis te vinden. BaoCut leest deze map alleen: er wordt niets in gewijzigd, verplaatst of verwijderd. De video’s en afbeeldingen erin verschijnen in Space met deze map als bron.',
+      'Video’s buiten je projecten zijn dan ook op betekenis te vinden. OpenFox leest deze map alleen: er wordt niets in gewijzigd, verplaatst of verwijderd. De video’s en afbeeldingen erin verschijnen in Space met deze map als bron.',
     addWhat: (visual) =>
       visual
-        ? 'BaoCut-video’s worden geïndexeerd op wat er gezegd is en wat er in beeld is, andere videobestanden en afbeeldingen op beeld. Exports die BaoCut heeft vastgelegd worden overgeslagen, en video’s die ook in een project staan, gebruiken de kopie van het project.'
-        : 'BaoCut-video’s worden geïndexeerd op wat er gezegd is; andere videobestanden en afbeeldingen hebben de beeldindex nodig. Exports die BaoCut heeft vastgelegd worden overgeslagen, en video’s die ook in een project staan, gebruiken de kopie van het project.',
+        ? 'OpenFox-video’s worden geïndexeerd op wat er gezegd is en wat er in beeld is, andere videobestanden en afbeeldingen op beeld. Exports die OpenFox heeft vastgelegd worden overgeslagen, en video’s die ook in een project staan, gebruiken de kopie van het project.'
+        : 'OpenFox-video’s worden geïndexeerd op wat er gezegd is; andere videobestanden en afbeeldingen hebben de beeldindex nodig. Exports die OpenFox heeft vastgelegd worden overgeslagen, en video’s die ook in een project staan, gebruiken de kopie van het project.',
     visualOffTitle: 'Videobestanden en afbeeldingen worden op beeld geïndexeerd',
     visualOffBody:
-      'Ze hebben geen transcript en zijn dus alleen te vinden op wat er in beeld is. Ze worden geïndexeerd zodra de beeldindex aanstaat; tot dan worden alleen de BaoCut-video’s in deze map geïndexeerd.',
+      'Ze hebben geen transcript en zijn dus alleen te vinden op wat er in beeld is. Ze worden geïndexeerd zodra de beeldindex aanstaat; tot dan worden alleen de OpenFox-video’s in deze map geïndexeerd.',
     confirmAdd: 'Toevoegen',
     addedToast: (name) => `‘${name}’ toegevoegd. Scannen en indexeren gebeurt op de achtergrond.`,
     reindexedToast: (name) => `‘${name}’ wordt opnieuw gescand en de index opnieuw opgebouwd`,

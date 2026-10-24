@@ -171,7 +171,7 @@ export const fr: ModelsMessages = {
     customTag: "Personnalisé",
     emptyProviders: "Aucun fournisseur cloud pour cette catégorie. Vous pouvez ajouter un service compatible OpenAI personnalisé.",
     noCloud: "Cette catégorie n’a aucun modèle cloud.",
-    webNote: "Un navigateur ne peut pas connecter de fournisseurs, changer les clés, ajouter des fournisseurs ou des modèles, actualiser les catalogues, ni modifier le modèle par défaut et ses réglages. Vous pouvez toujours tester les modèles. Faites le reste dans l’app de bureau BaoCut.",
+    webNote: "Un navigateur ne peut pas connecter de fournisseurs, changer les clés, ajouter des fournisseurs ou des modèles, actualiser les catalogues, ni modifier le modèle par défaut et ses réglages. Vous pouvez toujours tester les modèles. Faites le reste dans l’app de bureau OpenFox.",
   },
 
   textParams: {

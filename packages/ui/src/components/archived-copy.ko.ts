@@ -15,7 +15,7 @@ export const ko: ArchivedMessages = {
   deleteAll: '모두 삭제',
   deleteAllTitle: (n) => (n === 1 ? '보관된 세션 1개를 삭제할까요?' : `보관된 세션 ${n}개를 모두 삭제할까요?`),
   deleteAllBody:
-    '세션 기록이 BaoCut에서 삭제되며, 실행 중인 작업은 먼저 중지됩니다. 이 작업은 되돌릴 수 없습니다. 프로젝트 폴더의 파일은 영향을 받지 않습니다.',
+    '세션 기록이 OpenFox에서 삭제되며, 실행 중인 작업은 먼저 중지됩니다. 이 작업은 되돌릴 수 없습니다. 프로젝트 폴더의 파일은 영향을 받지 않습니다.',
   restored: (title) => `“${title}” 세션을 복원했습니다`,
   open: '열기',
   restoreFailed: (message) => `복원하지 못했습니다: ${message}`,

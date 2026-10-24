@@ -27,7 +27,7 @@ export const de: SpeakersMessages = {
   startHint: "Nach Abschluss öffnet sich eine Prüfseite – dies ist das einzige Werkzeug, bei dem vor dem Anwenden bestätigt wird.",
   readOnly: "Das Video ist schreibgeschützt; Sprecher können nicht erkannt werden.",
   web: "Sprecher können im Browser nicht erkannt werden",
-  webBody: "Sprechererkennung verwendet das lokale Stimmabdruckmodell auf diesem Computer. Die BaoCut-Desktop-App verwenden.",
+  webBody: "Sprechererkennung verwendet das lokale Stimmabdruckmodell auf diesem Computer. Die OpenFox-Desktop-App verwenden.",
 
   submitting: "Wird eingereicht…",
   queued: "In Warteschlange…",

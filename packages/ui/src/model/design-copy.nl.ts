@@ -8,9 +8,9 @@ export const nl: DesignMessages = {
   frameTitle: (name) => `Ontwerpeditor: ${name}`,
   opening: 'Ontwerp openen…',
   unavailableTitle: 'Ontwerpeditor niet beschikbaar',
-  unavailableBody: 'Deze versie van BaoCut bevat de ontwerpeditor niet. De bestanden van het ontwerp staan nog in hun map.',
+  unavailableBody: 'Deze versie van OpenFox bevat de ontwerpeditor niet. De bestanden van het ontwerp staan nog in hun map.',
   hostBlockedTitle: 'Ontwerpeditor niet beschikbaar op dit adres',
-  hostBlockedBody: 'Open BaoCut Web op 127.0.0.1 of localhost om ontwerpen te bewerken. De bestanden van het ontwerp staan nog in hun map.',
+  hostBlockedBody: 'Open OpenFox Web op 127.0.0.1 of localhost om ontwerpen te bewerken. De bestanden van het ontwerp staan nog in hun map.',
   openFailed: (reason) => `Kan ontwerp niet openen: ${reason}`,
   open: 'Ontwerp openen',
   openCard: (name) => `Ontwerp ‘${name}’ openen`,
@@ -40,5 +40,5 @@ export const nl: DesignMessages = {
   exportDialogButton: 'Exporteren',
   exportSaved: (path) => `Opgeslagen in ${path}`,
   exportFailed: (reason) => `Kan het geëxporteerde bestand niet opslaan: ${reason}`,
-  exportUnsupported: (name) => `BaoCut kan ‘${name}’ niet opslaan: dit bestandstype wordt niet ondersteund`,
+  exportUnsupported: (name) => `OpenFox kan ‘${name}’ niet opslaan: dit bestandstype wordt niet ondersteund`,
 };

@@ -6,18 +6,18 @@ export const ja: AgentMessages = {
   pageTitle: 'Agent プロバイダ',
   factsLabel: 'Agent のしくみ',
   permissionsTitle: 'Agent の権限',
-  lede: 'Agent は、Claude Code や Codex など、お使いのコンピュータにインストールされた AI コーディングアシスタントです。BaoCut が直接呼び出すので、ひと言で文字起こし、翻訳、編集を済ませられます。',
+  lede: 'Agent は、Claude Code や Codex など、お使いのコンピュータにインストールされた AI コーディングアシスタントです。OpenFox が直接呼び出すので、ひと言で文字起こし、翻訳、編集を済ませられます。',
   facts: [
-    { key: 'cli', title: 'インストール済みのものを使用', body: 'BaoCut は独自にインストールせず、このコンピュータにあるコマンドライン Agent を呼び出します。' },
-    { key: 'plan', title: 'ご自身のサブスクリプションを使用', body: 'BaoCut への追加の支払いも、API キーの入力も不要です。' },
+    { key: 'cli', title: 'インストール済みのものを使用', body: 'OpenFox は独自にインストールせず、このコンピュータにあるコマンドライン Agent を呼び出します。' },
+    { key: 'plan', title: 'ご自身のサブスクリプションを使用', body: 'OpenFox への追加の支払いも、API キーの入力も不要です。' },
     { key: 'ask', title: '変更する前に確認', body: '動画に書き込む前に止まって許可を待ちます。いつでも取り消せます。' },
   ],
 
   providersHeading: 'このコンピュータの Agent',
   providersHint:
-    'BaoCut はインストール済みのものを見つけます。使える Agent が 1 つあれば十分で、すべてそろえる必要はありません。迷ったら Claude Code か Codex を選んでください。内蔵のものは無効にすることしかできず、追加したものは削除できます。',
+    'OpenFox はインストール済みのものを見つけます。使える Agent が 1 つあれば十分で、すべてそろえる必要はありません。迷ったら Claude Code か Codex を選んでください。内蔵のものは無効にすることしかできず、追加したものは削除できます。',
   providersMeta: (checked: string | null, builtin: number, added: number, found: number) =>
-    `${checked ? `${checked} に確認 · ` : ''}BaoCut の内蔵 Agent ${builtin} 個${added ? `、追加 ${added} 個` : ''}。このコンピュータで ${found} 個を検出`,
+    `${checked ? `${checked} に確認 · ` : ''}OpenFox の内蔵 Agent ${builtin} 個${added ? `、追加 ${added} 個` : ''}。このコンピュータで ${found} 個を検出`,
   statusLabel: 'Agent の状態',
   scanDone: (n: number) => (n ? `確認完了 · このコンピュータに Agent が ${n} 個あります` : '確認完了 · インストール済みの Agent は見つかりませんでした'),
   scanFailed: (message: string) => `再確認できませんでした：${message}`,
@@ -40,15 +40,15 @@ export const ja: AgentMessages = {
   },
 
   fullAccessOnly:
-    '1 ステップごとに承認を求める仕組みがないため、BaoCut は「フルアクセス」モードでしか実行できません。コマンドの実行やファイルの変更の前に確認しません。',
+    '1 ステップごとに承認を求める仕組みがないため、OpenFox は「フルアクセス」モードでしか実行できません。コマンドの実行やファイルの変更の前に確認しません。',
 
   untested: {
-    body: 'この Agent は、BaoCut で実機による完全なセッションをまだ通していません。検出、サインイン、モデル一覧は通常どおり動作します。セッション中の問題は、Agent 自身のドキュメントに従ってください。',
+    body: 'この Agent は、OpenFox で実機による完全なセッションをまだ通していません。検出、サインイン、モデル一覧は通常どおり動作します。セッション中の問題は、Agent 自身のドキュメントに従ってください。',
   },
 
   catalog: {
     heading: 'Agent を追加',
-    hint: 'ACP（Agent Client Protocol）に対応するほかのコマンドライン Agent も追加できます。BaoCut は個別に検証していないため、使えるかどうかはチェック結果で判断してください。',
+    hint: 'ACP（Agent Client Protocol）に対応するほかのコマンドライン Agent も追加できます。OpenFox は個別に検証していないため、使えるかどうかはチェック結果で判断してください。',
     custom: 'カスタムコマンド…',
     search: '追加する Agent を検索',
     searchPlaceholder: '名前、説明、コマンドで検索',
@@ -62,12 +62,12 @@ export const ja: AgentMessages = {
     landed: (name: string, custom: boolean) => `${name}${custom ? '（カスタムコマンド）' : ''} を追加しました · 検出されるとセッションで使えます`,
     addFailed: (message: string) => `追加できませんでした：${message}`,
     webNote:
-      'このコンピュータでどのコマンドを実行するかに関わるため、ブラウザでは Agent を追加・削除できません。BaoCut デスクトップアプリを使ってください。',
+      'このコンピュータでどのコマンドを実行するかに関わるため、ブラウザでは Agent を追加・削除できません。OpenFox デスクトップアプリを使ってください。',
   },
 
   customDialog: {
     title: 'カスタムコマンドで Agent を追加',
-    lede: 'ターミナルで ACP モードとして起動するコマンドを入力してください。BaoCut はターミナルを介さず、プログラムを直接起動します。',
+    lede: 'ターミナルで ACP モードとして起動するコマンドを入力してください。OpenFox はターミナルを介さず、プログラムを直接起動します。',
     name: '名前',
     namePlaceholder: '例：マイ Agent',
     id: 'id',
@@ -79,8 +79,8 @@ export const ja: AgentMessages = {
     commandParts: (exe: string, args: string[]) => `起動内容：プログラム ${exe}、引数 ${args.join(' · ')}`,
     env: '環境変数（任意）',
     envPlaceholder: 'MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\nMY_AGENT_LOG=0',
-    envHint: '1 行に 1 つの KEY=VALUE。BaoCut が起動するときだけ追加されます。',
-    note: '追加後、BaoCut は起動できるか、サインインが必要か、どのモデルがあるかを確認します。検出されるとセッションに表示されます。',
+    envHint: '1 行に 1 つの KEY=VALUE。OpenFox が起動するときだけ追加されます。',
+    note: '追加後、OpenFox は起動できるか、サインインが必要か、どのモデルがあるかを確認します。検出されるとセッションに表示されます。',
     cancel: 'キャンセル',
     submit: '追加',
     exists: (id: string) => `「${id}」はすでにほかの Agent が使っています。別の id を選んでください。`,
@@ -95,29 +95,29 @@ export const ja: AgentMessages = {
     subLauncher: (launcher: string, needs: string) => `未確認 · 起動時に ${launcher} がダウンロード、${needs} が必要`,
     subMissing: (command: string) => `未確認 · このコンピュータに ${command} が見つかりません`,
     note: (name: string) =>
-      `${name} は ACP（Agent Client Protocol）で接続します。BaoCut はこの Agent を検証していません。インストール方法やサインインするアカウントは、Agent 自身のドキュメントに従ってください。`,
+      `${name} は ACP（Agent Client Protocol）で接続します。OpenFox はこの Agent を検証していません。インストール方法やサインインするアカウントは、Agent 自身のドキュメントに従ってください。`,
     noInstall: '個別のインストールは不要',
     noInstallBody: (launcher: string, spec: string, needs: string) =>
-      `BaoCut が起動するときに ${launcher} が ${spec} を自動でダウンロードします。このコンピュータに ${needs} が必要です。`,
+      `OpenFox が起動するときに ${launcher} が ${spec} を自動でダウンロードします。このコンピュータに ${needs} が必要です。`,
     install: '公式の手順に従ってこのコンピュータにインストール',
     installBody: (command: string) => `インストール後、ターミナルで ${command} を実行できるようになります。`,
     docs: '公式の手順を開く',
-    launch: 'BaoCut はこのコマンドで起動します',
+    launch: 'OpenFox はこのコマンドで起動します',
     launchCopy: '起動コマンド',
     envNote: (keys: string[]) => `起動時に環境変数 ${keys.join('、')} を追加します（値はここに表示されません）。`,
     login: 'サインインが必要な場合は Agent 側でサインイン',
-    loginBody: 'ターミナルで Agent の手順に従ってください。サインインは専用のウインドウで行われ、BaoCut がアカウントやパスワードを扱うことはありません。',
+    loginBody: 'ターミナルで Agent の手順に従ってください。サインインは専用のウインドウで行われ、OpenFox がアカウントやパスワードを扱うことはありません。',
     detectStep: '確認',
-    detectBody: 'BaoCut が一度起動して、接続できるか、サインインが必要かを確かめ、モデル一覧を取得します。',
+    detectBody: 'OpenFox が一度起動して、接続できるか、サインインが必要かを確かめ、モデル一覧を取得します。',
     launchRow: '起動コマンド',
-    launchRowHint: 'BaoCut は ACP（Agent Client Protocol）経由で、このコマンドを使って起動します。',
+    launchRowHint: 'OpenFox は ACP（Agent Client Protocol）経由で、このコマンドを使って起動します。',
     versionPinned: (spec: string) => `起動コマンドで ${spec} に固定されています。バージョンを変えるには、削除してからカスタムコマンドで追加し直してください。`,
     versionOwn: 'アップグレードは Agent 自身の手順に従い、その後ここで再確認してください。',
     account: (name: string, signedOut: boolean) =>
-      `${signedOut ? '未サインイン、またはサインインの有効期限切れです。' : ''}サインインと課金はどちらも ${name} 側で行われます。BaoCut がアカウントを扱うことはなく、追加料金もかかりません。`,
+      `${signedOut ? '未サインイン、またはサインインの有効期限切れです。' : ''}サインインと課金はどちらも ${name} 側で行われます。OpenFox がアカウントを扱うことはなく、追加料金もかかりません。`,
     removeTitle: (name: string) => `${name} を削除しますか？`,
     removeBody: (name: string) =>
-      `${name} を BaoCut の Agent 一覧から削除し、有効状態と既定モデルも消去します。新しいセッションの既定がこの Agent の場合は、利用できるほかの Agent が引き継ぎます。この Agent を使っているタスクは終了します。このコンピュータにインストールされたプログラムには影響せず、あとで追加し直すこともできます。`,
+      `${name} を OpenFox の Agent 一覧から削除し、有効状態と既定モデルも消去します。新しいセッションの既定がこの Agent の場合は、利用できるほかの Agent が引き継ぎます。この Agent を使っているタスクは終了します。このコンピュータにインストールされたプログラムには影響せず、あとで追加し直すこともできます。`,
     removed: (name: string) => `${name} を削除しました`,
     removeFailed: (message: string) => `削除できませんでした：${message}`,
   },
@@ -143,13 +143,13 @@ export const ja: AgentMessages = {
   faq: [
     {
       key: 'cost',
-      title: 'BaoCut に別途支払いやサブスクリプションが必要ですか？',
-      body: 'いいえ。Agent はお持ちの Claude または ChatGPT のサブスクリプションを使い、費用と使用枠もそちらで計上されます。BaoCut は独自のモデルを持たず、キーを預からず、クラウドでの中継もしません。こうしたサブスクリプションがなければ Agent を使わなくてもかまいません。BaoCut のほかの機能は通常どおり使えます。',
+      title: 'OpenFox に別途支払いやサブスクリプションが必要ですか？',
+      body: 'いいえ。Agent はお持ちの Claude または ChatGPT のサブスクリプションを使い、費用と使用枠もそちらで計上されます。OpenFox は独自のモデルを持たず、キーを預からず、クラウドでの中継もしません。こうしたサブスクリプションがなければ Agent を使わなくてもかまいません。OpenFox のほかの機能は通常どおり使えます。',
     },
     {
       key: 'account',
-      title: 'BaoCut からアカウントやパスワードが見えますか？',
-      body: 'いいえ。サインインは Agent 専用のウインドウで行われます。BaoCut はお使いのコンピュータでそのプログラムを起動し、動画を渡すだけです。動画を変更する前には確認があり、そのルールは「設定 › プライバシーと権限」にあります。',
+      title: 'OpenFox からアカウントやパスワードが見えますか？',
+      body: 'いいえ。サインインは Agent 専用のウインドウで行われます。OpenFox はお使いのコンピュータでそのプログラムを起動し、動画を渡すだけです。動画を変更する前には確認があり、そのルールは「設定 › プライバシーと権限」にあります。',
     },
     {
       key: 'cloud',
@@ -159,8 +159,8 @@ export const ja: AgentMessages = {
     },
     {
       key: 'terminal',
-      title: 'これらの Agent でターミナルから BaoCut を操作したいですか？',
-      body: 'BaoCut 内のセッションには追加の準備は不要です。ターミナルやほかのアプリで使うには、それらに BaoCut の Skill をインストールしてください。Skills ページの下部を参照してください。',
+      title: 'これらの Agent でターミナルから OpenFox を操作したいですか？',
+      body: 'OpenFox 内のセッションには追加の準備は不要です。ターミナルやほかのアプリで使うには、それらに OpenFox の Skill をインストールしてください。Skills ページの下部を参照してください。',
       link: 'skills',
     },
   ],
@@ -189,7 +189,7 @@ export const ja: AgentMessages = {
     desc: '起動時と実行中に、有効な各 Agent のモデル一覧を定期的に更新します。オフでも、各 Agent の詳細で手動で更新できます。',
   },
   executableHint:
-    'BaoCut は PATH と一般的なインストール場所（Homebrew、npm のグローバルフォルダ、~/.local/bin）を探します。バージョンマネージャ（nvm、asdf、mise）でインストールしたものは別の場所にあることがあるため、その場合は実行ファイルのフルパスをここに入力してください。空欄にすると自動検索に戻ります。',
+    'OpenFox は PATH と一般的なインストール場所（Homebrew、npm のグローバルフォルダ、~/.local/bin）を探します。バージョンマネージャ（nvm、asdf、mise）でインストールしたものは別の場所にあることがあるため、その場合は実行ファイルのフルパスをここに入力してください。空欄にすると自動検索に戻ります。',
   techPanel: '技術情報と場所',
   techTitle: 'Agent の技術情報',
   techSubtitle: 'バージョン、パス、利用できるモデル',
@@ -222,7 +222,7 @@ export const ja: AgentMessages = {
     confirmUpgrade: (name: string) => `${name} のアップグレードコマンドを実行しますか？`,
     confirmRun: '実行',
     cancel: 'キャンセル',
-    confirmBefore: 'BaoCut はこのコンピュータで下のコマンドを実行します。出力はコマンドの下に表示され、いつでも停止できます。',
+    confirmBefore: 'OpenFox はこのコンピュータで下のコマンドを実行します。出力はコマンドの下に表示され、いつでも停止できます。',
     confirmAfter: 'パスワードが必要なコマンドはここでは失敗します。その場合はターミナルで実行してください。',
     restored: (name: string) => `${name} を自動検索に戻しました`,
     switched: (path: string) => `${path} を使用します`,
@@ -237,7 +237,7 @@ export const ja: AgentMessages = {
   },
 
   skills: {
-    lede: 'Skill は、BaoCut 内の Agent に特定のやり方を教えるフォルダ（SKILL.md と、任意の参考ファイル）です。スイッチがオンなら、Agent はタスクに関係がありそうなときに自分で使います。オフなら、入力欄の「+」から選んだときだけ使われます。Skill のオン・オフ、追加、削除は、次に新しく始める Agent セッションから反映されます。',
+    lede: 'Skill は、OpenFox 内の Agent に特定のやり方を教えるフォルダ（SKILL.md と、任意の参考ファイル）です。スイッチがオンなら、Agent はタスクに関係がありそうなときに自分で使います。オフなら、入力欄の「+」から選んだときだけ使われます。Skill のオン・オフ、追加、削除は、次に新しく始める Agent セッションから反映されます。',
     search: 'Skill を検索',
     filter: '提供元で絞り込む',
     tab: (label: string, count: number) => `${label} ${count}`,
@@ -248,15 +248,15 @@ export const ja: AgentMessages = {
     loading: 'Skill を読み込み中…',
     loadFailed: (message: string) => `Skill を読み込めませんでした：${message}`,
     retry: '再試行',
-    disconnected: 'BaoCut Runtime に接続されていません。接続すると Skill が表示されます。',
+    disconnected: 'OpenFox Runtime に接続されていません。接続すると Skill が表示されます。',
     emptyTitle: 'Skill はまだありません',
     emptyBody:
       'ここで使える Skill はまだありません。自作の Skill フォルダを追加するか、GitHub で共有されているものを読み込んでください。サードパーティの Skill は読み込み後オフになっているので、内容を確認してからオンにしてください。',
-    emptyWeb: 'ここで使える Skill はまだありません。ブラウザでは表示とオン・オフの切り替えしかできません。追加と読み込みは BaoCut デスクトップアプリで行ってください。',
+    emptyWeb: 'ここで使える Skill はまだありません。ブラウザでは表示とオン・オフの切り替えしかできません。追加と読み込みは OpenFox デスクトップアプリで行ってください。',
     noMatch: (query: string) => `「${query}」に一致する Skill は見つかりませんでした`,
     noMatchHint: '別の言葉を試すか、「すべて」に切り替えてください。',
     noneInTab: (label: string) => `${label} の Skill はまだありません`,
-    webNote: 'ブラウザでは Skill の表示とオン・オフの切り替えができます。追加、読み込み、削除は BaoCut デスクトップアプリで行ってください。',
+    webNote: 'ブラウザでは Skill の表示とオン・オフの切り替えができます。追加、読み込み、削除は OpenFox デスクトップアプリで行ってください。',
     view: (name: string) => `${name} を表示`,
     enable: (name: string) => `${name} を有効にする`,
     toggledOn: (name: string) => `「${name}」をオンにしました：次の新しいセッションから、関係があるときに Agent が自分で使います`,
@@ -268,9 +268,9 @@ export const ja: AgentMessages = {
     diagnosticsHint: 'これらのフォルダは使える Skill ではないため、スキップしました。修正してからこのページに戻ると再読み込みされます。',
     diagnosticCode: { invalid: '形式が無効', 'duplicate-id': '名前が重複', 'builtin-conflict': '内蔵 Skill と同じ名前' },
     diagnosticLine: (dir: string, reason: string, issue: string) => `${dir} · ${reason}：${issue}`,
-    externalTitle: 'ターミナルやほかのアプリの Agent から BaoCut を使う',
+    externalTitle: 'ターミナルやほかのアプリの Agent から OpenFox を使う',
     externalBody:
-      '上の Skill は BaoCut 内の Agent 用です。ターミナルの Claude Code や Codex に BaoCut での文字起こし、翻訳、編集、書き出しを覚えさせるには、それらに BaoCut の Skill をインストールしてください。これらの Agent のグローバルな場所へのワンクリックインストールや、インストール先と更新の要否の確認は、今後のバージョンで提供予定です。',
+      '上の Skill は OpenFox 内の Agent 用です。ターミナルの Claude Code や Codex に OpenFox での文字起こし、翻訳、編集、書き出しを覚えさせるには、それらに OpenFox の Skill をインストールしてください。これらの Agent のグローバルな場所へのワンクリックインストールや、インストール先と更新の要否の確認は、今後のバージョンで提供予定です。',
   },
 
   skillDetail: {
@@ -278,7 +278,7 @@ export const ja: AgentMessages = {
     stateOn: 'オン：関係があるときに Agent が自分で使います。',
     stateOff: 'オフ：入力欄の「+」から選んだときだけ使われます。',
     thirdPartyNote:
-      'サードパーティの Skill は、ほかの人が共有したリポジトリのものです。オンにする前に内容を確認してください。BaoCut が Skill 内のファイルを実行することはなく、Skill で Agent の権限が広がることもありません。',
+      'サードパーティの Skill は、ほかの人が共有したリポジトリのものです。オンにする前に内容を確認してください。OpenFox が Skill 内のファイルを実行することはなく、Skill で Agent の権限が広がることもありません。',
     source: '提供元',
     location: '場所',
     version: 'バージョン',

@@ -201,7 +201,7 @@ export const ko: ExportMessages = {
   editors: '편집 프로그램으로 내보내기',
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: 'FCP7 XML(.xml)',
-  portableName: 'BaoCut 휴대용 패키지',
+  portableName: 'OpenFox 휴대용 패키지',
   portableMeta: '.baocut · 영상, 모든 문서와 소재를 파일 하나에 담습니다',
   plannedTarget: '이 버전에서는 아직 이 프로젝트 파일 형식을 지원하지 않습니다',
   jianyingName: 'Jianying 초안',

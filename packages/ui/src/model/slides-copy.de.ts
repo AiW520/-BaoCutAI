@@ -8,7 +8,7 @@ export const de: SlidesMessages = {
   frameTitle: (name) => `Folieneditor: ${name}`,
   opening: 'Folien werden geöffnet…',
   unavailableTitle: 'Folieneditor nicht verfügbar',
-  unavailableBody: 'Diese BaoCut-Version enthält den Folieneditor nicht. Die Foliendateien liegen weiterhin in ihrem Ordner.',
+  unavailableBody: 'Diese OpenFox-Version enthält den Folieneditor nicht. Die Foliendateien liegen weiterhin in ihrem Ordner.',
   openFailed: (reason) => `Folien konnten nicht geöffnet werden: ${reason}`,
   open: 'Folien öffnen',
   openCard: (name) => `Folien „${name}“ öffnen`,

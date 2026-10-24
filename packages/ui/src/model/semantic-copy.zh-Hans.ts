@@ -203,8 +203,8 @@ export const zhHans: SemanticMessages = {
   },
   scope: {
     group: '索引范围',
-    lead: '所有 BaoCut 项目里的视频都建：讲话内容与画面；声音这一版还没有。不想建的项目可以排除；成片不另建，搜导出它的视频就能找到。',
-    all: '所有 BaoCut 项目',
+    lead: '所有 开胡-OpenFox 项目里的视频都建：讲话内容与画面；声音这一版还没有。不想建的项目可以排除；成片不另建，搜导出它的视频就能找到。',
+    all: '所有 开胡-OpenFox 项目',
     allLine: (projects, excluded) => `${projects} 个项目${excluded ? `，排除了 ${excluded} 个` : ''} · 新建的项目自动加入`,
     outside: '项目之外的视频也建。',
     excludedGroup: '排除的项目',
@@ -259,7 +259,7 @@ export const zhHans: SemanticMessages = {
     reindexDesc: '重新扫一遍，丢掉这里的索引重建',
     remove: '移除',
     removeDesc: '删掉它的索引，文件不动',
-    videos: (n) => `${n} 部 BaoCut 视频`,
+    videos: (n) => `${n} 部 开胡-OpenFox 视频`,
     videoFiles: (n) => `${n} 个视频素材`,
     images: (n) => `${n} 张图片`,
     nothing: '还没扫到视频和图片',
@@ -273,20 +273,20 @@ export const zhHans: SemanticMessages = {
     truncatedNote: (limit) => `文件太多，只扫了前 ${limit} 个视频与图片。可以改加里面的子文件夹。`,
     truncatedNoteNoLimit: '文件太多，只扫了前面一部分。可以改加里面的子文件夹。',
     unreadableNote: '读不了这个文件夹，检查一下权限。',
-    legacyNote: '旧版 BaoCut 视频要先升级才能读；升级会改动它，所以这里不读。把它放进项目、在 BaoCut 里打开一次就能升级。',
+    legacyNote: '旧版 开胡-OpenFox 视频要先升级才能读；升级会改动它，所以这里不读。把它放进项目、在 开胡-OpenFox 里打开一次就能升级。',
     visualReady: '画面已就绪',
     visualProgress: (done, total) => `画面 ${done}/${total} 个完成`,
-    textOnly: '文字按里面的 BaoCut 视频建',
+    textOnly: '文字按里面的 开胡-OpenFox 视频建',
     visualOff: '画面索引没开，视频素材与图片还没建',
     addTitle: '添加索引文件夹',
     addBody:
-      '项目之外的视频素材也能按意思找到。BaoCut 只读这个文件夹，不改、不移动、不删里面的文件；里面的视频与图片会出现在 Space 里，来源写这个文件夹。',
+      '项目之外的视频素材也能按意思找到。开胡-OpenFox 只读这个文件夹，不改、不移动、不删里面的文件；里面的视频与图片会出现在 Space 里，来源写这个文件夹。',
     addWhat: (visual) =>
       visual
-        ? 'BaoCut 视频按讲话内容与画面建，其他视频素材与图片按画面建；BaoCut 导出记录过的成片跳过，同时在项目里的视频按项目那一份建。'
-        : 'BaoCut 视频按讲话内容建，其他视频素材与图片要打开画面索引才会建；BaoCut 导出记录过的成片跳过，同时在项目里的视频按项目那一份建。',
+        ? '开胡-OpenFox 视频按讲话内容与画面建，其他视频素材与图片按画面建；开胡-OpenFox 导出记录过的成片跳过，同时在项目里的视频按项目那一份建。'
+        : '开胡-OpenFox 视频按讲话内容建，其他视频素材与图片要打开画面索引才会建；开胡-OpenFox 导出记录过的成片跳过，同时在项目里的视频按项目那一份建。',
     visualOffTitle: '视频素材与图片要按画面建',
-    visualOffBody: '它们没有文稿，只能按画面找。打开画面索引之后才会建；现在加进来，只有里面的 BaoCut 视频会建索引。',
+    visualOffBody: '它们没有文稿，只能按画面找。打开画面索引之后才会建；现在加进来，只有里面的 开胡-OpenFox 视频会建索引。',
     confirmAdd: '添加',
     addedToast: (name) => `已添加「${name}」：正在后台扫描并建索引`,
     reindexedToast: (name) => `正在重新扫「${name}」并重建它的索引`,

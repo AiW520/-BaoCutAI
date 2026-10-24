@@ -6,7 +6,7 @@ export const koDub: DubMessages = {
   title: '번역 더빙',
   back: '뒤로',
   web: '번역 더빙은 데스크톱 앱에서 사용할 수 있습니다',
-  webBody: '브라우저의 BaoCut은 고정 워크플로(pipelines.*)를 제공하지 않아 여기서는 번역 더빙을 시작할 수 없습니다. 데스크톱 앱에서 이 영상을 여세요.',
+  webBody: '브라우저의 OpenFox은 고정 워크플로(pipelines.*)를 제공하지 않아 여기서는 번역 더빙을 시작할 수 없습니다. 데스크톱 앱에서 이 영상을 여세요.',
   summary: (language: string, count: number | null, translate: boolean) =>
     `${translate ? `먼저 ${language} 번역을 만든 뒤` : `기존 ${language} 번역을 사용해`} ${count === null ? '문장별로' : `문장 ${count}개를 하나씩`} 음성을 합성하고, 각 문장을 원문 문장의 타이밍에 맞춰 하나의 더빙 그룹으로 타임라인에 씁니다`,
   language: '더빙 언어',
@@ -117,7 +117,7 @@ export const koDub: DubMessages = {
   grantAction: '허가 발급 후 시작',
   grantRetryAction: '허가 발급 후 다시 시도',
   grantDialogTitle: '데이터 공유 허가 발급',
-  grantDialogIntro: '확인하면 BaoCut이 이 허가를 기록하고 더빙을 계속합니다:',
+  grantDialogIntro: '확인하면 OpenFox이 이 허가를 기록하고 더빙을 계속합니다:',
   grantConfirm: '발급 후 계속',
   grantCancel: '나중에',
   granting: '허가 발급 중…',

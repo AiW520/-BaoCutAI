@@ -76,10 +76,10 @@ export const ptBR: VoicesMessages = {
     exportButton: "Exportar",
     exported: (path: string) => `Exportado para ${path}`,
     exportFailed: (text: string) => `Não foi possível exportar: ${text}`,
-    exportExists: "O BaoCut não sobrescreve arquivos. Escolha outro nome ou local e exporte novamente.",
+    exportExists: "O OpenFox não sobrescreve arquivos. Escolha outro nome ou local e exporte novamente.",
 
     exportFailedExists: (text: string) =>
-      `Não foi possível exportar: ${text}. O BaoCut não sobrescreve arquivos. Escolha outro nome ou local e exporte novamente.`,
+      `Não foi possível exportar: ${text}. O OpenFox não sobrescreve arquivos. Escolha outro nome ou local e exporte novamente.`,
 
     deleteTitle: (name: string) => `Excluir “${name}”?`,
     deleteConfirm: "Excluir",
@@ -139,7 +139,7 @@ A voz ainda está aqui. Tente depois ou exclua só o registro e voz locais. O cl
     reading: "Lendo o áudio…",
     readFailed: message => `Não foi possível ler este áudio: ${message}`,
     micFailed: message => `Não foi possível iniciar o microfone: ${message}`,
-    micDenied: "O BaoCut não consegue usar o microfone. Permita nas configurações do sistema ou envie uma gravação.",
+    micDenied: "O OpenFox não consegue usar o microfone. Permita nas configurações do sistema ou envie uma gravação.",
     sampleShort: (seconds, min) => `Só ${seconds} segundos; são necessários pelo menos ${min}. Grave de novo.`,
     sampleLocal: "Suficiente para motores locais · um pouco mais e provedores na nuvem também podem usar",
     sampleOk: target => `Suficiente · ${target} segundos é o ideal`,

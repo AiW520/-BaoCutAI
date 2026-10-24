@@ -46,7 +46,7 @@ export const ko: PlayerMessages = {
     aborted: '불러오기가 중단되었습니다',
     network: '파일을 읽는 중에 문제가 생겼습니다',
     decode: '디코딩하지 못했습니다. 파일이 손상되었을 수 있습니다',
-    unsupported: 'BaoCut은 아직 이 파일의 형식이나 코덱을 재생할 수 없습니다',
+    unsupported: 'OpenFox은 아직 이 파일의 형식이나 코덱을 재생할 수 없습니다',
     other: '이 파일을 재생하지 못했습니다',
   },
 };

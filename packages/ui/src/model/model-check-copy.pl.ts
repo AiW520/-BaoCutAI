@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'Brak pliku BaoCut; to nie problem modelu',
-    todo: 'Ponowna instalacja BaoCut rozwiąże problem. Pobrane modele bez zmian.',
+    text: 'Brak pliku OpenFox; to nie problem modelu',
+    todo: 'Ponowna instalacja OpenFox rozwiąże problem. Pobrane modele bez zmian.',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: 'Pliki modelu uszkodzone', todo: 'Naprawa pobierze ponownie uszkodzone pliki.' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -22,7 +22,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   MODEL_OUT_OF_MEMORY: () => ({ text: 'Za mało pamięci, model niewczytany', todo: 'Zamknij inne duże modele lub aplikacje zużywające pamięć i sprawdź ponownie.' }),
   MODEL_WORKER_FAILED: () => ({
     text: 'Błąd procesu modelu w tle',
-    todo: 'Sprawdź ponownie. Przy powtórzeniu uruchom BaoCut ponownie lub skopiuj szczegóły techniczne i wyślij do nas.',
+    todo: 'Sprawdź ponownie. Przy powtórzeniu uruchom OpenFox ponownie lub skopiuj szczegóły techniczne i wyślij do nas.',
   }),
 };
 
@@ -75,7 +75,7 @@ export const pl: ModelCheckMessages = {
     todo: "Sprawdź ponownie. Jeśli powtarza się, skopiuj szczegóły techniczne i wyślij do nas.",
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: "Usługa BaoCut w tle nie odpowiada", todo: "Sprawdź później. Jeśli powtarza się, uruchom BaoCut ponownie." },
+    RUNTIME_UNREACHABLE: { text: "Usługa OpenFox w tle nie odpowiada", todo: "Sprawdź później. Jeśli powtarza się, uruchom OpenFox ponownie." },
     MODEL_IN_USE: { text: "Inne zadanie używa modelu", todo: "Poczekaj na ukończenie lub anuluj w zadaniach w tle, potem sprawdź." },
     MODEL_UNAVAILABLE: { text: "Nie można teraz użyć modelu", todo: "Najpierw napraw lub włącz, potem sprawdź." },
     RESOURCE_ADMISSION_UNSATISFIABLE: { text: "Komputer ma za mało pamięci dla modelu", todo: "Wybierz mniejszy model." },
@@ -83,7 +83,7 @@ export const pl: ModelCheckMessages = {
     OFFLINE_STRICT: { text: "Ścisły tryb offline włączony", todo: "Wyłącz ścisły offline w ustawieniach, potem sprawdź." },
   },
   notStartedUnknown: {
-    text: "BaoCut nie przyjął sprawdzenia",
+    text: "OpenFox nie przyjął sprawdzenia",
     todo: "Sprawdź później. Jeśli powtarza się, skopiuj szczegóły techniczne i wyślij do nas.",
   },
   detail: {

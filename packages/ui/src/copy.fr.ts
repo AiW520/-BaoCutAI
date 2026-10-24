@@ -99,7 +99,7 @@ export const fr: CopyMessages = {
     files: 'Fichiers', folders: 'Dossiers',
     filesMessage: (paths) => `Fichiers et dossiers:\n${paths.map(path => JSON.stringify(path)).join('\n')}`,
     pickFailed: (message) => `Impossible de sélectionner les fichiers: ${message}`,
-    webFilesUnsupported: 'Ajoutez les fichiers et dossiers locaux dans Tuzi pour ordinateur. L’envoi de fichiers n’est pas encore disponible dans le client Web.',
+    webFilesUnsupported: 'Ajoutez les fichiers et dossiers locaux dans OpenFox pour ordinateur. L’envoi de fichiers n’est pas encore disponible dans le client Web.',
 
     mention: "Référencer une vidéo ou un fichier",
     slash: "Utiliser un outil",
@@ -149,13 +149,13 @@ export const fr: CopyMessages = {
   recovery: {
     authTitle: (name: string) => `${name} nécessite une nouvelle connexion`,
     authBody: (name: string) =>
-      `Connectez-vous dans la fenêtre de ${name} ; Tuzi ne gère jamais compte ou mot de passe. Revenez renvoyer après connexion.`,
+      `Connectez-vous dans la fenêtre de ${name} ; OpenFox ne gère jamais compte ou mot de passe. Revenez renvoyer après connexion.`,
     openLogin: "Se connecter depuis Terminal",
     loginOpened: (command: string) => `Exécution de ${command} dans un terminal · revenez renvoyer après connexion`,
     loginCopied: "Impossible d’ouvrir un terminal. Commande de connexion copiée ; collez-la dans un terminal",
     loginManual: (command: string) => `Impossible d’ouvrir un terminal. Exécutez ${command} dans un terminal`,
     modelTitle: (model: string | null) => `${model ?? "Ce modèle"} est actuellement indisponible`,
-    modelBody: "Choisissez un autre modèle et renvoyez. Tuzi ne change pas de modèle seul.",
+    modelBody: "Choisissez un autre modèle et renvoyez. OpenFox ne change pas de modèle seul.",
     pickModel: "Renvoyer avec un autre modèle",
     resend: "Renvoyer",
     retry: "Réessayer",
@@ -604,7 +604,7 @@ export const fr: CopyMessages = {
     blockedTitle: {
       loopback: "Adresses locales non ouvertes ici",
       scheme: "Seules les URL http / https peuvent être ouvertes",
-      'app-origin': "Les pages Tuzi ne s’ouvrent pas dans un onglet web",
+      'app-origin': "Les pages OpenFox ne s’ouvrent pas dans un onglet web",
       invalid: "URL invalide",
     },
     blockedBody: {
@@ -614,10 +614,10 @@ export const fr: CopyMessages = {
       invalid: "Vérifiez l’écriture de l’URL.",
     },
     backToPage: "Retour à la page",
-    footer: "Pages dans un environnement séparé sans accès à Tuzi ou services locaux ; connexions distinctes du navigateur système.",
+    footer: "Pages dans un environnement séparé sans accès à OpenFox ou services locaux ; connexions distinctes du navigateur système.",
     externalShort: "Ouvrir à l’extérieur",
     unsupportedTitle: "Pages web non intégrables ici",
-    unsupportedBody: "L’application de bureau Tuzi peut naviguer directement ; pour l’instant, ouvrez dans un navigateur.",
+    unsupportedBody: "L’application de bureau OpenFox peut naviguer directement ; pour l’instant, ouvrez dans un navigateur.",
     openInBrowser: "Ouvrir dans le navigateur",
     toolsTitle: 'Outils',
     newPageTitle: 'Nouvelle page web',
@@ -758,7 +758,7 @@ export const fr: CopyMessages = {
     mcp: {
       name: "Service MCP",
       scope: "Cet ordinateur uniquement",
-      desc: "Permet aux applications IA de lire les vidéos et appeler les outils Tuzi",
+      desc: "Permet aux applications IA de lire les vidéos et appeler les outils OpenFox",
       start: "Démarrer le service",
       stop: "Arrêter le service",
       starting: "Démarrage…",
@@ -776,7 +776,7 @@ export const fr: CopyMessages = {
     web: {
       name: "Service web",
       scope: "Cet ordinateur uniquement",
-      desc: "Ouvrir Tuzi Web dans un navigateur pour modifier les mêmes vidéos",
+      desc: "Ouvrir OpenFox Web dans un navigateur pour modifier les mêmes vidéos",
       start: "Démarrer le service",
       stop: "Arrêter le service",
       starting: "Démarrage…",
@@ -785,7 +785,7 @@ export const fr: CopyMessages = {
     'model-api': {
       name: "API de modèles",
       scope: "Cet ordinateur uniquement",
-      desc: "Permet aux outils OpenAI API d’utiliser les modèles Tuzi pour transcription, parole, images et texte",
+      desc: "Permet aux outils OpenAI API d’utiliser les modèles OpenFox pour transcription, parole, images et texte",
       start: "Démarrer le service",
       stop: "Arrêter le service",
       starting: "Démarrage…",
@@ -801,7 +801,7 @@ export const fr: CopyMessages = {
   servicesPage: {
     title: "Services",
     overview: "Aperçu des services",
-    lede: "Services Tuzi sur ce Mac pour connecter applications et appareils. Tous désactivés par défaut, arrêtés en quittant Tuzi.",
+    lede: "Services OpenFox sur ce Mac pour connecter applications et appareils. Tous désactivés par défaut, arrêtés en quittant OpenFox.",
     allOff: "Aucun actif",
     errors: (n: number) => (pluralForm('fr', n, { one: `${n} erreur`, other: `${n} erreurs` })),
     running: (n: number) => `${n} actifs`,
@@ -811,18 +811,18 @@ export const fr: CopyMessages = {
     railAlert: (text: string) => `Services, ${text}`,
     railApprovals: (n: number) => (pluralForm('fr', n, { one: `Services, ${n} demande attend votre approbation`, other: `Services, ${n} demandes attendent votre approbation` })),
     loading: "Chargement de l’état…",
-    disconnected: "Non connecté au Runtime Tuzi",
+    disconnected: "Non connecté au Runtime OpenFox",
     failed: (message: string) => `Échec : ${message}`,
 
     unavailableDetail: "Cette version du Runtime ne fournit pas encore ce service",
     unavailableTitle: (name: string) => `${name} est encore indisponible`,
     notRunning: "Le service est arrêté. Démarrez-le d’abord",
-    mcpRelated: "Pour apprendre les flux Tuzi à Claude Code ou Codex dans le terminal, installez le Skill Tuzi ; aucun service requis. Voir",
+    mcpRelated: "Pour apprendre les flux OpenFox à Claude Code ou Codex dans le terminal, installez le Skill OpenFox ; aucun service requis. Voir",
     mcpRelatedLink: "Skills",
   },
 
   runtimeCard: {
-    name: "Runtime Tuzi",
+    name: "Runtime OpenFox",
     version: "Version",
     versionValue: (runtime: string, protocol: number | string) => `${runtime} (protocole ${protocol})`,
     pid: "Processus",
@@ -851,8 +851,8 @@ export const fr: CopyMessages = {
     subOff: "Les autres appareils ne voient pas ce Mac.",
     subErrorFallback: "Le service de nœud n’écoute pas.",
     errorFix: "Fermez le programme utilisant ce port et redémarrez le partage, ou arrêtez si inutile.",
-    foot: "Partage actif : Tuzi le reprend à sa prochaine ouverture.",
-    footRight: "Le partage s’arrête quand vous quittez Tuzi.",
+    foot: "Partage actif : OpenFox le reprend à sa prochaine ouverture.",
+    footRight: "Le partage s’arrête quand vous quittez OpenFox.",
     privacy: "Entrées de tâches seulement sur le réseau local, résultats renvoyés ; rien ne reste sur ce Mac après la tâche.",
     offHint: "Un code de jumelage à 6 chiffres apparaît au démarrage ; saisissez-le sur l’autre appareil.",
     started: "Partage de ce Mac démarré",
@@ -865,7 +865,7 @@ export const fr: CopyMessages = {
     pairingHint: (left: string) => `Saisissez ce code sur l’autre appareil. Expire dans ${left}.`,
     pairingLocked: (until: string) => `Trop d’erreurs ; jumelage verrouillé jusqu’à ${until}. Générez un nouveau code pour déverrouiller.`,
     pairingNone:
-      "Aucun code disponible. Régénérez après utilisation, expiration ou réouverture de Tuzi. Appareils jumelés inchangés.",
+      "Aucun code disponible. Régénérez après utilisation, expiration ou réouverture de OpenFox. Appareils jumelés inchangés.",
     regenerate: "Régénérer",
     generate: "Générer un code de jumelage",
     regenerated: "Nouveau code d’appairage généré",
@@ -919,8 +919,8 @@ export const fr: CopyMessages = {
     unpairDone: "Dissocié",
 
     problem: {
-      unreachable: "Ordinateur inaccessible. Vérifiez Tuzi ouvert, « Partager ce Mac » actif et même réseau local.",
-      version: "Versions Tuzi incompatibles. Mettez les deux à jour.",
+      unreachable: "Ordinateur inaccessible. Vérifiez OpenFox ouvert, « Partager ce Mac » actif et même réseau local.",
+      version: "Versions OpenFox incompatibles. Mettez les deux à jour.",
       unpaired: "Jumelage invalide : autre côté révoqué, ou adresse d’un autre ordinateur. Dissociez et jumelez à nouveau.",
     },
     transcribeOff: "Transcription non proposée",
@@ -944,7 +944,7 @@ export const fr: CopyMessages = {
     pairErrors: {
       'pairing-code-invalid': "Code incorrect ou invalide. Demandez un nouveau code et réessayez.",
       'pairing-locked': "Trop d’erreurs ; jumelage verrouillé là-bas. Demandez un clic sur « Régénérer » pour déverrouiller.",
-      version: "Versions Tuzi incompatibles. Mettez les deux à jour d’abord.",
+      version: "Versions OpenFox incompatibles. Mettez les deux à jour d’abord.",
       'source-not-allowed': "Cet ordinateur refuse les connexions depuis votre adresse.",
       lost: "Ordinateur inaccessible. Vérifiez adresse, port et « Partager ce Mac » actif.",
     },
@@ -965,7 +965,7 @@ export const fr: CopyMessages = {
     subtitle: "Consultez à tout moment pour avancer",
     close: "Fermer l’aide",
     navLabel: "Catégories d’aide",
-    navTitle: "Utiliser Tuzi",
+    navTitle: "Utiliser OpenFox",
     navNote: ["Lisez seulement ce qu’il vous faut.", "Fermez pour revenir au travail."] as [string, string],
     sections: { start: "Démarrage rapide", guide: "Guides", keys: "Raccourcis clavier", faq: "FAQ" },
     searchLabel: "Rechercher dans l’aide",

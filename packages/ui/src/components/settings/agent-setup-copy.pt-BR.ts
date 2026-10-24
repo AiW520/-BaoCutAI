@@ -20,13 +20,13 @@ export const ptBR: AgentSetupMessages = {
     `${detail ? `${detail} ` : ""}Comum após remover/atualizar Node.js ou permissões. Verificações mostram onde falha.`,
   errorCta: "Executar verificações",
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} é antigo demais para o BaoCut` : `Esta versão de ${name} é antigo demais para o BaoCut`,
+    version ? `${name} ${version} é antigo demais para o OpenFox` : `Esta versão de ${name} é antigo demais para o OpenFox`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `Exige ${minVersion} ou posterior. `}Atualiza só a ferramenta de linha de comando; conta e configurações próprias não mudam.`,
   outdatedCta: (version: string) => `Atualizar para ${version}`,
   signedOutTitle: (name: string) => `${name} precisa de novo login`,
   signedOutBody: (name: string) =>
-    `O login ocorre na janela de ${name}; BaoCut não trata conta ou senha. Volte para verificar após entrar.`,
+    `O login ocorre na janela de ${name}; OpenFox não trata conta ou senha. Volte para verificar após entrar.`,
   signedOutCta: "Abrir terminal para entrar",
 
   stepSkipped: "Verificado após a etapa anterior passar",
@@ -35,7 +35,7 @@ export const ptBR: AgentSetupMessages = {
   stepRun: "Inicia",
   stepRunOk: (command: string, version: string) => `${command} --version retornou ${version}`,
   stepRunFail: "Falha ao iniciar",
-  stepVersion: "Versão aceita pelo BaoCut",
+  stepVersion: "Versão aceita pelo OpenFox",
   stepVersionOk: (version: string, min: string) => `${version}, mínimo ${min}`,
   stepVersionFail: (version: string, min: string) => `Atual ${version}, mínimo ${min}`,
   stepLogin: "Conectado à conta",
@@ -51,7 +51,7 @@ export const ptBR: AgentSetupMessages = {
 
   readyTitle: "Pronto para começar",
   readyBody: (name: string, model: string, plan: string) =>
-    `Novas sessões usam ${name} · ${model}. Executa em ${name} já instalado localmente com sua ${plan}; sem cobrança extra do BaoCut.`,
+    `Novas sessões usam ${name} · ${model}. Executa em ${name} já instalado localmente com sua ${plan}; sem cobrança extra do OpenFox.`,
   readyCta: "Iniciar sessão",
   attentionBody: (name: string) =>
     `Já instalado; sem reinstalar. Motivo e solução na linha “${name}” abaixo.`,

@@ -25,7 +25,7 @@ export const zhHans: SpeakersMessages = {
   startHint: '识别完成后进入确认页——这是唯一需要先确认再应用的工具。',
   readOnly: '视频是只读的，不能识别说话人。',
   web: '浏览器里不能识别说话人',
-  webBody: '识别说话人要用这台电脑上的本机声纹模型，请在桌面版 BaoCut 里做。',
+  webBody: '识别说话人要用这台电脑上的本机声纹模型，请在桌面版 开胡-OpenFox 里做。',
 
   // 运行
   submitting: '正在提交…',

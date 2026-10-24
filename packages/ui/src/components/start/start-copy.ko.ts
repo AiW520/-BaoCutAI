@@ -7,7 +7,7 @@ export const ko: StartMessages = {
     pickTitle: 'yt-dlp 선택',
     pickButton: '이것 사용',
     pickFailed: (message) => `이 파일은 사용할 수 없습니다: ${message}`,
-    manualUpdate: '지금은 BaoCut이 이 yt-dlp를 업데이트할 수 없습니다. 카드에 있는 명령을 터미널에서 실행하세요',
+    manualUpdate: '지금은 OpenFox이 이 yt-dlp를 업데이트할 수 없습니다. 카드에 있는 명령을 터미널에서 실행하세요',
     commandChanged: '업데이트 명령이 바뀌었습니다. 실행하기 전에 새 명령을 확인하세요',
     updateFailed: (message) => `업데이트를 시작하지 못했습니다: ${message}`,
     stopFailed: (message) => `업데이트를 중지하지 못했습니다: ${message}`,

@@ -27,11 +27,11 @@ export const de: LinkImportMessages = {
   issue: {
     TOOL_NOT_INSTALLED: {
       title: "Einmal einrichten, dann nur einfügen",
-      body: "BaoCut benötigt yt-dlp zum Lesen dieser Website. Installieren, dann diesen Import erneut starten.",
+      body: "OpenFox benötigt yt-dlp zum Lesen dieser Website. Installieren, dann diesen Import erneut starten.",
     },
     TOOL_CONSENT_REQUIRED: {
       title: "Einwilligung zur Nutzung des Downloadwerkzeugs erforderlich",
-      body: "Downloadwerkzeug bereits vorhanden. BaoCut lädt Websitevideos damit nur nach Ihrer Zustimmung herunter.",
+      body: "Downloadwerkzeug bereits vorhanden. OpenFox lädt Websitevideos damit nur nach Ihrer Zustimmung herunter.",
     },
     TOOL_UNAVAILABLE: {
       title: "Downloadwerkzeug nicht ausführbar",
@@ -43,7 +43,7 @@ export const de: LinkImportMessages = {
     },
     OFFLINE_STRICT: {
       title: "Keine Linkdownloads im strikten Offlinemodus",
-      body: "Im strikten Offlinemodus geht BaoCut nicht online. Video zuerst im Browser herunterladen, dann lokale Datei auswählen.",
+      body: "Im strikten Offlinemodus geht OpenFox nicht online. Video zuerst im Browser herunterladen, dann lokale Datei auswählen.",
     },
     LINK_UNSUPPORTED: {
       title: "Diese Quelle wird noch nicht unterstützt",
@@ -55,7 +55,7 @@ export const de: LinkImportMessages = {
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: "Browser-Cookies konnten nicht gelesen werden",
-      body: "Browseranmeldung prüfen. Bei gesperrter Datenbank Browser vollständig beenden, auch Hintergrundprozesse; Schlüsselbundberechtigungen prüfen (für Safari BaoCut Festplattenvollzugriff erlauben). Unter Windows sind appgebunden verschlüsselte Chrome-, Edge- und Brave-Cookies nicht lesbar; Firefox wählen. Oder unter Einstellungen › Video-Download einen anderen Browser auswählen und erneut herunterladen.",
+      body: "Browseranmeldung prüfen. Bei gesperrter Datenbank Browser vollständig beenden, auch Hintergrundprozesse; Schlüsselbundberechtigungen prüfen (für Safari OpenFox Festplattenvollzugriff erlauben). Unter Windows sind appgebunden verschlüsselte Chrome-, Edge- und Brave-Cookies nicht lesbar; Firefox wählen. Oder unter Einstellungen › Video-Download einen anderen Browser auswählen und erneut herunterladen.",
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: "yt-dlp benötigt Aktualisierung",
@@ -115,14 +115,14 @@ export const de: LinkImportMessages = {
   toolSource: {
     system: "Im System installiert",
     user: "Von dir gewählt",
-    managed: "Von BaoCut heruntergeladen",
-    bundled: "Mit BaoCut ausgeliefert",
+    managed: "Von OpenFox heruntergeladen",
+    bundled: "Mit OpenFox ausgeliefert",
     env: "Durch Umgebungsvariable festgelegt",
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Version ${version} · etwa ${size}` : `Version ${version}`),
   factFrom: (host: string) => `Heruntergeladen von ${host}`,
   factLicense: (license: string) => `${license}-Lizenz`,
-  factIsolated: "In BaoCuts eigenem Ordner; Ausführung erst nach Prüfsummenprüfung. System unverändert",
+  factIsolated: "In OpenFoxs eigenem Ordner; Ausführung erst nach Prüfsummenprüfung. System unverändert",
   factInstalledWith: (method: string) => `Installiert mit ${method}`,
 
   cardChecking: "Downloadwerkzeug wird geprüft…",
@@ -133,18 +133,18 @@ export const de: LinkImportMessages = {
   cardInstallingBody: "Herunterladen → prüfen → Testausführung. Nach Abschluss steht „Bereit“.",
   cardUpdating: "Downloadwerkzeug wird aktualisiert…",
   cardUpdatingBody: "Ausgabe unter dem Befehl; nach Abschluss erneute Versionsprüfung.",
-  cardBlockedWhy: "BaoCut kann es auf diesem Computer nicht herunterladen.",
+  cardBlockedWhy: "OpenFox kann es auf diesem Computer nicht herunterladen.",
   cardMissing: "Downloadwerkzeug nicht installiert",
   cardMissingBody: (why: string) => `${endSentence(why)} yt-dlp manuell installieren und dann „Erneut prüfen“ oder Speicherort auswählen.`,
   cardInstall: "Einmal einrichten, dann nur einfügen",
-  cardInstallBody: "BaoCut benötigt yt-dlp für Videowebsites. Nach Zustimmung wird es heruntergeladen und Ihre Einwilligung gespeichert; Linkimporte fragen nicht erneut.",
+  cardInstallBody: "OpenFox benötigt yt-dlp für Videowebsites. Nach Zustimmung wird es heruntergeladen und Ihre Einwilligung gespeichert; Linkimporte fragen nicht erneut.",
   cardInstallAction: "Zustimmen und installieren",
   cardOutdatedReason: (reason: string | null, version: string | null, minVersion: string | null) =>
     endSentence(reason ?? `Version ${version ?? "unbekannt"} ist älter als erforderliche Version ${minVersion ?? ""}`),
   cardOutdated: "Downloadwerkzeug benötigt Aktualisierung",
   cardOutdatedBlocked: (reason: string, why: string) => `${reason} ${why}`,
-  cardOutdatedRunnable: "Nicht von BaoCut heruntergeladen; mit folgendem Befehl nach Installationsart aktualisieren.",
-  cardOutdatedManual: "Nicht von BaoCut heruntergeladen. Nach folgender Anleitung im Terminal aktualisieren, dann „Erneut prüfen“ wählen.",
+  cardOutdatedRunnable: "Nicht von OpenFox heruntergeladen; mit folgendem Befehl nach Installationsart aktualisieren.",
+  cardOutdatedManual: "Nicht von OpenFox heruntergeladen. Nach folgender Anleitung im Terminal aktualisieren, dann „Erneut prüfen“ wählen.",
   cardOutdatedUpdate: (reason: string) => `${reason} Vor Start aktualisieren.`,
   cardUpdateAction: "Zustimmen und aktualisieren",
   cardBroken: "Downloadwerkzeug nicht ausführbar",
@@ -152,8 +152,8 @@ export const de: LinkImportMessages = {
   cardReinstallAction: "Zustimmen und neu installieren",
   cardConsentRevoked: "Einwilligung für das Downloadwerkzeug zurückgezogen",
   cardConsent: "Einwilligung zur Nutzung des Downloadwerkzeugs erforderlich",
-  cardConsentBody: "BaoCut lädt damit Websitevideos nur nach Zustimmung herunter. Runtime speichert die Einwilligung; Linkimporte fragen nicht erneut.",
+  cardConsentBody: "OpenFox lädt damit Websitevideos nur nach Zustimmung herunter. Runtime speichert die Einwilligung; Linkimporte fragen nicht erneut.",
   cardConsentAction: "Zustimmen und verwenden",
   cardReady: "Downloadwerkzeug bereit",
-  cardReadyBody: "Beim Start prüft BaoCut zuerst den Link und holt Videoinformationen; anschließend Download.",
+  cardReadyBody: "Beim Start prüft OpenFox zuerst den Link und holt Videoinformationen; anschließend Download.",
 };

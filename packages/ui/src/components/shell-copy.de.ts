@@ -6,6 +6,7 @@ export const de: ShellMessages = {
   list: (items: readonly string[]): string => items.join(", "),
   separator: ", ",
   common: {
+    productName: 'OpenFox',
     cancel: "Abbrechen",
     save: "Speichern",
     rename: "Umbenennen",
@@ -37,7 +38,7 @@ export const de: ShellMessages = {
     deleteTitle: "Diese Sitzung löschen?",
     deleteConfirm: "Löschen",
     deleteBody:
-      "Der Sitzungsverlauf wird aus Tuzi entfernt; laufende Aufgaben werden zuerst gestoppt. Dateien im Projektordner bleiben unverändert.",
+      "Der Sitzungsverlauf wird aus OpenFox entfernt; laufende Aufgaben werden zuerst gestoppt. Dateien im Projektordner bleiben unverändert.",
     deleteFailed: (message: string) => `Löschen fehlgeschlagen: ${message}`,
     renameTitle: "Sitzung umbenennen",
     videosIn: (place: ConversationPlace): string => (place === 'project' ? "Videos im Projekt" : "Videos im Arbeitsordner"),
@@ -67,7 +68,7 @@ export const de: ShellMessages = {
     noSessions: "Noch keine Sitzungen.",
     noProjects: "Noch keine Projekte. Ein Projekt erstellen oder vorhandenen Ordner öffnen; der Agent arbeitet dort.",
     renameProjectTitle: "Projekt umbenennen",
-    renameProjectHint: "Ändert nur den Namen in Tuzi; der Ordnername bleibt unverändert.",
+    renameProjectHint: "Ändert nur den Namen in OpenFox; der Ordnername bleibt unverändert.",
     toggleSection: (collapsed: boolean, label: string) => `${collapsed ? "Erweitern" : "Einklappen"} ${label}`,
     organizeLabel: "Projekte und Sitzungen organisieren",
     sidebarSettings: "Seitenleisteneinstellungen",
@@ -102,7 +103,7 @@ export const de: ShellMessages = {
     app: "App",
     privacyTitle: "Ihre Daten bleiben auf diesem Computer",
     privacyHint:
-      "Sitzungen, Projektliste und Space-Markierungen liegen im Datenordner. Projektdateien bleiben in ihren eigenen Ordnern und werden von Tuzi nicht hochgeladen. Internetverbindung des Agenten bestimmt dessen Engine.",
+      "Sitzungen, Projektliste und Space-Markierungen liegen im Datenordner. Projektdateien bleiben in ihren eigenen Ordnern und werden von OpenFox nicht hochgeladen. Internetverbindung des Agenten bestimmt dessen Engine.",
     dataDir: "Datenordner",
     projectsDir: "Neue Projekte liegen in",
     logsDir: "Protokollordner",
@@ -179,7 +180,7 @@ export const de: ShellMessages = {
     closed: "Verbindung geschlossen",
     lost: (reason: string, retrying: boolean) => `${reason}.${retrying ? " Wird neu verbunden…" : ""}`,
     reconnectingEllipsis: "Wird neu verbunden…",
-    title: "Nicht mit Tuzi Runtime verbunden",
+    title: "Nicht mit OpenFox Runtime verbunden",
     reconnecting: "Wird neu verbunden",
   },
   videoInfo: {
@@ -198,7 +199,7 @@ export const de: ShellMessages = {
   filePreview: {
     tooLarge: "Die Datei ist zu groß für eine vollständige Anzeige",
     loading: "Vorschau wird geladen",
-    unsupported: "Tuzi kann diesen Dateityp noch nicht als Vorschau anzeigen. Im Ordner anzeigen und mit einer anderen App öffnen.",
+    unsupported: "OpenFox kann diesen Dateityp noch nicht als Vorschau anzeigen. Im Ordner anzeigen und mit einer anderen App öffnen.",
     failed: (message: string) => `Vorschau konnte nicht geladen werden: ${message}`,
   },
   accessPicker: {

@@ -40,7 +40,7 @@ export const tr: GlossaryMessages = {
     cancel: "İptal",
   },
   detail: {
-    exportExists: "Orada bu adda bir dosya zaten var. BaoCut mevcut dosyaların üzerine yazmaz; başka ad seçip yeniden dışa aktarın.",
+    exportExists: "Orada bu adda bir dosya zaten var. OpenFox mevcut dosyaların üzerine yazmaz; başka ad seçip yeniden dışa aktarın.",
     loadFailed: "Bu sözlük okunamadı",
     loadingLabel: "Yükleniyor",
     loading: "Yükleniyor…",

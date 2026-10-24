@@ -5,7 +5,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${pluralForm('fr'
 
 export const fr: ModelsProbeMessages = {
 
-  speechText: "Bonjour, ceci est un test de synthèse vocale BaoCut.",
+  speechText: "Bonjour, ceci est un test de synthèse vocale OpenFox.",
   noResult: "Tâche terminée mais aucun résultat reçu.",
   failed: "Échec de la tâche.",
   cancelled: "Tâche annulée.",

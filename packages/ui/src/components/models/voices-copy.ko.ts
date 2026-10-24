@@ -75,9 +75,9 @@ export const ko: VoicesMessages = {
     exportButton: '내보내기',
     exported: (path: string) => `${path}에 내보냈습니다`,
     exportFailed: (text: string) => `내보내지 못했습니다: ${text}`,
-    exportExists: 'BaoCut은 기존 파일을 덮어쓰지 않습니다. 다른 이름이나 위치를 골라 다시 내보내세요.',
+    exportExists: 'OpenFox은 기존 파일을 덮어쓰지 않습니다. 다른 이름이나 위치를 골라 다시 내보내세요.',
     exportFailedExists: (text: string) =>
-      `내보내지 못했습니다: ${text}. BaoCut은 기존 파일을 덮어쓰지 않습니다. 다른 이름이나 위치를 골라 다시 내보내세요.`,
+      `내보내지 못했습니다: ${text}. OpenFox은 기존 파일을 덮어쓰지 않습니다. 다른 이름이나 위치를 골라 다시 내보내세요.`,
     // 删除
     deleteTitle: (name: string) => `“${name}” 목소리를 삭제할까요?`,
     deleteConfirm: '삭제',
@@ -135,7 +135,7 @@ export const ko: VoicesMessages = {
     reading: "오디오를 읽는 중…",
     readFailed: message => `이 오디오를 읽을 수 없습니다: ${message}`,
     micFailed: message => `마이크를 시작할 수 없습니다: ${message}`,
-    micDenied: "BaoCut이 마이크를 사용할 수 없습니다. 시스템 설정에서 허용하거나 녹음 파일을 업로드하세요.",
+    micDenied: "OpenFox이 마이크를 사용할 수 없습니다. 시스템 설정에서 허용하거나 녹음 파일을 업로드하세요.",
     sampleShort: (seconds, min) => `${seconds}초뿐입니다. 최소 ${min}초가 필요합니다. 다시 녹음하세요.`,
     sampleLocal: "로컬 엔진에는 충분 · 조금 더 길면 클라우드에서도 쓸 수 있습니다",
     sampleOk: target => `충분함 · ${target}초가 가장 좋음`,

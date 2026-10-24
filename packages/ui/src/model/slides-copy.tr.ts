@@ -8,7 +8,7 @@ export const tr: SlidesMessages = {
   frameTitle: (name) => `Slayt düzenleyici: ${name}`,
   opening: 'Slaytlar açılıyor…',
   unavailableTitle: 'Slayt düzenleyici kullanılamıyor',
-  unavailableBody: 'Bu BaoCut sürümünde slayt düzenleyici yok. Slayt dosyaları hâlâ klasöründe.',
+  unavailableBody: 'Bu OpenFox sürümünde slayt düzenleyici yok. Slayt dosyaları hâlâ klasöründe.',
   openFailed: (reason) => `Slaytlar açılamadı: ${reason}`,
   open: 'Slaytları aç',
   openCard: (name) => `“${name}” slaytlarını aç`,

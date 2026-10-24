@@ -133,7 +133,7 @@ export const zhTranslate: TranslateMessages = {
   termsUnify: '统一为术语表译法',
   termsUnified: (n: number) => `已统一 ${n} 处为术语表译法`,
   cut: (n) => `${n} 句原文的画面被剪掉了`,
-  webHint: '重译要调模型或会话：从 Agent 或 BaoCut App 发起',
+  webHint: '重译要调模型或会话：从 Agent 或 开胡-OpenFox App 发起',
   refreshing: (n) => (n === null ? '正在重译…' : `正在重译 ${n} 句…`),
   aiMenu: '重译与翻译',
   directAll: (n) => `用模型 API 重译这 ${n} 句`,

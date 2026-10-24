@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonVi: CommonMessages = {
   copied: (label) => `Đã sao chép ${label}`,
   copyFailed: "Không sao chép được. Chọn chữ và tự sao chép.",
-  autostart: "Khởi chạy khi BaoCut mở",
-  stopsWithApp: "Dịch vụ sẽ dừng khi bạn thoát BaoCut.",
+  autostart: "Khởi chạy khi OpenFox mở",
+  stopsWithApp: "Dịch vụ sẽ dừng khi bạn thoát OpenFox.",
   portLabel: "Cổng",
   portIdle: (port) => `Mặc định ${port}. Nếu bận, chọn cổng khác: dịch vụ hiện “Khởi chạy thất bại”, không tự đổi cổng.`,
   portLive: "Đổi cổng khởi động lại dịch vụ ở cổng mới; ngắt kết nối hiện có.",
@@ -13,7 +13,7 @@ export const commonVi: CommonMessages = {
   errorFix: "Thử cổng khác hoặc thoát ứng dụng đang dùng.",
   resetPort: "Dùng cổng mặc định",
   portReset: (port) => `Đặt lại cổng mặc định ${port}`,
-  unavailableSub: "Runtime BaoCut này chưa cung cấp dịch vụ nên không khởi chạy được.",
+  unavailableSub: "Runtime OpenFox này chưa cung cấp dịch vụ nên không khởi chạy được.",
   started: (name) => `Đã khởi chạy ${name}`,
   stopped: (name) => `Đã dừng ${name}`,
   startFailed: (reason) => `Chưa khởi chạy: ${reason}`,
@@ -38,13 +38,13 @@ export const commonVi: CommonMessages = {
 };
 
 export const clientsVi: ClientsMessages = {
-  lede: "Cấp token riêng cho từng ứng dụng. Chỉ hiện token khi tạo, BaoCut chỉ giữ dấu vân tay. Thu hồi khi không cần để ngắt ngay ứng dụng.",
+  lede: "Cấp token riêng cho từng ứng dụng. Chỉ hiện token khi tạo, OpenFox chỉ giữ dấu vân tay. Thu hồi khi không cần để ngắt ngay ứng dụng.",
   empty: "Chưa có máy khách. Tạo rồi nhập token vào ứng dụng cần kết nối.",
   create: "Tạo máy khách",
   createTitle: "Tạo máy khách",
   nameLabel: "Tên ứng dụng",
   namePlaceholder: "Ví dụ Claude Desktop",
-  nameDesc: "Chỉ phân biệt bên gọi trong BaoCut. Lịch sử yêu cầu và phê duyệt hiện tên này.",
+  nameDesc: "Chỉ phân biệt bên gọi trong OpenFox. Lịch sử yêu cầu và phê duyệt hiện tên này.",
   confirmCreate: "Tạo",
   cancel: "Hủy",
   done: "Xong",
@@ -81,7 +81,7 @@ export const approvalCardVi: ApprovalCardMessages = {
 
 export const mcpVi: McpMessages = {
   title: "Dịch vụ MCP",
-  lede: "BaoCut làm máy chủ MCP, cung cấp công cụ cho Agent của ứng dụng AI khác: liệt kê, xem video, đọc bản chép lời, chỉnh sửa, chép lời, xuất, tổng hợp giọng hoặc tạo hình bằng mô hình máy này. Mặc định tắt. Mặc định chia sẻ mọi video hoặc chọn một phần.",
+  lede: "OpenFox làm máy chủ MCP, cung cấp công cụ cho Agent của ứng dụng AI khác: liệt kê, xem video, đọc bản chép lời, chỉnh sửa, chép lời, xuất, tổng hợp giọng hoặc tạo hình bằng mô hình máy này. Mặc định tắt. Mặc định chia sẻ mọi video hoặc chọn một phần.",
   on: "Dịch vụ MCP đang chạy",
   off: "Dịch vụ MCP chưa chạy",
   error: "Dịch vụ MCP khởi chạy thất bại",
@@ -113,7 +113,7 @@ export const mcpVi: McpMessages = {
 
 export const modelApiVi: ModelApiMessages = {
   title: "API mô hình",
-  lede: "Cho công cụ dùng OpenAI API (SDK, dòng lệnh, ứng dụng khác) dùng mô hình BaoCut để chép lời, tổng hợp giọng, tạo hình, văn bản. Chỉ lắng nghe máy này. Mặc định chỉ mô hình máy này; đám mây, nút LAN, Agent phải bật riêng.",
+  lede: "Cho công cụ dùng OpenAI API (SDK, dòng lệnh, ứng dụng khác) dùng mô hình OpenFox để chép lời, tổng hợp giọng, tạo hình, văn bản. Chỉ lắng nghe máy này. Mặc định chỉ mô hình máy này; đám mây, nút LAN, Agent phải bật riêng.",
   on: "API mô hình đang chạy",
   off: "API mô hình chưa chạy",
   error: "API mô hình khởi chạy thất bại",
@@ -128,7 +128,7 @@ export const modelApiVi: ModelApiMessages = {
   needKeyFixed: "Bản này luôn cần khóa API (token máy khách), không tắt được. Mỗi ứng dụng có riêng và thu hồi riêng.",
   levels: {
     read: "Chỉ liệt kê mô hình (GET /v1/models). Từ chối yêu cầu tạo.",
-    ask: "Xác nhận mỗi yêu cầu tạo trong BaoCut. Từ chối nếu không phản hồi trong 50 giây.",
+    ask: "Xác nhận mỗi yêu cầu tạo trong OpenFox. Từ chối nếu không phản hồi trong 50 giây.",
     auto: "Yêu cầu tạo không cần xác nhận. Phù hợp khi chỉ bạn dùng.",
   },
   routingTitle: "Định tuyến",
@@ -164,11 +164,11 @@ export const modelApiVi: ModelApiMessages = {
 
 export const webVi: WebMessages = {
   title: "Dịch vụ web",
-  lede: "Mở BaoCut Web trong trình duyệt trên Mac này và sửa cùng video. Chỉ lắng nghe máy này; thiết bị khác cùng mạng không truy cập được.",
+  lede: "Mở OpenFox Web trong trình duyệt trên Mac này và sửa cùng video. Chỉ lắng nghe máy này; thiết bị khác cùng mạng không truy cập được.",
   on: "Dịch vụ web đang chạy",
   off: "Dịch vụ web chưa chạy",
   error: "Dịch vụ web khởi chạy thất bại",
-  offSub: "Sau khi khởi động, bạn có thể mở BaoCut Web trong trình duyệt.",
+  offSub: "Sau khi khởi động, bạn có thể mở OpenFox Web trong trình duyệt.",
   open: "Mở trong trình duyệt",
   copyLink: "Sao chép liên kết đăng nhập",
   linkLabel: "Liên kết đăng nhập",

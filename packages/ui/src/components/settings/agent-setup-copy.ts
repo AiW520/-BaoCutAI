@@ -34,13 +34,13 @@ const en = {
     `${detail ? `${detail} ` : ''}This usually happens when Node.js was uninstalled or upgraded, or file permissions changed. Running checks can pinpoint the failing step.`,
   errorCta: 'Run checks',
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} is too old for BaoCut to drive` : `This version of ${name} is too old for BaoCut to drive`,
+    version ? `${name} ${version} is too old for OpenFox to drive` : `This version of ${name} is too old for OpenFox to drive`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `Requires ${minVersion} or later. `}Upgrading only updates this command-line tool; your account and its own settings stay as they are.`,
   outdatedCta: (version: string) => `Upgrade to ${version}`,
   signedOutTitle: (name: string) => `${name} needs you to sign in again`,
   signedOutBody: (name: string) =>
-    `Signing in happens in ${name}'s own window; BaoCut never handles your account or password. Come back here to check after signing in.`,
+    `Signing in happens in ${name}'s own window; OpenFox never handles your account or password. Come back here to check after signing in.`,
   signedOutCta: 'Open a terminal to sign in',
 
   stepSkipped: 'Checked once the previous step passes',
@@ -49,7 +49,7 @@ const en = {
   stepRun: 'Starts',
   stepRunOk: (command: string, version: string) => `${command} --version returned ${version}`,
   stepRunFail: 'Failed to start',
-  stepVersion: 'Version supported by BaoCut',
+  stepVersion: 'Version supported by OpenFox',
   stepVersionOk: (version: string, min: string) => `${version}, minimum ${min}`,
   stepVersionFail: (version: string, min: string) => `Current ${version}, minimum ${min}`,
   stepLogin: 'Signed in to your account',
@@ -65,13 +65,13 @@ const en = {
 
   readyTitle: 'Ready to go',
   readyBody: (name: string, model: string, plan: string) =>
-    `New sessions use ${name} · ${model}. It runs on the ${name} already installed on this computer with your own ${plan}; BaoCut doesn't charge anything extra.`,
+    `New sessions use ${name} · ${model}. It runs on the ${name} already installed on this computer with your own ${plan}; OpenFox doesn't charge anything extra.`,
   readyCta: 'Start session',
   attentionBody: (name: string) =>
     `It's already installed on this computer, so there's no need to reinstall. The cause and the fix are in the “${name}” row below.`,
   attentionCta: 'View problem',
   offTitle: (name: string) => `${name} is installed but disabled`,
-  offBody: 'Enable it to hand work over from BaoCut with a single sentence.',
+  offBody: 'Enable it to hand work over from OpenFox with a single sentence.',
   offCta: (name: string) => `Enable ${name}`,
   missingTitle: 'No Agent detected on this computer yet',
   missingBodyMany: "Install any one below and sign in with an account you already have. You don't need all of them.",

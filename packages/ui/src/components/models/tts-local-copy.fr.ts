@@ -38,7 +38,7 @@ export const fr: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join(", "),
     cloneHint: "Fournissez 5–15 secondes de parole propre : une personne, sans musique. WAV, MP3, M4A, FLAC ou vidéo conviennent.",
     yourFile: (name: string) => `Votre enregistrement · ${name}`,
-    sampleFile: (label: string) => `Échantillon · ${label} · fourni avec BaoCut, aucun fichier à chercher`,
+    sampleFile: (label: string) => `Échantillon · ${label} · fourni avec OpenFox, aucun fichier à chercher`,
     pickFile: "Choisir un enregistrement…",
     changeFile: "Choisissez-en un autre…",
     useSample: "Utiliser l’échantillon",

@@ -28,7 +28,7 @@ const dub = {
   title: 'Translated voice-over',
   back: 'Back',
   web: 'Translated voice-over needs the desktop app',
-  webBody: 'BaoCut in the browser doesn’t provide fixed workflows (pipelines.*), so a translated voice-over can’t start here. Open this video in the desktop app.',
+  webBody: 'OpenFox in the browser doesn’t provide fixed workflows (pipelines.*), so a translated voice-over can’t start here. Open this video in the desktop app.',
   summary: (language: string, count: number | null, translate: boolean) =>
     `${translate ? `Translates into ${language} first, then synthesizes` : `Uses the existing ${language} translation and synthesizes`} speech ${count === null ? 'sentence by sentence' : `for ${sentences(count)} one by one`}, aligns each to the original sentence’s timing, and writes them to the timeline as one voice-over group`,
   language: 'Voice-over language',
@@ -148,7 +148,7 @@ const dub = {
   grantAction: 'Grant permission and start',
   grantRetryAction: 'Grant permission and try again',
   grantDialogTitle: 'Grant data sharing permission',
-  grantDialogIntro: 'Once you confirm, BaoCut records this permission and continues the voice-over:',
+  grantDialogIntro: 'Once you confirm, OpenFox records this permission and continues the voice-over:',
   grantConfirm: 'Grant and continue',
   grantCancel: 'Not now',
   granting: 'Granting permission…',

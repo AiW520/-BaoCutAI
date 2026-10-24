@@ -47,13 +47,15 @@
     "check:model-assets": "npm run build && node apps/desktop/tools/check-model-assets.mjs",
     "bench:preview": "npm run build && node apps/desktop/tools/preview-bench.mjs",
     "bench:panels": "npm run build && node apps/desktop/tools/panels-bench.mjs",
-    "icons": "node tools/app-icon/render.mjs",
+    "icons": "python tools/openfox-brand/render.py",
     "precli": "npm run build:catalog",
     "cli": "node --experimental-strip-types apps/cli/src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p packages/design-system-runtime/tsconfig.json --noEmit && tsc -p packages/docs-runtime/tsconfig.json --noEmit",
     "pretest": "npm run build:catalog && npm run build:agent-skill",
     "test": "vitest run",
-    "package:mac": "npm run build && npm run build:web && npm run build:slides-editor && npm run build:design-editor && npm run build:design-system-editor && npm run build:docs-editor && node apps/desktop/tools/package-desktop.mjs --platform mac"
+    "package:mac": "npm run build && npm run build:web && npm run build:slides-editor && npm run build:design-editor && npm run build:design-system-editor && npm run build:docs-editor && node apps/desktop/tools/package-desktop.mjs --platform mac",
+    "icons:openfox": "python tools/openfox-brand/render.py",
+    "build:download": "node apps/portal/src/openfox/build.mjs"
   },
   "engines": {
     "node": ">=22.12.0"

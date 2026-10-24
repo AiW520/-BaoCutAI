@@ -14,7 +14,7 @@ export const zhHant: ArchivedMessages = {
   deleteNamed: (title) => `刪除「${title}」`,
   deleteAll: '全部刪除',
   deleteAllTitle: (n) => `刪除全部 ${n} 個已封存對話？`,
-  deleteAllBody: '這些對話記錄會從 BaoCut 中刪除，正在執行的工作會先停止，無法復原。專案資料夾裡的檔案不受影響。',
+  deleteAllBody: '這些對話記錄會從 OpenFox 中刪除，正在執行的工作會先停止，無法復原。專案資料夾裡的檔案不受影響。',
   restored: (title) => `已還原「${title}」`,
   open: '開啟',
   restoreFailed: (message) => `無法還原：${message}`,

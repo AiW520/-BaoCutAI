@@ -191,7 +191,7 @@ const en = {
     emptyProviders: 'No cloud providers for this category yet. You can add a custom OpenAI-compatible service.',
     noCloud: 'This category has no cloud models.',
     /** 浏览器里这一页能做的只有看与测试（Web 白名单只放行生成与转写）：页头下写这一句，其余控件置灰。 */
-    webNote: 'A browser can’t connect providers, change keys, add providers or models, refresh catalogs, or change the default and its settings. You can still test models. Do the rest in the BaoCut desktop app.',
+    webNote: 'A browser can’t connect providers, change keys, add providers or models, refresh catalogs, or change the default and its settings. You can still test models. Do the rest in the OpenFox desktop app.',
   },
   /** 文本生成的两行参数（设计稿 settings-cloud.jsx:262-269）。存在 Runtime 的能力参数里，对所有文本模型生效。 */
   textParams: {

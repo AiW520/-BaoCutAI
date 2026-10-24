@@ -20,13 +20,13 @@ export const de: AgentSetupMessages = {
     `${detail ? `${detail} ` : ""}Meist nach Deinstallation oder Aktualisierung von Node.js oder geänderten Dateiberechtigungen. Prüfungen zeigen den fehlgeschlagenen Schritt.`,
   errorCta: "Prüfungen ausführen",
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} ist für BaoCut zu alt` : `Diese Version von ${name} ist für BaoCut zu alt`,
+    version ? `${name} ${version} ist für OpenFox zu alt` : `Diese Version von ${name} ist für OpenFox zu alt`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `Benötigt ${minVersion} oder neuer. `}Aktualisieren betrifft nur dieses CLI-Werkzeug; Konto und dessen Einstellungen bleiben unverändert.`,
   outdatedCta: (version: string) => `Aktualisieren auf ${version}`,
   signedOutTitle: (name: string) => `${name} benötigt erneute Anmeldung`,
   signedOutBody: (name: string) =>
-    `Anmeldung erfolgt im eigenen Fenster von ${name}; BaoCut verarbeitet weder Konto noch Passwort. Nach Anmeldung hier erneut prüfen.`,
+    `Anmeldung erfolgt im eigenen Fenster von ${name}; OpenFox verarbeitet weder Konto noch Passwort. Nach Anmeldung hier erneut prüfen.`,
   signedOutCta: "Terminal zum Anmelden öffnen",
 
   stepSkipped: "Wird nach erfolgreichem vorherigen Schritt geprüft",
@@ -35,7 +35,7 @@ export const de: AgentSetupMessages = {
   stepRun: "Startet",
   stepRunOk: (command: string, version: string) => `${command} --version gab zurück: ${version}`,
   stepRunFail: "Start fehlgeschlagen",
-  stepVersion: "Von BaoCut unterstützte Version",
+  stepVersion: "Von OpenFox unterstützte Version",
   stepVersionOk: (version: string, min: string) => `${version}, mindestens ${min}`,
   stepVersionFail: (version: string, min: string) => `Aktuell ${version}, mindestens ${min}`,
   stepLogin: "Bei Ihrem Konto angemeldet",
@@ -51,13 +51,13 @@ export const de: AgentSetupMessages = {
 
   readyTitle: "Startklar",
   readyBody: (name: string, model: string, plan: string) =>
-    `Neue Sitzungen verwenden ${name} · ${model}. Ausführung über vorhandene Version von ${name} auf diesem Computer mit Ihrem ${plan}; BaoCut berechnet nichts zusätzlich.`,
+    `Neue Sitzungen verwenden ${name} · ${model}. Ausführung über vorhandene Version von ${name} auf diesem Computer mit Ihrem ${plan}; OpenFox berechnet nichts zusätzlich.`,
   readyCta: "Sitzung starten",
   attentionBody: (name: string) =>
     `Bereits auf diesem Computer installiert; keine Neuinstallation nötig. Ursache und Lösung stehen im Abschnitt „${name}“ unten.`,
   attentionCta: "Problem ansehen",
   offTitle: (name: string) => `${name} ist installiert, aber deaktiviert`,
-  offBody: "Aktivieren, um Arbeit mit einem Satz aus BaoCut zu übergeben.",
+  offBody: "Aktivieren, um Arbeit mit einem Satz aus OpenFox zu übergeben.",
   offCta: (name: string) => `Aktivieren: ${name}`,
   missingTitle: "Noch kein Agent auf diesem Computer erkannt",
   missingBodyMany: "Einen der folgenden Agenten installieren und mit einem vorhandenen Konto anmelden. Nicht alle sind nötig.",

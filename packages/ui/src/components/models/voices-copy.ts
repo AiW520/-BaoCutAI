@@ -95,10 +95,10 @@ const en = {
     exportButton: 'Export',
     exported: (path: string) => `Exported to ${path}`,
     exportFailed: (text: string) => `Couldn't export: ${text}`,
-    exportExists: 'BaoCut doesn’t overwrite existing files. Choose another name or location and export again.',
+    exportExists: 'OpenFox doesn’t overwrite existing files. Choose another name or location and export again.',
     /** 目标已存在时的整句（`exportFailed` 加上 `exportExists`）。 */
     exportFailedExists: (text: string) =>
-      `Couldn't export: ${text}. BaoCut doesn’t overwrite existing files. Choose another name or location and export again.`,
+      `Couldn't export: ${text}. OpenFox doesn’t overwrite existing files. Choose another name or location and export again.`,
     // 删除
     deleteTitle: (name: string) => `Delete “${name}”?`,
     deleteConfirm: 'Delete',
@@ -159,7 +159,7 @@ const en = {
     reading: 'Reading the audio…',
     readFailed: (message: string) => `Couldn’t read this audio: ${message}`,
     micFailed: (message: string) => `Couldn’t start the microphone: ${message}`,
-    micDenied: 'BaoCut can’t use the microphone. Allow it in system settings, or upload a recording instead.',
+    micDenied: 'OpenFox can’t use the microphone. Allow it in system settings, or upload a recording instead.',
     sampleShort: (seconds: string, min: number) => `Only ${seconds} seconds; at least ${min} seconds are needed. Record again.`,
     sampleLocal: 'Enough for local engines · a little longer and cloud providers can use it too',
     sampleOk: (target: number) => `Enough · ${target} seconds is best`,

@@ -15,7 +15,7 @@ export const tr: ArchivedMessages = {
   deleteAll: 'Tümünü sil',
   deleteAllTitle: (n) => (n === 1 ? '1 arşivlenmiş oturum silinsin mi?' : `${n} arşivlenmiş oturumun tümü silinsin mi?`),
   deleteAllBody:
-    'Bu oturumların geçmişi BaoCut içinden kaldırılır; çalışan görevler önce durdurulur. Bu işlem geri alınamaz. Proje klasörlerindeki dosyalar etkilenmez.',
+    'Bu oturumların geçmişi OpenFox içinden kaldırılır; çalışan görevler önce durdurulur. Bu işlem geri alınamaz. Proje klasörlerindeki dosyalar etkilenmez.',
   restored: (title) => `${title} adlı oturum geri yüklendi`,
   open: 'Aç',
   restoreFailed: (message) => `Geri yüklenemedi: ${message}`,

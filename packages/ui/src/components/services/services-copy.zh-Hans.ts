@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonZh: CommonMessages = {
   copied: (label: string) => `${label}已复制`,
   copyFailed: '复制失败，请选中文字后复制',
-  autostart: '打开 BaoCut 时自动启动',
-  stopsWithApp: '退出 BaoCut 时服务会一起停止。',
+  autostart: '打开 开胡-OpenFox 时自动启动',
+  stopsWithApp: '退出 开胡-OpenFox 时服务会一起停止。',
   portLabel: '端口',
   portIdle: (port: number) => `默认 ${port}。被占用时换一个，服务会进入「启动失败」，不会自己换端口。`,
   portLive: '改了端口会按新端口重新启动服务，已有的连接会断开。',
@@ -13,7 +13,7 @@ export const commonZh: CommonMessages = {
   errorFix: '换一个端口再试，或先关掉占用它的程序。',
   resetPort: '换回默认端口',
   portReset: (port: number) => `端口已换回默认的 ${port}`,
-  unavailableSub: '这个版本的 BaoCut Runtime 还没有提供这项服务，暂时不能启动。',
+  unavailableSub: '这个版本的 开胡-OpenFox Runtime 还没有提供这项服务，暂时不能启动。',
   started: (name: string) => `${name}已启动`,
   stopped: (name: string) => `${name}已停止`,
   startFailed: (reason: string) => `没有启动：${reason}`,
@@ -38,13 +38,13 @@ export const commonZh: CommonMessages = {
 };
 
 export const clientsZh: ClientsMessages = {
-  lede: '给每个要连进来的应用发一枚令牌：令牌只在创建时显示一次，BaoCut 只保存它的指纹；不用了就吊销，那个应用立刻连不上。',
+  lede: '给每个要连进来的应用发一枚令牌：令牌只在创建时显示一次，开胡-OpenFox 只保存它的指纹；不用了就吊销，那个应用立刻连不上。',
   empty: '还没有客户端。先创建一个，把令牌填进要连接的应用。',
   create: '创建客户端',
   createTitle: '创建客户端',
   nameLabel: '应用名称',
   namePlaceholder: '比如 Claude Desktop',
-  nameDesc: '只用来在 BaoCut 里认出是谁在调用，请求记录与审批里会显示这个名字。',
+  nameDesc: '只用来在 开胡-OpenFox 里认出是谁在调用，请求记录与审批里会显示这个名字。',
   confirmCreate: '创建',
   cancel: '取消',
   done: '完成',
@@ -81,7 +81,7 @@ export const approvalCardZh: ApprovalCardMessages = {
 
 export const mcpZh: McpMessages = {
   title: 'MCP 服务',
-  lede: 'BaoCut 作为 MCP 服务端，向其他 AI 应用的 Agent 提供一套工具：列出与查看视频、读文稿、剪辑、启动转录与导出，以及用这台电脑能用的模型合成语音、生成图片。默认关闭；默认开放所有视频，也可以只开放其中几个。',
+  lede: '开胡-OpenFox 作为 MCP 服务端，向其他 AI 应用的 Agent 提供一套工具：列出与查看视频、读文稿、剪辑、启动转录与导出，以及用这台电脑能用的模型合成语音、生成图片。默认关闭；默认开放所有视频，也可以只开放其中几个。',
   on: 'MCP 服务运行中',
   off: 'MCP 服务未启动',
   error: 'MCP 服务启动失败',
@@ -113,7 +113,7 @@ export const mcpZh: McpMessages = {
 
 export const modelApiZh: ModelApiMessages = {
   title: '模型接口',
-  lede: '让支持 OpenAI 接口的工具（SDK、命令行工具、其他应用）用 BaoCut 能用的模型转录、合成语音、生成图片与生成文本。只监听本机地址；默认只用这台电脑上的模型，云端、局域网节点与智能体要分别打开。',
+  lede: '让支持 OpenAI 接口的工具（SDK、命令行工具、其他应用）用 开胡-OpenFox 能用的模型转录、合成语音、生成图片与生成文本。只监听本机地址；默认只用这台电脑上的模型，云端、局域网节点与智能体要分别打开。',
   on: '模型接口运行中',
   off: '模型接口未启动',
   error: '模型接口启动失败',
@@ -128,7 +128,7 @@ export const modelApiZh: ModelApiMessages = {
   needKeyFixed: '这一版总是要 API key（就是客户端令牌），不能关掉；每个应用一枚，可以单独吊销。',
   levels: {
     read: '只能列出模型（GET /v1/models），生成请求会被拒绝',
-    ask: '每个生成请求都在 BaoCut 里确认，50 秒没人处理按拒绝',
+    ask: '每个生成请求都在 开胡-OpenFox 里确认，50 秒没人处理按拒绝',
     auto: '生成请求直接执行，不用确认；适合只有你自己用时',
   },
   routingTitle: '路由',
@@ -164,11 +164,11 @@ export const modelApiZh: ModelApiMessages = {
 
 export const webZh: WebMessages = {
   title: 'Web 服务',
-  lede: '在这台 Mac 的浏览器里打开 BaoCut Web，编辑同一批视频。服务只监听本机地址，局域网里的其他设备访问不到。',
+  lede: '在这台 Mac 的浏览器里打开 开胡-OpenFox Web，编辑同一批视频。服务只监听本机地址，局域网里的其他设备访问不到。',
   on: 'Web 服务运行中',
   off: 'Web 服务未启动',
   error: 'Web 服务启动失败',
-  offSub: '启动后可以在浏览器里打开 BaoCut Web。',
+  offSub: '启动后可以在浏览器里打开 开胡-OpenFox Web。',
   open: '在浏览器中打开',
   copyLink: '复制登录链接',
   linkLabel: '登录链接',

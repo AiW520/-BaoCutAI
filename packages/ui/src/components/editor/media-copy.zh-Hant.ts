@@ -8,7 +8,7 @@ export const zhHant: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => noun[kind],
   undo: '還原',
   readOnly: '影片為唯讀',
-  revealManaged: '已收集到影片資料夾並由 BaoCut 管理，沒有單獨的檔案位置',
+  revealManaged: '已收集到影片資料夾並由 OpenFox 管理，沒有單獨的檔案位置',
   revealUnknown: '找不到這個檔案記錄的位置',
   uses: '使用位置',
   usesNone: '尚未在時間軸上使用',

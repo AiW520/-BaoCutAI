@@ -38,7 +38,7 @@ export const zhHant: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join('、'),
     cloneHint: '提供 5–15 秒乾淨的人聲：只有一個人說話，沒有背景音樂。WAV、MP3、M4A、FLAC 或影片檔都可以。',
     yourFile: (name: string) => `你的錄音 · ${name}`,
-    sampleFile: (label: string) => `範例錄音 · ${label} · BaoCut 內建，不必另外找檔案`,
+    sampleFile: (label: string) => `範例錄音 · ${label} · OpenFox 內建，不必另外找檔案`,
     pickFile: '選擇錄音…',
     changeFile: '選擇其他錄音…',
     useSample: '使用範例錄音',

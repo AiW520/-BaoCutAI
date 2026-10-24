@@ -201,7 +201,7 @@ export const vi: ExportMessages = {
   editors: "Xuất sang trình chỉnh sửa",
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: "FCP7 XML(.xml)",
-  portableName: "Gói di động BaoCut",
+  portableName: "Gói di động OpenFox",
   portableMeta: ".baocut · video, mọi tài liệu và tư liệu trong một tệp",
   plannedTarget: "Bản này chưa có loại tệp dự án này",
   jianyingName: "Bản nháp Jianying",

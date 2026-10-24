@@ -19,22 +19,22 @@ const en = {
   title: 'Import projects from an earlier version?',
   lead: (n: number) =>
     n === 1
-      ? 'There’s 1 project from an earlier version of BaoCut on this computer. Import it to keep editing in this version. The original files stay where they are, unchanged.'
-      : `There are ${n} projects from an earlier version of BaoCut on this computer. Import them to keep editing in this version. The original files stay where they are, unchanged.`,
+      ? 'There’s 1 project from an earlier version of OpenFox on this computer. Import it to keep editing in this version. The original files stay where they are, unchanged.'
+      : `There are ${n} projects from an earlier version of OpenFox on this computer. Import them to keep editing in this version. The original files stay where they are, unchanged.`,
   found: 'Projects found',
   destination: 'Import to',
   resetDefault: 'Use default location',
   change: 'Change…',
   pickTitle: 'Choose where to import',
   destinationNote: 'This folder appears as a project in Home, and each earlier project becomes a video in it.',
-  hint: 'If you skip, you’ll be asked again the next time BaoCut starts. Check “Don’t remind me again” to never import them.',
+  hint: 'If you skip, you’ll be asked again the next time OpenFox starts. Check “Don’t remind me again” to never import them.',
   never: 'Don’t remind me again',
   skip: 'Skip',
   import: 'Import',
   importing: (n: number) =>
     n === 1 ? 'Importing 1 earlier project in the background' : `Importing ${n} earlier projects in the background`,
   neverDone: 'You won’t be reminded to import earlier projects again. The original files stay as they are.',
-  skipped: 'Skipped. You’ll be asked again the next time BaoCut starts.',
+  skipped: 'Skipped. You’ll be asked again the next time OpenFox starts.',
   failed: (message: string) => `Couldn’t import: ${message}`,
   settingsTitle: 'Settings recovery from an earlier version',
   settingsLeadAdopted: 'The earlier model directory was adopted during the upgrade. Installation checks existing files against the current manifest and downloads only missing or damaged files.',

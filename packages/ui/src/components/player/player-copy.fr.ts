@@ -47,7 +47,7 @@ export const fr: PlayerMessages = {
     aborted: "Chargement interrompu",
     network: "Erreur de lecture du fichier",
     decode: "Décodage en échec ; fichier peut-être endommagé",
-    unsupported: "BaoCut ne lit pas encore ce format ou codec",
+    unsupported: "OpenFox ne lit pas encore ce format ou codec",
     other: "Impossible de lire ce fichier",
   },
 };

@@ -95,8 +95,8 @@
       else if (stage === 'models') setStage('connect');
       else setStage('models');
     };
-    return <R.DialogContainer onDismiss={dismiss}><R.Dialog size="L" aria-label="Tuzi 使用方式引导">
-      <R.Heading slot="title">{stage === 'choose' ? '欢迎使用 Tuzi' : stage === 'connect' ? '连接 Tuzi API' : stage === 'models' ? '选择并验证模型能力' : 'Tuzi API 配置完成'}</R.Heading>
+    return <R.DialogContainer onDismiss={dismiss}><R.Dialog size="L" aria-label="OpenFox 使用方式引导">
+      <R.Heading slot="title">{stage === 'choose' ? '欢迎使用 OpenFox' : stage === 'connect' ? '连接 Tuzi API' : stage === 'models' ? '选择并验证模型能力' : 'Tuzi API 配置完成'}</R.Heading>
       <R.Content>
         {stage === 'choose' ? null : <Steps items={STEPS} cur={STEPS.findIndex((s) => s.k === stage)} label="Tuzi API 配置步骤" className="onb-steps" />}
         {stage === 'choose' ? <ModeChoice value={mode} onChange={setMode} />

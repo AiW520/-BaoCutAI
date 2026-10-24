@@ -6,9 +6,9 @@ export const ja: DesignMessages = {
   frameTitle: (name) => `デザインエディタ：${name}`,
   opening: 'デザインを開いています…',
   unavailableTitle: 'デザインエディタを利用できません',
-  unavailableBody: 'この BaoCut にはデザインエディタが含まれていません。デザインのファイルはフォルダに残っています。',
+  unavailableBody: 'この OpenFox にはデザインエディタが含まれていません。デザインのファイルはフォルダに残っています。',
   hostBlockedTitle: 'このアドレスではデザインエディタを開けません',
-  hostBlockedBody: 'デザインを編集するには、BaoCut Web を 127.0.0.1 か localhost で開いてください。デザインのファイルはフォルダに残っています。',
+  hostBlockedBody: 'デザインを編集するには、OpenFox Web を 127.0.0.1 か localhost で開いてください。デザインのファイルはフォルダに残っています。',
   openFailed: (reason) => `デザインを開けませんでした：${reason}`,
   open: 'デザインを開く',
   openCard: (name) => `デザイン「${name}」を開く`,
@@ -38,5 +38,5 @@ export const ja: DesignMessages = {
   exportDialogButton: '書き出し',
   exportSaved: (path) => `${path} に保存しました`,
   exportFailed: (reason) => `書き出したファイルを保存できませんでした：${reason}`,
-  exportUnsupported: (name) => `BaoCut は「${name}」を保存できません：このファイル形式には対応していません`,
+  exportUnsupported: (name) => `OpenFox は「${name}」を保存できません：このファイル形式には対応していません`,
 };

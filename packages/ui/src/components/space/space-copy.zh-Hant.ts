@@ -59,7 +59,7 @@ export const zhHant: SpaceMessages = {
   newFromPackageHint: '在其他地方匯出的 .baocut，所有素材都包含在內',
   pickPackageTitle: '選擇可攜式套件',
   pickPackageButton: '開啟',
-  pickPackageFilter: 'BaoCut 可攜式套件',
+  pickPackageFilter: 'OpenFox 可攜式套件',
   openPackage: '開啟為新影片',
   packageBlocked: (reason: string) => `開啟為新影片：${reason}`,
   packageOpening: (name: string) => `正在開啟「${name}」…`,
@@ -108,7 +108,7 @@ export const zhHant: SpaceMessages = {
   changedBody: '這個結果對應的是較早版本的影片。它仍可使用，但已不反映目前的影片。',
   reexport: '從來源影片重新匯出',
   noPreviewVideo: '影片會在編輯器中開啟。',
-  inIndexFolder: (folder: string | null) => (folder ? `在索引資料夾「${folder}」裡，唯讀：BaoCut 不改、不移動、不刪這個檔案。` : '在索引資料夾裡，唯讀：BaoCut 不改、不移動、不刪這個檔案。'),
+  inIndexFolder: (folder: string | null) => (folder ? `在索引資料夾「${folder}」裡，唯讀：OpenFox 不改、不移動、不刪這個檔案。` : '在索引資料夾裡，唯讀：OpenFox 不改、不移動、不刪這個檔案。'),
 
   // 能力（origin.capability）
   capability: {

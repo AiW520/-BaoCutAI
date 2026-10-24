@@ -8,7 +8,7 @@ export const tr: DocsMessages = {
   frameTitle: (name) => `Ortak belge düzenleyici: ${name}`,
   opening: 'Ortak belge açılıyor…',
   unavailableTitle: 'Ortak belge düzenleyici kullanılamıyor',
-  unavailableBody: 'Bu BaoCut sürümünde ortak belge düzenleyici yok. Belgenin dosyaları hâlâ klasöründe.',
+  unavailableBody: 'Bu OpenFox sürümünde ortak belge düzenleyici yok. Belgenin dosyaları hâlâ klasöründe.',
   openFailed: (reason) => `Ortak belge açılamadı: ${reason}`,
   open: 'Ortak belgeyi aç',
   openCard: (name) => `“${name}” ortak belgesini aç`,

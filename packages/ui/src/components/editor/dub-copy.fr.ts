@@ -10,7 +10,7 @@ export const frDub: DubMessages = {
   title: "Doublage traduit",
   back: "Retour",
   web: "Le doublage traduit nécessite l’application de bureau",
-  webBody: "BaoCut dans le navigateur ne fournit pas les flux fixes (pipelines.*) ; le doublage traduit ne peut pas démarrer ici. Ouvrez cette vidéo dans l’application de bureau.",
+  webBody: "OpenFox dans le navigateur ne fournit pas les flux fixes (pipelines.*) ; le doublage traduit ne peut pas démarrer ici. Ouvrez cette vidéo dans l’application de bureau.",
   summary: (language: string, count: number | null, translate: boolean) =>
     `${translate ? `Traduit d’abord en ${language}, puis synthétise` : `Utilise la traduction existante ${language} et synthétise`} la parole ${count === null ? "phrase par phrase" : `pour ${sentences(count)} une à une`}, aligne chaque phrase sur l’horaire original et les écrit dans la timeline comme groupe de doublage`,
   language: "Langue du doublage",
@@ -123,7 +123,7 @@ export const frDub: DubMessages = {
   grantAction: "Autoriser et démarrer",
   grantRetryAction: "Autoriser et réessayer",
   grantDialogTitle: "Autoriser le partage de données",
-  grantDialogIntro: "Après confirmation, BaoCut enregistre cette autorisation et continue le doublage :",
+  grantDialogIntro: "Après confirmation, OpenFox enregistre cette autorisation et continue le doublage :",
   grantConfirm: "Autoriser et continuer",
   grantCancel: "Pas maintenant",
   granting: "Autorisation en cours…",

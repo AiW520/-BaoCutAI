@@ -15,7 +15,7 @@ import { tr } from './home-workbench-copy.tr.ts';
 import { vi } from './home-workbench-copy.vi.ts';
 
 const en = {
-  eyebrow: "Tuzi · Creative workspace",
+  eyebrow: "OpenFox · Creative workspace",
   title: "Turn an idea into your next video.",
   intro: "Describe an idea, add your media, or pick up where you left off.",
   recentTitle: "Recent projects",

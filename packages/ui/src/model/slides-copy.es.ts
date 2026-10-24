@@ -8,7 +8,7 @@ export const es: SlidesMessages = {
   frameTitle: (name) => `Editor de diapositivas: ${name}`,
   opening: 'Abriendo diapositivas…',
   unavailableTitle: 'Editor de diapositivas no disponible',
-  unavailableBody: 'Esta versión de BaoCut no incluye el editor de diapositivas. Los archivos de las diapositivas siguen en su carpeta.',
+  unavailableBody: 'Esta versión de OpenFox no incluye el editor de diapositivas. Los archivos de las diapositivas siguen en su carpeta.',
   openFailed: (reason) => `No se pudieron abrir las diapositivas: ${reason}`,
   open: 'Abrir diapositivas',
   openCard: (name) => `Abrir diapositivas «${name}»`,

@@ -2,7 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const ja: LocalModelsMessages = {
   install: {
-    webNote: 'ブラウザーではローカルモデルのダウンロード、確認、修復、削除と既定モデルの変更はできません。BaoCut デスクトップアプリで操作してください。',
+    webNote: 'ブラウザーではローカルモデルのダウンロード、確認、修復、削除と既定モデルの変更はできません。OpenFox デスクトップアプリで操作してください。',
     availableNote:
       'ダウンロード前に、ダウンロード量とディスクの空き容量が表示されます。ダウンロードは一時停止でき、ダウンロード済みの部分は残して次回そこから再開します。',
     download: 'ダウンロード',

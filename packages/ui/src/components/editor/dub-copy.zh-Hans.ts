@@ -6,7 +6,7 @@ export const zhDub: DubMessages = {
   title: '翻译配音',
   back: '返回',
   web: '翻译配音要在桌面版里用',
-  webBody: '浏览器里打开的 BaoCut 不提供固定流程（pipelines.*），这里没法开始翻译配音。在桌面版里打开这个视频再来。',
+  webBody: '浏览器里打开的 开胡-OpenFox 不提供固定流程（pipelines.*），这里没法开始翻译配音。在桌面版里打开这个视频再来。',
   summary: (language: string, sentences: number | null, translate: boolean) =>
     `${translate ? '先翻译成' : '用已有的'}${language}${translate ? '' : '译文'}，${sentences === null ? '' : `${sentences} 句`}逐句合成语音、对齐到原句的时间，作为一组配音写进时间线`,
   language: '配成哪种语言',
@@ -119,7 +119,7 @@ export const zhDub: DubMessages = {
   grantAction: '发放授权并开始',
   grantRetryAction: '发放授权并重试',
   grantDialogTitle: '发放数据外发授权',
-  grantDialogIntro: '确认之后 BaoCut 记下这条授权并接着配音：',
+  grantDialogIntro: '确认之后 开胡-OpenFox 记下这条授权并接着配音：',
   grantConfirm: '发放并继续',
   grantCancel: '先不发',
   granting: '正在发放授权…',

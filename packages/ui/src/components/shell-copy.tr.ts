@@ -6,6 +6,7 @@ export const tr: ShellMessages = {
   list: (items) => items.join(', '),
   separator: ', ',
   common: {
+    productName: 'OpenFox',
     cancel: "İptal",
     save: "Kaydet",
     rename: "Yeniden adlandır",
@@ -36,7 +37,7 @@ export const tr: ShellMessages = {
     deleteSessionEllipsis: "Oturumu sil…",
     deleteTitle: "Bu oturum silinsin mi?",
     deleteConfirm: "Sil",
-    deleteBody: "Oturum geçmişi Tuzi içinden kaldırılır; çalışan görevler önce durdurulur. Proje klasöründeki dosyalar etkilenmez.",
+    deleteBody: "Oturum geçmişi OpenFox içinden kaldırılır; çalışan görevler önce durdurulur. Proje klasöründeki dosyalar etkilenmez.",
     deleteFailed: (message) => `Silinemedi: ${message}`,
     renameTitle: "Oturumu yeniden adlandır",
     videosIn: (place) => place === 'project' ? 'Projedeki videolar' : 'Çalışma klasöründeki videolar',
@@ -64,7 +65,7 @@ export const tr: ShellMessages = {
     noSessions: "Henüz oturum yok.",
     noProjects: "Henüz proje yok. Bir tane oluşturun veya mevcut klasörü açın; Ajan orada çalışır.",
     renameProjectTitle: "Projeyi yeniden adlandır",
-    renameProjectHint: "Yalnızca Tuzi içinde görünen adı değiştirir; klasör adı aynı kalır.",
+    renameProjectHint: "Yalnızca OpenFox içinde görünen adı değiştirir; klasör adı aynı kalır.",
     toggleSection: (collapsed,label) => `${label}: ${collapsed ? 'genişlet' : 'daralt'}`,
     organizeLabel: "Projeleri ve oturumları düzenle",
     sidebarSettings: "Kenar çubuğu ayarları",
@@ -98,7 +99,7 @@ export const tr: ShellMessages = {
     shortcutForward: "İleri",
     app: "Uygulama",
     privacyTitle: "Verileriniz bu bilgisayarda kalır",
-    privacyHint: "Oturumlar, proje listesi ve Space işaretleri veri klasöründe saklanır; proje dosyaları kendi klasörlerinde kalır ve Tuzi bunları yüklemez. Ajan motorunun internete bağlanması motorun kararına bağlıdır.",
+    privacyHint: "Oturumlar, proje listesi ve Space işaretleri veri klasöründe saklanır; proje dosyaları kendi klasörlerinde kalır ve OpenFox bunları yüklemez. Ajan motorunun internete bağlanması motorun kararına bağlıdır.",
     dataDir: "Veri klasörü",
     projectsDir: "Yeni projelerin konumu",
     logsDir: "Günlükler klasörü",
@@ -175,7 +176,7 @@ export const tr: ShellMessages = {
     closed: "Bağlantı kapandı",
     lost: (reason,retrying) => `${reason}.${retrying ? ' Yeniden bağlanılıyor…' : ''}`,
     reconnectingEllipsis: "Yeniden bağlanılıyor…",
-    title: "Tuzi Runtime bağlı değil",
+    title: "OpenFox Runtime bağlı değil",
     reconnecting: "Yeniden bağlanılıyor",
   },
   videoInfo: {
@@ -194,7 +195,7 @@ export const tr: ShellMessages = {
   filePreview: {
     tooLarge: "Dosya burada tam gösterilemeyecek kadar büyük",
     loading: "Önizleme yükleniyor",
-    unsupported: "Tuzi bu dosya türünü henüz önizleyemiyor. Klasörde gösterin ve başka uygulamayla açın.",
+    unsupported: "OpenFox bu dosya türünü henüz önizleyemiyor. Klasörde gösterin ve başka uygulamayla açın.",
     failed: (message) => `Önizleme yüklenemedi: ${message}`,
   },
   accessPicker: {

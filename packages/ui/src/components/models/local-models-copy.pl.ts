@@ -3,7 +3,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const pl: LocalModelsMessages = {
   install: {
-    webNote: "W przeglądarce nie można pobierać, sprawdzać, naprawiać ani usuwać modeli lokalnych ani zmieniać domyślnego modelu. Zrób to w aplikacji BaoCut na komputer.",
+    webNote: "W przeglądarce nie można pobierać, sprawdzać, naprawiać ani usuwać modeli lokalnych ani zmieniać domyślnego modelu. Zrób to w aplikacji OpenFox na komputer.",
     availableNote: "Przed pobieraniem zobaczysz rozmiar i wolne miejsce na dysku. Możesz wstrzymać pobieranie; pobrana część zostaje zachowana i jest wznawiana następnym razem.",
     download: "Pobierz",
     complete: "Uzupełnij",

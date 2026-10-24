@@ -141,7 +141,7 @@ export const jaTranslate: TranslateMessages = {
   termsUnify: '用語集の訳語に統一',
   termsUnified: (n: number) => `${n} か所を用語集の訳語に統一しました`,
   cut: (n) => `${n} 文の原文の映像がカットされています`,
-  webHint: '訳し直しにはモデルか会話が必要です：Agent か BaoCut アプリから始めてください',
+  webHint: '訳し直しにはモデルか会話が必要です：Agent か OpenFox アプリから始めてください',
   refreshing: (n) => (n === null ? '訳し直しています…' : `${n} 文を訳し直しています…`),
   aiMenu: '訳し直しと翻訳',
   directAll: (n) => `この ${n} 文をモデル API で訳し直す`,

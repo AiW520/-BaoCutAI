@@ -203,8 +203,8 @@ export const zhHant: SemanticMessages = {
   },
   scope: {
     group: '索引範圍',
-    lead: '所有 BaoCut 專案裡的影片都建立：講話內容與畫面；聲音這一版還沒有。不想建立的專案可以排除；成片不另外建立，搜尋匯出它的影片就能找到。',
-    all: '所有 BaoCut 專案',
+    lead: '所有 OpenFox 專案裡的影片都建立：講話內容與畫面；聲音這一版還沒有。不想建立的專案可以排除；成片不另外建立，搜尋匯出它的影片就能找到。',
+    all: '所有 OpenFox 專案',
     allLine: (projects, excluded) => `${projects} 個專案${excluded ? `，排除了 ${excluded} 個` : ''} · 新建的專案自動加入`,
     outside: '專案之外的影片也建立。',
     excludedGroup: '排除的專案',
@@ -260,7 +260,7 @@ export const zhHant: SemanticMessages = {
     reindexDesc: '重新掃描一遍，丟掉這裡的索引重建',
     remove: '移除',
     removeDesc: '刪掉它的索引，檔案不動',
-    videos: (n) => `${n} 部 BaoCut 影片`,
+    videos: (n) => `${n} 部 OpenFox 影片`,
     videoFiles: (n) => `${n} 個影片素材`,
     images: (n) => `${n} 張圖片`,
     nothing: '還沒掃描到影片和圖片',
@@ -274,20 +274,20 @@ export const zhHant: SemanticMessages = {
     truncatedNote: (limit) => `檔案太多，只掃描了前 ${limit} 個影片與圖片。可以改為新增裡面的子資料夾。`,
     truncatedNoteNoLimit: '檔案太多，只掃描了前面一部分。可以改為新增裡面的子資料夾。',
     unreadableNote: '讀取不了這個資料夾，請檢查權限。',
-    legacyNote: '舊版 BaoCut 影片要先升級才能讀取；升級會改動它，所以這裡不讀取。把它放進專案、在 BaoCut 裡開啟一次就能升級。',
+    legacyNote: '舊版 OpenFox 影片要先升級才能讀取；升級會改動它，所以這裡不讀取。把它放進專案、在 OpenFox 裡開啟一次就能升級。',
     visualReady: '畫面已就緒',
     visualProgress: (done, total) => `畫面 ${done}/${total} 個完成`,
-    textOnly: '文字依裡面的 BaoCut 影片建立',
+    textOnly: '文字依裡面的 OpenFox 影片建立',
     visualOff: '畫面索引沒開，影片素材與圖片還沒建立',
     addTitle: '新增索引資料夾',
     addBody:
-      '專案之外的影片素材也能依意思找到。BaoCut 只讀取這個資料夾，不改、不移動、不刪裡面的檔案；裡面的影片與圖片會出現在 Space 裡，來源寫這個資料夾。',
+      '專案之外的影片素材也能依意思找到。OpenFox 只讀取這個資料夾，不改、不移動、不刪裡面的檔案；裡面的影片與圖片會出現在 Space 裡，來源寫這個資料夾。',
     addWhat: (visual) =>
       visual
-        ? 'BaoCut 影片依講話內容與畫面建立，其他影片素材與圖片依畫面建立；BaoCut 匯出記錄過的成片跳過，同時在專案裡的影片以專案那一份為準。'
-        : 'BaoCut 影片依講話內容建立，其他影片素材與圖片要開啟畫面索引才會建立；BaoCut 匯出記錄過的成片跳過，同時在專案裡的影片以專案那一份為準。',
+        ? 'OpenFox 影片依講話內容與畫面建立，其他影片素材與圖片依畫面建立；OpenFox 匯出記錄過的成片跳過，同時在專案裡的影片以專案那一份為準。'
+        : 'OpenFox 影片依講話內容建立，其他影片素材與圖片要開啟畫面索引才會建立；OpenFox 匯出記錄過的成片跳過，同時在專案裡的影片以專案那一份為準。',
     visualOffTitle: '影片素材與圖片要依畫面建立',
-    visualOffBody: '它們沒有文稿，只能依畫面尋找。開啟畫面索引之後才會建立；現在加進來，只有裡面的 BaoCut 影片會建立索引。',
+    visualOffBody: '它們沒有文稿，只能依畫面尋找。開啟畫面索引之後才會建立；現在加進來，只有裡面的 OpenFox 影片會建立索引。',
     confirmAdd: '新增',
     addedToast: (name) => `已新增「${name}」：正在背景掃描並建立索引`,
     reindexedToast: (name) => `正在重新掃描「${name}」並重建它的索引`,

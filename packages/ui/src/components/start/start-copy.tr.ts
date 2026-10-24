@@ -7,7 +7,7 @@ export const tr: StartMessages = {
     pickTitle: "Yt-dlp seçin",
     pickButton: "Bunu kullan",
     pickFailed: (message) => `Bu dosya kullanılamaz: ${message}`,
-    manualUpdate: "BaoCut bu yt-dlp kopyasını şu anda güncelleyemiyor. Karttaki komutu terminalde çalıştırın",
+    manualUpdate: "OpenFox bu yt-dlp kopyasını şu anda güncelleyemiyor. Karttaki komutu terminalde çalıştırın",
     commandChanged: "Güncelleme komutu değişti. Çalıştırmadan önce yeni komutu denetleyin",
     updateFailed: (message) => `Güncelleme başlatılamadı: ${message}`,
     stopFailed: (message) => `Güncelleme durdurulamadı: ${message}`,

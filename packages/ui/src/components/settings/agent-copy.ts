@@ -27,20 +27,20 @@ const en = {
   factsLabel: 'How Agents work',
   /** 隐私页里「Agent 权限」小标题（page-settings.jsx 的 `setpage__perm`）。 */
   permissionsTitle: 'Agent permissions',
-  lede: 'An Agent is an AI coding assistant installed on your computer, such as Claude Code or Codex. BaoCut calls it directly, so a single sentence can get transcribing, translating and editing done.',
+  lede: 'An Agent is an AI coding assistant installed on your computer, such as Claude Code or Codex. OpenFox calls it directly, so a single sentence can get transcribing, translating and editing done.',
   /** 三条事实（page-settings-agent.jsx:12-16）。 */
   facts: [
-    { key: 'cli', title: 'Uses what you already have', body: "BaoCut calls the command-line Agent on this computer instead of installing its own." },
-    { key: 'plan', title: 'Uses your own subscription', body: 'No extra payment to BaoCut, and no API key to fill in.' },
+    { key: 'cli', title: 'Uses what you already have', body: "OpenFox calls the command-line Agent on this computer instead of installing its own." },
+    { key: 'plan', title: 'Uses your own subscription', body: 'No extra payment to OpenFox, and no API key to fill in.' },
     { key: 'ask', title: 'Asks before changing anything', body: 'It stops and waits for your OK before writing to a video, and you can undo at any time.' },
   ] as readonly { key: 'cli' | 'plan' | 'ask'; title: string; body: string }[],
 
   providersHeading: 'Agents on this computer',
   providersHint:
-    "BaoCut finds the ones already installed. One working Agent is enough; you don't need them all. If unsure, pick Claude Code or Codex. Built-in ones can only be disabled; ones you added can be removed.",
+    "OpenFox finds the ones already installed. One working Agent is enough; you don't need them all. If unsure, pick Claude Code or Codex. Built-in ones can only be disabled; ones you added can be removed.",
   /** 列表底下那一行：几时检查过、内置几家、添加了几家、检测到几家（page-settings-agent.jsx 的 `agset-meta`）。 */
   providersMeta: (checked: string | null, builtin: number, added: number, found: number) =>
-    `${checked ? `Checked ${checked} · ` : ''}BaoCut has ${builtin} built-in ${builtin === 1 ? 'Agent' : 'Agents'}${added ? `, you added ${added}` : ''}; ${found} detected on this computer`,
+    `${checked ? `Checked ${checked} · ` : ''}OpenFox has ${builtin} built-in ${builtin === 1 ? 'Agent' : 'Agents'}${added ? `, you added ${added}` : ''}; ${found} detected on this computer`,
   /** 状态区的无障碍名。 */
   statusLabel: 'Agent status',
   scanDone: (n: number) => (n ? `Check complete · ${n} ${n === 1 ? 'Agent' : 'Agents'} on this computer` : 'Check complete · No installed Agents found'),
@@ -66,17 +66,17 @@ const en = {
 
   /** 「没有逐次询问的通道」的那几家（data.js 的 `FULL_ONLY`）：`capabilities.approvals` 为 false。 */
   fullAccessOnly:
-    "It has no way to ask for approval step by step, so BaoCut can only run it in Full access mode: it won't ask you before running commands or changing files.",
+    "It has no way to ask for approval step by step, so OpenFox can only run it in Full access mode: it won't ask you before running commands or changing files.",
 
-  /** `tested` 为 false 的 Agent：能开会话，但没在 BaoCut 里真机跑通过完整会话。 */
+  /** `tested` 为 false 的 Agent：能开会话，但没在 OpenFox 里真机跑通过完整会话。 */
   untested: {
-    body: "This one hasn't completed a full session in BaoCut on a real machine. Detection, sign-in and the model list work as usual; for problems during a session, follow its own documentation.",
+    body: "This one hasn't completed a full session in OpenFox on a real machine. Detection, sign-in and the model list work as usual; for problems during a session, follow its own documentation.",
   },
 
   /** 添加更多 Agent（settings-agent-catalog.jsx，产品设计 §7.6）。 */
   catalog: {
     heading: 'Add more Agents',
-    hint: "Other command-line Agents that support ACP (Agent Client Protocol) can be added too. BaoCut hasn't verified them one by one; whether they work depends on the check result.",
+    hint: "Other command-line Agents that support ACP (Agent Client Protocol) can be added too. OpenFox hasn't verified them one by one; whether they work depends on the check result.",
     custom: 'Custom command…',
     search: 'Search Agents to add',
     searchPlaceholder: 'Search by name, description or command',
@@ -90,13 +90,13 @@ const en = {
     landed: (name: string, custom: boolean) => `Added ${name}${custom ? ' (custom command)' : ''} · Once detected, it can be used in sessions`,
     addFailed: (message: string) => `Couldn't add: ${message}`,
     webNote:
-      "Agents can't be added or removed in the browser because this decides which commands run on this computer. Use the BaoCut desktop app instead.",
+      "Agents can't be added or removed in the browser because this decides which commands run on this computer. Use the OpenFox desktop app instead.",
   },
 
   /** 自定义命令对话框（settings-agent-catalog.jsx 的 `AgentCustomDialog`）。 */
   customDialog: {
     title: 'Add an Agent with a custom command',
-    lede: 'Enter the command that starts it in ACP mode in a terminal. BaoCut starts the program directly, without a terminal.',
+    lede: 'Enter the command that starts it in ACP mode in a terminal. OpenFox starts the program directly, without a terminal.',
     name: 'Name',
     namePlaceholder: 'e.g. My Agent',
     id: 'id',
@@ -108,8 +108,8 @@ const en = {
     commandParts: (exe: string, args: string[]) => `Will start as: program ${exe}, arguments ${args.join(' · ')}`,
     env: 'Environment variables (optional)',
     envPlaceholder: 'MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\nMY_AGENT_LOG=0',
-    envHint: 'One KEY=VALUE per line, added only when BaoCut starts it.',
-    note: "After adding it, BaoCut checks whether it starts, whether it needs signing in, and which models it has. It appears in sessions once it's detected.",
+    envHint: 'One KEY=VALUE per line, added only when OpenFox starts it.',
+    note: "After adding it, OpenFox checks whether it starts, whether it needs signing in, and which models it has. It appears in sessions once it's detected.",
     cancel: 'Cancel',
     submit: 'Add',
     exists: (id: string) => `An Agent already uses “${id}”. Choose another id.`,
@@ -125,29 +125,29 @@ const en = {
     subLauncher: (launcher: string, needs: string) => `Not checked yet · ${launcher} downloads it at launch; requires ${needs}`,
     subMissing: (command: string) => `Not checked yet · ${command} not found on this computer`,
     note: (name: string) =>
-      `${name} connects via ACP (Agent Client Protocol). BaoCut hasn't verified it: for how to install it and which account to sign in with, follow its own documentation.`,
+      `${name} connects via ACP (Agent Client Protocol). OpenFox hasn't verified it: for how to install it and which account to sign in with, follow its own documentation.`,
     noInstall: 'No separate install needed',
     noInstallBody: (launcher: string, spec: string, needs: string) =>
-      `When BaoCut starts it, ${launcher} downloads ${spec} automatically. Requires ${needs} on this computer.`,
+      `When OpenFox starts it, ${launcher} downloads ${spec} automatically. Requires ${needs} on this computer.`,
     install: 'Install it on this computer following the official instructions',
     installBody: (command: string) => `Once installed, ${command} should run in a terminal.`,
     docs: 'Open official instructions',
-    launch: 'BaoCut starts it with this command',
+    launch: 'OpenFox starts it with this command',
     launchCopy: 'launch command',
     envNote: (keys: string[]) => `Adds the environment variables ${keys.join(', ')} at launch (values aren't shown here).`,
     login: 'If it needs signing in, sign in through it',
-    loginBody: 'Follow its instructions in a terminal. Signing in happens in its own window; BaoCut never handles your account or password.',
+    loginBody: 'Follow its instructions in a terminal. Signing in happens in its own window; OpenFox never handles your account or password.',
     detectStep: 'Check',
-    detectBody: 'BaoCut starts it once to confirm it connects, see whether it needs signing in, and get its model list.',
+    detectBody: 'OpenFox starts it once to confirm it connects, see whether it needs signing in, and get its model list.',
     launchRow: 'Launch command',
-    launchRowHint: 'BaoCut starts it with this command via ACP (Agent Client Protocol).',
+    launchRowHint: 'OpenFox starts it with this command via ACP (Agent Client Protocol).',
     versionPinned: (spec: string) => `The launch command pins ${spec}. To change versions, remove it and add it again with a custom command.`,
     versionOwn: 'To upgrade, follow its own instructions, then check again here.',
     account: (name: string, signedOut: boolean) =>
-      `${signedOut ? 'Not signed in, or the sign-in has expired. ' : ''}Sign-in and billing both happen in ${name}; BaoCut never handles your account and doesn't charge extra.`,
+      `${signedOut ? 'Not signed in, or the sign-in has expired. ' : ''}Sign-in and billing both happen in ${name}; OpenFox never handles your account and doesn't charge extra.`,
     removeTitle: (name: string) => `Remove ${name}?`,
     removeBody: (name: string) =>
-      `${name} will be removed from BaoCut's Agent list, along with its enabled state and default model. If new sessions use it by default, another available Agent takes over. Tasks using it will end. The program installed on this computer isn't affected, and you can add it again later.`,
+      `${name} will be removed from OpenFox's Agent list, along with its enabled state and default model. If new sessions use it by default, another available Agent takes over. Tasks using it will end. The program installed on this computer isn't affected, and you can add it again later.`,
     removed: (name: string) => `Removed ${name}`,
     removeFailed: (message: string) => `Couldn't remove: ${message}`,
   },
@@ -179,13 +179,13 @@ const en = {
   faq: [
     {
       key: 'cost',
-      title: 'Do I need to pay or subscribe to BaoCut separately?',
-      body: "No. Agents use the Claude or ChatGPT subscription you already have, and cost and quota are counted there. BaoCut ships no model of its own, collects no keys and relays nothing through the cloud. Without such a subscription you can skip Agents; the rest of BaoCut works as usual.",
+      title: 'Do I need to pay or subscribe to OpenFox separately?',
+      body: "No. Agents use the Claude or ChatGPT subscription you already have, and cost and quota are counted there. OpenFox ships no model of its own, collects no keys and relays nothing through the cloud. Without such a subscription you can skip Agents; the rest of OpenFox works as usual.",
     },
     {
       key: 'account',
-      title: 'Can BaoCut see my account and password?',
-      body: 'No. Signing in happens in the Agent’s own window. BaoCut only starts that program on your computer and hands it the video. It asks you before changing a video; the rules are in Settings › Privacy & permissions.',
+      title: 'Can OpenFox see my account and password?',
+      body: 'No. Signing in happens in the Agent’s own window. OpenFox only starts that program on your computer and hands it the video. It asks you before changing a video; the rules are in Settings › Privacy & permissions.',
     },
     {
       key: 'cloud',
@@ -195,8 +195,8 @@ const en = {
     },
     {
       key: 'terminal',
-      title: 'Want to drive BaoCut with these Agents from a terminal?',
-      body: 'Sessions in BaoCut need no extra setup. To use them in a terminal or other apps, install the BaoCut skill for them; see the bottom of the Skills page.',
+      title: 'Want to drive OpenFox with these Agents from a terminal?',
+      body: 'Sessions in OpenFox need no extra setup. To use them in a terminal or other apps, install the OpenFox skill for them; see the bottom of the Skills page.',
       link: 'skills',
     },
   ] as readonly { key: string; title: string; body: string; link?: 'models' | 'skills' }[],
@@ -232,7 +232,7 @@ const en = {
     desc: "At launch and while running, regularly update each enabled Agent's own model list. When off, you can still refresh by hand in each Agent's details.",
   },
   executableHint:
-    "BaoCut looks in PATH and common install locations (Homebrew, npm's global folder, ~/.local/bin). Ones installed with a version manager (nvm, asdf, mise) are sometimes elsewhere; enter the executable's full path here. Leave it empty to go back to automatic lookup.",
+    "OpenFox looks in PATH and common install locations (Homebrew, npm's global folder, ~/.local/bin). Ones installed with a version manager (nvm, asdf, mise) are sometimes elsewhere; enter the executable's full path here. Leave it empty to go back to automatic lookup.",
   techPanel: 'Technical info and locations',
   techTitle: 'Agent technical info',
   techSubtitle: 'Versions, paths and available models',
@@ -267,7 +267,7 @@ const en = {
     confirmUpgrade: (name: string) => `Run the upgrade command for ${name}?`,
     confirmRun: 'Run',
     cancel: 'Cancel',
-    confirmBefore: 'BaoCut will run the command below on this computer. Its output appears under the command, and you can stop it at any time.',
+    confirmBefore: 'OpenFox will run the command below on this computer. Its output appears under the command, and you can stop it at any time.',
     confirmAfter: 'Commands that need a password fail here; run those in a terminal instead.',
     restored: (name: string) => `${name} is back to automatic lookup`,
     switched: (path: string) => `Now using ${path}`,
@@ -283,7 +283,7 @@ const en = {
 
   // ---- Skills（产品设计 §6.9；原型 settings-agent-skills.jsx、settings-agent-skill-detail.jsx） ----
   skills: {
-    lede: "A skill is a folder (a SKILL.md, plus optional reference files) that teaches the Agents in BaoCut to do things a certain way. With the switch on, an Agent uses it on its own when it seems relevant to the task; with it off, it's used only when you pick it from “+” in the input box. Turning skills on or off, adding or removing them takes effect from the next new Agent session.",
+    lede: "A skill is a folder (a SKILL.md, plus optional reference files) that teaches the Agents in OpenFox to do things a certain way. With the switch on, an Agent uses it on its own when it seems relevant to the task; with it off, it's used only when you pick it from “+” in the input box. Turning skills on or off, adding or removing them takes effect from the next new Agent session.",
     search: 'Search skills',
     filter: 'Filter by source',
     tab: (label: string, count: number) => `${label} ${count}`,
@@ -294,15 +294,15 @@ const en = {
     loading: 'Loading skills…',
     loadFailed: (message: string) => `Couldn't load skills: ${message}`,
     retry: 'Try again',
-    disconnected: 'Not connected to the BaoCut Runtime. Skills are listed once connected.',
+    disconnected: 'Not connected to the OpenFox Runtime. Skills are listed once connected.',
     emptyTitle: 'No skills yet',
     emptyBody:
       'There are no skills available here yet. Add a skill folder you wrote, or import one someone shared on GitHub. Third-party skills are off after import; look through them before turning them on.',
-    emptyWeb: 'There are no skills available here yet. In the browser you can only view and toggle them; add and import them in the BaoCut desktop app.',
+    emptyWeb: 'There are no skills available here yet. In the browser you can only view and toggle them; add and import them in the OpenFox desktop app.',
     noMatch: (query: string) => `No skills found for “${query}”`,
     noMatchHint: 'Try another word, or switch to “All”.',
     noneInTab: (label: string) => `No ${label} skills yet`,
-    webNote: 'In the browser you can view and toggle skills; add, import and remove them in the BaoCut desktop app.',
+    webNote: 'In the browser you can view and toggle skills; add, import and remove them in the OpenFox desktop app.',
     view: (name: string) => `View ${name}`,
     enable: (name: string) => `Enable ${name}`,
     toggledOn: (name: string) => `Turned on “${name}”: from the next new session, the Agent uses it on its own when relevant`,
@@ -315,9 +315,9 @@ const en = {
     diagnosticCode: { invalid: 'Invalid format', 'duplicate-id': 'Duplicate name', 'builtin-conflict': 'Same name as a built-in skill' } as Record<string, string>,
     /** 没能加载的那一行：文件夹 · 原因：第一条问题。 */
     diagnosticLine: (dir: string, reason: string, issue: string) => `${dir} · ${reason}: ${issue}`,
-    externalTitle: 'Use BaoCut from Agents in a terminal or other apps',
+    externalTitle: 'Use OpenFox from Agents in a terminal or other apps',
     externalBody:
-      "The skills above are for the Agents inside BaoCut. To teach Claude Code or Codex in a terminal to transcribe, translate, edit and export with BaoCut, install the BaoCut skill for them. One-click install to these Agents' global locations, plus seeing where it's installed and whether it needs updating, is coming in a later version.",
+      "The skills above are for the Agents inside OpenFox. To teach Claude Code or Codex in a terminal to transcribe, translate, edit and export with OpenFox, install the OpenFox skill for them. One-click install to these Agents' global locations, plus seeing where it's installed and whether it needs updating, is coming in a later version.",
   },
 
   skillDetail: {
@@ -325,7 +325,7 @@ const en = {
     stateOn: 'On: the Agent uses it on its own when relevant.',
     stateOff: "Off: used only when you pick it from “+” in the input box.",
     thirdPartyNote:
-      "Third-party skills come from repositories other people share: look through one before turning it on. BaoCut never runs any file in a skill, and a skill can't widen an Agent's permissions.",
+      "Third-party skills come from repositories other people share: look through one before turning it on. OpenFox never runs any file in a skill, and a skill can't widen an Agent's permissions.",
     source: 'Source',
     location: 'Location',
     version: 'Version',

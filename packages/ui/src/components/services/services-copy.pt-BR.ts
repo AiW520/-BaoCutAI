@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonPtBR: CommonMessages = {
   copied: (label: string) => `${label} copiado`,
   copyFailed: "Não foi possível copiar. Selecione o texto e copie manualmente.",
-  autostart: "Iniciar automaticamente ao abrir o BaoCut",
-  stopsWithApp: "O serviço para quando você sai do BaoCut.",
+  autostart: "Iniciar automaticamente ao abrir o OpenFox",
+  stopsWithApp: "O serviço para quando você sai do OpenFox.",
   portLabel: "Porta",
   portIdle: (port: number) =>
     `Padrão é ${port}. Se ocupado, escolha outro: “Falha ao iniciar”, sem trocar porta automaticamente.`,
@@ -41,13 +41,13 @@ export const commonPtBR: CommonMessages = {
 };
 
 export const clientsPtBR: ClientsMessages = {
-  lede: "Dê token próprio a cada aplicativo. Mostrado só na criação, BaoCut guarda só hash. Revogue quando não precisar; aplicativo desconectado imediatamente.",
+  lede: "Dê token próprio a cada aplicativo. Mostrado só na criação, OpenFox guarda só hash. Revogue quando não precisar; aplicativo desconectado imediatamente.",
   empty: "Sem clientes. Crie e informe o token no aplicativo.",
   create: "Criar cliente",
   createTitle: "Criar cliente",
   nameLabel: "Nome do aplicativo",
   namePlaceholder: "Por exemplo, Claude Desktop",
-  nameDesc: "Distingue chamadores no BaoCut. Histórico e aprovações mostram este nome.",
+  nameDesc: "Distingue chamadores no OpenFox. Histórico e aprovações mostram este nome.",
   confirmCreate: "Criar",
   cancel: "Cancelar",
   done: "Concluído",
@@ -86,7 +86,7 @@ export const approvalCardPtBR: ApprovalCardMessages = {
 
 export const mcpPtBR: McpMessages = {
   title: "Serviço MCP",
-  lede: "BaoCut é servidor MCP para agentes de outras IAs: listar e ler vídeos, transcrições, editar, transcrever, exportar, sintetizar e gerar imagens com modelos disponíveis. Desativado por padrão. Todos os vídeos compartilhados, ou só escolhidos.",
+  lede: "OpenFox é servidor MCP para agentes de outras IAs: listar e ler vídeos, transcrições, editar, transcrever, exportar, sintetizar e gerar imagens com modelos disponíveis. Desativado por padrão. Todos os vídeos compartilhados, ou só escolhidos.",
   on: "O servidor MCP está em execução",
   off: "O servidor MCP está parado",
   error: "Falha ao iniciar o servidor MCP",
@@ -122,7 +122,7 @@ export const mcpPtBR: McpMessages = {
 
 export const modelApiPtBR: ModelApiMessages = {
   title: "API de modelos",
-  lede: "Ferramentas OpenAI API (SDKs, CLI, aplicativos) usam modelos BaoCut para transcrever, sintetizar, gerar imagens e texto. Escuta só local. Só modelos locais por padrão; nuvem, nós e agentes ativados separadamente.",
+  lede: "Ferramentas OpenAI API (SDKs, CLI, aplicativos) usam modelos OpenFox para transcrever, sintetizar, gerar imagens e texto. Escuta só local. Só modelos locais por padrão; nuvem, nós e agentes ativados separadamente.",
   on: "API de modelos em execução",
   off: "API de modelos não iniciada",
   error: "API de modelos falhou ao iniciar",
@@ -138,7 +138,7 @@ export const modelApiPtBR: ModelApiMessages = {
   needKeyFixed: "Chave API (token cliente) sempre exigida. Cada aplicativo tem sua chave revogável separadamente.",
   levels: {
     read: "Só lista modelos (GET /v1/models). Geração rejeitada.",
-    ask: "Confirme cada geração no BaoCut. Negado após 50 segundos sem resposta.",
+    ask: "Confirme cada geração no OpenFox. Negado após 50 segundos sem resposta.",
     auto: "Geração sem confirmação, melhor para uso individual.",
   },
   routingTitle: "Roteamento",
@@ -177,11 +177,11 @@ export const modelApiPtBR: ModelApiMessages = {
 
 export const webPtBR: WebMessages = {
   title: "Servidor Web",
-  lede: "Abra BaoCut Web neste Mac para editar os mesmos vídeos. Escuta só local, sem acesso de outros dispositivos.",
+  lede: "Abra OpenFox Web neste Mac para editar os mesmos vídeos. Escuta só local, sem acesso de outros dispositivos.",
   on: "O servidor Web está em execução",
   off: "O servidor Web está parado",
   error: "Falha ao iniciar o servidor Web",
-  offSub: "Depois de iniciado, você pode abrir o BaoCut Web em um navegador.",
+  offSub: "Depois de iniciado, você pode abrir o OpenFox Web em um navegador.",
   open: "Abrir no Navegador",
   copyLink: "Copiar link de login",
   linkLabel: "Link de login",

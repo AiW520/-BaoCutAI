@@ -18,12 +18,12 @@ export const zhHans: AgentSetupMessages = {
   errorBody: (detail: string | null) => `${detail ? `${detail} ` : ''}常见原因是 Node.js 被卸载或升级、文件权限被改。运行排查可以定位到具体哪一步。`,
   errorCta: '运行排查',
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} 太旧，BaoCut 无法驱动` : `${name} 的版本太旧，BaoCut 无法驱动`,
+    version ? `${name} ${version} 太旧，开胡-OpenFox 无法驱动` : `${name} 的版本太旧，开胡-OpenFox 无法驱动`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `至少需要 ${minVersion}。`}升级只更新这个命令行工具，不影响你的账号和它自己的设置。`,
   outdatedCta: (version: string) => `升级到 ${version}`,
   signedOutTitle: (name: string) => `${name} 需要重新登录`,
-  signedOutBody: (name: string) => `登录在 ${name} 自己的窗口里完成，BaoCut 不经手你的账号和密码。登录后回到这里检查。`,
+  signedOutBody: (name: string) => `登录在 ${name} 自己的窗口里完成，开胡-OpenFox 不经手你的账号和密码。登录后回到这里检查。`,
   signedOutCta: '打开终端登录',
 
   stepSkipped: '上一步通过后再检查',
@@ -32,7 +32,7 @@ export const zhHans: AgentSetupMessages = {
   stepRun: '能够启动',
   stepRunOk: (command: string, version: string) => `${command} --version 返回 ${version}`,
   stepRunFail: '启动时出错',
-  stepVersion: 'BaoCut 支持这个版本',
+  stepVersion: '开胡-OpenFox 支持这个版本',
   stepVersionOk: (version: string, min: string) => `${version}，最低要求 ${min}`,
   stepVersionFail: (version: string, min: string) => `当前 ${version}，最低要求 ${min}`,
   stepLogin: '已登录你的账号',
@@ -48,12 +48,12 @@ export const zhHans: AgentSetupMessages = {
 
   readyTitle: '已准备好，可以开始了',
   readyBody: (name: string, model: string, plan: string) =>
-    `新会话默认用 ${name} · ${model}。用的是这台电脑上已经装好的 ${name} 和你自己的 ${plan}，BaoCut 不另外收费。`,
+    `新会话默认用 ${name} · ${model}。用的是这台电脑上已经装好的 ${name} 和你自己的 ${plan}，开胡-OpenFox 不另外收费。`,
   readyCta: '开始会话',
   attentionBody: (name: string) => `它已经装在这台电脑上，不需要重装。原因和修法在下面「${name}」那一行。`,
   attentionCta: '查看问题',
   offTitle: (name: string) => `${name} 已安装，但被停用了`,
-  offBody: '启用后就能在 BaoCut 里用一句话交代活。',
+  offBody: '启用后就能在 开胡-OpenFox 里用一句话交代活。',
   offCta: (name: string) => `启用 ${name}`,
   missingTitle: '这台电脑上还没有检测到 Agent',
   missingBodyMany: '装下面任意一个并用你已有的账号登录即可，不需要全部安装。',

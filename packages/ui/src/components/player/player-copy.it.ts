@@ -13,5 +13,5 @@ export const it: PlayerMessages = {
   overlay: 'Sovrapponi sottotitoli', showTip: 'Mostra sottotitoli (C)', hideTip: 'Nascondi sottotitoli (C)', rateCurrent: (rate) => `Velocità di riproduzione ${rate}×`, rate: 'Velocità di riproduzione', rateNormal: '1× (Normale)',
   mute: 'Disattiva audio', unmute: 'Attiva audio', muteTip: 'Disattiva audio (M)', unmuteTip: 'Attiva audio (M)', volume: 'Volume', fullscreen: 'Schermo intero', exitFullscreen: 'Esci da schermo intero', fullscreenTip: 'Schermo intero (F)', exitFullscreenTip: 'Esci da schermo intero (F)',
   position: 'Posizione di riproduzione', backToCurrent: 'Torna alla riga attuale',
-  mediaError: { aborted: 'Il caricamento è stato interrotto', network: 'Si è verificato un errore durante la lettura del file', decode: 'Decodifica non riuscita; il file potrebbe essere danneggiato', unsupported: 'BaoCut non può ancora riprodurre il formato o il codec di questo file', other: 'Impossibile riprodurre questo file' },
+  mediaError: { aborted: 'Il caricamento è stato interrotto', network: 'Si è verificato un errore durante la lettura del file', decode: 'Decodifica non riuscita; il file potrebbe essere danneggiato', unsupported: 'OpenFox non può ancora riprodurre il formato o il codec di questo file', other: 'Impossibile riprodurre questo file' },
 };

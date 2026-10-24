@@ -10,11 +10,11 @@ export const ptBR: AgentMessages = {
   factsLabel: "Como agentes funcionam",
 
   permissionsTitle: "Permissões do agente",
-  lede: "Agente é assistente de código local, como Claude Code ou Codex. BaoCut chama direto para transcrever, traduzir e editar em uma frase.",
+  lede: "Agente é assistente de código local, como Claude Code ou Codex. OpenFox chama direto para transcrever, traduzir e editar em uma frase.",
 
   facts: [
     { key: 'cli', title: "Usa o que você já tem", body: "Chama agente local da CLI, sem instalar outro." },
-    { key: 'plan', title: "Usa sua própria assinatura", body: "Sem pagar extra ao BaoCut ou informar chave API." },
+    { key: 'plan', title: "Usa sua própria assinatura", body: "Sem pagar extra ao OpenFox ou informar chave API." },
     { key: 'ask', title: "Pergunta antes de alterar", body: "Espera sua aprovação antes de gravar no vídeo, desfazível a qualquer momento." },
   ] as readonly { key: 'cli' | 'plan' | 'ask'; title: string; body: string }[],
 
@@ -23,7 +23,7 @@ export const ptBR: AgentMessages = {
     "Detecta os instalados. Um agente funcional basta; se dúvida, Claude Code ou Codex. Integrados podem ser desativados; adicionados removidos.",
 
   providersMeta: (checked: string | null, builtin: number, added: number, found: number) =>
-    `${checked ? `Verificados ${checked} · ` : ""}BaoCut tem ${builtin} integrados ${pluralForm('pt-BR', builtin, { one: "Agente", other: "Agentes" })}${added ? `, você adicionou ${added}` : ""}; ${found} detectados neste computador`,
+    `${checked ? `Verificados ${checked} · ` : ""}OpenFox tem ${builtin} integrados ${pluralForm('pt-BR', builtin, { one: "Agente", other: "Agentes" })}${added ? `, você adicionou ${added}` : ""}; ${found} detectados neste computador`,
 
   statusLabel: "Estado do agente",
   scanDone: (n: number) => (n ? `Verificação concluída · ${n} ${pluralForm('pt-BR', n, { one: "Agente", other: "Agentes" })} neste computador` : "Verificação concluída · nenhum agente instalado"),
@@ -53,7 +53,7 @@ export const ptBR: AgentMessages = {
 
 
   untested: {
-    body: "Ainda não concluiu sessão real no BaoCut. Detecção, login e modelos funcionam; problemas em sessão devem seguir documentação própria.",
+    body: "Ainda não concluiu sessão real no OpenFox. Detecção, login e modelos funcionam; problemas em sessão devem seguir documentação própria.",
   },
 
 
@@ -79,7 +79,7 @@ export const ptBR: AgentMessages = {
 
   customDialog: {
     title: "Adicionar agente com comando personalizado",
-    lede: "Informe o comando ACP usado no terminal. BaoCut inicia direto, sem terminal.",
+    lede: "Informe o comando ACP usado no terminal. OpenFox inicia direto, sem terminal.",
     name: "Nome",
     namePlaceholder: "Ex.: meu agente",
     id: 'id',
@@ -91,7 +91,7 @@ export const ptBR: AgentMessages = {
     commandParts: (exe: string, args: string[]) => `Inicia como: programa ${exe}, argumentos ${args.join(" · ")}`,
     env: "Variáveis de ambiente (opcional)",
     envPlaceholder: "MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\nMY_AGENT_LOG=0",
-    envHint: "Um KEY=VALUE por linha, só ao iniciar pelo BaoCut.",
+    envHint: "Um KEY=VALUE por linha, só ao iniciar pelo OpenFox.",
     note: "Depois verifica se inicia, precisa de login e quais modelos possui. Aparece nas sessões após detecção.",
     cancel: "Cancelar",
     submit: "Adicionar",
@@ -108,18 +108,18 @@ export const ptBR: AgentMessages = {
     subLauncher: (launcher: string, needs: string) => `Ainda não verificado · ${launcher} baixa ao iniciar; exige ${needs}`,
     subMissing: (command: string) => `Ainda não verificado · ${command} não encontrado localmente`,
     note: (name: string) =>
-      `${name} conecta por ACP (Agent Client Protocol). Não verificado pelo BaoCut; siga a documentação própria para instalação e conta.`,
+      `${name} conecta por ACP (Agent Client Protocol). Não verificado pelo OpenFox; siga a documentação própria para instalação e conta.`,
     noInstall: "Sem instalação separada",
     noInstallBody: (launcher: string, spec: string, needs: string) =>
-      `Quando o BaoCut inicia, ${launcher} baixa ${spec} automaticamente. Exige ${needs} neste computador.`,
+      `Quando o OpenFox inicia, ${launcher} baixa ${spec} automaticamente. Exige ${needs} neste computador.`,
     install: "Instalar neste computador seguindo as instruções oficiais",
     installBody: (command: string) => `Após instalar, ${command} deve executar no terminal.`,
     docs: "Abrir instruções oficiais",
-    launch: "BaoCut inicia com este comando",
+    launch: "OpenFox inicia com este comando",
     launchCopy: "comando de início",
     envNote: (keys: string[]) => `Adiciona variáveis de ambiente ${keys.join(", ")} ao iniciar (valores não exibidos).`,
     login: "Se precisar de login, entre pelo próprio agente",
-    loginBody: "Siga as instruções no terminal. Login na janela própria; BaoCut não trata conta ou senha.",
+    loginBody: "Siga as instruções no terminal. Login na janela própria; OpenFox não trata conta ou senha.",
     detectStep: "Verificação",
     detectBody: "Inicia uma vez para confirmar conexão, login e modelos.",
     launchRow: "Comando de início",
@@ -127,7 +127,7 @@ export const ptBR: AgentMessages = {
     versionPinned: (spec: string) => `O comando fixa ${spec}. Para mudar versão, remova e adicione novamente com comando personalizado.`,
     versionOwn: "Atualize pela documentação própria, depois verifique aqui.",
     account: (name: string, signedOut: boolean) =>
-      `${signedOut ? "Não conectado ou login expirado. " : ""}Login e cobrança ocorrem em ${name}; BaoCut não trata conta nem cobra extra.`,
+      `${signedOut ? "Não conectado ou login expirado. " : ""}Login e cobrança ocorrem em ${name}; OpenFox não trata conta nem cobra extra.`,
     removeTitle: (name: string) => `Remover ${name}?`,
     removeBody: (name: string) =>
       `${name} será removido da lista com ativação e modelo padrão. Se padrão de novas sessões, outro agente disponível assume. Tarefas que usam terminam. Programa local inalterado, adicionável depois.`,
@@ -159,13 +159,13 @@ export const ptBR: AgentMessages = {
   faq: [
     {
       key: 'cost',
-      title: "Preciso pagar ou assinar o BaoCut separadamente?",
-      body: "Não. Agentes usam sua assinatura Claude ou ChatGPT, com custo e cota lá. BaoCut não inclui modelo próprio, não coleta chaves nem retransmite pela nuvem. Sem assinatura, ignore agentes; o resto funciona normalmente.",
+      title: "Preciso pagar ou assinar o OpenFox separadamente?",
+      body: "Não. Agentes usam sua assinatura Claude ou ChatGPT, com custo e cota lá. OpenFox não inclui modelo próprio, não coleta chaves nem retransmite pela nuvem. Sem assinatura, ignore agentes; o resto funciona normalmente.",
     },
     {
       key: 'account',
-      title: "BaoCut vê minha conta e senha?",
-      body: "Não. Login na janela do agente. BaoCut só inicia localmente e entrega o vídeo. Pergunta antes de alterar; regras em Configurações › Privacidade e permissões.",
+      title: "OpenFox vê minha conta e senha?",
+      body: "Não. Login na janela do agente. OpenFox só inicia localmente e entrega o vídeo. Pergunta antes de alterar; regras em Configurações › Privacidade e permissões.",
     },
     {
       key: 'cloud',
@@ -175,8 +175,8 @@ export const ptBR: AgentMessages = {
     },
     {
       key: 'terminal',
-      title: "Quer usar BaoCut por agentes no terminal?",
-      body: "Sessões no BaoCut não exigem mais configuração. Para terminal ou outros aplicativos, instale a Skill do BaoCut; veja o final da página Skills.",
+      title: "Quer usar OpenFox por agentes no terminal?",
+      body: "Sessões no OpenFox não exigem mais configuração. Para terminal ou outros aplicativos, instale a Skill do OpenFox; veja o final da página Skills.",
       link: "skills",
     },
   ] as readonly { key: string; title: string; body: string; link?: 'models' | 'skills' }[],
@@ -242,7 +242,7 @@ export const ptBR: AgentMessages = {
     confirmUpgrade: (name: string) => `Executar atualização de ${name}?`,
     confirmRun: "Em execução",
     cancel: "Cancelar",
-    confirmBefore: "BaoCut executará o comando localmente. Saída abaixo, pode parar a qualquer momento.",
+    confirmBefore: "OpenFox executará o comando localmente. Saída abaixo, pode parar a qualquer momento.",
     confirmAfter: "Comandos com senha falham aqui; execute no terminal.",
     restored: (name: string) => `${name} voltou à busca automática`,
     switched: (path: string) => `Agora usando ${path}`,
@@ -289,9 +289,9 @@ export const ptBR: AgentMessages = {
     diagnosticCode: { invalid: "Formato inválido", 'duplicate-id': "Nome duplicado", 'builtin-conflict': "Mesmo nome de Skill integrada" } as Record<string, string>,
 
     diagnosticLine: (dir: string, reason: string, issue: string) => `${dir} · ${reason}: ${issue}`,
-    externalTitle: "Usar BaoCut com agentes no terminal ou outros aplicativos",
+    externalTitle: "Usar OpenFox com agentes no terminal ou outros aplicativos",
     externalBody:
-      "Skills acima são para agentes internos. Para ensinar Claude Code ou Codex externos a transcrever, traduzir, editar e exportar, instale a Skill do BaoCut. Instalar globalmente em um clique e consultar locais e atualização virá depois.",
+      "Skills acima são para agentes internos. Para ensinar Claude Code ou Codex externos a transcrever, traduzir, editar e exportar, instale a Skill do OpenFox. Instalar globalmente em um clique e consultar locais e atualização virá depois.",
   },
 
   skillDetail: {
@@ -299,7 +299,7 @@ export const ptBR: AgentMessages = {
     stateOn: "Ativada: o agente usa quando relevante.",
     stateOff: "Desativada: só usa quando escolhida em “+”.",
     thirdPartyNote:
-      "Skills de terceiros vêm de repositórios compartilhados; revise antes de ativar. BaoCut não executa arquivos de Skills, nem elas ampliam permissões.",
+      "Skills de terceiros vêm de repositórios compartilhados; revise antes de ativar. OpenFox não executa arquivos de Skills, nem elas ampliam permissões.",
     source: "Fonte",
     location: "Local",
     version: "Versão",

@@ -3,7 +3,7 @@ import type { ServicesMcpMessages } from './services-mcp-copy.ts';
 export const pl: ServicesMcpMessages = {
   levels: {
     read: { title: "Tylko do odczytu", desc: "Zobacz informacje o wideo, transkrypcje i stan przetwarzania" },
-    ask: { title: "Pytaj przed zmianami", desc: "Potwierdź w BaoCut przed transkrypcją, edycją, eksportem lub generowaniem" },
+    ask: { title: "Pytaj przed zmianami", desc: "Potwierdź w OpenFox przed transkrypcją, edycją, eksportem lub generowaniem" },
     auto: { title: "Zezwalaj bez pytania", desc: "Zapis, zadania i generowanie ruszają od razu bez potwierdzenia; najlepiej do własnego użytku" },
   },
   scopeAll: (total) => `Wszystkie wideo (${total})`,

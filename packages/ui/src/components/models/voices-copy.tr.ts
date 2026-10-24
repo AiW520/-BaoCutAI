@@ -9,7 +9,7 @@ myVoices: { offline: 'Runtime bağlanınca sesler görünür.', add: 'Ses ekle',
   // 克隆
   uploadTitle: (label) => `${label} sağlayıcısına yüklensin mi?`, upload: 'Yükle', cloneStarted: (label) => `${label} sağlayıcısına yükleniyor · ilerleme Arka plan görevleri kısmında`, cloneRejected: (text) => `Klonlama başlatılamadı: ${text}`, removeCloneTitle: (label) => `${label} sağlayıcısındaki klon silinsin mi?`, removeCloneBody: (label) => `${label} sağlayıcısından bu klon sesi silmesi istenir. Sonrasında ${label} ile kullanmak için yeniden yüklemeniz gerekir.`, removeCloneConfirm: 'Klonu sil', cloneRemoved: (label) => `${label} sağlayıcısındaki klon silindi`, cloneGoneRemote: (label) => `${label} sağlayıcısında klon artık yok; bu bilgisayardaki kayıt da temizlendi`, cloneRemoveFailed: (text) => `Klon silinemedi: ${text}`,
   // 导出
-  exportTitle: 'Ses paketini dışa aktar', exportButton: 'Dışa aktar', exported: (path) => `Dışa aktarıldı: ${path}`, exportFailed: (text) => `Dışa aktarılamadı: ${text}`, exportExists: 'BaoCut mevcut dosyaların üzerine yazmaz. Başka ad veya konum seçip yeniden dışa aktarın.', exportFailedExists: (text) => `Dışa aktarılamadı: ${text}. BaoCut mevcut dosyaların üzerine yazmaz. Başka ad veya konum seçip yeniden dışa aktarın.`,
+  exportTitle: 'Ses paketini dışa aktar', exportButton: 'Dışa aktar', exported: (path) => `Dışa aktarıldı: ${path}`, exportFailed: (text) => `Dışa aktarılamadı: ${text}`, exportExists: 'OpenFox mevcut dosyaların üzerine yazmaz. Başka ad veya konum seçip yeniden dışa aktarın.', exportFailedExists: (text) => `Dışa aktarılamadı: ${text}. OpenFox mevcut dosyaların üzerine yazmaz. Başka ad veya konum seçip yeniden dışa aktarın.`,
   // 删除
   deleteTitle: (name) => `“${name}” silinsin mi?`, deleteConfirm: 'Sil', deleted: (name) => `“${name}” silindi`, deleteFailed: (text) => `Silinemedi: ${text}`, localOnlyTitle: (label) => `${label} sağlayıcısındaki klon silinmedi`, localOnlyBody: (label, text) => `${text}\n\nSes hâlâ burada. Daha sonra yeniden deneyebilir veya yalnızca bu bilgisayardaki kayıt ve sesi silebilirsiniz. ${label} hesabınızdaki klon kalır; ${label} üzerinde kendiniz silmeniz gerekir.`, localOnlyConfirm: 'Yalnızca bu bilgisayardan sil', later: 'Sonra yeniden dene' },
   /** 我的声音 › 克隆新音色、补录授权声明、行上的 ID 与模型页那一行。 */
@@ -58,7 +58,7 @@ myVoices: { offline: 'Runtime bağlanınca sesler görünür.', add: 'Ses ekle',
     reading: "Ses okunuyor…",
     readFailed: message => `Bu ses okunamadı: ${message}`,
     micFailed: message => `Mikrofon başlatılamadı: ${message}`,
-    micDenied: "BaoCut mikrofonu kullanamıyor. Sistem ayarlarından izin verin veya bunun yerine bir kayıt yükleyin.",
+    micDenied: "OpenFox mikrofonu kullanamıyor. Sistem ayarlarından izin verin veya bunun yerine bir kayıt yükleyin.",
     sampleShort: (seconds, min) => `Yalnızca ${seconds} saniye; en az ${min} saniye gerekli. Yeniden kaydedin.`,
     sampleLocal: "Yerel motorlar için yeterli · biraz daha uzun olursa bulut sağlayıcılar da kullanabilir",
     sampleOk: target => `Yeterli · en iyisi ${target} saniye`,

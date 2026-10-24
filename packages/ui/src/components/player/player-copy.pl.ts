@@ -46,7 +46,7 @@ export const pl: PlayerMessages = {
     aborted: "Wczytywanie przerwano",
     network: "Błąd odczytu pliku",
     decode: "Dekodowanie nie powiodło się; plik może być uszkodzony",
-    unsupported: "BaoCut nie odtwarza jeszcze tego formatu lub kodeka",
+    unsupported: "OpenFox nie odtwarza jeszcze tego formatu lub kodeka",
     other: "Nie udało się odtworzyć tego pliku",
   },
 };

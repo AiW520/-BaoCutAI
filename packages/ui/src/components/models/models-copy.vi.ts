@@ -147,7 +147,7 @@ export const vi: ModelsMessages = {
     customTag: "Tùy chỉnh",
     emptyProviders: "Chưa có nhà cung cấp đám mây cho danh mục này. Bạn có thể thêm dịch vụ tùy chỉnh tương thích OpenAI.",
     noCloud: "Danh mục này không có mô hình đám mây.",
-    webNote: "Trình duyệt không thể kết nối nhà cung cấp, đổi khóa, thêm nhà cung cấp hoặc mô hình, làm mới danh mục, hay đổi mô hình mặc định và cài đặt của nó. Bạn vẫn có thể thử mô hình. Hãy làm phần còn lại trong ứng dụng BaoCut trên máy tính.",
+    webNote: "Trình duyệt không thể kết nối nhà cung cấp, đổi khóa, thêm nhà cung cấp hoặc mô hình, làm mới danh mục, hay đổi mô hình mặc định và cài đặt của nó. Bạn vẫn có thể thử mô hình. Hãy làm phần còn lại trong ứng dụng OpenFox trên máy tính.",
   },
   textParams: {
     effort: "Mức suy luận",

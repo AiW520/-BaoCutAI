@@ -61,7 +61,7 @@ const en = {
     cancel: 'Cancel',
   },
   detail: {
-    exportExists: "There's already a file with that name there. BaoCut doesn't overwrite existing files; choose another name and export again.",
+    exportExists: "There's already a file with that name there. OpenFox doesn't overwrite existing files; choose another name and export again.",
     loadFailed: "Couldn't read this glossary",
     loadingLabel: 'Loading',
     loading: 'Loading…',

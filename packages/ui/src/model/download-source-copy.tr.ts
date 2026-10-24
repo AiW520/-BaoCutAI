@@ -19,7 +19,7 @@ export const tr: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `${base} adresindeki yansıdan indir.`,
   msNote: "ModelScope’ta olmayan birkaç dosya (whisper.cpp) yine Hugging Face’ten gelir. Her dosya yerleşik sağlama toplamıyla denetlenir.",
   envNote: (name: string) => `${name} ortam değişkeni ayarlıysa o kullanılır.`,
-  webNote: "Tarayıcı indirme kaynaklarını değiştiremez. Bunları BaoCut masaüstü uygulamasında ayarlayın.",
+  webNote: "Tarayıcı indirme kaynaklarını değiştiremez. Bunları OpenFox masaüstü uygulamasında ayarlayın.",
   lead:
     "Birden çok kaynak saklayıp her tür için birini seçebilirsiniz. İndirme penceresinde de değiştirilebilir; bu, buradaki seçimi de değiştirir. Her dosya, nereden gelirse gelsin yerleşik sağlama toplamıyla denetlenir.",
   editAria: (name: string) => `“${name}” öğesini düzenle`,

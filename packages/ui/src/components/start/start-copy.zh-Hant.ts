@@ -7,7 +7,7 @@ export const zhHant: StartMessages = {
     pickTitle: '選擇 yt-dlp',
     pickButton: '使用這個',
     pickFailed: (message) => `無法使用這個檔案：${message}`,
-    manualUpdate: 'BaoCut 目前無法更新這份 yt-dlp。請在終端機中執行卡片上的指令',
+    manualUpdate: 'OpenFox 目前無法更新這份 yt-dlp。請在終端機中執行卡片上的指令',
     commandChanged: '更新指令已變更。執行前請先確認新的指令',
     updateFailed: (message) => `無法開始更新：${message}`,
     stopFailed: (message) => `無法停止更新：${message}`,

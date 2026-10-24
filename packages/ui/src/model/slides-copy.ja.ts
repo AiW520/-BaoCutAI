@@ -6,7 +6,7 @@ export const ja: SlidesMessages = {
   frameTitle: (name) => `スライドエディタ：${name}`,
   opening: 'スライドを開いています…',
   unavailableTitle: 'スライドエディタを利用できません',
-  unavailableBody: 'この BaoCut にはスライドエディタが含まれていません。スライドのファイルはフォルダに残っています。',
+  unavailableBody: 'この OpenFox にはスライドエディタが含まれていません。スライドのファイルはフォルダに残っています。',
   openFailed: (reason) => `スライドを開けませんでした：${reason}`,
   open: 'スライドを開く',
   openCard: (name) => `スライド「${name}」を開く`,

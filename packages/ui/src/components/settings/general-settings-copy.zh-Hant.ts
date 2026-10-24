@@ -6,7 +6,7 @@ export const zhHant: GeneralSettingsMessages = {
   languageDesc: '立即生效，不需要重新啟動。',
   languageSystem: (current: string) => `跟隨系統（${current}）`,
   appearance: '外觀',
-  appearanceDesc: '只影響這台電腦上的 Tuzi 視窗。',
+  appearanceDesc: '只影響這台電腦上的 OpenFox 視窗。',
   schemeSystem: '跟隨系統',
   schemeLight: '淺色',
   schemeDark: '深色',
@@ -28,7 +28,7 @@ export const zhHant: GeneralSettingsMessages = {
   downloadsGroup: '下載與更新',
   autoUpdateOn: '已開啟自動檢查並下載更新',
   autoUpdateOff: '已關閉自動下載更新',
-  downloaderWeb: '瀏覽器不會檢查這台電腦上的下載工具；請在 Tuzi 桌面應用程式中查看。',
+  downloaderWeb: '瀏覽器不會檢查這台電腦上的下載工具；請在 OpenFox 桌面應用程式中查看。',
 
   sourcesGroup: '下載來源與離線',
   strictOffline: '嚴格離線',
@@ -39,7 +39,7 @@ export const zhHant: GeneralSettingsMessages = {
   trashDays: '垃圾桶保留天數',
   trashDaysDesc: (fallback: number | null) =>
     `在垃圾桶中超過這個天數且沒有被引用的項目，以及已刪除的影片，會被永久刪除（啟動時檢查一次，之後每 6 小時檢查一次）。仍被引用的項目會保留。清空此欄即回復預設值${fallback ? `（${fallback} 天）` : ''}。`,
-  webNote: '瀏覽器中無法變更這項設定，請在 Tuzi 桌面應用程式中變更。',
-  webViewOnly: '瀏覽器中只能檢視這些，請在 Tuzi 桌面應用程式中變更。',
-  webUnavailable: '瀏覽器中沒有這一項，請在 Tuzi 桌面應用程式中查看。',
+  webNote: '瀏覽器中無法變更這項設定，請在 OpenFox 桌面應用程式中變更。',
+  webViewOnly: '瀏覽器中只能檢視這些，請在 OpenFox 桌面應用程式中變更。',
+  webUnavailable: '瀏覽器中沒有這一項，請在 OpenFox 桌面應用程式中查看。',
 };

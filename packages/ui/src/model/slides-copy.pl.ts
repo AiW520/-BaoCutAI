@@ -8,7 +8,7 @@ export const pl: SlidesMessages = {
   frameTitle: (name) => `Edytor slajdów: ${name}`,
   opening: 'Otwieranie slajdów…',
   unavailableTitle: 'Edytor slajdów niedostępny',
-  unavailableBody: 'Ta wersja BaoCut nie zawiera edytora slajdów. Pliki slajdów nadal są w swoim folderze.',
+  unavailableBody: 'Ta wersja OpenFox nie zawiera edytora slajdów. Pliki slajdów nadal są w swoim folderze.',
   openFailed: (reason) => `Nie udało się otworzyć slajdów: ${reason}`,
   open: 'Otwórz slajdy',
   openCard: (name) => `Otwórz slajdy „${name}”`,

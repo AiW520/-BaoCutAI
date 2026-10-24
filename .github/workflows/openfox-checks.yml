@@ -1,0 +1,32 @@
+name: OpenFox brand checks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - name: Check installer identity and localized web copy
+        run: npx vitest run apps/desktop/src/main/app-update-rules.test.ts apps/desktop/src/main/app-update-install.test.ts apps/web/src/web-host-copy.test.ts
+      - name: Build local download page
+        run: npm run build:download
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: openfox-download-page
+          path: apps/portal/dist-openfox
+          if-no-files-found: error
+          retention-days: 30

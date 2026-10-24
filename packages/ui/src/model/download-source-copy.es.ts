@@ -19,7 +19,7 @@ export const es: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Descarga desde el espejo en ${base}.`,
   msNote: "Los pocos archivos que ModelScope no tiene (whisper.cpp) se siguen descargando de Hugging Face. Cada archivo se comprueba con su suma de verificación integrada.",
   envNote: (name: string) => `Si la variable de entorno ${name} está definida, se usa esa.`,
-  webNote: "Un navegador no puede cambiar los orígenes de descarga. Configúralos en la app de escritorio de BaoCut.",
+  webNote: "Un navegador no puede cambiar los orígenes de descarga. Configúralos en la app de escritorio de OpenFox.",
   lead:
     "Puedes guardar varios orígenes y elegir uno de cada tipo para usarlo. El cuadro de descarga también permite cambiarlo, y eso cambia la elección aquí. Cada archivo se comprueba con su suma de verificación integrada, venga de donde venga.",
   editAria: (name: string) => `Editar «${name}»`,

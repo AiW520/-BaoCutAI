@@ -5,8 +5,8 @@ export const ptBR: LegacyImportMessages = {
   title: 'Importar projetos de uma versão anterior?',
   lead: (n) =>
     pluralForm('pt-BR', n, {
-      one: `Há ${n} projeto de uma versão anterior do BaoCut neste computador. Importe-o para continuar editando nesta versão. Os arquivos originais ficam onde estão, sem alterações.`,
-      other: `Há ${n} projetos de uma versão anterior do BaoCut neste computador. Importe-os para continuar editando nesta versão. Os arquivos originais ficam onde estão, sem alterações.`,
+      one: `Há ${n} projeto de uma versão anterior do OpenFox neste computador. Importe-o para continuar editando nesta versão. Os arquivos originais ficam onde estão, sem alterações.`,
+      other: `Há ${n} projetos de uma versão anterior do OpenFox neste computador. Importe-os para continuar editando nesta versão. Os arquivos originais ficam onde estão, sem alterações.`,
     }),
   found: 'Projetos encontrados',
   destination: 'Importar para',
@@ -14,7 +14,7 @@ export const ptBR: LegacyImportMessages = {
   change: 'Alterar…',
   pickTitle: 'Escolha onde importar',
   destinationNote: 'Esta pasta aparece como um projeto em Home, e cada projeto anterior vira um vídeo dentro dela.',
-  hint: 'Se pular, você será perguntado de novo na próxima vez que o BaoCut iniciar. Marque “Não lembrar novamente” para nunca importá-los.',
+  hint: 'Se pular, você será perguntado de novo na próxima vez que o OpenFox iniciar. Marque “Não lembrar novamente” para nunca importá-los.',
   never: 'Não lembrar novamente',
   skip: 'Pular',
   import: 'Importar',
@@ -24,7 +24,7 @@ export const ptBR: LegacyImportMessages = {
       other: `Importando ${n} projetos anteriores em segundo plano`,
     }),
   neverDone: 'Você não será mais lembrado de importar projetos anteriores. Os arquivos originais ficam como estão.',
-  skipped: 'Pulado. Você será perguntado de novo na próxima vez que o BaoCut iniciar.',
+  skipped: 'Pulado. Você será perguntado de novo na próxima vez que o OpenFox iniciar.',
   failed: (message) => `Não foi possível importar: ${message}`,
   settingsTitle: "Recuperação de configurações de uma versão anterior",
   settingsLeadAdopted: "A pasta de modelos anterior foi adotada durante a atualização. A instalação verifica os arquivos existentes com o manifesto atual e baixa apenas os ausentes ou danificados.",

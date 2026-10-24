@@ -56,14 +56,14 @@ export const ja: AgentCardMessages = {
   nowDefault: (name: string) => `新しいセッションで ${name} を使うようになりました`,
   version: (version: string | null) => (version ? `バージョン · v${version}` : 'バージョン'),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `${latest} にアップグレードできます。` : ''}${min ? `BaoCut には ${min} 以上が必要です。` : ''}アップグレードで更新されるのはこのコマンドラインツールだけです。アカウントとツール自体の設定はそのまま残ります。${source}`,
+    `${latest ? `${latest} にアップグレードできます。` : ''}${min ? `OpenFox には ${min} 以上が必要です。` : ''}アップグレードで更新されるのはこのコマンドラインツールだけです。アカウントとツール自体の設定はそのまま残ります。${source}`,
   account: 'アカウント',
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? '未サインイン、またはサインインの有効期限切れです' : (account ?? 'サインイン済み')}。ご自身の ${plan} を使うため、BaoCut の追加料金はかかりません。サインインはターミナルで行います。`,
+    `${signedOut ? '未サインイン、またはサインインの有効期限切れです' : (account ?? 'サインイン済み')}。ご自身の ${plan} を使うため、OpenFox の追加料金はかかりません。サインインはターミナルで行います。`,
   loginInTerminal: 'ターミナルを開いてサインイン',
   switchAccount: 'アカウントを切り替え…',
   location: 'インストール場所',
-  locationDesc: 'BaoCut はこのコンピュータにあるこのプログラムを直接呼び出し、別のコピーをインストールすることはありません。',
+  locationDesc: 'OpenFox はこのコンピュータにあるこのプログラムを直接呼び出し、別のコピーをインストールすることはありません。',
   realLocation: '実際の場所',
   setLocation: '場所を手動で指定',
   troubleshoot: 'トラブルシューティング',
@@ -75,7 +75,7 @@ export const ja: AgentCardMessages = {
     `このコピーは「${label}」でインストールされているため、同じ方法でアップグレードしてください。ほかの方法ではこのコピーは更新されず、別のコピーがインストールされるだけです。`,
   sourceUnknown: 'インストールしたときと同じ方法でアップグレードしてください。',
   scriptInstall:
-    'このコマンドは公式サイトからスクリプトをダウンロードして実行します。BaoCut はインターネット上のスクリプトを代わりに実行しません。コピーしてご自身でターミナルで実行してください。',
+    'このコマンドは公式サイトからスクリプトをダウンロードして実行します。OpenFox はインターネット上のスクリプトを代わりに実行しません。コピーしてご自身でターミナルで実行してください。',
   scriptUpgrade: 'このコマンドは公式サイトからスクリプトをダウンロードして実行します。コピーしてご自身でターミナルで実行してください。',
   copyUpgrade: 'このコマンドをコピーしてターミナルで実行し、完了したらここに戻って再確認してください。',
   runnableHint: 'コマンドの左の ▶ をクリックするとここで実行でき、出力は下に表示されます。コピーしてご自身でターミナルで実行することもできます。',
@@ -85,20 +85,20 @@ export const ja: AgentCardMessages = {
   needs: (needs: string) => `このコンピュータに ${needs} が必要です。`,
 
   installIntro: (name: string, plan: string) =>
-    `${name} はご自身のコンピュータにインストールするコマンドライン型の AI アシスタントで、お持ちの ${plan} でサインインします。BaoCut は呼び出すだけなので、追加料金はかからず、BaoCut に API キーを入力する必要もありません。`,
+    `${name} はご自身のコンピュータにインストールするコマンドライン型の AI アシスタントで、お持ちの ${plan} でサインインします。OpenFox は呼び出すだけなので、追加料金はかからず、OpenFox に API キーを入力する必要もありません。`,
   stepInstall: 'このコンピュータにインストール',
   stepInstallOfficial: '公式の手順に従ってこのコンピュータにインストール',
   installOfficialBody: (command: ReactNode): ReactNode =>
     createElement(Fragment, null, '公式の手順に従ってインストールしてください。インストール後、ターミナルで ', command, ' を実行できるようになります。'),
   stepLogin: 'アカウントにサインイン',
   stepLoginBody:
-    'インストール後、ターミナルで下のコマンドを実行し、表示に従ってブラウザでサインインしてください。サインインは専用のウインドウで行われ、BaoCut がアカウントやパスワードを扱うことはありません。',
+    'インストール後、ターミナルで下のコマンドを実行し、表示に従ってブラウザでサインインしてください。サインインは専用のウインドウで行われ、OpenFox がアカウントやパスワードを扱うことはありません。',
   stepBack: 'ここに戻る',
   stepBackBody: 'インストールとサインインが検出されれば使えるようになります。',
   detecting: '確認中…',
   recheck: 'インストールしたので再確認',
   notDetected: 'インストールしたのに検出されませんか？',
   notDetectedBody:
-    'BaoCut は PATH と一般的なインストール場所（Homebrew、npm のグローバルフォルダ、~/.local/bin）を探します。バージョンマネージャ（nvm、asdf、mise）でインストールしたものは別の場所にあることがあるため、手動で BaoCut に場所を指定できます。',
+    'OpenFox は PATH と一般的なインストール場所（Homebrew、npm のグローバルフォルダ、~/.local/bin）を探します。バージョンマネージャ（nvm、asdf、mise）でインストールしたものは別の場所にあることがあるため、手動で OpenFox に場所を指定できます。',
   diagnosisOf: (name: string) => `${name} のチェック結果`,
 };

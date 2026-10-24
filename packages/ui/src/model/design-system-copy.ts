@@ -28,10 +28,10 @@ const en = {
   opening: 'Opening design system…',
   /** 这台机器没有构建编辑器（`designSystem.open` 的 `editorAvailable` 为 false）。 */
   unavailableTitle: 'Design system editor unavailable',
-  unavailableBody: 'This build of BaoCut doesn’t include the design system editor. The design system files are still in their folder.',
+  unavailableBody: 'This build of OpenFox doesn’t include the design system editor. The design system files are still in their folder.',
   /** Web 端的页面不在 127.0.0.1 或 localhost 上，换不到另一个回环主机名（§10.4）。 */
   hostBlockedTitle: 'Design system editor unavailable at this address',
-  hostBlockedBody: 'Open BaoCut Web at 127.0.0.1 or localhost to edit design systems. The design system files are still in their folder.',
+  hostBlockedBody: 'Open OpenFox Web at 127.0.0.1 or localhost to edit design systems. The design system files are still in their folder.',
   openFailed: (reason: string) => `Couldn’t open the design system: ${reason}`,
   /** Space 的条目菜单与查看框里的按钮。 */
   open: 'Open design system',

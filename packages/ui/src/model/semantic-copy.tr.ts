@@ -205,8 +205,8 @@ export const tr: SemanticMessages = {
   },
   scope: {
     group: 'Dizin kapsamı',
-    lead: 'Tüm BaoCut projelerindeki videolar söylenene ve ekranda görünene göre dizinlenir; sesler sonraki bir sürümde gelecek. Dizinlenmesini istemediğiniz projeleri hariç tutabilirsiniz. Dışa aktarılan videolar ayrıca dizinlenmez: arama, dışa aktarıldıkları videoyu bulur.',
-    all: 'Tüm BaoCut projeleri',
+    lead: 'Tüm OpenFox projelerindeki videolar söylenene ve ekranda görünene göre dizinlenir; sesler sonraki bir sürümde gelecek. Dizinlenmesini istemediğiniz projeleri hariç tutabilirsiniz. Dışa aktarılan videolar ayrıca dizinlenmez: arama, dışa aktarıldıkları videoyu bulur.',
+    all: 'Tüm OpenFox projeleri',
     allLine: (projects, excluded) => `${projects} proje${excluded ? `, ${excluded} hariç` : ''} · yeni projeler otomatik eklenir`,
     outside: 'Projeler dışındaki videolar da dizinlenir.',
     excludedGroup: 'Hariç tutulan projeler',
@@ -266,13 +266,13 @@ export const tr: SemanticMessages = {
     reindexDesc: 'Yeniden tarar ve dizinini baştan oluşturur',
     remove: 'Kaldır',
     removeDesc: 'Dizinini siler; dosyalar kalır',
-    videos: (n) => `${n} BaoCut videosu`,
+    videos: (n) => `${n} OpenFox videosu`,
     videoFiles: (n) => `${n} video dosyası`,
     images: (n) => `${n} görsel`,
     nothing: 'Henüz video veya görsel bulunamadı',
     exportsSkipped: (n) => `${n} dışa aktarım atlandı`,
     duplicates: (n) => `${n} tanesi zaten projelerde`,
-    legacy: (n) => `${n} eski BaoCut videosu okunmadı`,
+    legacy: (n) => `${n} eski OpenFox videosu okunmadı`,
     listSeparator: ', ',
     separator: ' · ',
     missing: 'Bu klasör bulunamıyor',
@@ -281,21 +281,21 @@ export const tr: SemanticMessages = {
     truncatedNoteNoLimit: 'Çok fazla dosya var: yalnızca ilk dosyalar tarandı. Bunun yerine bir alt klasör ekleyin.',
     unreadableNote: 'Bu klasör okunamıyor. İzinlerini kontrol edin.',
     legacyNote:
-      'Eski BaoCut videoları okunmadan önce yükseltilmelidir ve yükseltme onları değiştirir; bu yüzden burada okunmazlar. Birini bir projeye taşıyıp yükseltmek için BaoCut’ta bir kez açın.',
+      'Eski OpenFox videoları okunmadan önce yükseltilmelidir ve yükseltme onları değiştirir; bu yüzden burada okunmazlar. Birini bir projeye taşıyıp yükseltmek için OpenFox’ta bir kez açın.',
     visualReady: 'Görüntüler hazır',
     visualProgress: (done, total) => `Görüntüler: ${total} içinden ${done} tamamlandı`,
-    textOnly: 'İçindeki BaoCut videoları söylenene göre dizinlenir',
+    textOnly: 'İçindeki OpenFox videoları söylenene göre dizinlenir',
     visualOff: 'Görüntü dizini kapalı, bu yüzden video dosyaları ve görseller henüz dizinlenmedi',
     addTitle: 'Dizin klasörü ekle',
     addBody:
-      'Projelerinizin dışındaki videolar da anlamlarına göre bulunabilir. BaoCut bu klasörü yalnızca okur: içindeki hiçbir şeyi değiştirmez, taşımaz veya silmez. İçindeki videolar ve görseller, kaynak olarak bu klasörle Space’te görünür.',
+      'Projelerinizin dışındaki videolar da anlamlarına göre bulunabilir. OpenFox bu klasörü yalnızca okur: içindeki hiçbir şeyi değiştirmez, taşımaz veya silmez. İçindeki videolar ve görseller, kaynak olarak bu klasörle Space’te görünür.',
     addWhat: (visual) =>
       visual
-        ? 'BaoCut videoları söylenene ve görüntüye göre, diğer video dosyaları ve görseller görüntüye göre dizinlenir. BaoCut’ın kaydettiği dışa aktarımlar atlanır; projede de bulunan videolar projedeki kopyayı kullanır.'
-        : 'BaoCut videoları söylenene göre dizinlenir; diğer video dosyaları ve görseller için görüntü dizini gerekir. BaoCut’ın kaydettiği dışa aktarımlar atlanır; projede de bulunan videolar projedeki kopyayı kullanır.',
+        ? 'OpenFox videoları söylenene ve görüntüye göre, diğer video dosyaları ve görseller görüntüye göre dizinlenir. OpenFox’ın kaydettiği dışa aktarımlar atlanır; projede de bulunan videolar projedeki kopyayı kullanır.'
+        : 'OpenFox videoları söylenene göre dizinlenir; diğer video dosyaları ve görseller için görüntü dizini gerekir. OpenFox’ın kaydettiği dışa aktarımlar atlanır; projede de bulunan videolar projedeki kopyayı kullanır.',
     visualOffTitle: 'Video dosyaları ve görseller görüntüye göre dizinlenir',
     visualOffBody:
-      'Dökümleri olmadığından yalnızca ekranda görünene göre bulunabilirler. Görüntü dizini açılınca dizinlenirler; o zamana kadar yalnızca bu klasördeki BaoCut videoları dizinlenir.',
+      'Dökümleri olmadığından yalnızca ekranda görünene göre bulunabilirler. Görüntü dizini açılınca dizinlenirler; o zamana kadar yalnızca bu klasördeki OpenFox videoları dizinlenir.',
     confirmAdd: 'Ekle',
     addedToast: (name) => `“${name}” eklendi. Tarama ve dizinleme arka planda sürüyor.`,
     reindexedToast: (name) => `“${name}” yeniden taranıyor ve dizini baştan oluşturuluyor`,

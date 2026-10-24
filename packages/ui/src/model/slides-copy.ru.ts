@@ -8,7 +8,7 @@ export const ru: SlidesMessages = {
   frameTitle: (name) => `Редактор слайдов: ${name}`,
   opening: 'Открытие слайдов…',
   unavailableTitle: 'Редактор слайдов недоступен',
-  unavailableBody: 'Эта сборка BaoCut не содержит редактор слайдов. Файлы слайдов остаются в своей папке.',
+  unavailableBody: 'Эта сборка OpenFox не содержит редактор слайдов. Файлы слайдов остаются в своей папке.',
   openFailed: (reason) => `Не удалось открыть слайды: ${reason}`,
   open: 'Открыть слайды',
   openCard: (name) => `Открыть слайды «${name}»`,

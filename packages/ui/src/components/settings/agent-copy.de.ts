@@ -10,20 +10,20 @@ export const de: AgentMessages = {
   factsLabel: "So arbeiten Agenten",
 
   permissionsTitle: "Agentenberechtigungen",
-  lede: "Ein Agent ist ein auf Ihrem Computer installierter KI-Coding-Assistent wie Claude Code oder Codex. BaoCut ruft ihn direkt auf; ein Satz kann Transkription, Übersetzung und Bearbeitung auslösen.",
+  lede: "Ein Agent ist ein auf Ihrem Computer installierter KI-Coding-Assistent wie Claude Code oder Codex. OpenFox ruft ihn direkt auf; ein Satz kann Transkription, Übersetzung und Bearbeitung auslösen.",
 
   facts: [
-    { key: 'cli', title: "Verwendet Vorhandenes", body: "BaoCut ruft den CLI-Agenten dieses Computers auf, statt einen eigenen zu installieren." },
-    { key: 'plan', title: "Verwendet Ihr Abonnement", body: "Keine zusätzliche Zahlung an BaoCut und kein API-Schlüssel nötig." },
+    { key: 'cli', title: "Verwendet Vorhandenes", body: "OpenFox ruft den CLI-Agenten dieses Computers auf, statt einen eigenen zu installieren." },
+    { key: 'plan', title: "Verwendet Ihr Abonnement", body: "Keine zusätzliche Zahlung an OpenFox und kein API-Schlüssel nötig." },
     { key: 'ask', title: "Fragt vor Änderungen", body: "Vor dem Schreiben in ein Video wartet er auf Ihre Zustimmung; jederzeit rückgängig zu machen." },
   ] as readonly { key: 'cli' | 'plan' | 'ask'; title: string; body: string }[],
 
   providersHeading: "Agenten auf diesem Computer",
   providersHint:
-    "BaoCut findet installierte Agenten. Ein funktionierender Agent reicht; nicht alle sind nötig. Bei Unsicherheit Claude Code oder Codex wählen. Integrierte Agenten lassen sich nur deaktivieren, selbst hinzugefügte entfernen.",
+    "OpenFox findet installierte Agenten. Ein funktionierender Agent reicht; nicht alle sind nötig. Bei Unsicherheit Claude Code oder Codex wählen. Integrierte Agenten lassen sich nur deaktivieren, selbst hinzugefügte entfernen.",
 
   providersMeta: (checked: string | null, builtin: number, added: number, found: number) =>
-    `${checked ? `Geprüft: ${checked} · ` : ""}BaoCut enthält ${builtin} integrierte ${pluralForm('de', builtin, { one: "Agent", other: "Agenten" })}${added ? `, selbst hinzugefügt: ${added}` : ""}; ${found} auf diesem Computer erkannt`,
+    `${checked ? `Geprüft: ${checked} · ` : ""}OpenFox enthält ${builtin} integrierte ${pluralForm('de', builtin, { one: "Agent", other: "Agenten" })}${added ? `, selbst hinzugefügt: ${added}` : ""}; ${found} auf diesem Computer erkannt`,
 
   statusLabel: "Agentenstatus",
   scanDone: (n: number) => (n ? `Prüfung abgeschlossen · ${n} ${pluralForm('de', n, { one: "Agent", other: "Agenten" })} auf diesem Computer` : "Prüfung abgeschlossen · keine installierten Agenten gefunden"),
@@ -49,17 +49,17 @@ export const de: AgentMessages = {
 
 
   fullAccessOnly:
-    "Kann nicht schrittweise um Genehmigung bitten; BaoCut führt ihn nur mit Vollzugriff aus. Vor Befehlen oder Dateiänderungen wird nicht nachgefragt.",
+    "Kann nicht schrittweise um Genehmigung bitten; OpenFox führt ihn nur mit Vollzugriff aus. Vor Befehlen oder Dateiänderungen wird nicht nachgefragt.",
 
 
   untested: {
-    body: "Hat noch keine vollständige BaoCut-Sitzung auf einem echten Computer durchlaufen. Erkennung, Anmeldung und Modellliste funktionieren normal; bei Sitzungsproblemen die eigene Dokumentation beachten.",
+    body: "Hat noch keine vollständige OpenFox-Sitzung auf einem echten Computer durchlaufen. Erkennung, Anmeldung und Modellliste funktionieren normal; bei Sitzungsproblemen die eigene Dokumentation beachten.",
   },
 
 
   catalog: {
     heading: "Weitere Agenten hinzufügen",
-    hint: "Auch andere CLI-Agenten mit ACP-Unterstützung (Agent Client Protocol) können hinzugefügt werden. BaoCut hat sie nicht einzeln geprüft; die Nutzbarkeit hängt vom Prüfergebnis ab.",
+    hint: "Auch andere CLI-Agenten mit ACP-Unterstützung (Agent Client Protocol) können hinzugefügt werden. OpenFox hat sie nicht einzeln geprüft; die Nutzbarkeit hängt vom Prüfergebnis ab.",
     custom: "Benutzerdefinierter Befehl…",
     search: "Agenten zum Hinzufügen suchen",
     searchPlaceholder: "Nach Name, Beschreibung oder Befehl suchen",
@@ -73,13 +73,13 @@ export const de: AgentMessages = {
     landed: (name: string, custom: boolean) => `Hinzugefügt: ${name}${custom ? " (benutzerdefinierter Befehl)" : ""} · nach Erkennung in Sitzungen verwendbar`,
     addFailed: (message: string) => `Hinzufügen fehlgeschlagen: ${message}`,
     webNote:
-      "Agenten können im Browser nicht hinzugefügt oder entfernt werden, da dies die ausgeführten Befehle auf diesem Computer festlegt. BaoCut-Desktop-App verwenden.",
+      "Agenten können im Browser nicht hinzugefügt oder entfernt werden, da dies die ausgeführten Befehle auf diesem Computer festlegt. OpenFox-Desktop-App verwenden.",
   },
 
 
   customDialog: {
     title: "Agenten mit benutzerdefiniertem Befehl hinzufügen",
-    lede: "Den Terminalbefehl zum Starten im ACP-Modus eingeben. BaoCut startet das Programm direkt, ohne Terminal.",
+    lede: "Den Terminalbefehl zum Starten im ACP-Modus eingeben. OpenFox startet das Programm direkt, ohne Terminal.",
     name: "Name",
     namePlaceholder: "z. B. Mein Agent",
     id: 'id',
@@ -91,8 +91,8 @@ export const de: AgentMessages = {
     commandParts: (exe: string, args: string[]) => `Startet als: Programm ${exe}, Argumente ${args.join(" · ")}`,
     env: "Umgebungsvariablen (optional)",
     envPlaceholder: "MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\\nMY_AGENT_LOG=0",
-    envHint: "Eine Zeile KEY=VALUE; nur beim Start durch BaoCut hinzugefügt.",
-    note: "Nach dem Hinzufügen prüft BaoCut Start, Anmeldebedarf und Modelle. Nach Erkennung erscheint der Agent in Sitzungen.",
+    envHint: "Eine Zeile KEY=VALUE; nur beim Start durch OpenFox hinzugefügt.",
+    note: "Nach dem Hinzufügen prüft OpenFox Start, Anmeldebedarf und Modelle. Nach Erkennung erscheint der Agent in Sitzungen.",
     cancel: "Abbrechen",
     submit: "Hinzufügen",
     exists: (id: string) => `Ein Agent verwendet bereits „${id}“. Andere ID wählen.`,
@@ -108,29 +108,29 @@ export const de: AgentMessages = {
     subLauncher: (launcher: string, needs: string) => `Noch nicht geprüft · ${launcher} lädt beim Start herunter; benötigt ${needs}`,
     subMissing: (command: string) => `Noch nicht geprüft · ${command} nicht auf diesem Computer gefunden`,
     note: (name: string) =>
-      `${name} verbindet über ACP (Agent Client Protocol). Nicht von BaoCut geprüft; Installation und Kontowahl nach eigener Dokumentation.`,
+      `${name} verbindet über ACP (Agent Client Protocol). Nicht von OpenFox geprüft; Installation und Kontowahl nach eigener Dokumentation.`,
     noInstall: "Keine separate Installation nötig",
     noInstallBody: (launcher: string, spec: string, needs: string) =>
-      `Beim Start durch BaoCut lädt ${launcher} herunter: ${spec} automatisch. Benötigt ${needs} auf diesem Computer.`,
+      `Beim Start durch OpenFox lädt ${launcher} herunter: ${spec} automatisch. Benötigt ${needs} auf diesem Computer.`,
     install: "Nach offizieller Anleitung auf diesem Computer installieren",
     installBody: (command: string) => `Nach Installation muss ${command} im Terminal ausführbar sein.`,
     docs: "Offizielle Anleitung öffnen",
-    launch: "BaoCut startet mit diesem Befehl",
+    launch: "OpenFox startet mit diesem Befehl",
     launchCopy: "Startbefehl",
     envNote: (keys: string[]) => `Fügt beim Start folgende Umgebungsvariablen hinzu: ${keys.join(", ")} (Werte werden hier nicht gezeigt).`,
     login: "Bei Anmeldebedarf über den Agenten anmelden",
-    loginBody: "Den Anweisungen im Terminal folgen. Anmeldung erfolgt im eigenen Fenster; BaoCut verarbeitet weder Konto noch Passwort.",
+    loginBody: "Den Anweisungen im Terminal folgen. Anmeldung erfolgt im eigenen Fenster; OpenFox verarbeitet weder Konto noch Passwort.",
     detectStep: "Prüfen",
-    detectBody: "BaoCut startet einmal, um Verbindung, Anmeldebedarf und Modellliste zu prüfen.",
+    detectBody: "OpenFox startet einmal, um Verbindung, Anmeldebedarf und Modellliste zu prüfen.",
     launchRow: "Startbefehl",
-    launchRowHint: "BaoCut startet mit diesem Befehl über ACP (Agent Client Protocol).",
+    launchRowHint: "OpenFox startet mit diesem Befehl über ACP (Agent Client Protocol).",
     versionPinned: (spec: string) => `Der Startbefehl legt diese Version fest: ${spec}. Zum Versionswechsel entfernen und mit benutzerdefiniertem Befehl erneut hinzufügen.`,
     versionOwn: "Nach eigener Anleitung aktualisieren, dann hier erneut prüfen.",
     account: (name: string, signedOut: boolean) =>
-      `${signedOut ? "Nicht angemeldet oder Anmeldung abgelaufen. " : ""}Anmeldung und Abrechnung erfolgen bei ${name}; BaoCut verarbeitet Ihr Konto nicht und berechnet nichts zusätzlich.`,
+      `${signedOut ? "Nicht angemeldet oder Anmeldung abgelaufen. " : ""}Anmeldung und Abrechnung erfolgen bei ${name}; OpenFox verarbeitet Ihr Konto nicht und berechnet nichts zusätzlich.`,
     removeTitle: (name: string) => `Entfernen: ${name}?`,
     removeBody: (name: string) =>
-      `${name} wird aus BaoCuts Agentenliste samt Aktivierung und Standardmodell entfernt. Neue Sitzungen mit diesem Standard verwenden einen anderen verfügbaren Agenten. Laufende Aufgaben damit werden beendet. Das installierte Programm bleibt unverändert und kann später wieder hinzugefügt werden.`,
+      `${name} wird aus OpenFoxs Agentenliste samt Aktivierung und Standardmodell entfernt. Neue Sitzungen mit diesem Standard verwenden einen anderen verfügbaren Agenten. Laufende Aufgaben damit werden beendet. Das installierte Programm bleibt unverändert und kann später wieder hinzugefügt werden.`,
     removed: (name: string) => `Entfernt: ${name}`,
     removeFailed: (message: string) => `Entfernen fehlgeschlagen: ${message}`,
   },
@@ -159,13 +159,13 @@ export const de: AgentMessages = {
   faq: [
     {
       key: 'cost',
-      title: "Muss ich BaoCut separat bezahlen oder abonnieren?",
-      body: "Nein. Agenten verwenden vorhandene Claude- oder ChatGPT-Abonnements; Kosten und Kontingent werden dort gezählt. BaoCut liefert kein eigenes Modell, sammelt keine Schlüssel und leitet nichts über die Cloud weiter. Ohne entsprechendes Abonnement sind Agenten optional; der Rest von BaoCut funktioniert normal.",
+      title: "Muss ich OpenFox separat bezahlen oder abonnieren?",
+      body: "Nein. Agenten verwenden vorhandene Claude- oder ChatGPT-Abonnements; Kosten und Kontingent werden dort gezählt. OpenFox liefert kein eigenes Modell, sammelt keine Schlüssel und leitet nichts über die Cloud weiter. Ohne entsprechendes Abonnement sind Agenten optional; der Rest von OpenFox funktioniert normal.",
     },
     {
       key: 'account',
-      title: "Kann BaoCut Konto und Passwort sehen?",
-      body: "Nein. Anmeldung erfolgt im Agentenfenster. BaoCut startet nur das Programm auf Ihrem Computer und übergibt das Video. Vor Videoänderungen wird gefragt; Regeln unter Einstellungen › Datenschutz und Berechtigungen.",
+      title: "Kann OpenFox Konto und Passwort sehen?",
+      body: "Nein. Anmeldung erfolgt im Agentenfenster. OpenFox startet nur das Programm auf Ihrem Computer und übergibt das Video. Vor Videoänderungen wird gefragt; Regeln unter Einstellungen › Datenschutz und Berechtigungen.",
     },
     {
       key: 'cloud',
@@ -175,8 +175,8 @@ export const de: AgentMessages = {
     },
     {
       key: 'terminal',
-      title: "BaoCut mit diesen Agenten im Terminal steuern?",
-      body: "Sitzungen in BaoCut benötigen keine Einrichtung. Für Terminal oder andere Apps den BaoCut-Skill installieren; siehe unten auf der Seite Skills.",
+      title: "OpenFox mit diesen Agenten im Terminal steuern?",
+      body: "Sitzungen in OpenFox benötigen keine Einrichtung. Für Terminal oder andere Apps den OpenFox-Skill installieren; siehe unten auf der Seite Skills.",
       link: "Skills",
     },
   ] as readonly { key: string; title: string; body: string; link?: 'models' | 'skills' }[],
@@ -207,7 +207,7 @@ export const de: AgentMessages = {
     desc: "Beim Start und während des Betriebs regelmäßig die Modellliste jedes aktivierten Agenten aktualisieren. Bei ausgeschalteter Option in dessen Details manuell abrufbar.",
   },
   executableHint:
-    "BaoCut sucht in PATH und üblichen Installationsorten (Homebrew, globaler npm-Ordner, ~/.local/bin). Versionsmanager (nvm, asdf, mise) installieren manchmal anderswo; hier den vollständigen Programmpfad eingeben. Leer lassen für automatische Suche.",
+    "OpenFox sucht in PATH und üblichen Installationsorten (Homebrew, globaler npm-Ordner, ~/.local/bin). Versionsmanager (nvm, asdf, mise) installieren manchmal anderswo; hier den vollständigen Programmpfad eingeben. Leer lassen für automatische Suche.",
   techPanel: "Technische Informationen und Speicherorte",
   techTitle: "Technische Agenteninformationen",
   techSubtitle: "Versionen, Pfade und verfügbare Modelle",
@@ -242,7 +242,7 @@ export const de: AgentMessages = {
     confirmUpgrade: (name: string) => `Aktualisierungsbefehl ausführen für ${name}?`,
     confirmRun: "Ausführen",
     cancel: "Abbrechen",
-    confirmBefore: "BaoCut führt den folgenden Befehl auf diesem Computer aus. Ausgabe erscheint darunter; jederzeit stoppbar.",
+    confirmBefore: "OpenFox führt den folgenden Befehl auf diesem Computer aus. Ausgabe erscheint darunter; jederzeit stoppbar.",
     confirmAfter: "Befehle mit Passwortbedarf schlagen hier fehl; im Terminal ausführen.",
     restored: (name: string) => `${name} verwendet wieder die automatische Suche`,
     switched: (path: string) => `Verwendet jetzt ${path}`,
@@ -257,7 +257,7 @@ export const de: AgentMessages = {
   },
 
   skills: {
-    lede: "Ein Skill ist ein Ordner (SKILL.md und optionale Referenzdateien), der BaoCuts Agenten eine Arbeitsweise vermittelt. Eingeschaltet wird er bei passenden Aufgaben automatisch verwendet; ausgeschaltet nur nach Auswahl über „+“ im Eingabefeld. Ein-/Ausschalten, Hinzufügen und Entfernen werden ab der nächsten neuen Agentensitzung wirksam.",
+    lede: "Ein Skill ist ein Ordner (SKILL.md und optionale Referenzdateien), der OpenFoxs Agenten eine Arbeitsweise vermittelt. Eingeschaltet wird er bei passenden Aufgaben automatisch verwendet; ausgeschaltet nur nach Auswahl über „+“ im Eingabefeld. Ein-/Ausschalten, Hinzufügen und Entfernen werden ab der nächsten neuen Agentensitzung wirksam.",
     search: "Skills suchen",
     filter: "Nach Quelle filtern",
     tab: (label: string, count: number) => `${label} ${count}`,
@@ -268,15 +268,15 @@ export const de: AgentMessages = {
     loading: "Skills werden geladen…",
     loadFailed: (message: string) => `Skills konnten nicht geladen werden: ${message}`,
     retry: "Erneut versuchen",
-    disconnected: "Nicht mit BaoCut Runtime verbunden. Skills erscheinen nach Verbindung.",
+    disconnected: "Nicht mit OpenFox Runtime verbunden. Skills erscheinen nach Verbindung.",
     emptyTitle: "Noch keine Skills",
     emptyBody:
       "Noch keine Skills verfügbar. Einen eigenen Skill-Ordner hinzufügen oder einen geteilten Skill von GitHub importieren. Drittanbieter-Skills sind nach Import ausgeschaltet; vor dem Einschalten prüfen.",
-    emptyWeb: "Noch keine Skills verfügbar. Im Browser nur anzeigen und umschalten; in der BaoCut-Desktop-App hinzufügen und importieren.",
+    emptyWeb: "Noch keine Skills verfügbar. Im Browser nur anzeigen und umschalten; in der OpenFox-Desktop-App hinzufügen und importieren.",
     noMatch: (query: string) => `Keine Skills gefunden für „${query}“`,
     noMatchHint: "Anderen Begriff versuchen oder „Alle“ auswählen.",
     noneInTab: (label: string) => `Nicht vorhanden: ${label} Skills verfügbar`,
-    webNote: "Im Browser Skills anzeigen und umschalten; in der BaoCut-Desktop-App hinzufügen, importieren und entfernen.",
+    webNote: "Im Browser Skills anzeigen und umschalten; in der OpenFox-Desktop-App hinzufügen, importieren und entfernen.",
     view: (name: string) => `Anzeigen: ${name}`,
     enable: (name: string) => `Aktivieren: ${name}`,
     toggledOn: (name: string) => `Eingeschaltet: „${name}“: ab der nächsten neuen Sitzung automatisch vom Agenten bei passenden Aufgaben verwendet`,
@@ -289,9 +289,9 @@ export const de: AgentMessages = {
     diagnosticCode: { invalid: "Ungültiges Format", 'duplicate-id': "Doppelter Name", 'builtin-conflict': "Name eines integrierten Skills" } as Record<string, string>,
 
     diagnosticLine: (dir: string, reason: string, issue: string) => `${dir} · ${reason}: ${issue}`,
-    externalTitle: "BaoCut über Agenten im Terminal oder anderen Apps verwenden",
+    externalTitle: "OpenFox über Agenten im Terminal oder anderen Apps verwenden",
     externalBody:
-      "Obige Skills sind für Agenten innerhalb von BaoCut. Für Transkription, Übersetzung, Bearbeitung und Export im Terminal den BaoCut-Skill für Claude Code oder Codex installieren. Installation in deren globale Ordner mit einem Klick sowie Installations- und Aktualisierungsanzeige folgen in einer späteren Version.",
+      "Obige Skills sind für Agenten innerhalb von OpenFox. Für Transkription, Übersetzung, Bearbeitung und Export im Terminal den OpenFox-Skill für Claude Code oder Codex installieren. Installation in deren globale Ordner mit einem Klick sowie Installations- und Aktualisierungsanzeige folgen in einer späteren Version.",
   },
 
   skillDetail: {
@@ -299,7 +299,7 @@ export const de: AgentMessages = {
     stateOn: "Ein: automatische Verwendung durch den Agenten bei passenden Aufgaben.",
     stateOff: "Aus: nur nach Auswahl über „+“ im Eingabefeld verwendet.",
     thirdPartyNote:
-      "Drittanbieter-Skills stammen aus geteilten Repositorys; vor Aktivierung prüfen. BaoCut führt keine Skill-Dateien aus, und Skills erweitern keine Agentenberechtigungen.",
+      "Drittanbieter-Skills stammen aus geteilten Repositorys; vor Aktivierung prüfen. OpenFox führt keine Skill-Dateien aus, und Skills erweitern keine Agentenberechtigungen.",
     source: "Quelle",
     location: "Speicherort",
     version: "Version",

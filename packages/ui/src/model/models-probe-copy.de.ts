@@ -3,7 +3,7 @@ import type { ModelsProbeMessages } from './models-probe-copy.ts';
 
 export const de: ModelsProbeMessages = {
 
-  speechText: "Hallo, dies ist ein BaoCut-Sprachsynthesetest.",
+  speechText: "Hallo, dies ist ein OpenFox-Sprachsynthesetest.",
   noResult: "Aufgabe abgeschlossen, aber kein Ergebnis zurückgegeben.",
   failed: "Aufgabe fehlgeschlagen.",
   cancelled: "Aufgabe abgebrochen.",

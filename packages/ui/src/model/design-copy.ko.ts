@@ -8,9 +8,9 @@ export const ko: DesignMessages = {
   frameTitle: (name) => `디자인 편집기: ${name}`,
   opening: '디자인 여는 중…',
   unavailableTitle: '디자인 편집기를 사용할 수 없음',
-  unavailableBody: '이 BaoCut 빌드에는 디자인 편집기가 포함되어 있지 않습니다. 디자인 파일은 폴더에 그대로 있습니다.',
+  unavailableBody: '이 OpenFox 빌드에는 디자인 편집기가 포함되어 있지 않습니다. 디자인 파일은 폴더에 그대로 있습니다.',
   hostBlockedTitle: '이 주소에서는 디자인 편집기를 열 수 없음',
-  hostBlockedBody: '디자인을 편집하려면 BaoCut Web을 127.0.0.1 또는 localhost로 여세요. 디자인 파일은 폴더에 그대로 있습니다.',
+  hostBlockedBody: '디자인을 편집하려면 OpenFox Web을 127.0.0.1 또는 localhost로 여세요. 디자인 파일은 폴더에 그대로 있습니다.',
   openFailed: (reason) => `디자인을 열 수 없습니다: ${reason}`,
   open: '디자인 열기',
   openCard: (name) => `디자인 “${name}” 열기`,
@@ -40,5 +40,5 @@ export const ko: DesignMessages = {
   exportDialogButton: '내보내기',
   exportSaved: (path) => `${path}에 저장했습니다`,
   exportFailed: (reason) => `내보낸 파일을 저장할 수 없습니다: ${reason}`,
-  exportUnsupported: (name) => `BaoCut에서 “${name}”을(를) 저장할 수 없습니다: 지원하지 않는 파일 형식입니다`,
+  exportUnsupported: (name) => `OpenFox에서 “${name}”을(를) 저장할 수 없습니다: 지원하지 않는 파일 형식입니다`,
 };

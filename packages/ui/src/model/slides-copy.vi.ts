@@ -8,7 +8,7 @@ export const vi: SlidesMessages = {
   frameTitle: (name) => `Trình chỉnh sửa trang chiếu: ${name}`,
   opening: 'Đang mở trang chiếu…',
   unavailableTitle: 'Không dùng được trình chỉnh sửa trang chiếu',
-  unavailableBody: 'Bản BaoCut này không kèm trình chỉnh sửa trang chiếu. Các tệp trang chiếu vẫn nằm trong thư mục của chúng.',
+  unavailableBody: 'Bản OpenFox này không kèm trình chỉnh sửa trang chiếu. Các tệp trang chiếu vẫn nằm trong thư mục của chúng.',
   openFailed: (reason) => `Không mở được trang chiếu: ${reason}`,
   open: 'Mở trang chiếu',
   openCard: (name) => `Mở trang chiếu “${name}”`,

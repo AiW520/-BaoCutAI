@@ -29,7 +29,7 @@ export const ptBR: ModelsDirMessages = {
     confirmMove: "Mover e alterar",
     confirmSwitch: "Mudar local",
     movingLabel: "Movendo modelos",
-    stayOpen: "Não saia do BaoCut enquanto move",
+    stayOpen: "Não saia do OpenFox enquanto move",
     missingDir:
       "Pasta inexistente, pode ser disco externo desconectado. Conecte para funcionar ou escolha outra.",
     notWritableDir: "Sem permissão de gravação; não pode baixar modelos aqui.",

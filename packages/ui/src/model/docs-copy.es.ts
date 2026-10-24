@@ -8,7 +8,7 @@ export const es: DocsMessages = {
   frameTitle: (name) => `Editor de documentos colaborativos: ${name}`,
   opening: 'Abriendo el documento colaborativo…',
   unavailableTitle: 'Editor de documentos colaborativos no disponible',
-  unavailableBody: 'Esta versión de BaoCut no incluye el editor de documentos colaborativos. Los archivos del documento siguen en su carpeta.',
+  unavailableBody: 'Esta versión de OpenFox no incluye el editor de documentos colaborativos. Los archivos del documento siguen en su carpeta.',
   openFailed: (reason) => `No se pudo abrir el documento colaborativo: ${reason}`,
   open: 'Abrir documento colaborativo',
   openCard: (name) => `Abrir documento colaborativo «${name}»`,

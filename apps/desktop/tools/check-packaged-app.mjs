@@ -10,6 +10,7 @@
 // 不启动 Runtime、不碰应用数据目录、不联网。退出码：0 通过，1 不通过，2 起不来。
 
 import { spawnSync } from 'node:child_process';
+import { PRODUCT_NAME } from '../src/main/app-update-rules.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,7 +56,7 @@ if (arg === '--dev') {
   script = path.resolve(HERE, '../out/main/runtime.js');
 } else {
   const appDir = path.resolve(arg);
-  command = path.join(appDir, process.platform === 'darwin' ? 'Contents/MacOS/BaoCut' : process.platform === 'win32' ? 'BaoCut.exe' : 'BaoCut');
+  command = path.join(appDir, process.platform === 'darwin' ? `Contents/MacOS/${PRODUCT_NAME}` : process.platform === 'win32' ? `${PRODUCT_NAME}.exe` : PRODUCT_NAME);
   const resources = path.join(appDir, process.platform === 'darwin' ? 'Contents/Resources' : 'resources');
   for (const { source, fileName } of DISTRIBUTED_NOTICES) {
     const file = path.join(resources, fileName);

@@ -8,7 +8,7 @@ export const de: DocsMessages = {
   frameTitle: (name) => `Editor für Gemeinschaftsdokumente: ${name}`,
   opening: 'Gemeinschaftsdokument wird geöffnet…',
   unavailableTitle: 'Editor für Gemeinschaftsdokumente nicht verfügbar',
-  unavailableBody: 'Diese BaoCut-Version enthält den Editor für Gemeinschaftsdokumente nicht. Die Dateien des Dokuments liegen weiterhin in ihrem Ordner.',
+  unavailableBody: 'Diese OpenFox-Version enthält den Editor für Gemeinschaftsdokumente nicht. Die Dateien des Dokuments liegen weiterhin in ihrem Ordner.',
   openFailed: (reason) => `Gemeinschaftsdokument konnte nicht geöffnet werden: ${reason}`,
   open: 'Gemeinschaftsdokument öffnen',
   openCard: (name) => `Gemeinschaftsdokument „${name}“ öffnen`,

@@ -3,7 +3,7 @@ import type { ServicesMcpMessages } from './services-mcp-copy.ts';
 export const zhHant: ServicesMcpMessages = {
   levels: {
     read: { title: '唯讀', desc: '查看影片資訊、逐字稿與處理狀態' },
-    ask: { title: '變更前詢問', desc: '轉錄、編輯、匯出或生成前，先在 BaoCut 中確認' },
+    ask: { title: '變更前詢問', desc: '轉錄、編輯、匯出或生成前，先在 OpenFox 中確認' },
     auto: { title: '直接允許', desc: '寫入、任務與生成會立即執行，不需確認；適合只有你自己使用時' },
   },
   scopeAll: (total) => `所有影片（${total}）`,

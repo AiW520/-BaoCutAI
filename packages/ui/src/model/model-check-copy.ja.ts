@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'BaoCut に付属するファイルが見つかりません。モデルの問題ではありません',
-    todo: 'BaoCut を再インストールすると解決します。ダウンロード済みのモデルには影響しません。',
+    text: 'OpenFox に付属するファイルが見つかりません。モデルの問題ではありません',
+    todo: 'OpenFox を再インストールすると解決します。ダウンロード済みのモデルには影響しません。',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: 'モデルのファイルが破損しています', todo: '修復すると、破損したファイルをもう一度ダウンロードします。' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -25,7 +25,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   }),
   MODEL_WORKER_FAILED: () => ({
     text: 'モデルを実行するバックグラウンドプロセスでエラーが発生しました',
-    todo: 'もう一度確認してください。繰り返し起きる場合は BaoCut を再起動するか、技術的な詳細をコピーして送ってください。',
+    todo: 'もう一度確認してください。繰り返し起きる場合は OpenFox を再起動するか、技術的な詳細をコピーして送ってください。',
   }),
 };
 
@@ -82,8 +82,8 @@ export const ja: ModelCheckMessages = {
   },
   notStarted: {
     RUNTIME_UNREACHABLE: {
-      text: 'BaoCut のバックグラウンドサービスが応答していません',
-      todo: 'しばらくしてからもう一度確認してください。繰り返し起きる場合は BaoCut を再起動してください。',
+      text: 'OpenFox のバックグラウンドサービスが応答していません',
+      todo: 'しばらくしてからもう一度確認してください。繰り返し起きる場合は OpenFox を再起動してください。',
     },
     MODEL_IN_USE: {
       text: '別のタスクがこのモデルを使用中です',
@@ -98,7 +98,7 @@ export const ja: ModelCheckMessages = {
     OFFLINE_STRICT: { text: '厳格オフラインモードがオンです', todo: '設定で厳格オフラインモードをオフにしてから、もう一度確認してください。' },
   },
   notStartedUnknown: {
-    text: 'BaoCut はこの確認を受け付けませんでした',
+    text: 'OpenFox はこの確認を受け付けませんでした',
     todo: 'しばらくしてからもう一度確認してください。繰り返し起きる場合は、技術的な詳細をコピーして送ってください。',
   },
   detail: {

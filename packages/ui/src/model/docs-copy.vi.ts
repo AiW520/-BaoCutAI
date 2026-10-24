@@ -8,7 +8,7 @@ export const vi: DocsMessages = {
   frameTitle: (name) => `Trình chỉnh sửa tài liệu cộng tác: ${name}`,
   opening: 'Đang mở tài liệu cộng tác…',
   unavailableTitle: 'Không dùng được trình chỉnh sửa tài liệu cộng tác',
-  unavailableBody: 'Bản BaoCut này không kèm trình chỉnh sửa tài liệu cộng tác. Các tệp của tài liệu vẫn nằm trong thư mục của chúng.',
+  unavailableBody: 'Bản OpenFox này không kèm trình chỉnh sửa tài liệu cộng tác. Các tệp của tài liệu vẫn nằm trong thư mục của chúng.',
   openFailed: (reason) => `Không mở được tài liệu cộng tác: ${reason}`,
   open: 'Mở tài liệu cộng tác',
   openCard: (name) => `Mở tài liệu cộng tác “${name}”`,

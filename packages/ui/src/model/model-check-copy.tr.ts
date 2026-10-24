@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'BaoCut ile gelen dosya eksik; model sorunu değil',
-    todo: 'BaoCut yeniden yüklemek çözer. İndirilen modeller etkilenmez.',
+    text: 'OpenFox ile gelen dosya eksik; model sorunu değil',
+    todo: 'OpenFox yeniden yüklemek çözer. İndirilen modeller etkilenmez.',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: 'Model dosyaları bozuk', todo: 'Onarım bozuk dosyaları yeniden indirir.' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -22,7 +22,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   MODEL_OUT_OF_MEMORY: () => ({ text: 'Bellek yetersiz; model yüklenemedi', todo: 'Diğer büyük modelleri veya çok bellek kullanan uygulamaları kapatıp yeniden denetleyin.' }),
   MODEL_WORKER_FAILED: () => ({
     text: 'Modeli çalıştıran arka plan süreci hata verdi',
-    todo: 'Yeniden denetleyin. Sürerse BaoCut yeniden başlatın veya teknik ayrıntıları kopyalayıp bize gönderin.',
+    todo: 'Yeniden denetleyin. Sürerse OpenFox yeniden başlatın veya teknik ayrıntıları kopyalayıp bize gönderin.',
   }),
 };
 
@@ -74,7 +74,7 @@ export const tr: ModelCheckMessages = {
     todo: 'Yeniden denetleyin. Sürerse teknik ayrıntıları kopyalayıp bize gönderin.',
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: 'BaoCut arka plan hizmeti yanıt vermiyor', todo: 'Daha sonra yeniden denetleyin. Sürerse BaoCut yeniden başlatın.' },
+    RUNTIME_UNREACHABLE: { text: 'OpenFox arka plan hizmeti yanıt vermiyor', todo: 'Daha sonra yeniden denetleyin. Sürerse OpenFox yeniden başlatın.' },
     MODEL_IN_USE: { text: 'Başka görev bu modeli kullanıyor', todo: 'Görevin bitmesini bekleyin veya Arka plan görevleri kısmında iptal edip yeniden denetleyin.' },
     MODEL_UNAVAILABLE: { text: 'Bu model şu anda kullanılamıyor', todo: 'Önce onarın veya yeniden açın, sonra denetleyin.' },
     RESOURCE_ADMISSION_UNSATISFIABLE: { text: 'Bu bilgisayarda modeli çalıştıracak bellek yetersiz', todo: 'Daha küçük modele geçin.' },
@@ -82,7 +82,7 @@ export const tr: ModelCheckMessages = {
     OFFLINE_STRICT: { text: 'Katı çevrimdışı mod açık', todo: 'Ayarlar kısmında katı çevrimdışı modu kapatıp yeniden denetleyin.' },
   },
   notStartedUnknown: {
-    text: 'BaoCut bu denetimi kabul etmedi',
+    text: 'OpenFox bu denetimi kabul etmedi',
     todo: 'Daha sonra yeniden denetleyin. Sürerse teknik ayrıntıları kopyalayıp bize gönderin.',
   },
   detail: {

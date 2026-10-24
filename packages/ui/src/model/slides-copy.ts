@@ -29,7 +29,7 @@ const en = {
   opening: 'Opening slides…',
   /** 这台机器没有构建编辑器（`slides.open` 的 `editorAvailable` 为 false）。 */
   unavailableTitle: 'Slides editor unavailable',
-  unavailableBody: 'This build of BaoCut doesn’t include the slides editor. The slide files are still in their folder.',
+  unavailableBody: 'This build of OpenFox doesn’t include the slides editor. The slide files are still in their folder.',
   openFailed: (reason: string) => `Couldn’t open the slides: ${reason}`,
   /** Space 的条目菜单与查看框里的按钮。 */
   open: 'Open slides',

@@ -139,7 +139,7 @@ export const deTranslate: TranslateMessages = {
   termsUnify: 'Glossar-Übersetzungen verwenden',
   termsUnified: (n: number) => `${n} ${n === 1 ? 'Stelle' : 'Stellen'} an die Glossar-Übersetzung angeglichen`,
   cut: (n: number) => `${sentences(n)} des Originals ${pluralForm('de', n, { one: 'wurde', other: 'wurden' })} aus dem Video geschnitten`,
-  webHint: 'Neu übersetzen nutzt ein Modell oder den Agenten: starte es im Agenten oder in der BaoCut-App',
+  webHint: 'Neu übersetzen nutzt ein Modell oder den Agenten: starte es im Agenten oder in der OpenFox-App',
   refreshing: (n: number | null) => (n === null ? 'Wird neu übersetzt…' : `${sentences(n)} werden neu übersetzt…`),
   aiMenu: 'Neu übersetzen und übersetzen',
   directAll: (n: number) => `${sentences(n)} mit der Modell-API neu übersetzen`,

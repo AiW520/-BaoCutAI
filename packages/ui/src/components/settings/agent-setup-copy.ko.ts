@@ -19,13 +19,13 @@ export const ko: AgentSetupMessages = {
     `${detail ? `${detail} ` : ''}보통 Node.js를 설치 제거했거나 업그레이드했을 때, 또는 파일 권한이 바뀌었을 때 발생합니다. 점검을 실행하면 어느 단계에서 실패하는지 찾을 수 있습니다.`,
   errorCta: '점검 실행',
   outdatedTitle: (name: string, version: string | null) =>
-    version ? `${name} ${version} 버전은 너무 오래되어 BaoCut에서 사용할 수 없습니다` : `${name}의 이 버전은 너무 오래되어 BaoCut에서 사용할 수 없습니다`,
+    version ? `${name} ${version} 버전은 너무 오래되어 OpenFox에서 사용할 수 없습니다` : `${name}의 이 버전은 너무 오래되어 OpenFox에서 사용할 수 없습니다`,
   outdatedBody: (detail: string | null, minVersion: string) =>
     `${detail ? `${detail} ` : `${minVersion} 이상이 필요합니다. `}업그레이드하면 이 명령줄 도구만 업데이트되며, 계정과 도구 자체 설정은 그대로 유지됩니다.`,
   outdatedCta: (version: string) => `${version} 버전으로 업그레이드`,
   signedOutTitle: (name: string) => `${name}에 다시 로그인해야 합니다`,
   signedOutBody: (name: string) =>
-    `로그인은 ${name} 자체 창에서 이루어지며 BaoCut은 계정이나 비밀번호를 다루지 않습니다. 로그인한 뒤 여기로 돌아와 확인하세요.`,
+    `로그인은 ${name} 자체 창에서 이루어지며 OpenFox은 계정이나 비밀번호를 다루지 않습니다. 로그인한 뒤 여기로 돌아와 확인하세요.`,
   signedOutCta: '터미널을 열어 로그인',
 
   stepSkipped: '이전 단계를 통과하면 확인합니다',
@@ -34,7 +34,7 @@ export const ko: AgentSetupMessages = {
   stepRun: '시작 가능',
   stepRunOk: (command: string, version: string) => `${command} --version 실행 결과: ${version}`,
   stepRunFail: '시작하지 못했습니다',
-  stepVersion: 'BaoCut이 지원하는 버전',
+  stepVersion: 'OpenFox이 지원하는 버전',
   stepVersionOk: (version: string, min: string) => `${version}, 최소 ${min}`,
   stepVersionFail: (version: string, min: string) => `현재 ${version}, 최소 ${min}`,
   stepLogin: '계정에 로그인됨',
@@ -50,13 +50,13 @@ export const ko: AgentSetupMessages = {
 
   readyTitle: '준비되었습니다',
   readyBody: (name: string, model: string, plan: string) =>
-    `새 세션은 ${name} · ${model} 모델을 사용합니다. 이 컴퓨터에 이미 설치된 ${name}과(와) 내 ${plan}(으)로 실행되며 BaoCut은 추가 요금을 받지 않습니다.`,
+    `새 세션은 ${name} · ${model} 모델을 사용합니다. 이 컴퓨터에 이미 설치된 ${name}과(와) 내 ${plan}(으)로 실행되며 OpenFox은 추가 요금을 받지 않습니다.`,
   readyCta: '세션 시작',
   attentionBody: (name: string) =>
     `이미 이 컴퓨터에 설치되어 있으므로 다시 설치할 필요가 없습니다. 원인과 해결 방법은 아래 “${name}” 행에 있습니다.`,
   attentionCta: '문제 보기',
   offTitle: (name: string) => `${name}이(가) 설치되어 있지만 비활성화되어 있습니다`,
-  offBody: '활성화하면 BaoCut에서 한 문장으로 작업을 맡길 수 있습니다.',
+  offBody: '활성화하면 OpenFox에서 한 문장으로 작업을 맡길 수 있습니다.',
   offCta: (name: string) => `${name} 활성화`,
   missingTitle: '이 컴퓨터에서 아직 감지된 Agent가 없습니다',
   missingBodyMany: '아래에서 아무거나 하나를 설치하고 이미 있는 계정으로 로그인하세요. 모두 설치할 필요는 없습니다.',

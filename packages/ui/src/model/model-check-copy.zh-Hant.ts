@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'BaoCut 內建的一個檔案遺失了，並不是模型的問題',
-    todo: '重新安裝 BaoCut 即可解決，已下載的模型不受影響。',
+    text: 'OpenFox 內建的一個檔案遺失了，並不是模型的問題',
+    todo: '重新安裝 OpenFox 即可解決，已下載的模型不受影響。',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: '模型檔案已損壞', todo: '修復會重新下載損壞的檔案。' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -22,7 +22,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   MODEL_OUT_OF_MEMORY: () => ({ text: '記憶體不足，無法載入模型', todo: '請關閉其他大型模型或佔用記憶體的應用程式，再檢查一次。' }),
   MODEL_WORKER_FAILED: () => ({
     text: '執行模型的背景程序發生錯誤',
-    todo: '請再檢查一次；如果持續發生，請重新啟動 BaoCut，或複製技術詳細資訊並傳送給我們。',
+    todo: '請再檢查一次；如果持續發生，請重新啟動 OpenFox，或複製技術詳細資訊並傳送給我們。',
   }),
 };
 
@@ -74,7 +74,7 @@ export const zhHant: ModelCheckMessages = {
     todo: '請再檢查一次；如果持續發生，請複製技術詳細資訊並傳送給我們。',
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: 'BaoCut 的背景服務沒有回應', todo: '請稍後再檢查一次；如果持續發生，請重新啟動 BaoCut。' },
+    RUNTIME_UNREACHABLE: { text: 'OpenFox 的背景服務沒有回應', todo: '請稍後再檢查一次；如果持續發生，請重新啟動 OpenFox。' },
     MODEL_IN_USE: { text: '其他任務正在使用這個模型', todo: '請等待該任務結束，或在背景任務中取消它，再檢查一次。' },
     MODEL_UNAVAILABLE: { text: '目前無法使用這個模型', todo: '請先修復，或重新啟用後再檢查。' },
     RESOURCE_ADMISSION_UNSATISFIABLE: { text: '這台電腦的記憶體不足以執行這個模型', todo: '請改用較小的模型。' },
@@ -82,7 +82,7 @@ export const zhHant: ModelCheckMessages = {
     OFFLINE_STRICT: { text: '嚴格離線模式已開啟', todo: '請在設定中關閉嚴格離線模式，再檢查一次。' },
   },
   notStartedUnknown: {
-    text: 'BaoCut 未接受這次檢查',
+    text: 'OpenFox 未接受這次檢查',
     todo: '請稍後再檢查一次；如果持續發生，請複製技術詳細資訊並傳送給我們。',
   },
   detail: {

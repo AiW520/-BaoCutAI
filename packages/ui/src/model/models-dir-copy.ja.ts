@@ -7,7 +7,7 @@ export const ja: ModelsDirMessages = {
     envChip: '環境変数',
     change: '変更…',
     restore: '既定に戻す',
-    envNote: '環境変数 BAOCUT_MODELS_DIR で指定されています。変更するには、環境変数を編集して BaoCut を再起動してください。',
+    envNote: '環境変数 BAOCUT_MODELS_DIR で指定されています。変更するには、環境変数を編集して OpenFox を再起動してください。',
     shareHint:
       'ほかのアプリとこのフォルダを共有している場合、ここでモデルを削除するとフォルダからファイルが削除され、それらのアプリでも見つからなくなります。',
     blockedPrefix: '現在は変更できません：',
@@ -23,10 +23,10 @@ export const ja: ModelsDirMessages = {
     confirmMove: '移動して変更',
     confirmSwitch: '場所を変更',
     movingLabel: 'モデルを移動中',
-    stayOpen: 'その間は BaoCut を終了しないでください',
+    stayOpen: 'その間は OpenFox を終了しないでください',
     missingDir:
       'このフォルダは存在しません（外付けドライブが接続されていない場合にも起こります）。接続すればモデルをまた使えます。別の場所を選ぶこともできます。',
-    notWritableDir: 'BaoCut にはこのフォルダへの書き込み権限がないため、モデルをダウンロードできません。',
+    notWritableDir: 'OpenFox にはこのフォルダへの書き込み権限がないため、モデルをダウンロードできません。',
     loading: 'モデルフォルダを読み込み中…',
     pickFailed: (message) => `フォルダを選択できませんでした：${message}`,
     same: 'すでに現在のモデルフォルダです',
@@ -44,7 +44,7 @@ export const ja: ModelsDirMessages = {
   missingText: 'このフォルダは存在しません。外付けドライブが接続されていない場合にも起こります。接続してから、もう一度選んでください。',
   notWritableTitle: 'このフォルダには書き込めません',
   notWritableText:
-    'BaoCut にはこのフォルダへの書き込み権限がないため、モデルをダウンロードできません。書き込み可能な場所を選ぶか、先に権限を変更してください。',
+    'OpenFox にはこのフォルダへの書き込み権限がないため、モデルをダウンロードできません。書き込み可能な場所を選ぶか、先に権限を変更してください。',
   nestedTitle: 'ここには置けません',
   nestedText:
     '新しい場所と現在のモデルフォルダが互いを含んでいます（一方がもう一方の中にあります）。現在のフォルダの中になく、それを含んでもいないフォルダを選んでください。',

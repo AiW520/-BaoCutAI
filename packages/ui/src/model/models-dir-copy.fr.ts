@@ -13,7 +13,7 @@ export const fr: ModelsDirMessages = {
     envChip: "Variable d’environnement",
     change: "Changer…",
     restore: "Restaurer le défaut",
-    envNote: "Défini par BAOCUT_MODELS_DIR. Modifiez cette variable et redémarrez BaoCut pour changer.",
+    envNote: "Défini par BAOCUT_MODELS_DIR. Modifiez cette variable et redémarrez OpenFox pour changer.",
     shareHint:
       "Si d’autres applications partagent ce dossier, supprimer un modèle efface ses fichiers et le rend introuvable pour elles aussi.",
     blockedPrefix: "Modification indisponible :",
@@ -29,10 +29,10 @@ export const fr: ModelsDirMessages = {
     confirmMove: "Déplacer et changer",
     confirmSwitch: "Changer l’emplacement",
     movingLabel: "Déplacement des modèles",
-    stayOpen: "Ne quittez pas BaoCut pendant ce temps",
+    stayOpen: "Ne quittez pas OpenFox pendant ce temps",
     missingDir:
       "Dossier inexistant (disque externe déconnecté possible). Modèles utilisables après connexion, ou choisissez un autre emplacement.",
-    notWritableDir: "BaoCut n’a pas le droit d’écrire ici ; téléchargement de modèles impossible.",
+    notWritableDir: "OpenFox n’a pas le droit d’écrire ici ; téléchargement de modèles impossible.",
     loading: "Lecture du dossier des modèles…",
     pickFailed: (message: string) => `Impossible de choisir le dossier : ${message}`,
     same: "Dossier des modèles déjà actuel",
@@ -52,7 +52,7 @@ export const fr: ModelsDirMessages = {
   missingText: "Dossier inexistant, disque externe peut-être déconnecté ; reconnectez et choisissez à nouveau.",
   notWritableTitle: "Dossier non accessible en écriture",
   notWritableText:
-    "BaoCut ne peut pas écrire ici ; téléchargement impossible. Choisissez un dossier accessible ou modifiez ses permissions.",
+    "OpenFox ne peut pas écrire ici ; téléchargement impossible. Choisissez un dossier accessible ou modifiez ses permissions.",
   nestedTitle: "Emplacement impossible",
   nestedText:
     "Dossiers actuel et nouveau imbriqués. Choisissez un dossier qui ne contient ni n’est contenu par l’autre.",

@@ -6,7 +6,7 @@ export const zhHans: DocsMessages = {
   frameTitle: (name) => `协作文档编辑器：${name}`,
   opening: '正在打开协作文档…',
   unavailableTitle: '协作文档编辑器不可用',
-  unavailableBody: '这个版本的 BaoCut 没有带协作文档编辑器。协作文档的文件仍在它的文件夹里。',
+  unavailableBody: '这个版本的 开胡-OpenFox 没有带协作文档编辑器。协作文档的文件仍在它的文件夹里。',
   openFailed: (reason) => `打不开这份协作文档：${reason}`,
   open: '打开协作文档',
   openCard: (name) => `打开协作文档「${name}」`,

@@ -2,7 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const ptBR: LocalModelsMessages = {
   install: {
-    webNote: 'Um navegador não pode baixar, verificar, reparar nem excluir modelos locais, nem alterar o modelo padrão. Faça isso no app para desktop do BaoCut.',
+    webNote: 'Um navegador não pode baixar, verificar, reparar nem excluir modelos locais, nem alterar o modelo padrão. Faça isso no app para desktop do OpenFox.',
     availableNote: 'Antes de baixar, você verá o tamanho do download e o espaço livre em disco. Você pode pausar; o que já foi baixado é mantido e será retomado na próxima vez.',
     download: 'Baixar', complete: 'Completar', downloadSize: (size: string) => `Baixar ${size}`, completeSize: (size: string) => `Completar ${size}`, resume: 'Retomar download', pause: 'Pausar', cancelDownload: 'Cancelar download', discard: 'Descartar arquivos baixados', repair: 'Reparar…', remove: 'Excluir…',
     more: (id: string) => `Mais · ${id}`, details: 'Detalhes', hideDetails: 'Ocultar detalhes',

@@ -2,7 +2,7 @@ import type { ModelsProbeMessages } from './models-probe-copy.ts';
 import { pluralForm } from '@baocut/protocol';
 
 export const ptBR: ModelsProbeMessages = {
-  speechText: 'Olá, este é um teste de síntese de fala do BaoCut.',
+  speechText: 'Olá, este é um teste de síntese de fala do OpenFox.',
   noResult: 'A tarefa terminou, mas nenhum resultado foi retornado.',
   failed: 'A tarefa falhou.', cancelled: 'A tarefa foi cancelada.',
   interrupted: 'O Runtime reiniciou, então este teste não terminou.',

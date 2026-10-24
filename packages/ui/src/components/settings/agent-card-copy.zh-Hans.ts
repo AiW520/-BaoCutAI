@@ -54,14 +54,14 @@ export const zhHans: AgentCardMessages = {
   nowDefault: (name: string) => `新会话默认用 ${name}`,
   version: (version: string | null) => (version ? `版本 · v${version}` : '版本'),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `可以升级到 ${latest}。` : ''}${min ? `BaoCut 至少需要 ${min}。` : ''}升级只更新这个命令行工具，不影响你的账号和它自己的设置。${source}`,
+    `${latest ? `可以升级到 ${latest}。` : ''}${min ? `开胡-OpenFox 至少需要 ${min}。` : ''}升级只更新这个命令行工具，不影响你的账号和它自己的设置。${source}`,
   account: '账号',
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? '未登录或登录已过期' : (account ?? '已登录')}。用的是你自己的 ${plan}，BaoCut 不额外收费。登录在终端里完成。`,
+    `${signedOut ? '未登录或登录已过期' : (account ?? '已登录')}。用的是你自己的 ${plan}，开胡-OpenFox 不额外收费。登录在终端里完成。`,
   loginInTerminal: '打开终端登录',
   switchAccount: '换一个账号…',
   location: '安装位置',
-  locationDesc: 'BaoCut 直接调用你电脑上的这个程序，不会另装一份。',
+  locationDesc: '开胡-OpenFox 直接调用你电脑上的这个程序，不会另装一份。',
   realLocation: '实际位置',
   setLocation: '手动指定位置',
   troubleshoot: '排查',
@@ -71,7 +71,7 @@ export const zhHans: AgentCardMessages = {
 
   sourceKnown: (label: string) => `这一份是用「${label}」安装的，升级也要用它——别的方式升不到这一份，只会再装一份。`,
   sourceUnknown: '请用当初安装它的那种方式升级。',
-  scriptInstall: '这条命令会从官方网站下载并运行脚本。BaoCut 不替你运行来自网络的脚本：请复制后在终端里自己运行。',
+  scriptInstall: '这条命令会从官方网站下载并运行脚本。开胡-OpenFox 不替你运行来自网络的脚本：请复制后在终端里自己运行。',
   scriptUpgrade: '这条命令会从官方网站下载并运行脚本，请复制后在终端里自己运行。',
   copyUpgrade: '复制这条命令，在终端里运行；运行完回到这里重新检测。',
   runnableHint: '点命令左边的 ▶ 直接运行，输出会显示在下面；也可以复制后在终端里自己运行。',
@@ -81,18 +81,18 @@ export const zhHans: AgentCardMessages = {
   needs: (needs: string) => `需要这台电脑上已有 ${needs}。`,
 
   installIntro: (name: string, plan: string) =>
-    `${name} 是命令行 AI 助手，装在你自己的电脑上，用你已有的 ${plan} 登录。BaoCut 只是调用它，不另外收费，也不用在 BaoCut 里填 API key。`,
+    `${name} 是命令行 AI 助手，装在你自己的电脑上，用你已有的 ${plan} 登录。开胡-OpenFox 只是调用它，不另外收费，也不用在 开胡-OpenFox 里填 API key。`,
   stepInstall: '安装到这台电脑',
   stepInstallOfficial: '按官方说明安装到这台电脑',
   installOfficialBody: (command: ReactNode): ReactNode => createElement(Fragment, null, '按它官方的说明装好，装完终端里应当能运行 ', command, '。'),
   stepLogin: '登录你的账号',
-  stepLoginBody: '装好后在终端里运行下面这条命令，按提示在浏览器里登录。登录在它自己的窗口里完成，BaoCut 不经手你的账号和密码。',
+  stepLoginBody: '装好后在终端里运行下面这条命令，按提示在浏览器里登录。登录在它自己的窗口里完成，开胡-OpenFox 不经手你的账号和密码。',
   stepBack: '回到这里',
   stepBackBody: '检测到安装并登录后就能用。',
   detecting: '正在检测…',
   recheck: '我已装好，重新检测',
   notDetected: '已经装好，但检测不到？',
   notDetectedBody:
-    'BaoCut 会查找 PATH 和常见安装位置（Homebrew、npm 全局目录、~/.local/bin）。用版本管理器（nvm、asdf、mise）装的有时不在这些位置里，可以手动指给 BaoCut。',
+    '开胡-OpenFox 会查找 PATH 和常见安装位置（Homebrew、npm 全局目录、~/.local/bin）。用版本管理器（nvm、asdf、mise）装的有时不在这些位置里，可以手动指给 开胡-OpenFox。',
   diagnosisOf: (name: string) => `${name} 的排查结果`,
 };

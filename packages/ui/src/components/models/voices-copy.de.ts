@@ -76,10 +76,10 @@ export const de: VoicesMessages = {
     exportButton: "Exportieren",
     exported: (path: string) => `Exportiert nach ${path}`,
     exportFailed: (text: string) => `Exportieren fehlgeschlagen: ${text}`,
-    exportExists: "BaoCut überschreibt keine vorhandenen Dateien. Anderen Namen oder Speicherort auswählen und erneut exportieren.",
+    exportExists: "OpenFox überschreibt keine vorhandenen Dateien. Anderen Namen oder Speicherort auswählen und erneut exportieren.",
 
     exportFailedExists: (text: string) =>
-      `Exportieren fehlgeschlagen: ${text}. BaoCut überschreibt keine vorhandenen Dateien. Anderen Namen oder Speicherort auswählen und erneut exportieren.`,
+      `Exportieren fehlgeschlagen: ${text}. OpenFox überschreibt keine vorhandenen Dateien. Anderen Namen oder Speicherort auswählen und erneut exportieren.`,
 
     deleteTitle: (name: string) => `Löschen: „${name}“?`,
     deleteConfirm: "Löschen",
@@ -137,7 +137,7 @@ export const de: VoicesMessages = {
     reading: "Audio wird gelesen…",
     readFailed: message => `Dieses Audio lässt sich nicht lesen: ${message}`,
     micFailed: message => `Mikrofon lässt sich nicht starten: ${message}`,
-    micDenied: "BaoCut kann das Mikrofon nicht nutzen. In den Systemeinstellungen erlauben oder stattdessen eine Aufnahme hochladen.",
+    micDenied: "OpenFox kann das Mikrofon nicht nutzen. In den Systemeinstellungen erlauben oder stattdessen eine Aufnahme hochladen.",
     sampleShort: (seconds, min) => `Nur ${seconds} Sekunden; mindestens ${min} Sekunden sind nötig. Neu aufnehmen.`,
     sampleLocal: "Genug für lokale Engines · etwas länger, dann können es auch Cloud-Anbieter nutzen",
     sampleOk: target => `Genug · am besten ${target} Sekunden`,

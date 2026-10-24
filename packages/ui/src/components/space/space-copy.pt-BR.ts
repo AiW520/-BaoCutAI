@@ -59,7 +59,7 @@ export const ptBR: SpaceMessages = {
   newFromPackageHint: "Um .baocut exportado com todas as mídias",
   pickPackageTitle: "Escolher pacote portátil",
   pickPackageButton: "Abrir",
-  pickPackageFilter: "Pacote portátil BaoCut",
+  pickPackageFilter: "Pacote portátil OpenFox",
   openPackage: "Abrir como novo vídeo",
   packageBlocked: (reason: string) => `Abrir como novo vídeo: ${reason}`,
   packageOpening: (name: string) => `Abrindo “${name}"…`,
@@ -105,7 +105,7 @@ export const ptBR: SpaceMessages = {
   changedTitle: "Vídeo de origem mudou depois",
   changedBody: "Resultado corresponde a versão anterior. Ainda funciona, mas não reflete o vídeo atual.",
   reexport: "Exportar novamente da origem",
-  noPreviewVideo: "Vídeos abrem no editor.", inIndexFolder: (folder: string | null) => (folder ? `Na pasta indexada “${folder}”, somente leitura: o BaoCut não altera, move nem exclui este arquivo.` : 'Em uma pasta indexada, somente leitura: o BaoCut não altera, move nem exclui este arquivo.'),
+  noPreviewVideo: "Vídeos abrem no editor.", inIndexFolder: (folder: string | null) => (folder ? `Na pasta indexada “${folder}”, somente leitura: o OpenFox não altera, move nem exclui este arquivo.` : 'Em uma pasta indexada, somente leitura: o OpenFox não altera, move nem exclui este arquivo.'),
 
   capability: {
     synthesizeSpeech: "Narração",

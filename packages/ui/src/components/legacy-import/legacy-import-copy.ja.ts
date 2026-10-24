@@ -3,7 +3,7 @@ import type { LegacyImportMessages } from './legacy-import-copy.ts';
 export const ja: LegacyImportMessages = {
   title: '以前のバージョンのプロジェクトを読み込みますか？',
   lead: (n) =>
-    `このコンピュータに以前のバージョンの BaoCut のプロジェクトが ${n} 件あります。読み込むと新しいバージョンで編集を続けられます。元のファイルはそのままの場所に残り、変更されません。`,
+    `このコンピュータに以前のバージョンの OpenFox のプロジェクトが ${n} 件あります。読み込むと新しいバージョンで編集を続けられます。元のファイルはそのままの場所に残り、変更されません。`,
   found: '見つかったプロジェクト',
   destination: '読み込み先',
   resetDefault: 'デフォルトに戻す',

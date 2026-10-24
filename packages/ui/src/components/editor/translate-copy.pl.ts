@@ -133,7 +133,7 @@ export const plTranslate: TranslateMessages = {
   termsUnify: 'Użyj tłumaczeń z glosariusza',
   termsUnified: (n: number) => `Ujednolicono miejsca według glosariusza: ${n}`,
   cut: (n: number) => `Obraz wycięty z wideo: ${sentences(n)} oryginału`,
-  webHint: 'Ponowne tłumaczenie korzysta z modelu lub agenta: uruchom je z agenta lub aplikacji BaoCut',
+  webHint: 'Ponowne tłumaczenie korzysta z modelu lub agenta: uruchom je z agenta lub aplikacji OpenFox',
   refreshing: (n: number | null) => (n === null ? 'Ponowne tłumaczenie…' : `Ponowne tłumaczenie: ${sentences(n)}…`),
   aiMenu: 'Tłumacz ponownie i tłumacz',
   directAll: (n: number) => `Przetłumacz ponownie przez API modelu (${sentences(n)})`,

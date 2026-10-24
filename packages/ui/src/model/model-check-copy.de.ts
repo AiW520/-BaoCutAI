@@ -6,11 +6,11 @@ const outputWrong: Record<CheckSubject, string> = {
  music: 'Modell läuft, erzeugt aber fast nur Stille',
 };
 const checkSentences = {
- APP_FILE_MISSING: () => ({ text: 'Eine mit BaoCut gelieferte Datei fehlt; kein Modellproblem', todo: 'BaoCut erneut installieren. Heruntergeladene Modelle bleiben unverändert.' }),
+ APP_FILE_MISSING: () => ({ text: 'Eine mit OpenFox gelieferte Datei fehlt; kein Modellproblem', todo: 'OpenFox erneut installieren. Heruntergeladene Modelle bleiben unverändert.' }),
  MODEL_FILES_DAMAGED: () => ({ text: 'Modelldateien sind beschädigt', todo: 'Reparieren lädt beschädigte Dateien erneut herunter.' }),
  MODEL_OUTPUT_WRONG: (subject: CheckSubject) => ({ text: outputWrong[subject], todo: 'Zuerst reparieren. Bei Wiederholung technische Details kopieren und an uns senden.' }),
  MODEL_OUT_OF_MEMORY: () => ({ text: 'Nicht genug Arbeitsspeicher; Modell konnte nicht laden', todo: 'Andere große Modelle oder speicherintensive Apps schließen und erneut prüfen.' }),
- MODEL_WORKER_FAILED: () => ({ text: 'Hintergrundprozess des Modells hatte einen Fehler', todo: 'Erneut prüfen. Bei Wiederholung BaoCut neu starten oder technische Details kopieren und an uns senden.' }),
+ MODEL_WORKER_FAILED: () => ({ text: 'Hintergrundprozess des Modells hatte einen Fehler', todo: 'Erneut prüfen. Bei Wiederholung OpenFox neu starten oder technische Details kopieren und an uns senden.' }),
 } satisfies Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence>;
 import type { ModelCheckCode } from '@baocut/protocol';
 import type { CheckSentence, CheckSubject, ModelCheckMessages, TrySubject } from './model-check-copy.ts';
@@ -61,8 +61,8 @@ export const de: ModelCheckMessages = {
 
   notStarted: {
     RUNTIME_UNREACHABLE: {
-      text: "BaoCuts Hintergrunddienst antwortet nicht",
-      todo: "Später erneut prüfen. Bei Wiederholung BaoCut neu starten.",
+      text: "OpenFoxs Hintergrunddienst antwortet nicht",
+      todo: "Später erneut prüfen. Bei Wiederholung OpenFox neu starten.",
     },
     MODEL_IN_USE: {
       text: "Eine andere Aufgabe verwendet dieses Modell",
@@ -77,7 +77,7 @@ export const de: ModelCheckMessages = {
     OFFLINE_STRICT: { text: "Strikter Offlinemodus aktiv", todo: "In Einstellungen ausschalten, dann erneut prüfen." },
   } as Record<string, CheckSentence>,
   notStartedUnknown: {
-    text: "BaoCut hat diese Prüfung nicht angenommen",
+    text: "OpenFox hat diese Prüfung nicht angenommen",
     todo: "Später erneut prüfen. Bei Wiederholung technische Details kopieren und an uns senden.",
   } as CheckSentence,
 

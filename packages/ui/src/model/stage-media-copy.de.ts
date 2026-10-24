@@ -12,7 +12,7 @@ export const de: StageMediaMessages = {
   causes: {
     missing: "Datei möglicherweise verschoben, umbenannt, gelöscht oder auf einem getrennten Laufwerk.",
     changed: "Datei entspricht nicht mehr dem Import (Größe abweichend); möglicherweise überschrieben oder erneut exportiert.",
-    'outside-project': "Gespeicherter Ort liegt außerhalb dieses Video-Projektordners; BaoCut liest dort keine Dateien.",
+    'outside-project': "Gespeicherter Ort liegt außerhalb dieses Video-Projektordners; OpenFox liest dort keine Dateien.",
   } satisfies Record<MissingAsset['reason'], string>,
   unplayable: (error: string) => `Player kann diese Datei nicht öffnen: ${error}.`,
 
@@ -24,8 +24,8 @@ export const de: StageMediaMessages = {
   body: (cause: string, tail: string) => `${cause} ${tail}`,
   volume: (volume: string) => `Die Datei liegt auf „${volume}“. Laufwerk verbinden; automatische Wiederherstellung.`,
   more: (count: number) => `${count} weitere Video- oder Audiomaterialien ${pluralForm('de', count, { one: "Material", other: "Materialien" })} sind ebenfalls nicht abspielbar.`,
-  relinkHint: "Originaldatei zur Wiederherstellung auswählen. BaoCut prüft den Inhalt; anderer Inhalt ist nicht neu verknüpfbar.",
-  desktopOnly: "Video in der BaoCut-Desktop-App öffnen und auf der Arbeitsfläche „Erneut verknüpfen…“ wählen, um die Originaldatei auszuwählen.",
+  relinkHint: "Originaldatei zur Wiederherstellung auswählen. OpenFox prüft den Inhalt; anderer Inhalt ist nicht neu verknüpfbar.",
+  desktopOnly: "Video in der OpenFox-Desktop-App öffnen und auf der Arbeitsfläche „Erneut verknüpfen…“ wählen, um die Originaldatei auszuwählen.",
   managed: "Diese Datei liegt im Videoordner und kann nicht mit einem anderen Ort verknüpft werden.",
   oldRevision: "Zeitleiste verwendet eine ältere Materialversion; nur aktuelle Version ist neu verknüpfbar.",
   relink: "Neu verknüpfen…",

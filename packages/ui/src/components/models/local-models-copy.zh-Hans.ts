@@ -2,7 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const zhHans: LocalModelsMessages = {
   install: {
-    webNote: '浏览器里不能下载、检查、修复或删除本地模型，也不能更改默认模型，请在 BaoCut 桌面应用里操作。',
+    webNote: '浏览器里不能下载、检查、修复或删除本地模型，也不能更改默认模型，请在 开胡-OpenFox 桌面应用里操作。',
     availableNote: '下载前先给你看要下载多少、磁盘还剩多少。下载中可以暂停，已经下载的部分留着，下次接着下。',
     download: '下载',
     complete: '补齐',

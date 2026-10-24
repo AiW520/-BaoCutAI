@@ -2,7 +2,7 @@ import { pluralForm } from '@baocut/protocol';
 import type { ModelsProbeMessages } from './models-probe-copy.ts';
 
 export const pl: ModelsProbeMessages = {
-  speechText: "Cześć, to test syntezy mowy BaoCut.",
+  speechText: "Cześć, to test syntezy mowy OpenFox.",
   noResult: "Zadanie zakończono, ale nie otrzymano wyniku.",
   failed: "Zadanie nie powiodło się.",
   cancelled: "Zadanie zostało anulowane.",

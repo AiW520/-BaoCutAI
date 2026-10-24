@@ -12,7 +12,7 @@ export const fr: StageMediaMessages = {
   causes: {
     missing: "Fichier déplacé, renommé, supprimé ou disque déconnecté possible.",
     changed: "Le fichier n’est plus celui importé (taille différente). Peut-être écrasé ou réexporté.",
-    'outside-project': "Emplacement hors du projet de cette vidéo ; BaoCut n’y lit pas les fichiers.",
+    'outside-project': "Emplacement hors du projet de cette vidéo ; OpenFox n’y lit pas les fichiers.",
   } satisfies Record<MissingAsset['reason'], string>,
   unplayable: (error: string) => `Le lecteur ne peut pas ouvrir ce fichier : ${error}.`,
 
@@ -24,8 +24,8 @@ export const fr: StageMediaMessages = {
   body: (cause: string, tail: string) => `${cause} ${tail}`,
   volume: (volume: string) => `Le fichier est sur « ${volume} ». Connectez ce disque pour récupération automatique.`,
   more: (count: number) => `${count} autres médias vidéo ou audio ${pluralForm('fr', count, { one: "média", other: "médias" })} sont aussi illisibles.`,
-  relinkHint: "Choisissez l’original pour récupérer. BaoCut vérifie le contenu, différent = reconnexion refusée.",
-  desktopOnly: "Ouvrez dans BaoCut bureau et utilisez « Relier à nouveau… » sur le canevas pour choisir l’original.",
+  relinkHint: "Choisissez l’original pour récupérer. OpenFox vérifie le contenu, différent = reconnexion refusée.",
+  desktopOnly: "Ouvrez dans OpenFox bureau et utilisez « Relier à nouveau… » sur le canevas pour choisir l’original.",
   managed: "Fichier stocké dans le dossier vidéo, non reconnectable ailleurs.",
   oldRevision: "La timeline utilise une ancienne version ; seule l’actuelle peut être reconnectée.",
   relink: "Relier…",

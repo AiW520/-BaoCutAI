@@ -41,7 +41,7 @@ export const ja: GlossaryMessages = {
     cancel: 'キャンセル',
   },
   detail: {
-    exportExists: 'その場所には同じ名前のファイルがすでにあります。BaoCut は既存のファイルを上書きしないので、別の名前を選んでもう一度書き出してください。',
+    exportExists: 'その場所には同じ名前のファイルがすでにあります。OpenFox は既存のファイルを上書きしないので、別の名前を選んでもう一度書き出してください。',
     loadFailed: 'この用語集を読み込めませんでした',
     loadingLabel: '読み込み中',
     loading: '読み込み中…',

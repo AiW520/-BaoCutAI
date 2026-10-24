@@ -8,7 +8,7 @@ export const ptBR: SlidesMessages = {
   frameTitle: (name) => `Editor de slides: ${name}`,
   opening: 'Abrindo slides…',
   unavailableTitle: 'Editor de slides indisponível',
-  unavailableBody: 'Esta versão do BaoCut não inclui o editor de slides. Os arquivos dos slides continuam na pasta.',
+  unavailableBody: 'Esta versão do OpenFox não inclui o editor de slides. Os arquivos dos slides continuam na pasta.',
   openFailed: (reason) => `Não foi possível abrir os slides: ${reason}`,
   open: 'Abrir slides',
   openCard: (name) => `Abrir slides “${name}”`,

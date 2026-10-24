@@ -1,7 +1,7 @@
 import type { ModelsProbeMessages } from './models-probe-copy.ts';
 
 export const ko: ModelsProbeMessages = {
-  speechText: '안녕하세요. BaoCut 음성 합성 테스트입니다.',
+  speechText: '안녕하세요. OpenFox 음성 합성 테스트입니다.',
   noResult: '작업은 끝났지만 결과를 받지 못했습니다.',
   failed: '작업이 실패했습니다.',
   cancelled: '작업이 취소되었습니다.',

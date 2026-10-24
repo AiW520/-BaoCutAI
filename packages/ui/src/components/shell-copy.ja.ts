@@ -6,6 +6,7 @@ export const ja: ShellMessages = {
   list: (items) => items.join('、'),
   separator: '、',
   common: {
+    productName: 'OpenFox',
     cancel: 'キャンセル',
     save: '保存',
     rename: '名前を変更',
@@ -36,7 +37,7 @@ export const ja: ShellMessages = {
     deleteSessionEllipsis: 'セッションを削除…',
     deleteTitle: 'このセッションを削除しますか？',
     deleteConfirm: '削除',
-    deleteBody: 'セッションの履歴は Tuzi から削除され、実行中のタスクは先に停止されます。プロジェクトフォルダ内のファイルには影響しません。',
+    deleteBody: 'セッションの履歴は OpenFox から削除され、実行中のタスクは先に停止されます。プロジェクトフォルダ内のファイルには影響しません。',
     deleteFailed: (message) => `削除できませんでした：${message}`,
     renameTitle: 'セッションの名前を変更',
     videosIn: (place) => `${where(place)}の動画`,
@@ -64,7 +65,7 @@ export const ja: ShellMessages = {
     noSessions: 'セッションはまだありません。',
     noProjects: 'プロジェクトはまだありません。新しく作成するか、既存のフォルダを開いてください。Agent はそこで作業します。',
     renameProjectTitle: 'プロジェクトの名前を変更',
-    renameProjectHint: 'Tuzi に表示される名前だけが変わり、フォルダ名はそのままです。',
+    renameProjectHint: 'OpenFox に表示される名前だけが変わり、フォルダ名はそのままです。',
     toggleSection: (collapsed, label) => `${label} を${collapsed ? '展開する' : '折りたたむ'}`,
     organizeLabel: 'プロジェクトとセッションを整理',
     sidebarSettings: 'サイドバーの設定',
@@ -99,7 +100,7 @@ export const ja: ShellMessages = {
     app: 'アプリ',
     privacyTitle: 'データはこのコンピュータに保存されます',
     privacyHint:
-      'セッション、プロジェクト一覧、Space のマークはデータフォルダに保存されます。プロジェクトのファイルはそれぞれのフォルダにあり、Tuzi がアップロードすることはありません。Agent エンジンがオンラインに接続するかどうかはエンジン次第です。',
+      'セッション、プロジェクト一覧、Space のマークはデータフォルダに保存されます。プロジェクトのファイルはそれぞれのフォルダにあり、OpenFox がアップロードすることはありません。Agent エンジンがオンラインに接続するかどうかはエンジン次第です。',
     dataDir: 'データフォルダ',
     projectsDir: '新規プロジェクトの保存先',
     logsDir: 'ログフォルダ',
@@ -176,7 +177,7 @@ export const ja: ShellMessages = {
     closed: '接続が閉じられました',
     lost: (reason, retrying) => `${reason}。${retrying ? '再接続中…' : ''}`,
     reconnectingEllipsis: '再接続中…',
-    title: 'Tuzi Runtime に接続されていません',
+    title: 'OpenFox Runtime に接続されていません',
     reconnecting: '再接続中',
   },
   videoInfo: {
@@ -195,7 +196,7 @@ export const ja: ShellMessages = {
   filePreview: {
     tooLarge: 'ファイルが大きすぎるため、ここではすべてを表示できません',
     loading: 'プレビューを読み込み中',
-    unsupported: 'この種類のファイルは Tuzi ではまだプレビューできません。フォルダで表示して、ほかのアプリで開いてください。',
+    unsupported: 'この種類のファイルは OpenFox ではまだプレビューできません。フォルダで表示して、ほかのアプリで開いてください。',
     failed: (message) => `プレビューを読み込めませんでした：${message}`,
   },
   accessPicker: {

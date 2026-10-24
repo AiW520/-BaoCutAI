@@ -28,7 +28,7 @@ const en = {
     envChip: 'Environment variable',
     change: 'Change…',
     restore: 'Restore default',
-    envNote: 'Set by the BAOCUT_MODELS_DIR environment variable. To change it, edit the environment variable and restart BaoCut.',
+    envNote: 'Set by the BAOCUT_MODELS_DIR environment variable. To change it, edit the environment variable and restart OpenFox.',
     shareHint:
       "If other apps share this folder, deleting a model here deletes its files from the folder, and those apps won't find it either.",
     blockedPrefix: "Can't change right now:",
@@ -44,10 +44,10 @@ const en = {
     confirmMove: 'Move and change',
     confirmSwitch: 'Change location',
     movingLabel: 'Moving models',
-    stayOpen: "Don't quit BaoCut in the meantime",
+    stayOpen: "Don't quit OpenFox in the meantime",
     missingDir:
       "This folder doesn't exist (this also happens when an external drive isn't connected). Models work again once it's connected, or you can choose another location.",
-    notWritableDir: "BaoCut doesn't have permission to write to this folder, so models can't be downloaded into it.",
+    notWritableDir: "OpenFox doesn't have permission to write to this folder, so models can't be downloaded into it.",
     loading: 'Reading the models folder…',
     pickFailed: (message: string) => `Couldn't choose the folder: ${message}`,
     same: 'This is already the current models folder',
@@ -67,7 +67,7 @@ const en = {
   missingText: "This folder doesn't exist. This also happens when an external drive isn't connected; connect it and choose again.",
   notWritableTitle: "This folder isn't writable",
   notWritableText:
-    "BaoCut doesn't have permission to write to this folder, so models can't be downloaded into it. Choose a writable location, or change its permissions first.",
+    "OpenFox doesn't have permission to write to this folder, so models can't be downloaded into it. Choose a writable location, or change its permissions first.",
   nestedTitle: "Can't put it here",
   nestedText:
     'The new location and the current models folder contain each other (one is inside the other). Choose a folder that is neither inside it nor contains it.',

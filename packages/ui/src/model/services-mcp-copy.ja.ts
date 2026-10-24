@@ -3,7 +3,7 @@ import type { ServicesMcpMessages } from './services-mcp-copy.ts';
 export const ja: ServicesMcpMessages = {
   levels: {
     read: { title: '読み取りのみ', desc: '動画の情報、文字起こし、処理状況を表示します' },
-    ask: { title: '変更前に確認', desc: '文字起こし、編集、書き出し、生成の前に BaoCut で確認します' },
+    ask: { title: '変更前に確認', desc: '文字起こし、編集、書き出し、生成の前に OpenFox で確認します' },
     auto: { title: '確認せずに許可', desc: '書き込み、タスク、生成を確認なしですぐに実行します。ご自身だけが使う場合に適しています' },
   },
   scopeAll: (total) => `すべての動画（${total}）`,

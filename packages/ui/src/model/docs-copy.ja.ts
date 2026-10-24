@@ -6,7 +6,7 @@ export const ja: DocsMessages = {
   frameTitle: (name) => `共同編集ドキュメントエディタ：${name}`,
   opening: '共同編集ドキュメントを開いています…',
   unavailableTitle: '共同編集ドキュメントエディタを利用できません',
-  unavailableBody: 'この BaoCut には共同編集ドキュメントエディタが含まれていません。ドキュメントのファイルはフォルダに残っています。',
+  unavailableBody: 'この OpenFox には共同編集ドキュメントエディタが含まれていません。ドキュメントのファイルはフォルダに残っています。',
   openFailed: (reason) => `共同編集ドキュメントを開けませんでした：${reason}`,
   open: '共同編集ドキュメントを開く',
   openCard: (name) => `共同編集ドキュメント「${name}」を開く`,

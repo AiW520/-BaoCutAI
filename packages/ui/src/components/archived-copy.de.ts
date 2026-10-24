@@ -16,7 +16,7 @@ export const de: ArchivedMessages = {
   deleteAll: 'Alle löschen',
   deleteAllTitle: (n) => pluralForm('de', n, { one: `${n} archivierte Sitzung löschen?`, other: `Alle ${n} archivierten Sitzungen löschen?` }),
   deleteAllBody:
-    'Der Verlauf dieser Sitzungen wird aus BaoCut entfernt; laufende Aufgaben werden zuerst gestoppt. Dies kann nicht rückgängig gemacht werden. Dateien in Projektordnern sind nicht betroffen.',
+    'Der Verlauf dieser Sitzungen wird aus OpenFox entfernt; laufende Aufgaben werden zuerst gestoppt. Dies kann nicht rückgängig gemacht werden. Dateien in Projektordnern sind nicht betroffen.',
   restored: (title) => `Wiederhergestellt: „${title}“`,
   open: 'Öffnen',
   restoreFailed: (message) => `Wiederherstellen fehlgeschlagen: ${message}`,

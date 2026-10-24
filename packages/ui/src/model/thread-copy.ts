@@ -16,7 +16,7 @@ import { vi } from './thread-copy.vi.ts';
 
 /** 会话线程里执行步骤的文案（model/thread.ts；译文在 `thread-copy.<语言>.ts`）。 */
 const en = {
-  /** BaoCut 自己的视频工具（MCP 服务名 `baocut`）写成动作。 */
+  /** OpenFox 自己的视频工具（MCP 服务名 `baocut`）写成动作。 */
   videoTools: {
     videos_list: 'List videos',
     videos_create: 'New video',

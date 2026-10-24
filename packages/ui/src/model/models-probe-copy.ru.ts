@@ -2,7 +2,7 @@ import { pluralForm } from '@baocut/protocol';
 import type { ModelsProbeMessages } from './models-probe-copy.ts';
 
 export const ru: ModelsProbeMessages = {
-  speechText: "Здравствуйте, это тест синтеза речи BaoCut.",
+  speechText: "Здравствуйте, это тест синтеза речи OpenFox.",
   noResult: "Задача завершена, но результат не получен.",
   failed: "Задача завершилась ошибкой.",
   cancelled: "Задача отменена.",

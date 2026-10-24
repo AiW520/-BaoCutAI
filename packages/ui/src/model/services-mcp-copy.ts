@@ -18,7 +18,7 @@ import { vi } from './services-mcp-copy.vi.ts';
 const en = {
   levels: {
     read: { title: 'Read only', desc: 'View video info, transcripts, and processing status' },
-    ask: { title: 'Ask before changes', desc: 'Confirm in BaoCut before transcribing, editing, exporting, or generating' },
+    ask: { title: 'Ask before changes', desc: 'Confirm in OpenFox before transcribing, editing, exporting, or generating' },
     auto: { title: 'Allow without asking', desc: 'Writes, tasks, and generation run right away without confirmation; best when only you use it' },
   },
   scopeAll: (total: number) => `All videos (${total})`,

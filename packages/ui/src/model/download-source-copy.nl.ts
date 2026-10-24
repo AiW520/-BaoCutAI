@@ -19,7 +19,7 @@ export const nl: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Downloaden van de mirror op ${base}.`,
   msNote: "De paar bestanden die ModelScope niet heeft (whisper.cpp) komen nog steeds van Hugging Face. Elk bestand wordt gecontroleerd met de ingebouwde checksum.",
   envNote: (name: string) => `Als de omgevingsvariabele ${name} is ingesteld, wordt die gebruikt.`,
-  webNote: "Een browser kan de downloadbronnen niet wijzigen. Stel ze in de BaoCut-desktopapp in.",
+  webNote: "Een browser kan de downloadbronnen niet wijzigen. Stel ze in de OpenFox-desktopapp in.",
   lead:
     "Je kunt meerdere bronnen bewaren en per soort er één kiezen. Ook in het downloadvenster kun je wisselen; dat wijzigt de keuze hier. Elk bestand wordt gecontroleerd met de ingebouwde checksum, waar het ook vandaan komt.",
   editAria: (name: string) => `‘${name}’ bewerken`,

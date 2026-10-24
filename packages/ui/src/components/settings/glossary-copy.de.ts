@@ -43,7 +43,7 @@ export const de: GlossaryMessages = {
     cancel: "Abbrechen",
   },
   detail: {
-    exportExists: "Eine Datei mit diesem Namen ist bereits vorhanden. BaoCut überschreibt keine Dateien; anderen Namen wählen und erneut exportieren.",
+    exportExists: "Eine Datei mit diesem Namen ist bereits vorhanden. OpenFox überschreibt keine Dateien; anderen Namen wählen und erneut exportieren.",
     loadFailed: "Dieses Glossar konnte nicht gelesen werden",
     loadingLabel: "Wird geladen",
     loading: "Wird geladen…",

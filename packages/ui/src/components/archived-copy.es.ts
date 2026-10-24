@@ -16,7 +16,7 @@ export const es: ArchivedMessages = {
   deleteAll: 'Eliminar todas',
   deleteAllTitle: (n) => pluralForm('es', n, { one: `¿Eliminar ${n} sesión archivada?`, other: `¿Eliminar las ${n} sesiones archivadas?` }),
   deleteAllBody:
-    'Su historial se eliminará de BaoCut y cualquier tarea en curso se detendrá antes. No se puede deshacer. Los archivos de las carpetas de proyecto no se ven afectados.',
+    'Su historial se eliminará de OpenFox y cualquier tarea en curso se detendrá antes. No se puede deshacer. Los archivos de las carpetas de proyecto no se ven afectados.',
   restored: (title) => `«${title}» restaurada`,
   open: 'Abrir',
   restoreFailed: (message) => `No se pudo restaurar: ${message}`,

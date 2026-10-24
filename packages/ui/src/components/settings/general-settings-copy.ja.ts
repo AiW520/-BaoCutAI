@@ -6,7 +6,7 @@ export const ja: GeneralSettingsMessages = {
   languageDesc: 'すぐに反映され、再起動は不要です。',
   languageSystem: (current: string) => `システム（${current}）`,
   appearance: '外観',
-  appearanceDesc: 'このコンピュータの Tuzi ウインドウにだけ適用されます。',
+  appearanceDesc: 'このコンピュータの OpenFox ウインドウにだけ適用されます。',
   schemeSystem: 'システム',
   schemeLight: 'ライト',
   schemeDark: 'ダーク',
@@ -28,7 +28,7 @@ export const ja: GeneralSettingsMessages = {
   downloadsGroup: 'ダウンロードと更新',
   autoUpdateOn: '更新の自動確認とダウンロードをオンにしました',
   autoUpdateOff: '更新の自動ダウンロードをオフにしました',
-  downloaderWeb: 'ブラウザではこのコンピュータのダウンロードツールを確認しません。Tuzi デスクトップアプリで確認してください。',
+  downloaderWeb: 'ブラウザではこのコンピュータのダウンロードツールを確認しません。OpenFox デスクトップアプリで確認してください。',
 
   sourcesGroup: 'ダウンロード元とオフライン',
   strictOffline: '厳格オフライン',
@@ -40,7 +40,7 @@ export const ja: GeneralSettingsMessages = {
   trashDays: 'ゴミ箱の保持日数',
   trashDaysDesc: (fallback: number | null) =>
     `ゴミ箱に入れてからこの日数を過ぎ、どこからも参照されていない項目と、削除した動画は完全に削除されます（起動時とその後 6 時間ごとに確認）。まだ参照されている項目は残ります。空欄にすると既定値${fallback ? `の ${fallback} 日` : ''}に戻ります。`,
-  webNote: 'ブラウザーではこの設定を変更できません。Tuzi デスクトップアプリで変更してください。',
-  webViewOnly: 'ブラウザーでは表示のみです。変更は Tuzi デスクトップアプリで行ってください。',
-  webUnavailable: 'この項目はブラウザーでは使えません。Tuzi デスクトップアプリを使ってください。',
+  webNote: 'ブラウザーではこの設定を変更できません。OpenFox デスクトップアプリで変更してください。',
+  webViewOnly: 'ブラウザーでは表示のみです。変更は OpenFox デスクトップアプリで行ってください。',
+  webUnavailable: 'この項目はブラウザーでは使えません。OpenFox デスクトップアプリを使ってください。',
 };

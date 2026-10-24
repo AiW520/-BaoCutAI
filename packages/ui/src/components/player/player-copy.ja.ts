@@ -46,7 +46,7 @@ export const ja: PlayerMessages = {
     aborted: '読み込みが中断されました',
     network: 'ファイルの読み込み中に問題が発生しました',
     decode: 'デコードに失敗しました。ファイルが破損している可能性があります',
-    unsupported: 'このファイルの形式またはコーデックは、BaoCut ではまだ再生できません',
+    unsupported: 'このファイルの形式またはコーデックは、OpenFox ではまだ再生できません',
     other: 'このファイルを再生できませんでした',
   },
 };

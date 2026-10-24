@@ -59,7 +59,7 @@ export const ko: SpaceMessages = {
   newFromPackageHint: '다른 곳에서 내보낸 .baocut 파일로, 모든 소재가 안에 들어 있습니다',
   pickPackageTitle: '포터블 패키지 선택',
   pickPackageButton: '열기',
-  pickPackageFilter: 'BaoCut 포터블 패키지',
+  pickPackageFilter: 'OpenFox 포터블 패키지',
   openPackage: '새 영상으로 열기',
   packageBlocked: (reason: string) => `새 영상으로 열기: ${reason}`,
   packageOpening: (name: string) => `“${name}” 여는 중…`,
@@ -108,7 +108,7 @@ export const ko: SpaceMessages = {
   changedBody: '이 결과물은 이전 버전의 영상에 해당합니다. 계속 사용할 수 있지만 현재 영상을 반영하지 않습니다.',
   reexport: '원본 영상에서 다시 내보내기',
   noPreviewVideo: '영상은 편집기에서 열립니다.',
-  inIndexFolder: (folder: string | null) => (folder ? `인덱스 폴더 「${folder}」에 있어 읽기 전용입니다. BaoCut은 이 파일을 변경, 이동, 삭제하지 않습니다.` : '인덱스 폴더에 있어 읽기 전용입니다. BaoCut은 이 파일을 변경, 이동, 삭제하지 않습니다.'),
+  inIndexFolder: (folder: string | null) => (folder ? `인덱스 폴더 「${folder}」에 있어 읽기 전용입니다. OpenFox은 이 파일을 변경, 이동, 삭제하지 않습니다.` : '인덱스 폴더에 있어 읽기 전용입니다. OpenFox은 이 파일을 변경, 이동, 삭제하지 않습니다.'),
 
   // 能力（origin.capability）
   capability: {

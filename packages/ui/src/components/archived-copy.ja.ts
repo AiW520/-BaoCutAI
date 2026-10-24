@@ -15,7 +15,7 @@ export const ja: ArchivedMessages = {
   deleteAll: 'すべて削除',
   deleteAllTitle: (n) => (n === 1 ? 'アーカイブ済みのセッション 1 件を削除しますか？' : `アーカイブ済みのセッション ${n} 件をすべて削除しますか？`),
   deleteAllBody:
-    'これらのセッションの履歴は BaoCut から削除され、実行中のタスクは先に停止されます。この操作は取り消せません。プロジェクトフォルダ内のファイルには影響しません。',
+    'これらのセッションの履歴は OpenFox から削除され、実行中のタスクは先に停止されます。この操作は取り消せません。プロジェクトフォルダ内のファイルには影響しません。',
   restored: (title) => `「${title}」を復元しました`,
   open: '開く',
   restoreFailed: (message) => `復元できませんでした：${message}`,

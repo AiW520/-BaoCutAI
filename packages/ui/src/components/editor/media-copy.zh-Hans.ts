@@ -9,7 +9,7 @@ export const zhHans: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => noun[kind],
   undo: '撤销',
   readOnly: '视频是只读的',
-  revealManaged: '已收进视频目录，由 BaoCut 管理，没有单独的文件位置',
+  revealManaged: '已收进视频目录，由 开胡-OpenFox 管理，没有单独的文件位置',
   revealUnknown: '找不到这个文件登记的位置',
   uses: '用在哪',
   usesNone: '时间线上还没用到',

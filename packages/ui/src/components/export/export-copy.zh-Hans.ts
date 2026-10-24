@@ -201,7 +201,7 @@ export const zhHans: ExportMessages = {
   editors: '导到剪辑软件',
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: 'FCP7 XML（.xml）',
-  portableName: 'BaoCut 便携包',
+  portableName: '开胡-OpenFox 便携包',
   portableMeta: '.baocut · 视频、全部文档与素材收进一个文件',
   plannedTarget: '这一版还没有接上这种工程',
   jianyingName: '剪映草稿',

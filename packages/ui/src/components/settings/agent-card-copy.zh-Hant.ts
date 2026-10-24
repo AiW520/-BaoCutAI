@@ -56,14 +56,14 @@ export const zhHant: AgentCardMessages = {
   nowDefault: (name: string) => `新對話現在會使用 ${name}`,
   version: (version: string | null) => (version ? `版本 · v${version}` : '版本'),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `可以升級到 ${latest}。` : ''}${min ? `BaoCut 至少需要 ${min}。` : ''}升級只會更新這個命令列工具，你的帳號和它本身的設定都不受影響。${source}`,
+    `${latest ? `可以升級到 ${latest}。` : ''}${min ? `OpenFox 至少需要 ${min}。` : ''}升級只會更新這個命令列工具，你的帳號和它本身的設定都不受影響。${source}`,
   account: '帳號',
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? '尚未登入，或登入已過期' : (account ?? '已登入')}。使用的是你自己的 ${plan}，BaoCut 不會另外收費。登入在終端機中完成。`,
+    `${signedOut ? '尚未登入，或登入已過期' : (account ?? '已登入')}。使用的是你自己的 ${plan}，OpenFox 不會另外收費。登入在終端機中完成。`,
   loginInTerminal: '開啟終端機登入',
   switchAccount: '切換帳號…',
   location: '安裝位置',
-  locationDesc: 'BaoCut 直接呼叫你電腦上的這個程式，不會另外安裝一份。',
+  locationDesc: 'OpenFox 直接呼叫你電腦上的這個程式，不會另外安裝一份。',
   realLocation: '實際位置',
   setLocation: '手動指定位置',
   troubleshoot: '疑難排解',
@@ -75,7 +75,7 @@ export const zhHant: AgentCardMessages = {
     `這一份是用「${label}」安裝的，所以也要用同樣的方式升級。其他方式無法升級這一份，只會再安裝一份。`,
   sourceUnknown: '請用當初安裝它的方式升級。',
   scriptInstall:
-    '這個指令會從官方網站下載並執行指令碼。BaoCut 不會替你執行來自網路的指令碼：請複製後自行在終端機中執行。',
+    '這個指令會從官方網站下載並執行指令碼。OpenFox 不會替你執行來自網路的指令碼：請複製後自行在終端機中執行。',
   scriptUpgrade: '這個指令會從官方網站下載並執行指令碼。請複製後自行在終端機中執行。',
   copyUpgrade: '複製這個指令並在終端機中執行，完成後回到這裡重新檢查。',
   runnableHint: '按一下指令左邊的 ▶ 就能在這裡執行，輸出會顯示在下方；也可以複製後自行在終端機中執行。',
@@ -85,20 +85,20 @@ export const zhHant: AgentCardMessages = {
   needs: (needs: string) => `這台電腦上需要有 ${needs}。`,
 
   installIntro: (name: string, plan: string) =>
-    `${name} 是安裝在你自己電腦上的命令列 AI 助理，用你已有的 ${plan} 登入。BaoCut 只是呼叫它：不另外收費，也不必在 BaoCut 中輸入 API 金鑰。`,
+    `${name} 是安裝在你自己電腦上的命令列 AI 助理，用你已有的 ${plan} 登入。OpenFox 只是呼叫它：不另外收費，也不必在 OpenFox 中輸入 API 金鑰。`,
   stepInstall: '安裝到這台電腦',
   stepInstallOfficial: '依照官方說明安裝到這台電腦',
   installOfficialBody: (command: ReactNode): ReactNode =>
     createElement(Fragment, null, '依照官方說明安裝。安裝完成後，應該能在終端機中執行 ', command, '。'),
   stepLogin: '登入你的帳號',
   stepLoginBody:
-    '安裝完成後，在終端機中執行下面的指令，並依照提示在瀏覽器中登入。登入在它自己的視窗中完成，BaoCut 不會經手你的帳號或密碼。',
+    '安裝完成後，在終端機中執行下面的指令，並依照提示在瀏覽器中登入。登入在它自己的視窗中完成，OpenFox 不會經手你的帳號或密碼。',
   stepBack: '回到這裡',
   stepBackBody: '偵測到已安裝並登入後就能使用。',
   detecting: '正在檢查…',
   recheck: '我已安裝，重新檢查',
   notDetected: '已安裝但偵測不到？',
   notDetectedBody:
-    'BaoCut 會在 PATH 和常見的安裝位置（Homebrew、npm 全域資料夾、~/.local/bin）中尋找。用版本管理工具（nvm、asdf、mise）安裝的有時在其他位置；你可以手動為 BaoCut 指定位置。',
+    'OpenFox 會在 PATH 和常見的安裝位置（Homebrew、npm 全域資料夾、~/.local/bin）中尋找。用版本管理工具（nvm、asdf、mise）安裝的有時在其他位置；你可以手動為 OpenFox 指定位置。',
   diagnosisOf: (name: string) => `${name} 的檢查結果`,
 };

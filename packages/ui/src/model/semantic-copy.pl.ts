@@ -207,8 +207,8 @@ export const pl: SemanticMessages = {
   },
   scope: {
     group: 'Zakres indeksu',
-    lead: 'Filmy we wszystkich projektach BaoCut są indeksowane według tego, co powiedziano i co widać na ekranie; dźwięki pojawią się w późniejszej wersji. Projekty, których nie chcesz indeksować, możesz wykluczyć. Wyeksportowane filmy nie są indeksowane osobno: wyszukiwanie znajduje film, z którego je wyeksportowano.',
-    all: 'Wszystkie projekty BaoCut',
+    lead: 'Filmy we wszystkich projektach OpenFox są indeksowane według tego, co powiedziano i co widać na ekranie; dźwięki pojawią się w późniejszej wersji. Projekty, których nie chcesz indeksować, możesz wykluczyć. Wyeksportowane filmy nie są indeksowane osobno: wyszukiwanie znajduje film, z którego je wyeksportowano.',
+    all: 'Wszystkie projekty OpenFox',
     allLine: (projects, excluded) => `Projekty: ${projects}${excluded ? `, wykluczone: ${excluded}` : ''} · nowe projekty dodają się same`,
     outside: 'Filmy poza projektami też są indeksowane.',
     excludedGroup: 'Wykluczone projekty',
@@ -270,7 +270,7 @@ export const pl: SemanticMessages = {
     remove: 'Usuń',
     removeDesc: 'Usuwa jego indeks; pliki zostają',
     videos: (n) =>
-      pluralForm('pl', n, { one: `${n} film BaoCut`, few: `${n} filmy BaoCut`, many: `${n} filmów BaoCut`, other: `${n} filmu BaoCut` }),
+      pluralForm('pl', n, { one: `${n} film OpenFox`, few: `${n} filmy OpenFox`, many: `${n} filmów OpenFox`, other: `${n} filmu OpenFox` }),
     videoFiles: (n) =>
       pluralForm('pl', n, { one: `${n} plik wideo`, few: `${n} pliki wideo`, many: `${n} plików wideo`, other: `${n} pliku wideo` }),
     images: (n) => pluralForm('pl', n, { one: `${n} obraz`, few: `${n} obrazy`, many: `${n} obrazów`, other: `${n} obrazu` }),
@@ -285,10 +285,10 @@ export const pl: SemanticMessages = {
     duplicates: (n) => pluralForm('pl', n, { one: `${n} już w projekcie`, other: `${n} już w projektach` }),
     legacy: (n) =>
       pluralForm('pl', n, {
-        one: `${n} starszy film BaoCut nie został wczytany`,
-        few: `${n} starsze filmy BaoCut nie zostały wczytane`,
-        many: `${n} starszych filmów BaoCut nie zostało wczytanych`,
-        other: `${n} starszego filmu BaoCut nie zostało wczytanych`,
+        one: `${n} starszy film OpenFox nie został wczytany`,
+        few: `${n} starsze filmy OpenFox nie zostały wczytane`,
+        many: `${n} starszych filmów OpenFox nie zostało wczytanych`,
+        other: `${n} starszego filmu OpenFox nie zostało wczytanych`,
       }),
     listSeparator: ', ',
     separator: ' · ',
@@ -298,21 +298,21 @@ export const pl: SemanticMessages = {
     truncatedNoteNoLimit: 'Za dużo plików: przeskanowano tylko pierwsze z nich. Dodaj zamiast tego podfolder.',
     unreadableNote: 'Nie można odczytać tego folderu. Sprawdź uprawnienia.',
     legacyNote:
-      'Starsze filmy BaoCut trzeba najpierw zaktualizować, zanim będzie można je odczytać, a aktualizacja je zmienia, więc tutaj nie są odczytywane. Przenieś film do projektu i raz otwórz go w BaoCut, aby go zaktualizować.',
+      'Starsze filmy OpenFox trzeba najpierw zaktualizować, zanim będzie można je odczytać, a aktualizacja je zmienia, więc tutaj nie są odczytywane. Przenieś film do projektu i raz otwórz go w OpenFox, aby go zaktualizować.',
     visualReady: 'Obraz jest gotowy',
     visualProgress: (done, total) => `Obraz: gotowe ${done} z ${total}`,
-    textOnly: 'Jego filmy BaoCut są indeksowane według mowy',
+    textOnly: 'Jego filmy OpenFox są indeksowane według mowy',
     visualOff: 'Indeks obrazu jest wyłączony, więc pliki wideo i obrazy nie są jeszcze indeksowane',
     addTitle: 'Dodaj indeksowany folder',
     addBody:
-      'Filmy spoza projektów też będzie można znajdować według znaczenia. BaoCut tylko odczytuje ten folder: niczego w nim nie zmienia, nie przenosi ani nie usuwa. Jego filmy i obrazy pojawią się w Space z tym folderem jako źródłem.',
+      'Filmy spoza projektów też będzie można znajdować według znaczenia. OpenFox tylko odczytuje ten folder: niczego w nim nie zmienia, nie przenosi ani nie usuwa. Jego filmy i obrazy pojawią się w Space z tym folderem jako źródłem.',
     addWhat: (visual) =>
       visual
-        ? 'Filmy BaoCut są indeksowane według mowy i obrazu, a pozostałe pliki wideo i obrazy według obrazu. Eksporty zapisane przez BaoCut są pomijane, a filmy, które są też w projekcie, korzystają z kopii z projektu.'
-        : 'Filmy BaoCut są indeksowane według mowy; pozostałe pliki wideo i obrazy wymagają indeksu obrazu. Eksporty zapisane przez BaoCut są pomijane, a filmy, które są też w projekcie, korzystają z kopii z projektu.',
+        ? 'Filmy OpenFox są indeksowane według mowy i obrazu, a pozostałe pliki wideo i obrazy według obrazu. Eksporty zapisane przez OpenFox są pomijane, a filmy, które są też w projekcie, korzystają z kopii z projektu.'
+        : 'Filmy OpenFox są indeksowane według mowy; pozostałe pliki wideo i obrazy wymagają indeksu obrazu. Eksporty zapisane przez OpenFox są pomijane, a filmy, które są też w projekcie, korzystają z kopii z projektu.',
     visualOffTitle: 'Pliki wideo i obrazy są indeksowane według obrazu',
     visualOffBody:
-      'Nie mają transkrypcji, więc można je znaleźć tylko po tym, co widać na ekranie. Zostaną zaindeksowane po włączeniu indeksu obrazu; do tego czasu indeksowane są tylko filmy BaoCut z tego folderu.',
+      'Nie mają transkrypcji, więc można je znaleźć tylko po tym, co widać na ekranie. Zostaną zaindeksowane po włączeniu indeksu obrazu; do tego czasu indeksowane są tylko filmy OpenFox z tego folderu.',
     confirmAdd: 'Dodaj',
     addedToast: (name) => `Dodano „${name}”. Skanowanie i indeksowanie trwa w tle.`,
     reindexedToast: (name) => `Ponowne skanowanie „${name}” i odbudowa jego indeksu`,

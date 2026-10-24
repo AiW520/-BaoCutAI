@@ -201,7 +201,7 @@ export const ja: ExportMessages = {
   editors: '編集ソフトに書き出す',
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: 'FCP7 XML（.xml）',
-  portableName: 'BaoCut ポータブルパッケージ',
+  portableName: 'OpenFox ポータブルパッケージ',
   portableMeta: '.baocut · 動画、すべてのドキュメントと素材を 1 つのファイルに',
   plannedTarget: 'このプロジェクトファイル形式は、このバージョンではまだ使えません',
   jianyingName: 'Jianying（剪映）ドラフト',

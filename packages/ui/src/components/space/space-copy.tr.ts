@@ -56,7 +56,7 @@ export const tr: SpaceMessages = {
   newFromPackageHint: "Başka yerde dışa aktarılmış, tüm medyaları içeren .baocut",
   pickPackageTitle: "Taşınabilir paket seçin",
   pickPackageButton: "Aç",
-  pickPackageFilter: "BaoCut taşınabilir paketi",
+  pickPackageFilter: "OpenFox taşınabilir paketi",
   openPackage: "Yeni video olarak aç",
   packageBlocked: (reason) => `Yeni video olarak aç: ${reason}`,
   packageOpening: (name) => `${name} adlı paket açılıyor…`,
@@ -102,7 +102,7 @@ export const tr: SpaceMessages = {
   changedTitle: "Kaynak video sonradan değişti",
   changedBody: "Bu sonuç videonun önceki sürümüne aittir. Hâlâ çalışır, ancak geçerli videoyu yansıtmaz.",
   reexport: "Kaynak videodan yeniden dışa aktar",
-  noPreviewVideo: "Videolar düzenleyicide açılır.", inIndexFolder: (folder: string | null) => (folder ? `“${folder}” dizin klasöründe, salt okunur: BaoCut bu dosyayı değiştirmez, taşımaz veya silmez.` : 'Dizin klasöründe, salt okunur: BaoCut bu dosyayı değiştirmez, taşımaz veya silmez.'),
+  noPreviewVideo: "Videolar düzenleyicide açılır.", inIndexFolder: (folder: string | null) => (folder ? `“${folder}” dizin klasöründe, salt okunur: OpenFox bu dosyayı değiştirmez, taşımaz veya silmez.` : 'Dizin klasöründe, salt okunur: OpenFox bu dosyayı değiştirmez, taşımaz veya silmez.'),
 
   // 能力（origin.capability）
   capability: {

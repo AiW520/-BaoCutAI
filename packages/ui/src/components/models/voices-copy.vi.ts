@@ -9,7 +9,7 @@ myVoices: { offline: 'Giọng hiện sau khi Runtime kết nối.', add: 'Thêm 
   // 克隆
   uploadTitle: (label) => `Tải lên ${label}?`, upload: 'Tải lên', cloneStarted: (label) => `Đang tải lên ${label} · tiến độ trong Tác vụ nền`, cloneRejected: (text) => `Không bắt đầu nhân bản được: ${text}`, removeCloneTitle: (label) => `Xóa bản nhân từ ${label}?`, removeCloneBody: (label) => `Sẽ yêu cầu ${label} xóa giọng nhân bản. Để dùng giọng trên ${label} sau đó cần tải lên lại.`, removeCloneConfirm: 'Xóa bản nhân', cloneRemoved: (label) => `Đã xóa bản nhân từ ${label}`, cloneGoneRemote: (label) => `${label} không còn bản nhân; cũng đã xóa bản ghi trên máy này`, cloneRemoveFailed: (text) => `Không xóa bản nhân được: ${text}`,
   // 导出
-  exportTitle: 'Xuất gói giọng', exportButton: 'Xuất', exported: (path) => `Đã xuất đến ${path}`, exportFailed: (text) => `Không xuất được: ${text}`, exportExists: 'BaoCut không ghi đè tệp hiện có. Chọn tên hoặc vị trí khác rồi xuất lại.', exportFailedExists: (text) => `Không xuất được: ${text}. BaoCut không ghi đè tệp hiện có. Chọn tên hoặc vị trí khác rồi xuất lại.`,
+  exportTitle: 'Xuất gói giọng', exportButton: 'Xuất', exported: (path) => `Đã xuất đến ${path}`, exportFailed: (text) => `Không xuất được: ${text}`, exportExists: 'OpenFox không ghi đè tệp hiện có. Chọn tên hoặc vị trí khác rồi xuất lại.', exportFailedExists: (text) => `Không xuất được: ${text}. OpenFox không ghi đè tệp hiện có. Chọn tên hoặc vị trí khác rồi xuất lại.`,
   // 删除
   deleteTitle: (name) => `Xóa “${name}”?`, deleteConfirm: 'Xóa', deleted: (name) => `Đã xóa “${name}”`, deleteFailed: (text) => `Không xóa được: ${text}`, localOnlyTitle: (label) => `Bản nhân trên ${label} chưa xóa`, localOnlyBody: (label, text) => `${text}\n\nGiọng vẫn ở đây. Có thể thử lại sau hoặc chỉ xóa bản ghi và giọng trên máy tính này. Bản nhân trong tài khoản ${label} vẫn còn, bạn phải tự xóa trên ${label}.`, localOnlyConfirm: 'Chỉ xóa trên máy tính này', later: 'Thử lại sau' },
   /** 我的声音 › 克隆新音色、补录授权声明、行上的 ID 与模型页那一行。 */
@@ -58,7 +58,7 @@ myVoices: { offline: 'Giọng hiện sau khi Runtime kết nối.', add: 'Thêm 
     reading: "Đang đọc âm thanh…",
     readFailed: message => `Không đọc được âm thanh này: ${message}`,
     micFailed: message => `Không bật được micrô: ${message}`,
-    micDenied: "BaoCut không dùng được micrô. Hãy cho phép trong cài đặt hệ thống, hoặc tải lên một bản ghi.",
+    micDenied: "OpenFox không dùng được micrô. Hãy cho phép trong cài đặt hệ thống, hoặc tải lên một bản ghi.",
     sampleShort: (seconds, min) => `Chỉ có ${seconds} giây; cần ít nhất ${min} giây. Hãy ghi lại.`,
     sampleLocal: "Đủ cho engine cục bộ · dài thêm chút nữa thì nhà cung cấp đám mây cũng dùng được",
     sampleOk: target => `Đủ rồi · ${target} giây là tốt nhất`,

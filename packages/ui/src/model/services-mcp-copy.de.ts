@@ -4,7 +4,7 @@ import type { ServicesMcpMessages } from './services-mcp-copy.ts';
 export const de: ServicesMcpMessages = {
   levels: {
     read: { title: "Nur lesen", desc: "Videoinformation, Transkripte und Verarbeitungsstatus anzeigen" },
-    ask: { title: "Vor Änderungen nachfragen", desc: "Vor Transkription, Bearbeitung, Export oder Erzeugung in BaoCut bestätigen" },
+    ask: { title: "Vor Änderungen nachfragen", desc: "Vor Transkription, Bearbeitung, Export oder Erzeugung in OpenFox bestätigen" },
     auto: { title: "Ohne Nachfrage erlauben", desc: "Schreiben, Aufgaben und Erzeugung sofort ohne Bestätigung; am besten bei alleiniger Nutzung" },
   },
   scopeAll: (total: number) => `Alle Videos (${total})`,

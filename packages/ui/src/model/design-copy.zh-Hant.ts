@@ -6,9 +6,9 @@ export const zhHant: DesignMessages = {
   frameTitle: (name) => `設計稿編輯器：${name}`,
   opening: '正在開啟設計稿…',
   unavailableTitle: '設計稿編輯器無法使用',
-  unavailableBody: '這個版本的 BaoCut 沒有附帶設計稿編輯器。設計稿的檔案仍在它的資料夾裡。',
+  unavailableBody: '這個版本的 OpenFox 沒有附帶設計稿編輯器。設計稿的檔案仍在它的資料夾裡。',
   hostBlockedTitle: '這個位址無法開啟設計稿編輯器',
-  hostBlockedBody: '用 127.0.0.1 或 localhost 開啟 BaoCut Web 才能編輯設計稿。設計稿的檔案仍在它的資料夾裡。',
+  hostBlockedBody: '用 127.0.0.1 或 localhost 開啟 OpenFox Web 才能編輯設計稿。設計稿的檔案仍在它的資料夾裡。',
   openFailed: (reason) => `無法開啟這份設計稿：${reason}`,
   open: '開啟設計稿',
   openCard: (name) => `開啟設計稿「${name}」`,
@@ -38,5 +38,5 @@ export const zhHant: DesignMessages = {
   exportDialogButton: '匯出',
   exportSaved: (path) => `已儲存到 ${path}`,
   exportFailed: (reason) => `無法儲存匯出的檔案：${reason}`,
-  exportUnsupported: (name) => `BaoCut 無法儲存「${name}」：不支援這種檔案類型`,
+  exportUnsupported: (name) => `OpenFox 無法儲存「${name}」：不支援這種檔案類型`,
 };

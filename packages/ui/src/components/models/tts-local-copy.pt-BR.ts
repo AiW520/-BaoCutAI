@@ -38,7 +38,7 @@ export const ptBR: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join(", "),
     cloneHint: "Forneça 5–15 segundos de fala limpa, uma pessoa sem música. WAV, MP3, M4A, FLAC ou vídeo funcionam.",
     yourFile: (name: string) => `Sua gravação · ${name}`,
-    sampleFile: (label: string) => `Gravação de amostra · ${label} · fornecida com BaoCut, sem escolher arquivo`,
+    sampleFile: (label: string) => `Gravação de amostra · ${label} · fornecida com OpenFox, sem escolher arquivo`,
     pickFile: "Escolher gravação…",
     changeFile: "Escolha outro…",
     useSample: "Usar gravação de amostra",

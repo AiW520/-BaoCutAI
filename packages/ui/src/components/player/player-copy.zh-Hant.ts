@@ -46,7 +46,7 @@ export const zhHant: PlayerMessages = {
     aborted: '載入已中斷',
     network: '讀取檔案時發生錯誤',
     decode: '解碼失敗，檔案可能已損壞',
-    unsupported: 'BaoCut 目前還無法播放這個檔案的格式或編碼',
+    unsupported: 'OpenFox 目前還無法播放這個檔案的格式或編碼',
     other: '無法播放這個檔案',
   },
 };

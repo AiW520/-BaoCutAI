@@ -3,7 +3,7 @@ import type { ServicesMcpMessages } from './services-mcp-copy.ts';
 export const ko: ServicesMcpMessages = {
   levels: {
     read: { title: '읽기 전용', desc: '영상 정보, 전사본, 처리 상태를 봅니다' },
-    ask: { title: '변경 전 확인', desc: '전사, 편집, 내보내기, 생성 전에 BaoCut에서 확인합니다' },
+    ask: { title: '변경 전 확인', desc: '전사, 편집, 내보내기, 생성 전에 OpenFox에서 확인합니다' },
     auto: { title: '묻지 않고 허용', desc: '쓰기, 작업, 생성을 확인 없이 바로 실행합니다. 혼자 쓸 때 적합합니다' },
   },
   scopeAll: (total) => `모든 영상(${total})`,

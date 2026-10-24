@@ -19,7 +19,7 @@ export const vi: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Tải xuống từ mirror tại ${base}.`,
   msNote: "Một vài tệp ModelScope không có (whisper.cpp) vẫn được tải từ Hugging Face. Mỗi tệp đều được đối chiếu với tổng kiểm tra tích hợp.",
   envNote: (name: string) => `Nếu đặt biến môi trường ${name}, giá trị đó được dùng thay thế.`,
-  webNote: "Trình duyệt không thể đổi nguồn tải xuống. Hãy đặt các nguồn này trong ứng dụng BaoCut trên máy tính.",
+  webNote: "Trình duyệt không thể đổi nguồn tải xuống. Hãy đặt các nguồn này trong ứng dụng OpenFox trên máy tính.",
   lead:
     "Bạn có thể lưu nhiều nguồn và chọn một nguồn cho mỗi loại. Hộp thoại tải xuống cũng cho phép đổi nguồn, và lựa chọn ở đây sẽ đổi theo. Mỗi tệp đều được đối chiếu với tổng kiểm tra tích hợp, dù tải từ đâu.",
   editAria: (name: string) => `Sửa “${name}”`,

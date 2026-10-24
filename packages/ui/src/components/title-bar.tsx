@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import openfoxIcon from './openfox-icon.png';
 import { ActionButton, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import ChevronLeft from '@react-spectrum/s2/icons/ChevronLeft';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
@@ -81,7 +82,7 @@ export function TitleBar({ platform }: { platform: string }) {
           侧栏收起、它从左缘铺开时按钮的 no-drag 才压得住它（否则点开合钮只会拖动窗口）。 */}
       {homeMode ? null : (
         <div className={titleArea} style={{ left: dividers.at(-1) ?? 0 }}>
-          <span className={title}><span className={titleMark} aria-hidden="true">T</span>Tuzi</span>
+          <span className={title}><img className={titleMark} src={openfoxIcon} alt="" />{S.common.productName}</span>
         </div>
       )}
       {/* `data-shell-peek-keep`：在导航区按下不关侧栏浮层（开合钮自己处理）。 */}

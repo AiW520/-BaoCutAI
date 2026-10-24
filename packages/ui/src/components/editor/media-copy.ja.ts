@@ -8,7 +8,7 @@ export const ja: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => noun[kind],
   undo: '取り消す',
   readOnly: '動画は読み取り専用です',
-  revealManaged: '動画フォルダに取り込まれ BaoCut が管理しているため、個別のファイルの場所はありません',
+  revealManaged: '動画フォルダに取り込まれ OpenFox が管理しているため、個別のファイルの場所はありません',
   revealUnknown: 'このファイルに記録された場所が見つかりません',
   uses: '使用箇所',
   usesNone: 'タイムラインではまだ使われていません',

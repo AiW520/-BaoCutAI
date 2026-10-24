@@ -44,7 +44,7 @@ const en = {
   startHint: 'When it finishes, a review page opens—this is the only tool you confirm before it applies.',
   readOnly: 'The video is read-only, so speakers can’t be identified.',
   web: 'Speakers can’t be identified in the browser',
-  webBody: 'Identifying speakers uses the on-device voiceprint model on this computer. Use the BaoCut desktop app.',
+  webBody: 'Identifying speakers uses the on-device voiceprint model on this computer. Use the OpenFox desktop app.',
 
   // 运行
   submitting: 'Submitting…',

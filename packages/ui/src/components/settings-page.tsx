@@ -438,7 +438,7 @@ function About() {
   const app = useAppUpdate((s) => s.snapshot?.current ?? null);
   return (
     <section className={about} aria-label={S.settingsPage.version}>
-      <div className={aboutName}>Tuzi</div>
+      <div className={aboutName}>{S.common.productName}</div>
       {app ? (
         <div className={aboutVersion}>{S.settingsPage.appVersion(app.version, app.build)}</div>
       ) : null}

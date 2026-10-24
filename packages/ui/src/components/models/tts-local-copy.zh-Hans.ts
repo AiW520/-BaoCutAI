@@ -37,7 +37,7 @@ export const zhHans: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join('、'),
     cloneHint: '给一段 5–15 秒的干净人声：一个人说话、没有背景音乐。WAV / MP3 / M4A / FLAC 或视频文件都行。',
     yourFile: (name: string) => `你的录音 · ${name}`,
-    sampleFile: (label: string) => `示例录音 · ${label} · 随 BaoCut 自带，不用去找文件`,
+    sampleFile: (label: string) => `示例录音 · ${label} · 随 开胡-OpenFox 自带，不用去找文件`,
     pickFile: '选录音…',
     changeFile: '换一段…',
     useSample: '用示例录音',

@@ -148,7 +148,7 @@ export const pl: ModelsMessages = {
     customTag: "Niestandardowe",
     emptyProviders: "Brak chmurowych dostawców tej kategorii. Można dodać własną usługę zgodną z OpenAI.",
     noCloud: "Ta kategoria nie ma modeli chmurowych.",
-    webNote: "W przeglądarce nie można łączyć dostawców, zmieniać kluczy, dodawać dostawców ani modeli, odświeżać katalogów ani zmieniać modelu domyślnego i jego ustawień. Testować modele nadal można. Resztę zrób w aplikacji BaoCut na komputer.",
+    webNote: "W przeglądarce nie można łączyć dostawców, zmieniać kluczy, dodawać dostawców ani modeli, odświeżać katalogów ani zmieniać modelu domyślnego i jego ustawień. Testować modele nadal można. Resztę zrób w aplikacji OpenFox na komputer.",
   },
   textParams: {
     effort: "Intensywność rozumowania",

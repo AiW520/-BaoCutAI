@@ -231,7 +231,7 @@
           {/* 旧版项目导入在跑 / 留了没导入的（legacy-import-task.jsx，只在 App） */}
           {window.LegacyImportBanner ? <window.LegacyImportBanner /> : null}
           <div className="newp__hd newp__hd--hero">
-            <div className="home-create__eyebrow">Tuzi · 创作工作台</div>
+            <div className="home-create__eyebrow">OpenFox · 创作工作台</div>
             <h1 className="greet">把灵感，变成下一部作品。</h1>
             <p className="home-create__intro">描述你的想法，拖入素材，或继续上次的创作。</p>
           </div>

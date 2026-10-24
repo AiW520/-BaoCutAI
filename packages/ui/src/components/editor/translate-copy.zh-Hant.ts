@@ -137,7 +137,7 @@ export const zhHantTranslate: TranslateMessages = {
   termsUnify: '統一為術語表譯法',
   termsUnified: (n: number) => `已將 ${n} 處統一為術語表譯法`,
   cut: (n) => `${n} 句原文的畫面被剪掉了`,
-  webHint: '重譯要呼叫模型或會話：從 Agent 或 BaoCut App 發起',
+  webHint: '重譯要呼叫模型或會話：從 Agent 或 OpenFox App 發起',
   refreshing: (n) => (n === null ? '正在重譯…' : `正在重譯 ${n} 句…`),
   aiMenu: '重譯與翻譯',
   directAll: (n) => `用模型 API 重譯這 ${n} 句`,

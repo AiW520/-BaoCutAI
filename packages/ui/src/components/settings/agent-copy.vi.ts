@@ -11,20 +11,20 @@ export const vi: AgentMessages = {
   factsLabel: "Cách Agent hoạt động",
   /** 隐私页里「Agent 权限」小标题（page-settings.jsx 的 `setpage__perm`）。 */
   permissionsTitle: "Quyền của Agent",
-  lede: "Agent là trợ lý AI lập trình được cài trên máy tính của bạn, như Claude Code hoặc Codex. BaoCut gọi trực tiếp, nên một câu có thể hoàn tất chép lời, dịch và chỉnh sửa.",
+  lede: "Agent là trợ lý AI lập trình được cài trên máy tính của bạn, như Claude Code hoặc Codex. OpenFox gọi trực tiếp, nên một câu có thể hoàn tất chép lời, dịch và chỉnh sửa.",
   /** 三条事实（page-settings-agent.jsx:12-16）。 */
   facts: [
-    { key: "cli", title: "Dùng những gì bạn đã có", body: "BaoCut gọi Agent dòng lệnh trên máy tính này thay vì cài Agent riêng." },
-    { key: "plan", title: "Dùng gói đăng ký của bạn", body: "Không trả thêm cho BaoCut và không cần điền khóa API." },
+    { key: "cli", title: "Dùng những gì bạn đã có", body: "OpenFox gọi Agent dòng lệnh trên máy tính này thay vì cài Agent riêng." },
+    { key: "plan", title: "Dùng gói đăng ký của bạn", body: "Không trả thêm cho OpenFox và không cần điền khóa API." },
     { key: "ask", title: "Hỏi trước khi thay đổi", body: "Agent dừng và chờ bạn đồng ý trước khi ghi vào video; bạn có thể hoàn tác bất cứ lúc nào." },
   ] as readonly { key: "cli" | "plan" | "ask"; title: string; body: string }[],
 
   providersHeading: "Agent trên máy tính này",
   providersHint:
-    "BaoCut tìm những Agent đã cài. Chỉ cần một Agent hoạt động; không cần tất cả. Nếu chưa biết chọn gì, hãy chọn Claude Code hoặc Codex. Agent tích hợp chỉ có thể tắt; Agent bạn thêm có thể xóa.",
+    "OpenFox tìm những Agent đã cài. Chỉ cần một Agent hoạt động; không cần tất cả. Nếu chưa biết chọn gì, hãy chọn Claude Code hoặc Codex. Agent tích hợp chỉ có thể tắt; Agent bạn thêm có thể xóa.",
   /** 列表底下那一行：几时检查过、内置几家、添加了几家、检测到几家（page-settings-agent.jsx 的 `agset-meta`）。 */
   providersMeta: (checked: string | null, builtin: number, added: number, found: number) =>
-    `${checked ? `Đã kiểm tra ${checked} · ` : ""}BaoCut có ${builtin} Agent tích hợp${added ? `, bạn đã thêm ${added}` : ""}; ${found} được phát hiện trên máy tính này`,
+    `${checked ? `Đã kiểm tra ${checked} · ` : ""}OpenFox có ${builtin} Agent tích hợp${added ? `, bạn đã thêm ${added}` : ""}; ${found} được phát hiện trên máy tính này`,
   /** 状态区的无障碍名。 */
   statusLabel: "Trạng thái Agent",
   scanDone: (n: number) => (n ? `Kiểm tra xong · ${n} Agent trên máy tính này` : "Kiểm tra xong · Không tìm thấy Agent đã cài"),
@@ -50,17 +50,17 @@ export const vi: AgentMessages = {
 
   /** 「没有逐次询问的通道」的那几家（data.js 的 `FULL_ONLY`）：`capabilities.approvals` 为 false。 */
   fullAccessOnly:
-    "Agent không thể hỏi phê duyệt từng bước, nên BaoCut chỉ có thể chạy trong chế độ Toàn quyền: Agent sẽ không hỏi trước khi chạy lệnh hoặc thay đổi tệp.",
+    "Agent không thể hỏi phê duyệt từng bước, nên OpenFox chỉ có thể chạy trong chế độ Toàn quyền: Agent sẽ không hỏi trước khi chạy lệnh hoặc thay đổi tệp.",
 
-  /** `tested` 为 false 的 Agent：能开会话，但没在 BaoCut 里真机跑通过完整会话。 */
+  /** `tested` 为 false 的 Agent：能开会话，但没在 OpenFox 里真机跑通过完整会话。 */
   untested: {
-    body: "Agent này chưa hoàn tất một phiên đầy đủ trong BaoCut trên máy thật. Phát hiện, đăng nhập và danh sách mô hình hoạt động như thường; nếu có lỗi trong phiên, hãy xem tài liệu riêng của nó.",
+    body: "Agent này chưa hoàn tất một phiên đầy đủ trong OpenFox trên máy thật. Phát hiện, đăng nhập và danh sách mô hình hoạt động như thường; nếu có lỗi trong phiên, hãy xem tài liệu riêng của nó.",
   },
 
   /** 添加更多 Agent（settings-agent-catalog.jsx，产品设计 §7.6）。 */
   catalog: {
     heading: "Thêm Agent",
-    hint: "Có thể thêm Agent dòng lệnh khác hỗ trợ ACP (Agent Client Protocol). BaoCut chưa kiểm chứng từng Agent; khả năng hoạt động phụ thuộc kết quả kiểm tra.",
+    hint: "Có thể thêm Agent dòng lệnh khác hỗ trợ ACP (Agent Client Protocol). OpenFox chưa kiểm chứng từng Agent; khả năng hoạt động phụ thuộc kết quả kiểm tra.",
     custom: "Lệnh tùy chỉnh…",
     search: "Tìm Agent để thêm",
     searchPlaceholder: "Tìm theo tên, mô tả hoặc lệnh",
@@ -74,13 +74,13 @@ export const vi: AgentMessages = {
     landed: (name: string, custom: boolean) => `Đã thêm ${name}${custom ? " (lệnh tùy chỉnh)" : ""} · Có thể dùng trong phiên sau khi phát hiện`,
     addFailed: (message: string) => `Không thêm được: ${message}`,
     webNote:
-      "Không thể thêm hoặc xóa Agent trong trình duyệt vì thao tác này quyết định lệnh chạy trên máy tính này. Hãy dùng ứng dụng BaoCut trên máy tính.",
+      "Không thể thêm hoặc xóa Agent trong trình duyệt vì thao tác này quyết định lệnh chạy trên máy tính này. Hãy dùng ứng dụng OpenFox trên máy tính.",
   },
 
   /** 自定义命令对话框（settings-agent-catalog.jsx 的 `AgentCustomDialog`）。 */
   customDialog: {
     title: "Thêm Agent bằng lệnh tùy chỉnh",
-    lede: "Nhập lệnh khởi động Agent ở chế độ ACP trong terminal. BaoCut khởi động trực tiếp chương trình, không qua terminal.",
+    lede: "Nhập lệnh khởi động Agent ở chế độ ACP trong terminal. OpenFox khởi động trực tiếp chương trình, không qua terminal.",
     name: "Tên",
     namePlaceholder: "ví dụ: Agent của tôi",
     id: "id",
@@ -92,8 +92,8 @@ export const vi: AgentMessages = {
     commandParts: (exe: string, args: string[]) => `Sẽ khởi động: chương trình ${exe}, đối số ${args.join(" · ")}`,
     env: "Biến môi trường (tùy chọn)",
     envPlaceholder: "MY_AGENT_TOKEN_FILE=~/.config/my-agent/token\nMY_AGENT_LOG=0",
-    envHint: "Mỗi dòng một KEY=VALUE, chỉ thêm khi BaoCut khởi động Agent.",
-    note: "Sau khi thêm, BaoCut kiểm tra khả năng khởi động, yêu cầu đăng nhập và mô hình có sẵn. Agent xuất hiện trong phiên sau khi được phát hiện.",
+    envHint: "Mỗi dòng một KEY=VALUE, chỉ thêm khi OpenFox khởi động Agent.",
+    note: "Sau khi thêm, OpenFox kiểm tra khả năng khởi động, yêu cầu đăng nhập và mô hình có sẵn. Agent xuất hiện trong phiên sau khi được phát hiện.",
     cancel: "Hủy",
     submit: "Thêm",
     exists: (id: string) => `Một Agent đã dùng “${id}”. Hãy chọn id khác.`,
@@ -109,29 +109,29 @@ export const vi: AgentMessages = {
     subLauncher: (launcher: string, needs: string) => `Chưa kiểm tra · ${launcher} tải xuống khi khởi chạy; cần ${needs}`,
     subMissing: (command: string) => `Chưa kiểm tra · ${command} không có trên máy tính này`,
     note: (name: string) =>
-      `${name} kết nối qua ACP (Agent Client Protocol). BaoCut chưa kiểm chứng: hãy xem tài liệu riêng để biết cách cài đặt và tài khoản cần đăng nhập.`,
+      `${name} kết nối qua ACP (Agent Client Protocol). OpenFox chưa kiểm chứng: hãy xem tài liệu riêng để biết cách cài đặt và tài khoản cần đăng nhập.`,
     noInstall: "Không cần cài riêng",
     noInstallBody: (launcher: string, spec: string, needs: string) =>
-      `Khi BaoCut khởi động Agent, ${launcher} tải xuống ${spec} tự động. Cần ${needs} trên máy tính này.`,
+      `Khi OpenFox khởi động Agent, ${launcher} tải xuống ${spec} tự động. Cần ${needs} trên máy tính này.`,
     install: "Cài trên máy tính này theo hướng dẫn chính thức",
     installBody: (command: string) => `Sau khi cài, ${command} phải chạy được trong terminal.`,
     docs: "Mở hướng dẫn chính thức",
-    launch: "BaoCut khởi động Agent bằng lệnh này",
+    launch: "OpenFox khởi động Agent bằng lệnh này",
     launchCopy: "lệnh khởi chạy",
     envNote: (keys: string[]) => `Thêm biến môi trường ${keys.join(", ")} khi khởi chạy (giá trị không hiển thị ở đây).`,
     login: "Nếu cần đăng nhập, hãy đăng nhập qua Agent",
-    loginBody: "Làm theo hướng dẫn trong terminal. Đăng nhập diễn ra trong cửa sổ riêng; BaoCut không xử lý tài khoản hay mật khẩu của bạn.",
+    loginBody: "Làm theo hướng dẫn trong terminal. Đăng nhập diễn ra trong cửa sổ riêng; OpenFox không xử lý tài khoản hay mật khẩu của bạn.",
     detectStep: "Kiểm tra",
-    detectBody: "BaoCut khởi động Agent một lần để xác nhận kết nối, kiểm tra yêu cầu đăng nhập và lấy danh sách mô hình.",
+    detectBody: "OpenFox khởi động Agent một lần để xác nhận kết nối, kiểm tra yêu cầu đăng nhập và lấy danh sách mô hình.",
     launchRow: "Lệnh khởi chạy",
-    launchRowHint: "BaoCut khởi động Agent bằng lệnh này qua ACP (Agent Client Protocol).",
+    launchRowHint: "OpenFox khởi động Agent bằng lệnh này qua ACP (Agent Client Protocol).",
     versionPinned: (spec: string) => `Lệnh khởi chạy cố định ${spec}. Để đổi phiên bản, hãy xóa rồi thêm lại bằng lệnh tùy chỉnh.`,
     versionOwn: "Để nâng cấp, hãy làm theo hướng dẫn riêng rồi kiểm tra lại tại đây.",
     account: (name: string, signedOut: boolean) =>
-      `${signedOut ? "Chưa đăng nhập hoặc đăng nhập đã hết hạn. " : ""}Đăng nhập và thanh toán đều diễn ra trong ${name}; BaoCut không xử lý tài khoản và không thu thêm phí.`,
+      `${signedOut ? "Chưa đăng nhập hoặc đăng nhập đã hết hạn. " : ""}Đăng nhập và thanh toán đều diễn ra trong ${name}; OpenFox không xử lý tài khoản và không thu thêm phí.`,
     removeTitle: (name: string) => `Xóa ${name} không?`,
     removeBody: (name: string) =>
-      `${name} sẽ bị xóa khỏi danh sách Agent của BaoCut cùng trạng thái bật và mô hình mặc định. Nếu phiên mới dùng Agent này mặc định, một Agent khả dụng khác sẽ thay thế. Tác vụ đang dùng Agent này sẽ kết thúc. Chương trình cài trên máy tính không bị ảnh hưởng và bạn có thể thêm lại sau.`,
+      `${name} sẽ bị xóa khỏi danh sách Agent của OpenFox cùng trạng thái bật và mô hình mặc định. Nếu phiên mới dùng Agent này mặc định, một Agent khả dụng khác sẽ thay thế. Tác vụ đang dùng Agent này sẽ kết thúc. Chương trình cài trên máy tính không bị ảnh hưởng và bạn có thể thêm lại sau.`,
     removed: (name: string) => `Đã xóa ${name}`,
     removeFailed: (message: string) => `Không xóa được: ${message}`,
   },
@@ -163,13 +163,13 @@ export const vi: AgentMessages = {
   faq: [
     {
       key: "cost",
-      title: "Tôi có cần trả phí hoặc đăng ký BaoCut riêng không?",
-      body: "Không. Agent dùng gói Claude hoặc ChatGPT bạn đã có; phí và hạn mức được tính ở đó. BaoCut không có mô hình riêng, không thu thập khóa và không chuyển tiếp qua đám mây. Nếu không có gói này, bạn có thể bỏ qua Agent; phần còn lại của BaoCut vẫn hoạt động bình thường.",
+      title: "Tôi có cần trả phí hoặc đăng ký OpenFox riêng không?",
+      body: "Không. Agent dùng gói Claude hoặc ChatGPT bạn đã có; phí và hạn mức được tính ở đó. OpenFox không có mô hình riêng, không thu thập khóa và không chuyển tiếp qua đám mây. Nếu không có gói này, bạn có thể bỏ qua Agent; phần còn lại của OpenFox vẫn hoạt động bình thường.",
     },
     {
       key: "account",
-      title: "BaoCut có thấy tài khoản và mật khẩu của tôi không?",
-      body: "Không. Đăng nhập diễn ra trong cửa sổ riêng của Agent. BaoCut chỉ khởi động chương trình trên máy tính của bạn và giao video cho nó. Agent hỏi trước khi thay đổi video; quy tắc nằm trong Cài đặt › Quyền riêng tư và quyền.",
+      title: "OpenFox có thấy tài khoản và mật khẩu của tôi không?",
+      body: "Không. Đăng nhập diễn ra trong cửa sổ riêng của Agent. OpenFox chỉ khởi động chương trình trên máy tính của bạn và giao video cho nó. Agent hỏi trước khi thay đổi video; quy tắc nằm trong Cài đặt › Quyền riêng tư và quyền.",
     },
     {
       key: "cloud",
@@ -179,8 +179,8 @@ export const vi: AgentMessages = {
     },
     {
       key: "terminal",
-      title: "Muốn điều khiển BaoCut bằng những Agent này từ terminal?",
-      body: "Phiên trong BaoCut không cần thiết lập thêm. Để dùng trong terminal hoặc ứng dụng khác, hãy cài Skill BaoCut cho Agent; xem cuối trang Skills.",
+      title: "Muốn điều khiển OpenFox bằng những Agent này từ terminal?",
+      body: "Phiên trong OpenFox không cần thiết lập thêm. Để dùng trong terminal hoặc ứng dụng khác, hãy cài Skill OpenFox cho Agent; xem cuối trang Skills.",
       link: "skills",
     },
   ] as readonly { key: string; title: string; body: string; link?: "models" | "skills" }[],
@@ -216,7 +216,7 @@ export const vi: AgentMessages = {
     desc: "Khi khởi động và trong lúc chạy, định kỳ cập nhật danh sách mô hình riêng của từng Agent đã bật. Khi tắt, bạn vẫn có thể làm mới thủ công trong chi tiết của từng Agent.",
   },
   executableHint:
-    "BaoCut tìm trong PATH và các vị trí cài đặt phổ biến (Homebrew, thư mục toàn cục của npm, ~/.local/bin). Chương trình cài bằng trình quản lý phiên bản (nvm, asdf, mise) đôi khi nằm nơi khác; hãy nhập đường dẫn đầy đủ của tệp thực thi tại đây. Để trống để trở lại tìm tự động.",
+    "OpenFox tìm trong PATH và các vị trí cài đặt phổ biến (Homebrew, thư mục toàn cục của npm, ~/.local/bin). Chương trình cài bằng trình quản lý phiên bản (nvm, asdf, mise) đôi khi nằm nơi khác; hãy nhập đường dẫn đầy đủ của tệp thực thi tại đây. Để trống để trở lại tìm tự động.",
   techPanel: "Thông tin kỹ thuật và vị trí",
   techTitle: "Thông tin kỹ thuật của Agent",
   techSubtitle: "Phiên bản, đường dẫn và mô hình khả dụng",
@@ -251,7 +251,7 @@ export const vi: AgentMessages = {
     confirmUpgrade: (name: string) => `Chạy lệnh nâng cấp cho ${name} không?`,
     confirmRun: "Chạy",
     cancel: "Hủy",
-    confirmBefore: "BaoCut sẽ chạy lệnh bên dưới trên máy tính này. Đầu ra xuất hiện dưới lệnh và bạn có thể dừng bất cứ lúc nào.",
+    confirmBefore: "OpenFox sẽ chạy lệnh bên dưới trên máy tính này. Đầu ra xuất hiện dưới lệnh và bạn có thể dừng bất cứ lúc nào.",
     confirmAfter: "Lệnh cần mật khẩu sẽ thất bại ở đây; hãy chạy chúng trong terminal.",
     restored: (name: string) => `${name} đã trở lại tìm tự động`,
     switched: (path: string) => `Hiện dùng ${path}`,
@@ -267,7 +267,7 @@ export const vi: AgentMessages = {
 
   // ---- Skills（产品设计 §6.9；原型 settings-agent-skills.jsx、settings-agent-skill-detail.jsx） ----
   skills: {
-    lede: "Skill là thư mục (SKILL.md và tệp tham khảo tùy chọn) hướng dẫn Agent trong BaoCut làm việc theo cách nhất định. Khi bật, Agent tự dùng Skill khi thấy phù hợp với tác vụ; khi tắt, Skill chỉ được dùng khi bạn chọn từ “+” trong ô nhập. Bật, tắt, thêm hoặc xóa Skill có hiệu lực từ phiên Agent mới tiếp theo.",
+    lede: "Skill là thư mục (SKILL.md và tệp tham khảo tùy chọn) hướng dẫn Agent trong OpenFox làm việc theo cách nhất định. Khi bật, Agent tự dùng Skill khi thấy phù hợp với tác vụ; khi tắt, Skill chỉ được dùng khi bạn chọn từ “+” trong ô nhập. Bật, tắt, thêm hoặc xóa Skill có hiệu lực từ phiên Agent mới tiếp theo.",
     search: "Tìm Skill",
     filter: "Lọc theo nguồn",
     tab: (label: string, count: number) => `${label} ${count}`,
@@ -278,15 +278,15 @@ export const vi: AgentMessages = {
     loading: "Đang tải Skill…",
     loadFailed: (message: string) => `Không tải Skill được: ${message}`,
     retry: "Thử lại",
-    disconnected: "Chưa kết nối với BaoCut Runtime. Skill được liệt kê sau khi kết nối.",
+    disconnected: "Chưa kết nối với OpenFox Runtime. Skill được liệt kê sau khi kết nối.",
     emptyTitle: "Chưa có Skill",
     emptyBody:
       "Chưa có Skill khả dụng ở đây. Thêm thư mục Skill bạn viết hoặc nhập Skill được chia sẻ trên GitHub. Skill bên thứ ba tắt sau khi nhập; hãy xem nội dung trước khi bật.",
-    emptyWeb: "Chưa có Skill khả dụng ở đây. Trong trình duyệt, bạn chỉ có thể xem và bật/tắt; hãy thêm và nhập bằng ứng dụng BaoCut trên máy tính.",
+    emptyWeb: "Chưa có Skill khả dụng ở đây. Trong trình duyệt, bạn chỉ có thể xem và bật/tắt; hãy thêm và nhập bằng ứng dụng OpenFox trên máy tính.",
     noMatch: (query: string) => `Không tìm thấy Skill cho “${query}”`,
     noMatchHint: "Thử từ khác hoặc chuyển sang “Tất cả”.",
     noneInTab: (label: string) => `Chưa có Skill ${label}`,
-    webNote: "Trong trình duyệt, bạn có thể xem và bật/tắt Skill; hãy thêm, nhập và xóa bằng ứng dụng BaoCut trên máy tính.",
+    webNote: "Trong trình duyệt, bạn có thể xem và bật/tắt Skill; hãy thêm, nhập và xóa bằng ứng dụng OpenFox trên máy tính.",
     view: (name: string) => `Xem ${name}`,
     enable: (name: string) => `Bật ${name}`,
     toggledOn: (name: string) => `Đã bật “${name}”: từ phiên mới tiếp theo, Agent tự dùng khi phù hợp`,
@@ -299,9 +299,9 @@ export const vi: AgentMessages = {
     diagnosticCode: { invalid: "Định dạng không hợp lệ", 'duplicate-id': "Trùng tên", 'builtin-conflict': "Trùng tên với Skill tích hợp" } as Record<string, string>,
     /** 没能加载的那一行：文件夹 · 原因：第一条问题。 */
     diagnosticLine: (dir: string, reason: string, issue: string) => `${dir} · ${reason}: ${issue}`,
-    externalTitle: "Dùng BaoCut từ Agent trong terminal hoặc ứng dụng khác",
+    externalTitle: "Dùng OpenFox từ Agent trong terminal hoặc ứng dụng khác",
     externalBody:
-      "Skill bên trên dành cho Agent trong BaoCut. Để hướng dẫn Claude Code hoặc Codex trong terminal chép lời, dịch, chỉnh sửa và xuất bằng BaoCut, hãy cài Skill BaoCut cho chúng. Cài một lần nhấp vào vị trí toàn cục của những Agent này, xem nơi đã cài và có cần cập nhật không sẽ có trong phiên bản sau.",
+      "Skill bên trên dành cho Agent trong OpenFox. Để hướng dẫn Claude Code hoặc Codex trong terminal chép lời, dịch, chỉnh sửa và xuất bằng OpenFox, hãy cài Skill OpenFox cho chúng. Cài một lần nhấp vào vị trí toàn cục của những Agent này, xem nơi đã cài và có cần cập nhật không sẽ có trong phiên bản sau.",
   },
 
   skillDetail: {
@@ -309,7 +309,7 @@ export const vi: AgentMessages = {
     stateOn: "Bật: Agent tự dùng khi phù hợp.",
     stateOff: "Tắt: chỉ dùng khi bạn chọn từ “+” trong ô nhập.",
     thirdPartyNote:
-      "Skill bên thứ ba đến từ kho mã do người khác chia sẻ: hãy xem nội dung trước khi bật. BaoCut không chạy tệp trong Skill, và Skill không thể mở rộng quyền của Agent.",
+      "Skill bên thứ ba đến từ kho mã do người khác chia sẻ: hãy xem nội dung trước khi bật. OpenFox không chạy tệp trong Skill, và Skill không thể mở rộng quyền của Agent.",
     source: "Nguồn",
     location: "Vị trí",
     version: "Phiên bản",

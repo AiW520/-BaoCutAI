@@ -56,7 +56,7 @@ function manifest(app: Record<string, unknown>, extra: Record<string, unknown> =
   });
 }
 
-const zipApp = { url: 'https://baocut.app/downloads/BaoCut-2.3.0-build.57-aarch64-apple-darwin.zip', size: 1024, sha256: SHA, format: 'zip' };
+const zipApp = { url: 'https://baocut.app/downloads/OpenFox-2.3.0-build.57-aarch64-apple-darwin.zip', size: 1024, sha256: SHA, format: 'zip' };
 
 const info: AppUpdateInfo = {
   version: '2.3.0',
@@ -77,8 +77,8 @@ describe('更新源', () => {
     expect(feedTarget('win32', 'x64')).toBe('x86_64-pc-windows-msvc');
     expect(feedTarget('darwin', 'x64')).toBeNull();
     expect(feedTarget('linux', 'x64')).toBeNull();
-    expect(feedUrl('aarch64-apple-darwin')).toBe('https://raw.githubusercontent.com/jimliu/baocut/main/apps/desktop/releases/appcast-aarch64-apple-darwin.json');
-    expect(feedUrl('x86_64-pc-windows-msvc')).toBe('https://raw.githubusercontent.com/jimliu/baocut/main/apps/desktop/releases/appcast-x86_64-pc-windows-msvc.json');
+    expect(feedUrl('aarch64-apple-darwin')).toBe('https://raw.githubusercontent.com/AiW520/-BaoCutAI/openfox-updates/apps/desktop/releases/appcast-aarch64-apple-darwin.json');
+    expect(feedUrl('x86_64-pc-windows-msvc')).toBe('https://raw.githubusercontent.com/AiW520/-BaoCutAI/openfox-updates/apps/desktop/releases/appcast-x86_64-pc-windows-msvc.json');
   });
 
   it('Windows 的 CUDA、Vulkan 版各读自己的更新源，标准版不带后缀', () => {
@@ -88,7 +88,7 @@ describe('更新源', () => {
     expect(feedFileName(win, 'cuda')).toBe('appcast-x86_64-pc-windows-msvc-cuda.json');
     expect(feedFileName(win, 'vulkan')).toBe('appcast-x86_64-pc-windows-msvc-vulkan.json');
     expect(feedFileName(win, '../x')).toBe('appcast-x86_64-pc-windows-msvc.json');
-    expect(feedUrl(win, 'cuda')).toBe('https://raw.githubusercontent.com/jimliu/baocut/main/apps/desktop/releases/appcast-x86_64-pc-windows-msvc-cuda.json');
+    expect(feedUrl(win, 'cuda')).toBe('https://raw.githubusercontent.com/AiW520/-BaoCutAI/openfox-updates/apps/desktop/releases/appcast-x86_64-pc-windows-msvc-cuda.json');
   });
 
   it('Windows 的本地路径与 file:// 地址', () => {
@@ -163,7 +163,7 @@ describe('清单', () => {
 
   it('打包脚本生成的清单能被应用读回', () => {
     const win = 'x86_64-pc-windows-msvc';
-    const url = 'https://downloads.example/BaoCut-0.2.0-build.7-win-x64-cuda-setup.exe';
+    const url = 'https://downloads.example/OpenFox-0.2.0-build.7-win-x64-cuda-setup.exe';
     const doc = releaseManifest({
       target: win,
       variant: 'cuda',
@@ -196,7 +196,7 @@ describe('清单', () => {
     expect(doc).not.toHaveProperty('rolloutHours');
     expect(doc).not.toHaveProperty('releasedAt');
     expect(parseManifest(JSON.stringify(doc), win, false, null)).toMatchObject({ ok: false, error: 'target' });
-    expect(fileName({ url, build: 7, format: 'exe' })).toBe('BaoCut-0.2.0-build.7-win-x64-cuda-setup.exe');
+    expect(fileName({ url, build: 7, format: 'exe' })).toBe('OpenFox-0.2.0-build.7-win-x64-cuda-setup.exe');
   });
 
   it('分批推送的两个键都成形才分批；写错了当不分批，清单照读', () => {
@@ -236,7 +236,7 @@ describe('清单', () => {
       build: 7,
       date: '2026-10-05',
       format: 'exe',
-      url: 'https://downloads.example/BaoCut-0.2.0-build.7-win-x64-setup.exe',
+      url: 'https://downloads.example/OpenFox-0.2.0-build.7-win-x64-setup.exe',
       size: 1024,
       sha256: SHA,
       rolloutHours: 72,
@@ -252,14 +252,14 @@ describe('清单', () => {
   });
 
   it('本地安装包地址只在更新源被覆盖时允许', () => {
-    const local = { ...zipApp, url: 'file:///tmp/BaoCut.zip' };
+    const local = { ...zipApp, url: 'file:///tmp/OpenFox.zip' };
     expect(parseManifest(manifest(local), TARGET, false)).toMatchObject({ ok: false, error: 'artifact' });
-    expect(parseManifest(manifest(local), TARGET, true)).toMatchObject({ ok: true, info: { url: 'file:///tmp/BaoCut.zip' } });
+    expect(parseManifest(manifest(local), TARGET, true)).toMatchObject({ ok: true, info: { url: 'file:///tmp/OpenFox.zip' } });
   });
 
-  it('不安全的文件名改用 BaoCut-<build>.<ext>', () => {
-    expect(fileName(info)).toBe('BaoCut-2.3.0-build.57-aarch64-apple-darwin.zip');
-    expect(fileName({ ...info, url: 'https://x/a/BaoCut%202.zip?sig=1#x' })).toBe('BaoCut 2.zip');
+  it('不安全的文件名改用 OpenFox-<build>.<ext>', () => {
+    expect(fileName(info)).toBe('OpenFox-2.3.0-build.57-aarch64-apple-darwin.zip');
+    expect(fileName({ ...info, url: 'https://x/a/OpenFox%202.zip?sig=1#x' })).toBe('OpenFox 2.zip');
     for (const url of [
       'https://x/',
       'https://x/..',
@@ -269,7 +269,7 @@ describe('清单', () => {
       'https://x/c%3A.zip',
       'https://x/a%0Ab',
     ]) {
-      expect(fileName({ ...info, url }), url).toBe('BaoCut-57.zip');
+      expect(fileName({ ...info, url }), url).toBe('OpenFox-57.zip');
     }
   });
 });
@@ -304,7 +304,7 @@ describe('何时启用', () => {
     hasFeedTarget: true,
     packaged: true,
     windows: false,
-    bundleId: 'com.baocut.app',
+    bundleId: 'vip.openfox.app',
     exeInAppBundle: true,
   };
 
@@ -327,19 +327,19 @@ describe('何时启用', () => {
   });
 
   it('认得 .app 里的可执行文件', () => {
-    expect(exeInAppBundle('/Applications/BaoCut.app/Contents/MacOS/BaoCut')).toBe(true);
-    expect(exeInAppBundle('/Applications/BaoCut.APP/Contents/MacOS/BaoCut')).toBe(true);
+    expect(exeInAppBundle('/Applications/OpenFox.app/Contents/MacOS/OpenFox')).toBe(true);
+    expect(exeInAppBundle('/Applications/OpenFox.APP/Contents/MacOS/OpenFox')).toBe(true);
     expect(exeInAppBundle('/usr/local/bin/electron')).toBe(false);
-    expect(appBundleFromExecutable('/Applications/BaoCut.app/Contents/Frameworks/X.app/Contents/MacOS/X')).toBe(
-      '/Applications/BaoCut.app/Contents/Frameworks/X.app',
+    expect(appBundleFromExecutable('/Applications/OpenFox.app/Contents/Frameworks/X.app/Contents/MacOS/X')).toBe(
+      '/Applications/OpenFox.app/Contents/Frameworks/X.app',
     );
     expect(appBundleFromExecutable('/usr/local/bin/electron')).toBeNull();
   });
 
   it('缓存目录按平台', () => {
-    expect(cacheDirectory('darwin', '/Users/a', {})).toBe('/Users/a/Library/Caches/BaoCut/Updates');
-    expect(cacheDirectory('linux', '/home/a', {})).toBe('/home/a/.cache/BaoCut/Updates');
-    expect(cacheDirectory('linux', '/home/a', { XDG_CACHE_HOME: '/c' })).toBe('/c/BaoCut/Updates');
+    expect(cacheDirectory('darwin', '/Users/a', {})).toBe('/Users/a/Library/Caches/OpenFox/Updates');
+    expect(cacheDirectory('linux', '/home/a', {})).toBe('/home/a/.cache/OpenFox/Updates');
+    expect(cacheDirectory('linux', '/home/a', { XDG_CACHE_HOME: '/c' })).toBe('/c/OpenFox/Updates');
     expect(cacheDirectory('darwin', '', {})).toBeNull();
   });
 });
@@ -555,19 +555,19 @@ describe('命令输出与换包脚本', () => {
   });
 
   it('从 hdiutil 的输出读挂载点', () => {
-    const output = 'warning: deprecated\n/dev/disk4\tGUID_partition_scheme\t\n/dev/disk4s1\tApple_HFS\t/Volumes/BaoCut 2.3.0\n';
-    expect(mountPath(output)).toBe('/Volumes/BaoCut 2.3.0');
+    const output = 'warning: deprecated\n/dev/disk4\tGUID_partition_scheme\t\n/dev/disk4s1\tApple_HFS\t/Volumes/OpenFox 2.3.0\n';
+    expect(mountPath(output)).toBe('/Volumes/OpenFox 2.3.0');
     expect(mountPath('nothing')).toBeNull();
   });
 
   const plan: InstallerPlan = {
     pid: 4242,
-    newApp: "/Users/a/Library/Caches/BaoCut/Updates/unpack-57/BaoCut's.app",
-    target: '/Applications/BaoCut.app',
+    newApp: "/Users/a/Library/Caches/OpenFox/Updates/unpack-57/OpenFox's.app",
+    target: '/Applications/OpenFox.app',
     mount: null,
-    archive: '/Users/a/Library/Caches/BaoCut/Updates/BaoCut.zip',
-    unpacked: '/Users/a/Library/Caches/BaoCut/Updates/unpack-57',
-    script: '/Users/a/Library/Caches/BaoCut/Updates/install-4242.sh',
+    archive: '/Users/a/Library/Caches/OpenFox/Updates/OpenFox.zip',
+    unpacked: '/Users/a/Library/Caches/OpenFox/Updates/unpack-57',
+    script: '/Users/a/Library/Caches/OpenFox/Updates/install-4242.sh',
     relaunch: true,
   };
 
@@ -576,14 +576,14 @@ describe('命令输出与换包脚本', () => {
     expect(result.ok).toBe(true);
     const script = result.ok ? result.script : '';
     expect(shellQuote("a'b")).toBe("'a'\\''b'");
-    expect(script).toContain("NEW_APP='/Users/a/Library/Caches/BaoCut/Updates/unpack-57/BaoCut'\\''s.app'");
-    expect(script).toContain("STAGING='/Applications/.BaoCut.app.incoming'");
-    expect(script).toContain("BACKUP='/Applications/.BaoCut.app.previous'");
+    expect(script).toContain("NEW_APP='/Users/a/Library/Caches/OpenFox/Updates/unpack-57/OpenFox'\\''s.app'");
+    expect(script).toContain("STAGING='/Applications/.OpenFox.app.incoming'");
+    expect(script).toContain("BACKUP='/Applications/.OpenFox.app.previous'");
     expect(script).toContain('PID=4242');
     expect(script).toContain('/bin/mv "$BACKUP" "$TARGET"');
     expect(script).toContain('/bin/rm -rf "$UNPACKED"');
     expect(script).not.toContain('hdiutil');
-    const dmg = installerScript({ ...plan, mount: '/Volumes/BaoCut', unpacked: null });
+    const dmg = installerScript({ ...plan, mount: '/Volumes/OpenFox', unpacked: null });
     expect(dmg.ok && dmg.script).toContain('/usr/bin/hdiutil detach "$MOUNT" -quiet');
     // 换完、回滚（三处）都打开应用
     expect(script.match(/\/usr\/bin\/open "\$TARGET"/g)).toHaveLength(4);
@@ -600,7 +600,7 @@ describe('命令输出与换包脚本', () => {
   });
 
   it('拒绝不安全的目标', () => {
-    for (const target of ['/BaoCut.app', '/Applications/BaoCut', 'Applications/BaoCut.app', '/Applications/']) {
+    for (const target of ['/OpenFox.app', '/Applications/OpenFox', 'Applications/OpenFox.app', '/Applications/']) {
       expect(installerScript({ ...plan, target }).ok, target).toBe(false);
     }
   });

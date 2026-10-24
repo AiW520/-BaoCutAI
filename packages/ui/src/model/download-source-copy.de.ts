@@ -19,7 +19,7 @@ export const de: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Vom Spiegel unter ${base} herunterladen.`,
   msNote: "Die wenigen Dateien, die ModelScope nicht hat (whisper.cpp), kommen weiterhin von Hugging Face. Jede Datei wird mit ihrer integrierten Prüfsumme abgeglichen.",
   envNote: (name: string) => `Ist die Umgebungsvariable ${name} gesetzt, wird sie stattdessen verwendet.`,
-  webNote: "Im Browser lassen sich die Downloadquellen nicht ändern. Stellen Sie sie in der BaoCut-Desktop-App ein.",
+  webNote: "Im Browser lassen sich die Downloadquellen nicht ändern. Stellen Sie sie in der OpenFox-Desktop-App ein.",
   lead:
     "Sie können mehrere Quellen speichern und je Art eine auswählen. Auch im Download-Dialog lässt sie sich wechseln; das ändert die Auswahl hier. Jede Datei wird mit ihrer integrierten Prüfsumme abgeglichen, egal woher sie kommt.",
   editAria: (name: string) => `„${name}“ bearbeiten`,

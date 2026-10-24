@@ -57,7 +57,7 @@ export const ru: SpaceMessages = {
   newFromPackageHint: "Экспортированный .baocut со всеми материалами внутри",
   pickPackageTitle: "Выбрать переносимый пакет",
   pickPackageButton: "Открыть",
-  pickPackageFilter: "Переносимый пакет BaoCut",
+  pickPackageFilter: "Переносимый пакет OpenFox",
   openPackage: "Открыть новым видео",
   packageBlocked: (reason: string) => `Открыть новым видео: ${reason}`,
   packageOpening: (name: string) => `Открытие «${name}"…`,
@@ -101,7 +101,7 @@ export const ru: SpaceMessages = {
   changedTitle: "Исходное видео изменилось после",
   changedBody: "Результат соответствует старой версии видео. Работает, но не отражает текущее видео.",
   reexport: "Экспортировать снова из исходного видео",
-  noPreviewVideo: "Видео открываются в редакторе.", inIndexFolder: (folder: string | null) => (folder ? `В папке индекса «${folder}», только для чтения: BaoCut не изменяет, не перемещает и не удаляет этот файл.` : 'В папке индекса, только для чтения: BaoCut не изменяет, не перемещает и не удаляет этот файл.'),
+  noPreviewVideo: "Видео открываются в редакторе.", inIndexFolder: (folder: string | null) => (folder ? `В папке индекса «${folder}», только для чтения: OpenFox не изменяет, не перемещает и не удаляет этот файл.` : 'В папке индекса, только для чтения: OpenFox не изменяет, не перемещает и не удаляет этот файл.'),
 
   capability: {
     synthesizeSpeech: "Озвучка",

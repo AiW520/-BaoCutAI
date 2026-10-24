@@ -30,11 +30,11 @@ export const ja: LinkImportMessages = {
   issue: {
     TOOL_NOT_INSTALLED: {
       title: '一度準備すれば、あとは貼り付けるだけ',
-      body: 'BaoCut がこのサイトを読み取るには、動画ダウンロードツール yt-dlp が必要です。インストールしてから、この読み込みをもう一度始めてください。',
+      body: 'OpenFox がこのサイトを読み取るには、動画ダウンロードツール yt-dlp が必要です。インストールしてから、この読み込みをもう一度始めてください。',
     },
     TOOL_CONSENT_REQUIRED: {
       title: 'ダウンロードツールの使用には同意が必要です',
-      body: 'ダウンロードツールはすでにこのコンピュータにあります。BaoCut は同意を得てから、これを使って Web サイトから動画をダウンロードします。',
+      body: 'ダウンロードツールはすでにこのコンピュータにあります。OpenFox は同意を得てから、これを使って Web サイトから動画をダウンロードします。',
     },
     TOOL_UNAVAILABLE: {
       title: 'ダウンロードツールを実行できません',
@@ -46,7 +46,7 @@ export const ja: LinkImportMessages = {
     },
     OFFLINE_STRICT: {
       title: '厳格オフラインモードではリンクからダウンロードできません',
-      body: '厳格オフラインモードの BaoCut はネットワークに接続しません。先にブラウザで動画をダウンロードしてから、ローカルファイルを選んでください。',
+      body: '厳格オフラインモードの OpenFox はネットワークに接続しません。先にブラウザで動画をダウンロードしてから、ローカルファイルを選んでください。',
     },
     LINK_UNSUPPORTED: {
       title: 'このソースにはまだ対応していません',
@@ -58,7 +58,7 @@ export const ja: LinkImportMessages = {
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: 'ブラウザの Cookie を読み取れませんでした',
-      body: 'ブラウザでサインインしていることを確認してください。データベースがロックされている場合は、ブラウザを完全に終了し（バックグラウンドで動いているものも含む）、キーチェーンの権限を確認してください（Safari の場合は「フルディスクアクセス」で BaoCut を許可）。Windows では App-Bound Encryption で保護された Chrome、Edge、Brave の Cookie は読み取れないため、代わりに Firefox にチェックを入れてください。または、「設定 › 動画のダウンロード」で別のブラウザにチェックを入れて、もう一度ダウンロードしてください。',
+      body: 'ブラウザでサインインしていることを確認してください。データベースがロックされている場合は、ブラウザを完全に終了し（バックグラウンドで動いているものも含む）、キーチェーンの権限を確認してください（Safari の場合は「フルディスクアクセス」で OpenFox を許可）。Windows では App-Bound Encryption で保護された Chrome、Edge、Brave の Cookie は読み取れないため、代わりに Firefox にチェックを入れてください。または、「設定 › 動画のダウンロード」で別のブラウザにチェックを入れて、もう一度ダウンロードしてください。',
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: 'yt-dlp の更新が必要です',
@@ -118,14 +118,14 @@ export const ja: LinkImportMessages = {
   toolSource: {
     system: 'システムにインストール済み',
     user: '指定したもの',
-    managed: 'BaoCut がダウンロード',
-    bundled: 'BaoCut に同梱',
+    managed: 'OpenFox がダウンロード',
+    bundled: 'OpenFox に同梱',
     env: '環境変数で指定',
   },
   factVersion: (version: string, size: string | null) => (size ? `バージョン ${version} · 約 ${size}` : `バージョン ${version}`),
   factFrom: (host: string) => `${host} からダウンロード`,
   factLicense: (license: string) => `${license} ライセンス`,
-  factIsolated: 'BaoCut 専用のフォルダに置き、チェックサムを検証してから実行します。システムは変更しません',
+  factIsolated: 'OpenFox 専用のフォルダに置き、チェックサムを検証してから実行します。システムは変更しません',
   factInstalledWith: (method: string) => `${method} でインストール`,
 
   cardChecking: 'ダウンロードツールを確認中…',
@@ -136,19 +136,19 @@ export const ja: LinkImportMessages = {
   cardInstallingBody: 'ダウンロード → 検証 → テスト実行。完了すると「準備完了」と表示されます。',
   cardUpdating: 'ダウンロードツールを更新中…',
   cardUpdatingBody: '出力はコマンドの下に表示されます。完了後にバージョンをもう一度確認します。',
-  cardBlockedWhy: 'このコンピュータでは BaoCut がダウンロードを代行できません。',
+  cardBlockedWhy: 'このコンピュータでは OpenFox がダウンロードを代行できません。',
   cardMissing: 'ダウンロードツールがインストールされていません',
   cardMissingBody: (why: string) => `${endSentence(why)}yt-dlp をご自身でインストールしてから「再確認」をクリックするか、その場所を選んでください。`,
   cardInstall: '一度準備すれば、あとは貼り付けるだけ',
   cardInstallBody:
-    'BaoCut が動画サイトを読み取るには、動画ダウンロードツール yt-dlp が必要です。同意するとツールをダウンロードして同意を記憶するため、以降リンクから読み込むときに再度確認することはありません。',
+    'OpenFox が動画サイトを読み取るには、動画ダウンロードツール yt-dlp が必要です。同意するとツールをダウンロードして同意を記憶するため、以降リンクから読み込むときに再度確認することはありません。',
   cardInstallAction: '同意してインストール',
   cardOutdatedReason: (reason: string | null, version: string | null, minVersion: string | null) =>
     endSentence(reason ?? `バージョン ${version ?? '不明'} は必要な ${minVersion ?? ''} より古いです`),
   cardOutdated: 'ダウンロードツールの更新が必要です',
   cardOutdatedBlocked: (reason: string, why: string) => `${reason}${why}`,
-  cardOutdatedRunnable: 'BaoCut がダウンロードしたものではありません。下のコマンドで、インストールしたときと同じ方法で更新できます。',
-  cardOutdatedManual: 'BaoCut がダウンロードしたものではありません。下の手順に従ってターミナルで更新してから、「再確認」をクリックしてください。',
+  cardOutdatedRunnable: 'OpenFox がダウンロードしたものではありません。下のコマンドで、インストールしたときと同じ方法で更新できます。',
+  cardOutdatedManual: 'OpenFox がダウンロードしたものではありません。下の手順に従ってターミナルで更新してから、「再確認」をクリックしてください。',
   cardOutdatedUpdate: (reason: string) => `${reason}始める前に更新してください。`,
   cardUpdateAction: '同意して更新',
   cardBroken: 'ダウンロードツールを実行できません',
@@ -156,8 +156,8 @@ export const ja: LinkImportMessages = {
   cardReinstallAction: '同意して再インストール',
   cardConsentRevoked: 'ダウンロードツールへの同意は撤回されています',
   cardConsent: 'ダウンロードツールの使用には同意が必要です',
-  cardConsentBody: 'BaoCut は同意を得てから、これを使って Web サイトから動画をダウンロードします。同意は Runtime に保存されるため、以降リンクから読み込むときに再度確認することはありません。',
+  cardConsentBody: 'OpenFox は同意を得てから、これを使って Web サイトから動画をダウンロードします。同意は Runtime に保存されるため、以降リンクから読み込むときに再度確認することはありません。',
   cardConsentAction: '同意して使用',
   cardReady: 'ダウンロードツールの準備ができました',
-  cardReadyBody: '開始すると、BaoCut はまずリンクを確認して動画の情報を取得し、それからダウンロードします。',
+  cardReadyBody: '開始すると、OpenFox はまずリンクを確認して動画の情報を取得し、それからダウンロードします。',
 };

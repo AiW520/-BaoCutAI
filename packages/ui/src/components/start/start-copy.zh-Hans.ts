@@ -7,7 +7,7 @@ export const zhHans: StartMessages = {
     pickTitle: '选择 yt-dlp',
     pickButton: '使用这个',
     pickFailed: (message) => `这个文件用不了：${message}`,
-    manualUpdate: '这份 yt-dlp 现在不能由 BaoCut 代为更新，请按卡片里的命令在终端里执行',
+    manualUpdate: '这份 yt-dlp 现在不能由 开胡-OpenFox 代为更新，请按卡片里的命令在终端里执行',
     commandChanged: '更新命令已经变了，看一眼新的命令再执行',
     updateFailed: (message) => `没能开始更新：${message}`,
     stopFailed: (message) => `没能停止更新：${message}`,

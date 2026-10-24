@@ -2,7 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const fr: LocalModelsMessages = {
   install: {
-    webNote: "Un navigateur ne peut pas télécharger, vérifier, réparer ni supprimer les modèles locaux, ni changer le modèle par défaut. Faites-le dans l’app de bureau BaoCut.",
+    webNote: "Un navigateur ne peut pas télécharger, vérifier, réparer ni supprimer les modèles locaux, ni changer le modèle par défaut. Faites-le dans l’app de bureau OpenFox.",
     availableNote:
       "Avant téléchargement, taille et espace libre sont affichés. Vous pouvez suspendre ; les fichiers reçus sont conservés et repris la prochaine fois.",
     download: "Télécharger",

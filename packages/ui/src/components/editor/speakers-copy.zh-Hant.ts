@@ -27,7 +27,7 @@ export const zhHant: SpeakersMessages = {
   startHint: '完成後會開啟審閱頁面——這是唯一一個要先確認才會套用的工具。',
   readOnly: '這部影片是唯讀的，無法辨識說話者。',
   web: '無法在瀏覽器中辨識說話者',
-  webBody: '辨識說話者需要使用這台電腦上的本機聲紋模型，請使用 BaoCut 桌面版。',
+  webBody: '辨識說話者需要使用這台電腦上的本機聲紋模型，請使用 OpenFox 桌面版。',
 
   // 运行
   submitting: '正在提交…',

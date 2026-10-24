@@ -75,9 +75,9 @@ export const ja: VoicesMessages = {
     exportButton: '書き出す',
     exported: (path: string) => `${path} に書き出しました`,
     exportFailed: (text: string) => `書き出せませんでした：${text}`,
-    exportExists: 'BaoCut は既存のファイルを上書きしません。別の名前か場所を選んで、もう一度書き出してください。',
+    exportExists: 'OpenFox は既存のファイルを上書きしません。別の名前か場所を選んで、もう一度書き出してください。',
     exportFailedExists: (text: string) =>
-      `書き出せませんでした：${text}。BaoCut は既存のファイルを上書きしません。別の名前か場所を選んで、もう一度書き出してください。`,
+      `書き出せませんでした：${text}。OpenFox は既存のファイルを上書きしません。別の名前か場所を選んで、もう一度書き出してください。`,
     // 删除
     deleteTitle: (name: string) => `「${name}」を削除しますか？`,
     deleteConfirm: '削除',
@@ -135,7 +135,7 @@ export const ja: VoicesMessages = {
     reading: "音声を読み込み中…",
     readFailed: message => `この音声を読み込めません：${message}`,
     micFailed: message => `マイクを開始できません：${message}`,
-    micDenied: "BaoCut はマイクを使えません。システム設定で許可するか、録音ファイルをアップロードしてください。",
+    micDenied: "OpenFox はマイクを使えません。システム設定で許可するか、録音ファイルをアップロードしてください。",
     sampleShort: (seconds, min) => `${seconds} 秒しかありません。最低 ${min} 秒必要です。録り直してください。`,
     sampleLocal: "ローカルエンジンには十分 · もう少し長いとクラウドでも使えます",
     sampleOk: target => `十分です · ${target} 秒が最適`,

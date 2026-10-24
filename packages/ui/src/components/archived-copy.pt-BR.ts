@@ -16,7 +16,7 @@ export const ptBR: ArchivedMessages = {
   deleteAll: 'Excluir todas',
   deleteAllTitle: (n) => pluralForm('pt-BR', n, { one: `Excluir ${n} sessão arquivada?`, other: `Excluir todas as ${n} sessões arquivadas?` }),
   deleteAllBody:
-    'O histórico delas será removido do BaoCut, e qualquer tarefa em andamento será interrompida antes. Não é possível desfazer. Arquivos nas pastas de projeto não são afetados.',
+    'O histórico delas será removido do OpenFox, e qualquer tarefa em andamento será interrompida antes. Não é possível desfazer. Arquivos nas pastas de projeto não são afetados.',
   restored: (title) => `Restaurada “${title}”`,
   open: 'Abrir',
   restoreFailed: (message) => `Não foi possível restaurar: ${message}`,

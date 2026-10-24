@@ -11,8 +11,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
   APP_FILE_MISSING: () => ({
-    text: 'BaoCut에 포함된 파일이 없습니다. 모델의 문제는 아닙니다',
-    todo: 'BaoCut을 다시 설치하면 해결됩니다. 이미 다운로드한 모델에는 영향이 없습니다.',
+    text: 'OpenFox에 포함된 파일이 없습니다. 모델의 문제는 아닙니다',
+    todo: 'OpenFox을 다시 설치하면 해결됩니다. 이미 다운로드한 모델에는 영향이 없습니다.',
   }),
   MODEL_FILES_DAMAGED: () => ({ text: '모델 파일이 손상되었습니다', todo: '복구하면 손상된 파일을 다시 다운로드합니다.' }),
   MODEL_OUTPUT_WRONG: (subject) => ({
@@ -25,7 +25,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
   }),
   MODEL_WORKER_FAILED: () => ({
     text: '모델을 실행하는 백그라운드 프로세스에서 오류가 발생했습니다',
-    todo: '다시 검사하세요. 계속 발생하면 BaoCut을 다시 시작하거나 기술 세부 정보를 복사해 저희에게 보내 주세요.',
+    todo: '다시 검사하세요. 계속 발생하면 OpenFox을 다시 시작하거나 기술 세부 정보를 복사해 저희에게 보내 주세요.',
   }),
 };
 
@@ -80,7 +80,7 @@ export const ko: ModelCheckMessages = {
     todo: '다시 검사하세요. 계속 발생하면 기술 세부 정보를 복사해 저희에게 보내 주세요.',
   },
   notStarted: {
-    RUNTIME_UNREACHABLE: { text: 'BaoCut 백그라운드 서비스가 응답하지 않습니다', todo: '잠시 후 다시 검사하세요. 계속 발생하면 BaoCut을 다시 시작하세요.' },
+    RUNTIME_UNREACHABLE: { text: 'OpenFox 백그라운드 서비스가 응답하지 않습니다', todo: '잠시 후 다시 검사하세요. 계속 발생하면 OpenFox을 다시 시작하세요.' },
     MODEL_IN_USE: {
       text: '다른 작업이 이 모델을 사용하고 있습니다',
       todo: '그 작업이 끝날 때까지 기다리거나 백그라운드 작업에서 취소한 뒤 다시 검사하세요.',
@@ -91,7 +91,7 @@ export const ko: ModelCheckMessages = {
     OFFLINE_STRICT: { text: '엄격한 오프라인 모드가 켜져 있습니다', todo: '설정에서 엄격한 오프라인 모드를 끈 뒤 다시 검사하세요.' },
   },
   notStartedUnknown: {
-    text: 'BaoCut이 이번 검사를 받아들이지 않았습니다',
+    text: 'OpenFox이 이번 검사를 받아들이지 않았습니다',
     todo: '잠시 후 다시 검사하세요. 계속 발생하면 기술 세부 정보를 복사해 저희에게 보내 주세요.',
   },
   detail: {

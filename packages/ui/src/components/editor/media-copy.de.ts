@@ -8,7 +8,7 @@ export const de: MediaMessages = {
   panelTitle: (kind: PlaceableKind): string => ({ video: "Video", image: "Bilder", audio: "Audio" })[kind],
   undo: "Rückgängig machen",
   readOnly: "Das Video ist schreibgeschützt",
-  revealManaged: "Im Videoordner gesammelt und von BaoCut verwaltet; kein separater Dateispeicherort",
+  revealManaged: "Im Videoordner gesammelt und von OpenFox verwaltet; kein separater Dateispeicherort",
   revealUnknown: "Der gespeicherte Speicherort dieser Datei wurde nicht gefunden",
   uses: "Verwendung",
   usesNone: "Noch nicht in der Zeitleiste verwendet",

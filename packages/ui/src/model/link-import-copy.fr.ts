@@ -28,11 +28,11 @@ export const fr: LinkImportMessages = {
   issue: {
     TOOL_NOT_INSTALLED: {
       title: "Configurer une fois, puis coller",
-      body: "BaoCut nécessite yt-dlp pour lire ce site. Installez-le, puis relancez cet import.",
+      body: "OpenFox nécessite yt-dlp pour lire ce site. Installez-le, puis relancez cet import.",
     },
     TOOL_CONSENT_REQUIRED: {
       title: "Votre accord est requis pour l’outil",
-      body: "Outil déjà installé. BaoCut télécharge depuis les sites seulement après votre accord.",
+      body: "Outil déjà installé. OpenFox télécharge depuis les sites seulement après votre accord.",
     },
     TOOL_UNAVAILABLE: {
       title: "L’outil ne peut pas être exécuté",
@@ -44,7 +44,7 @@ export const fr: LinkImportMessages = {
     },
     OFFLINE_STRICT: {
       title: "Liens non téléchargeables hors ligne strict",
-      body: "BaoCut ne va pas en ligne dans ce mode. Téléchargez dans votre navigateur puis choisissez le fichier local.",
+      body: "OpenFox ne va pas en ligne dans ce mode. Téléchargez dans votre navigateur puis choisissez le fichier local.",
     },
     LINK_UNSUPPORTED: {
       title: "Source non encore prise en charge",
@@ -116,14 +116,14 @@ export const fr: LinkImportMessages = {
   toolSource: {
     system: "Installé sur le système",
     user: "Choisi par vous",
-    managed: "Téléchargé par BaoCut",
-    bundled: "Fourni avec BaoCut",
+    managed: "Téléchargé par OpenFox",
+    bundled: "Fourni avec OpenFox",
     env: "Défini par une variable d’environnement",
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Version ${version} · environ ${size}` : `Version ${version}`),
   factFrom: (host: string) => `Téléchargé depuis ${host}`,
   factLicense: (license: string) => `${license} : licence`,
-  factIsolated: "Conservé dans le dossier BaoCut, exécuté après vérification d’empreinte ; système inchangé",
+  factIsolated: "Conservé dans le dossier OpenFox, exécuté après vérification d’empreinte ; système inchangé",
   factInstalledWith: (method: string) => `Installé avec ${method}`,
 
   cardChecking: "Vérification de l’outil de téléchargement…",
@@ -134,18 +134,18 @@ export const fr: LinkImportMessages = {
   cardInstallingBody: "Télécharger → vérifier → tester. « Prêt » à la fin.",
   cardUpdating: "Mise à jour de l’outil…",
   cardUpdatingBody: "Sortie sous la commande, version revérifiée à la fin.",
-  cardBlockedWhy: "BaoCut ne peut pas le télécharger pour vous ici.",
+  cardBlockedWhy: "OpenFox ne peut pas le télécharger pour vous ici.",
   cardMissing: "Outil de téléchargement non installé",
   cardMissingBody: (why: string) => `${endSentence(why)} Installez yt-dlp vous-même puis « Vérifier à nouveau » ou choisissez son emplacement.`,
   cardInstall: "Configurer une fois, puis coller",
-  cardInstallBody: "BaoCut nécessite yt-dlp pour les sites vidéo. Après accord, télécharge l’outil et mémorise le consentement ; plus de demande à l’import.",
+  cardInstallBody: "OpenFox nécessite yt-dlp pour les sites vidéo. Après accord, télécharge l’outil et mémorise le consentement ; plus de demande à l’import.",
   cardInstallAction: "Accepter et installer",
   cardOutdatedReason: (reason: string | null, version: string | null, minVersion: string | null) =>
     endSentence(reason ?? `Version ${version ?? "inconnu"} est plus ancien que ${minVersion ?? ""}`),
   cardOutdated: "L’outil doit être mis à jour",
   cardOutdatedBlocked: (reason: string, why: string) => `${reason} ${why}`,
-  cardOutdatedRunnable: "Non téléchargé par BaoCut ; mettez à jour selon son installation avec la commande ci-dessous.",
-  cardOutdatedManual: "Non téléchargé par BaoCut. Mettez à jour dans Terminal selon les instructions, puis « Vérifier à nouveau ».",
+  cardOutdatedRunnable: "Non téléchargé par OpenFox ; mettez à jour selon son installation avec la commande ci-dessous.",
+  cardOutdatedManual: "Non téléchargé par OpenFox. Mettez à jour dans Terminal selon les instructions, puis « Vérifier à nouveau ».",
   cardOutdatedUpdate: (reason: string) => `${reason} Mettez à jour avant de démarrer.`,
   cardUpdateAction: "Accepter et mettre à jour",
   cardBroken: "L’outil ne peut pas être exécuté",
@@ -153,8 +153,8 @@ export const fr: LinkImportMessages = {
   cardReinstallAction: "Accepter et réinstaller",
   cardConsentRevoked: "Vous avez retiré le consentement à l’outil",
   cardConsent: "Votre accord est requis pour l’outil",
-  cardConsentBody: "BaoCut l’utilise seulement après accord. Consentement conservé dans le Runtime, aucune nouvelle demande à l’import.",
+  cardConsentBody: "OpenFox l’utilise seulement après accord. Consentement conservé dans le Runtime, aucune nouvelle demande à l’import.",
   cardConsentAction: "Accepter et utiliser",
   cardReady: "Outil de téléchargement prêt",
-  cardReadyBody: "BaoCut vérifie d’abord le lien et les informations vidéo, puis télécharge.",
+  cardReadyBody: "OpenFox vérifie d’abord le lien et les informations vidéo, puis télécharge.",
 };

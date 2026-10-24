@@ -7,7 +7,7 @@ export const ru: StartMessages = {
     pickTitle: "Выбрать yt-dlp",
     pickButton: "Использовать",
     pickFailed: (message) => `Файл нельзя использовать: ${message}`,
-    manualUpdate: "BaoCut сейчас не может обновить этот yt-dlp. Выполните команду с карточки в терминале",
+    manualUpdate: "OpenFox сейчас не может обновить этот yt-dlp. Выполните команду с карточки в терминале",
     commandChanged: "Команда обновления изменилась. Проверьте перед запуском",
     updateFailed: (message) => `Не удалось начать обновление: ${message}`,
     stopFailed: (message) => `Не удалось остановить обновление: ${message}`,

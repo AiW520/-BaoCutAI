@@ -6,9 +6,9 @@ export const zhHans: DesignMessages = {
   frameTitle: (name) => `设计稿编辑器：${name}`,
   opening: '正在打开设计稿…',
   unavailableTitle: '设计稿编辑器不可用',
-  unavailableBody: '这个版本的 BaoCut 没有带设计稿编辑器。设计稿的文件仍在它的文件夹里。',
+  unavailableBody: '这个版本的 开胡-OpenFox 没有带设计稿编辑器。设计稿的文件仍在它的文件夹里。',
   hostBlockedTitle: '这个地址上打不开设计稿编辑器',
-  hostBlockedBody: '用 127.0.0.1 或 localhost 打开 BaoCut Web 才能编辑设计稿。设计稿的文件仍在它的文件夹里。',
+  hostBlockedBody: '用 127.0.0.1 或 localhost 打开 开胡-OpenFox Web 才能编辑设计稿。设计稿的文件仍在它的文件夹里。',
   openFailed: (reason) => `打不开这份设计稿：${reason}`,
   open: '打开设计稿',
   openCard: (name) => `打开设计稿「${name}」`,
@@ -38,5 +38,5 @@ export const zhHans: DesignMessages = {
   exportDialogButton: '导出',
   exportSaved: (path) => `已保存到 ${path}`,
   exportFailed: (reason) => `没能保存导出的文件：${reason}`,
-  exportUnsupported: (name) => `BaoCut 不能保存「${name}」：不支持这种文件类型`,
+  exportUnsupported: (name) => `开胡-OpenFox 不能保存「${name}」：不支持这种文件类型`,
 };

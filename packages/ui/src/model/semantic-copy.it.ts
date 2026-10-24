@@ -206,8 +206,8 @@ export const it: SemanticMessages = {
   },
   scope: {
     group: 'Ambito dell’indice',
-    lead: 'I video di tutti i progetti BaoCut vengono indicizzati per ciò che è stato detto e ciò che si vede sullo schermo; i suoni arriveranno in una versione successiva. Puoi escludere i progetti che non vuoi indicizzare. I video esportati non vengono indicizzati a parte: la ricerca trova il video da cui sono stati esportati.',
-    all: 'Tutti i progetti BaoCut',
+    lead: 'I video di tutti i progetti OpenFox vengono indicizzati per ciò che è stato detto e ciò che si vede sullo schermo; i suoni arriveranno in una versione successiva. Puoi escludere i progetti che non vuoi indicizzare. I video esportati non vengono indicizzati a parte: la ricerca trova il video da cui sono stati esportati.',
+    all: 'Tutti i progetti OpenFox',
     allLine: (projects, excluded) => `${projects === 1 ? '1 progetto' : `${projects} progetti`}${excluded ? `, ${excluded} esclusi` : ''} · i nuovi progetti si aggiungono da soli`,
     outside: 'Anche i video fuori dai progetti vengono indicizzati.',
     excludedGroup: 'Progetti esclusi',
@@ -268,13 +268,13 @@ export const it: SemanticMessages = {
     reindexDesc: 'La scansiona di nuovo e ricostruisce il suo indice',
     remove: 'Rimuovi',
     removeDesc: 'Elimina il suo indice; i file restano',
-    videos: (n) => (n === 1 ? '1 video BaoCut' : `${n} video BaoCut`),
+    videos: (n) => (n === 1 ? '1 video OpenFox' : `${n} video OpenFox`),
     videoFiles: (n) => (n === 1 ? '1 file video' : `${n} file video`),
     images: (n) => (n === 1 ? '1 immagine' : `${n} immagini`),
     nothing: 'Nessun video o immagine trovato per ora',
     exportsSkipped: (n) => (n === 1 ? '1 esportazione saltata' : `${n} esportazioni saltate`),
     duplicates: (n) => (n === 1 ? '1 già in un progetto' : `${n} già nei progetti`),
-    legacy: (n) => (n === 1 ? '1 video BaoCut più vecchio non letto' : `${n} video BaoCut più vecchi non letti`),
+    legacy: (n) => (n === 1 ? '1 video OpenFox più vecchio non letto' : `${n} video OpenFox più vecchi non letti`),
     listSeparator: ', ',
     separator: ' · ',
     missing: 'Cartella non trovata',
@@ -284,21 +284,21 @@ export const it: SemanticMessages = {
     truncatedNoteNoLimit: 'Troppi file: sono stati scansionati solo i primi. Aggiungi invece una sottocartella.',
     unreadableNote: 'Impossibile leggere questa cartella. Controlla i permessi.',
     legacyNote:
-      'I video BaoCut più vecchi vanno aggiornati prima di poter essere letti, e l’aggiornamento li modifica, quindi qui non vengono letti. Spostane uno in un progetto e aprilo una volta in BaoCut per aggiornarlo.',
+      'I video OpenFox più vecchi vanno aggiornati prima di poter essere letti, e l’aggiornamento li modifica, quindi qui non vengono letti. Spostane uno in un progetto e aprilo una volta in OpenFox per aggiornarlo.',
     visualReady: 'Immagini pronte',
     visualProgress: (done, total) => `Immagini: ${done} su ${total} completate`,
-    textOnly: 'I suoi video BaoCut sono indicizzati per il parlato',
+    textOnly: 'I suoi video OpenFox sono indicizzati per il parlato',
     visualOff: 'L’indice delle immagini è disattivato, quindi file video e immagini non sono ancora indicizzati',
     addTitle: 'Aggiungi cartella indicizzata',
     addBody:
-      'Anche i video fuori dai tuoi progetti si potranno trovare in base al significato. BaoCut si limita a leggere questa cartella: non modifica, sposta né elimina nulla al suo interno. I suoi video e le sue immagini compaiono in Space con questa cartella come origine.',
+      'Anche i video fuori dai tuoi progetti si potranno trovare in base al significato. OpenFox si limita a leggere questa cartella: non modifica, sposta né elimina nulla al suo interno. I suoi video e le sue immagini compaiono in Space con questa cartella come origine.',
     addWhat: (visual) =>
       visual
-        ? 'I video BaoCut vengono indicizzati per il parlato e per le immagini; gli altri file video e le immagini, per le immagini. Le esportazioni registrate da BaoCut vengono saltate, e i video presenti anche in un progetto usano la copia del progetto.'
-        : 'I video BaoCut vengono indicizzati per il parlato; gli altri file video e le immagini richiedono l’indice delle immagini. Le esportazioni registrate da BaoCut vengono saltate, e i video presenti anche in un progetto usano la copia del progetto.',
+        ? 'I video OpenFox vengono indicizzati per il parlato e per le immagini; gli altri file video e le immagini, per le immagini. Le esportazioni registrate da OpenFox vengono saltate, e i video presenti anche in un progetto usano la copia del progetto.'
+        : 'I video OpenFox vengono indicizzati per il parlato; gli altri file video e le immagini richiedono l’indice delle immagini. Le esportazioni registrate da OpenFox vengono saltate, e i video presenti anche in un progetto usano la copia del progetto.',
     visualOffTitle: 'File video e immagini vengono indicizzati per le immagini',
     visualOffBody:
-      'Non hanno una trascrizione, quindi si possono trovare solo in base a ciò che si vede sullo schermo. Vengono indicizzati quando l’indice delle immagini è attivo; fino ad allora si indicizzano solo i video BaoCut di questa cartella.',
+      'Non hanno una trascrizione, quindi si possono trovare solo in base a ciò che si vede sullo schermo. Vengono indicizzati quando l’indice delle immagini è attivo; fino ad allora si indicizzano solo i video OpenFox di questa cartella.',
     confirmAdd: 'Aggiungi',
     addedToast: (name) => `«${name}» aggiunta. Scansione e indicizzazione in background.`,
     reindexedToast: (name) => `Nuova scansione di «${name}» e ricostruzione del suo indice`,

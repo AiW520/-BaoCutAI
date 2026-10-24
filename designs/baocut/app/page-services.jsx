@@ -118,12 +118,12 @@
 
     return (
       <window.Page title="MCP 服务" actions={<Chip>仅本机</Chip>}>
-        <Lede>Tuzi 作为 MCP 服务端，向其他 AI 应用的 Agent 提供一套工具：读视频、改文稿和译文、剪片段、启动转录 / 翻译 / 导出，以及用这台电脑上的模型合成语音、生成图片。默认关闭；默认开放所有视频，也可以只开放其中几个。</Lede>
+        <Lede>OpenFox 作为 MCP 服务端，向其他 AI 应用的 Agent 提供一套工具：读视频、改文稿和译文、剪片段、启动转录 / 翻译 / 导出，以及用这台电脑上的模型合成语音、生成图片。默认关闭；默认开放所有视频，也可以只开放其中几个。</Lede>
 
         <ServiceCard id="mcp" st={st} blocked={SV.startBlock('mcp')}
           title={live ? 'MCP 服务运行中' : st.phase ? SV.stateLabel('mcp', st) : 'MCP 服务未启动'}
           sub={SV.mcpSub(st, scope, mcp.access, needToken)}
-          foot={<span className="t-detail-xs">{needToken ? '每次启动都会换新的访问令牌。退出 Tuzi 时服务一起停止。' : '只接受本机连接。退出 Tuzi 时服务一起停止。'}</span>} />
+          foot={<span className="t-detail-xs">{needToken ? '每次启动都会换新的访问令牌。退出 OpenFox 时服务一起停止。' : '只接受本机连接。退出 OpenFox 时服务一起停止。'}</span>} />
 
         {live ? (
           <>
@@ -208,7 +208,7 @@
               </BCAction>
             ))}
           </BCChoiceGroup>
-          <Row label="需要访问令牌" desc="打开后，客户端要带上 Tuzi 给的令牌才能连接，每次启动换新的。这台电脑上有你不信任的程序时打开。关着时只接受本机、非网页来源的连接。">
+          <Row label="需要访问令牌" desc="打开后，客户端要带上 OpenFox 给的令牌才能连接，每次启动换新的。这台电脑上有你不信任的程序时打开。关着时只接受本机、非网页来源的连接。">
             <Switch on={needToken} disabled={locked} onChange={(v) => setMcp((s) => ({...s, requireToken: v}))} ariaLabel="需要访问令牌" />
           </Row>
           {locked ? <p className="t-detail svc__note">要更换视频、权限或令牌设置，请先停止服务。</p> : null}
@@ -217,8 +217,8 @@
         <window.McpToolsSection access={mcp.access} off={mcp.off} onToggle={toggleTool} live={live} copy={copy} />
 
         <div className="t-detail svc__related">
-          想让终端里的 Claude Code、Codex 学会 Tuzi 的工作流？给它们安装 baocut skill 即可，不需要启动服务。
-          <BCAction className="viewall" onClick={() => app.go({r: 'skills', tab: 'external'})}>Skills › 在终端里使用 Tuzi</BCAction>
+          想让终端里的 Claude Code、Codex 学会 OpenFox 的工作流？给它们安装 baocut skill 即可，不需要启动服务。
+          <BCAction className="viewall" onClick={() => app.go({r: 'skills', tab: 'external'})}>Skills › 在终端里使用 OpenFox</BCAction>
         </div>
         <p className="t-detail-xs svc__proto">原型演示 · 不会真正启动 MCP 服务；地址、令牌、客户端与请求记录都是示例。</p>
       </window.Page>
@@ -244,14 +244,14 @@
     };
     return (
       <window.Page title="Web 服务" actions={<Chip>仅本机</Chip>}>
-        <Lede>在这台 Mac 的浏览器里打开 Tuzi Web，编辑同一批视频。服务只监听本机地址，局域网里的其他设备访问不到。</Lede>
+        <Lede>在这台 Mac 的浏览器里打开 OpenFox Web，编辑同一批视频。服务只监听本机地址，局域网里的其他设备访问不到。</Lede>
 
         <ServiceCard id="web" st={st} subMono={live}
           title={live ? 'Web 服务运行中' : k === 'error' ? 'Web 服务启动失败' : st.phase ? SV.stateLabel('web', st) : 'Web 服务未启动'}
-          sub={live ? url : k === 'error' ? st.error : st.phase ? `端口 ${app.webPort}` : '启动后可以在浏览器里打开 Tuzi Web。'}
+          sub={live ? url : k === 'error' ? st.error : st.phase ? `端口 ${app.webPort}` : '启动后可以在浏览器里打开 OpenFox Web。'}
           foot={<>
-            <Checkbox on={!!app.prefs.webAutoStart} onChange={(v) => app.setPref('webAutoStart', v)} label="打开 Tuzi 时自动启动" />
-            <span className="t-detail-xs">退出 Tuzi 时服务会一起停止。</span>
+            <Checkbox on={!!app.prefs.webAutoStart} onChange={(v) => app.setPref('webAutoStart', v)} label="打开 OpenFox 时自动启动" />
+            <span className="t-detail-xs">退出 OpenFox 时服务会一起停止。</span>
           </>}>
           {k === 'error' ? (
             <div className="svc__fix">
@@ -348,7 +348,7 @@
         <window.SvcLights />
         {sum ? <Chip tone={sum.tone === 'error' ? 'notice' : 'positive'}>{sum.text}</Chip> : <Chip>全部未启动</Chip>}
       </>}>
-        <Lede>这台 Mac 上由 Tuzi 提供、等别的应用或设备连进来的服务。都默认关闭；退出 Tuzi 时一起停止。</Lede>
+        <Lede>这台 Mac 上由 OpenFox 提供、等别的应用或设备连进来的服务。都默认关闭；退出 OpenFox 时一起停止。</Lede>
         <Card layer className="svclist">
           {SV.SERVICES.map((svc) => <ServiceItem key={svc.id} svc={svc} />)}
         </Card>

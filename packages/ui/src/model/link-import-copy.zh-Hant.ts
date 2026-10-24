@@ -32,17 +32,17 @@ export const zhHant: LinkImportMessages = {
   issue: {
     TOOL_NOT_INSTALLED: {
       title: '設定一次，之後直接貼上',
-      body: 'BaoCut 需要影片下載工具 yt-dlp 才能讀取這個網站。請安裝後重新開始這次匯入。',
+      body: 'OpenFox 需要影片下載工具 yt-dlp 才能讀取這個網站。請安裝後重新開始這次匯入。',
     },
     TOOL_CONSENT_REQUIRED: {
       title: '使用下載工具前需要你的同意',
-      body: '下載工具已在這台電腦上。BaoCut 只有在你同意後，才會用它從網站下載影片。',
+      body: '下載工具已在這台電腦上。OpenFox 只有在你同意後，才會用它從網站下載影片。',
     },
     TOOL_UNAVAILABLE: { title: '下載工具無法執行', body: '已找到下載工具，但它無法執行。請重新安裝，或選擇一份可用的。' },
     TOOL_OUTDATED: { title: '下載工具需要更新', body: '這個版本太舊，可能無法讀取這個網站。請更新後再試一次。' },
     OFFLINE_STRICT: {
       title: '嚴格離線模式下無法從連結下載',
-      body: '在嚴格離線模式下，BaoCut 不會連上網路。請先在瀏覽器中下載影片，再選擇本機檔案。',
+      body: '在嚴格離線模式下，OpenFox 不會連上網路。請先在瀏覽器中下載影片，再選擇本機檔案。',
     },
     LINK_UNSUPPORTED: {
       title: '目前還不支援這個來源',
@@ -54,7 +54,7 @@ export const zhHant: LinkImportMessages = {
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: '無法讀取瀏覽器 Cookie',
-      body: '請確認已在瀏覽器中登入。如果資料庫被鎖定，請完全結束瀏覽器（包括在背景執行的），並檢查鑰匙圈權限（Safari 需要在「完整磁碟取用權限」中允許 BaoCut）。在 Windows 上，Chrome、Edge 和 Brave 以應用程式綁定加密保護的 Cookie 無法讀取，請改勾選 Firefox。或在「設定 › 影片下載」中勾選其他瀏覽器後重新下載。',
+      body: '請確認已在瀏覽器中登入。如果資料庫被鎖定，請完全結束瀏覽器（包括在背景執行的），並檢查鑰匙圈權限（Safari 需要在「完整磁碟取用權限」中允許 OpenFox）。在 Windows 上，Chrome、Edge 和 Brave 以應用程式綁定加密保護的 Cookie 無法讀取，請改勾選 Firefox。或在「設定 › 影片下載」中勾選其他瀏覽器後重新下載。',
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: 'yt-dlp 需要更新',
@@ -105,14 +105,14 @@ export const zhHant: LinkImportMessages = {
   toolSource: {
     system: '安裝在系統中',
     user: '由你選擇',
-    managed: '由 BaoCut 下載',
-    bundled: '隨 BaoCut 散布',
+    managed: '由 OpenFox 下載',
+    bundled: '隨 OpenFox 散布',
     env: '由環境變數指定',
   },
   factVersion: (version: string, size: string | null) => `版本 ${version}${size ? ` · 約 ${size}` : ''}`,
   factFrom: (host: string) => `從 ${host} 下載`,
   factLicense: (license: string) => `${license} 授權條款`,
-  factIsolated: '存放在 BaoCut 自己的資料夾中，驗證總和檢查碼後才會執行；不會更動系統',
+  factIsolated: '存放在 OpenFox 自己的資料夾中，驗證總和檢查碼後才會執行；不會更動系統',
   factInstalledWith: (method: string) => `以 ${method} 安裝`,
 
   cardChecking: '正在檢查下載工具…',
@@ -123,18 +123,18 @@ export const zhHant: LinkImportMessages = {
   cardInstallingBody: '下載 → 驗證 → 試執行。完成後這裡會顯示「已就緒」。',
   cardUpdating: '正在更新下載工具…',
   cardUpdatingBody: '輸出會顯示在命令下方；完成後會再次檢查版本。',
-  cardBlockedWhy: 'BaoCut 無法在這台電腦上替你下載它。',
+  cardBlockedWhy: 'OpenFox 無法在這台電腦上替你下載它。',
   cardMissing: '尚未安裝下載工具',
   cardMissingBody: (why: string) => `${endSentence(why)}你可以自行安裝 yt-dlp，然後點選「重新檢查」或選擇它的位置。`,
   cardInstall: '設定一次，之後直接貼上',
-  cardInstallBody: 'BaoCut 需要影片下載工具 yt-dlp 才能讀取影片網站。你同意後，它會下載這個工具並記住你的同意，之後從連結匯入就不會再詢問。',
+  cardInstallBody: 'OpenFox 需要影片下載工具 yt-dlp 才能讀取影片網站。你同意後，它會下載這個工具並記住你的同意，之後從連結匯入就不會再詢問。',
   cardInstallAction: '同意並安裝',
   cardOutdatedReason: (reason: string | null, version: string | null, minVersion: string | null) =>
     endSentence(reason ?? `版本 ${version ?? '不明'} 低於所需的 ${minVersion ?? ''}`),
   cardOutdated: '下載工具需要更新',
   cardOutdatedBlocked: (reason: string, why: string) => `${reason}${why}`,
-  cardOutdatedRunnable: '它不是由 BaoCut 下載的；你可以用下方的命令，依原本的安裝方式更新它。',
-  cardOutdatedManual: '它不是由 BaoCut 下載的。請依照下方說明在終端機中更新，然後點選「重新檢查」。',
+  cardOutdatedRunnable: '它不是由 OpenFox 下載的；你可以用下方的命令，依原本的安裝方式更新它。',
+  cardOutdatedManual: '它不是由 OpenFox 下載的。請依照下方說明在終端機中更新，然後點選「重新檢查」。',
   cardOutdatedUpdate: (reason: string) => `${reason}請先更新再開始。`,
   cardUpdateAction: '同意並更新',
   cardBroken: '下載工具無法執行',
@@ -142,8 +142,8 @@ export const zhHant: LinkImportMessages = {
   cardReinstallAction: '同意並重新安裝',
   cardConsentRevoked: '你已撤回對下載工具的同意',
   cardConsent: '使用下載工具前需要你的同意',
-  cardConsentBody: 'BaoCut 只有在你同意後，才會用它從網站下載影片。你的同意會保存在 Runtime 中，之後從連結匯入就不會再詢問。',
+  cardConsentBody: 'OpenFox 只有在你同意後，才會用它從網站下載影片。你的同意會保存在 Runtime 中，之後從連結匯入就不會再詢問。',
   cardConsentAction: '同意並使用',
   cardReady: '下載工具已就緒',
-  cardReadyBody: '開始後，BaoCut 會先檢查連結並取得影片資訊，然後再下載。',
+  cardReadyBody: '開始後，OpenFox 會先檢查連結並取得影片資訊，然後再下載。',
 };

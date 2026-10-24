@@ -57,14 +57,14 @@ export const de: AgentCardMessages = {
   nowDefault: (name: string) => `Neue Sitzungen verwenden jetzt ${name}`,
   version: (version: string | null) => (version ? `Version · v${version}` : "Version"),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `Aktualisierung möglich auf ${latest}. ` : ""}${min ? `BaoCut benötigt mindestens ${min}. ` : ""}Aktualisieren betrifft nur dieses CLI-Werkzeug; Konto und dessen Einstellungen bleiben unverändert. ${source}`,
+    `${latest ? `Aktualisierung möglich auf ${latest}. ` : ""}${min ? `OpenFox benötigt mindestens ${min}. ` : ""}Aktualisieren betrifft nur dieses CLI-Werkzeug; Konto und dessen Einstellungen bleiben unverändert. ${source}`,
   account: "Konto",
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? "Nicht angemeldet oder Anmeldung abgelaufen" : (account ?? "Angemeldet")}. Verwendet Ihr eigenes ${plan}; BaoCut berechnet nichts zusätzlich. Anmeldung erfolgt im Terminal.`,
+    `${signedOut ? "Nicht angemeldet oder Anmeldung abgelaufen" : (account ?? "Angemeldet")}. Verwendet Ihr eigenes ${plan}; OpenFox berechnet nichts zusätzlich. Anmeldung erfolgt im Terminal.`,
   loginInTerminal: "Terminal zum Anmelden öffnen",
   switchAccount: "Konto wechseln…",
   location: "Installationsort",
-  locationDesc: "BaoCut ruft dieses Programm auf Ihrem Computer direkt auf und installiert keine weitere Kopie.",
+  locationDesc: "OpenFox ruft dieses Programm auf Ihrem Computer direkt auf und installiert keine weitere Kopie.",
   realLocation: "Tatsächlicher Speicherort",
   setLocation: "Speicherort manuell festlegen",
   troubleshoot: "Fehler beheben",
@@ -77,7 +77,7 @@ export const de: AgentCardMessages = {
     `Diese Kopie wurde installiert mit „${label}“; auf dieselbe Weise aktualisieren. Andere Methoden erreichen diese Kopie nicht und installieren nur eine weitere.`,
   sourceUnknown: "Auf dieselbe Weise aktualisieren, wie es installiert wurde.",
   scriptInstall:
-    "Dieser Befehl lädt ein Skript von der offiziellen Website herunter und führt es aus. BaoCut führt keine Internetskripte für Sie aus; kopieren und manuell im Terminal ausführen.",
+    "Dieser Befehl lädt ein Skript von der offiziellen Website herunter und führt es aus. OpenFox führt keine Internetskripte für Sie aus; kopieren und manuell im Terminal ausführen.",
   scriptUpgrade: "Dieser Befehl lädt ein Skript von der offiziellen Website herunter und führt es aus. Kopieren und manuell im Terminal ausführen.",
   copyUpgrade: "Diesen Befehl kopieren, im Terminal ausführen und anschließend hier erneut prüfen.",
   runnableHint: "Links neben dem Befehl auf ▶ klicken, um ihn hier auszuführen; Ausgabe erscheint unten. Oder kopieren und manuell im Terminal ausführen.",
@@ -87,7 +87,7 @@ export const de: AgentCardMessages = {
   needs: (needs: string) => `Benötigt ${needs} auf diesem Computer.`,
 
   installIntro: (name: string, plan: string) =>
-    `${name} ist ein auf Ihrem Computer installierter KI-Assistent für die Befehlszeile; angemeldet mit Ihrem vorhandenen ${plan}. BaoCut ruft ihn nur auf: keine Zusatzkosten und kein API-Schlüssel in BaoCut nötig.`,
+    `${name} ist ein auf Ihrem Computer installierter KI-Assistent für die Befehlszeile; angemeldet mit Ihrem vorhandenen ${plan}. OpenFox ruft ihn nur auf: keine Zusatzkosten und kein API-Schlüssel in OpenFox nötig.`,
   stepInstall: "Auf diesem Computer installieren",
   stepInstallOfficial: "Nach offizieller Anleitung auf diesem Computer installieren",
 
@@ -95,13 +95,13 @@ export const de: AgentCardMessages = {
     createElement(Fragment, null, "Nach offizieller Anleitung installieren. Anschließend muss ", command, " im Terminal ausführbar sein."),
   stepLogin: "Bei Ihrem Konto anmelden",
   stepLoginBody:
-    "Nach Installation den folgenden Befehl im Terminal ausführen und bei Aufforderung im Browser anmelden. Anmeldung erfolgt im eigenen Fenster; BaoCut verarbeitet weder Konto noch Passwort.",
+    "Nach Installation den folgenden Befehl im Terminal ausführen und bei Aufforderung im Browser anmelden. Anmeldung erfolgt im eigenen Fenster; OpenFox verarbeitet weder Konto noch Passwort.",
   stepBack: "Hierher zurückkehren",
   stepBackBody: "Nach Erkennung als installiert und angemeldet einsatzbereit.",
   detecting: "Überprüfen…",
   recheck: "Installiert, erneut prüfen",
   notDetected: "Installiert, aber nicht erkannt?",
   notDetectedBody:
-    "BaoCut sucht in PATH und üblichen Installationsorten (Homebrew, globaler npm-Ordner, ~/.local/bin). Versionsmanager (nvm, asdf, mise) installieren manchmal anderswo; der Speicherort kann manuell angegeben werden.",
+    "OpenFox sucht in PATH und üblichen Installationsorten (Homebrew, globaler npm-Ordner, ~/.local/bin). Versionsmanager (nvm, asdf, mise) installieren manchmal anderswo; der Speicherort kann manuell angegeben werden.",
   diagnosisOf: (name: string) => `Prüfergebnisse für ${name}`,
 };

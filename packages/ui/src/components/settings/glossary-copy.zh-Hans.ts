@@ -40,7 +40,7 @@ export const zhHans: GlossaryMessages = {
     cancel: '取消',
   },
   detail: {
-    exportExists: '那个位置已经有同名文件。BaoCut 不覆盖已有文件，请换个名字再导出。',
+    exportExists: '那个位置已经有同名文件。开胡-OpenFox 不覆盖已有文件，请换个名字再导出。',
     loadFailed: '没能读取这张表',
     loadingLabel: '正在读取',
     loading: '正在读取…',

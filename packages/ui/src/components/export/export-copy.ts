@@ -223,7 +223,7 @@ const en = {
   editors: 'Export to an editor',
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: 'FCP7 XML (.xml)',
-  portableName: 'BaoCut portable package',
+  portableName: 'OpenFox portable package',
   portableMeta: '.baocut · the video, all documents and assets in one file',
   plannedTarget: 'This project file type isn’t available in this version yet',
   jianyingName: 'Jianying draft',

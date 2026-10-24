@@ -27,7 +27,7 @@ export const ko: SpeakersMessages = {
   startHint: '끝나면 검토 페이지가 열립니다. 적용 전에 확인하는 도구는 이것뿐입니다.',
   readOnly: '영상이 읽기 전용이라 화자를 식별할 수 없습니다.',
   web: '브라우저에서는 화자를 식별할 수 없습니다',
-  webBody: '화자 식별은 이 컴퓨터의 기기 내 성문 모델을 사용합니다. BaoCut 데스크톱 앱을 사용하세요.',
+  webBody: '화자 식별은 이 컴퓨터의 기기 내 성문 모델을 사용합니다. OpenFox 데스크톱 앱을 사용하세요.',
 
   // 运行
   submitting: '제출 중…',

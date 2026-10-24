@@ -1,4 +1,4 @@
-# BaoCut 桌面端的 Windows x64 安装包（不签名）。手动触发或由 desktop-release 的 release tag 调用；规则见 docs/development-workflow.md §2 与 apps/desktop/README.md。
+# OpenFox 桌面端的 Windows x64 安装包（不签名）。手动触发或由 desktop-release 的 release tag 调用；规则见 docs/development-workflow.md §2 与 apps/desktop/README.md。
 # 三个变体各一个 job，按显卡分档：标准版（Model Worker 用 candle CPU 与 whisper.cpp 的 Whisper，没有合适显卡时用）、CUDA 版
 # （NVIDIA 专用：candle 与 Whisper 都走 CUDA，随带 NVIDIA 运行库）与 Vulkan 版（Whisper 走 Vulkan，适合 AMD / Intel 与不支持
 # CUDA 13 的 NVIDIA 显卡，candle 仍在 CPU 上；构建要 Vulkan SDK，运行时只要显卡驱动的 vulkan-1.dll）。CUDA 版的 Whisper 与 Vulkan 版
@@ -245,25 +245,25 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         run: node apps/desktop/tools/check-packaged-app.mjs apps/desktop/dist/${{ matrix.variant }}/win-unpacked
 
-      # 按用户安装（不要管理员）。一键安装的目录名取 package.json 的 name，即 %LOCALAPPDATA%\Programs\baocut。
-      # 对装好的目录跑同一份自检。应用靠 exe 旁边的 `Uninstall BaoCut.exe` 认出安装版（app-update-install.ts），这里核对它在。
+      # 按用户安装（不要管理员）。一键安装的目录名取 package.json 的 name，即 %LOCALAPPDATA%\Programs\openfox。
+      # 对装好的目录跑同一份自检。应用靠 exe 旁边的 `Uninstall OpenFox.exe` 认出安装版（app-update-install.ts），这里核对它在。
       # 再按应用内更新的参数（/S --updated，不带 --force-run：runner 上不起界面）在装好的上面装一遍，最后静默卸载。
       - name: Install silently, update in place and self-check the installed app
         if: steps.gate.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $setup = Get-ChildItem apps/desktop/dist/${{ matrix.variant }}/BaoCut-*-setup.exe -File | Select-Object -First 1
+          $setup = Get-ChildItem apps/desktop/dist/${{ matrix.variant }}/OpenFox-*-setup.exe -File | Select-Object -First 1
           if (-not $setup) { throw "no NSIS installer" }
           if ((Get-AuthenticodeSignature -LiteralPath $setup.FullName).Status -ne 'NotSigned') { throw "installer is expected to be unsigned" }
           Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
-          $installed = Join-Path $env:LOCALAPPDATA 'Programs\baocut'
-          if (-not (Test-Path (Join-Path $installed 'BaoCut.exe'))) { throw "BaoCut.exe not installed under $installed" }
-          $uninstaller = Join-Path $installed 'Uninstall BaoCut.exe'
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs\openfox'
+          if (-not (Test-Path (Join-Path $installed 'OpenFox.exe'))) { throw "OpenFox.exe not installed under $installed" }
+          $uninstaller = Join-Path $installed 'Uninstall OpenFox.exe'
           if (-not (Test-Path $uninstaller)) { throw "no '$uninstaller': the app would not recognise this install for updates" }
           node apps/desktop/tools/check-packaged-app.mjs $installed
           if ($LASTEXITCODE -ne 0) { throw "installed app self-check failed" }
           Start-Process -FilePath $setup.FullName -ArgumentList '/S', '--updated' -Wait
-          if (-not (Test-Path (Join-Path $installed 'BaoCut.exe'))) { throw "BaoCut.exe missing after the in-place update" }
+          if (-not (Test-Path (Join-Path $installed 'OpenFox.exe'))) { throw "OpenFox.exe missing after the in-place update" }
           if (-not (Test-Path $uninstaller)) { throw "uninstaller missing after the in-place update" }
           node apps/desktop/tools/check-packaged-app.mjs $installed
           if ($LASTEXITCODE -ne 0) { throw "self-check failed after the in-place update" }
@@ -273,7 +273,7 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $zip = Get-ChildItem apps/desktop/dist/${{ matrix.variant }}/BaoCut-*-win-x64*.zip -File | Select-Object -First 1
+          $zip = Get-ChildItem apps/desktop/dist/${{ matrix.variant }}/OpenFox-*-win-x64*.zip -File | Select-Object -First 1
           if (-not $zip) { throw "no zip" }
           $dest = Join-Path $env:RUNNER_TEMP 'baocut-zip'
           Expand-Archive -LiteralPath $zip.FullName -DestinationPath $dest -Force
@@ -286,7 +286,7 @@ jobs:
         run: |
           $sourceCommit = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0) { throw "git source lookup failed" }
-          $report = Get-ChildItem apps/desktop/dist/${{ matrix.variant }}/BaoCut-*-release.json -File | Select-Object -First 1
+          $report = Get-ChildItem apps/desktop/dist/${{ matrix.variant }}/OpenFox-*-release.json -File | Select-Object -First 1
           if (-not $report) { throw "release report missing" }
           $metadata = Get-Content -Raw -LiteralPath $report.FullName | ConvertFrom-Json
           $metadata | Add-Member -NotePropertyName sourceCommit -NotePropertyValue $sourceCommit -Force
@@ -297,11 +297,11 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: baocut-desktop-windows-x64-${{ matrix.variant }}
+          name: openfox-desktop-windows-x64-${{ matrix.variant }}
           path: |
-            apps/desktop/dist/${{ matrix.variant }}/BaoCut-*.exe
-            apps/desktop/dist/${{ matrix.variant }}/BaoCut-*.zip
-            apps/desktop/dist/${{ matrix.variant }}/BaoCut-*-release.json
+            apps/desktop/dist/${{ matrix.variant }}/OpenFox-*.exe
+            apps/desktop/dist/${{ matrix.variant }}/OpenFox-*.zip
+            apps/desktop/dist/${{ matrix.variant }}/OpenFox-*-release.json
             apps/desktop/dist/${{ matrix.variant }}/appcast-*.json
           if-no-files-found: error
           retention-days: 14

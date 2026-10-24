@@ -1,4 +1,4 @@
-/* Product design §7.6: Tuzi onboarding preview. Discovery never implies verified capabilities. */
+/* Product design §7.6: OpenFox onboarding preview. Discovery never implies verified capabilities. */
 (function () {
   const ENDPOINT = 'https://api.tu-zi.com/v1';
   const CAPABILITIES = [

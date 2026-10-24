@@ -55,8 +55,8 @@ const outputWrong: Record<CheckSubject, string> = {
 
 const checkSentences = {
   APP_FILE_MISSING: () => ({
-    text: "A file that comes with BaoCut is missing; it's not a problem with the model",
-    todo: "Reinstalling BaoCut fixes this. Models you've already downloaded aren't affected.",
+    text: "A file that comes with OpenFox is missing; it's not a problem with the model",
+    todo: "Reinstalling OpenFox fixes this. Models you've already downloaded aren't affected.",
   }),
   MODEL_FILES_DAMAGED: () => ({ text: 'The model files are damaged', todo: 'Repair downloads the damaged files again.' }),
   MODEL_OUTPUT_WRONG: (subject: CheckSubject) => ({
@@ -69,7 +69,7 @@ const checkSentences = {
   }),
   MODEL_WORKER_FAILED: () => ({
     text: 'The background process that runs the model ran into an error',
-    todo: 'Check again. If it keeps happening, restart BaoCut, or copy the technical details and send them to us.',
+    todo: 'Check again. If it keeps happening, restart OpenFox, or copy the technical details and send them to us.',
   }),
 } satisfies Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence>;
 
@@ -119,8 +119,8 @@ const en = {
   /** 检查没能开始（提交被拒）：`details.code` → 一句。 */
   notStarted: {
     RUNTIME_UNREACHABLE: {
-      text: "BaoCut's background service isn't responding",
-      todo: 'Check again later. If it keeps happening, restart BaoCut.',
+      text: "OpenFox's background service isn't responding",
+      todo: 'Check again later. If it keeps happening, restart OpenFox.',
     },
     MODEL_IN_USE: {
       text: 'Another task is using this model',
@@ -135,7 +135,7 @@ const en = {
     OFFLINE_STRICT: { text: 'Strict offline mode is on', todo: 'Turn off strict offline mode in Settings, then check again.' },
   } as Record<string, CheckSentence>,
   notStartedUnknown: {
-    text: "BaoCut didn't accept this check",
+    text: "OpenFox didn't accept this check",
     todo: 'Check again later. If it keeps happening, copy the technical details and send them to us.',
   } as CheckSentence,
   /** 技术详情的几行。 */

@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonFr: CommonMessages = {
   copied: (label: string) => `${label} copié`,
   copyFailed: "Impossible de copier. Sélectionnez le texte et copiez-le vous-même.",
-  autostart: "Démarrer à l’ouverture de BaoCut",
-  stopsWithApp: "Le service s'arrête lorsque vous quittez BaoCut.",
+  autostart: "Démarrer à l’ouverture de OpenFox",
+  stopsWithApp: "Le service s'arrête lorsque vous quittez OpenFox.",
   portLabel: "Port",
   portIdle: (port: number) =>
     `Par défaut ${port}. Si occupé, choisissez-en un autre : « Échec du démarrage », sans changement automatique de port.`,
@@ -41,13 +41,13 @@ export const commonFr: CommonMessages = {
 };
 
 export const clientsFr: ClientsMessages = {
-  lede: "Donnez un jeton à chaque application. Affiché une seule fois à sa création, BaoCut conserve seulement son empreinte. Révoquez-le quand inutile ; application immédiatement déconnectée.",
+  lede: "Donnez un jeton à chaque application. Affiché une seule fois à sa création, OpenFox conserve seulement son empreinte. Révoquez-le quand inutile ; application immédiatement déconnectée.",
   empty: "Aucun client. Créez-en un puis saisissez son jeton dans l’application à connecter.",
   create: "Créer un client",
   createTitle: "Créer un client",
   nameLabel: "Nom de l’application",
   namePlaceholder: "Par exemple, Claude Desktop",
-  nameDesc: "Pour distinguer les appelants dans BaoCut. Historique des requêtes et approbations affichent ce nom.",
+  nameDesc: "Pour distinguer les appelants dans OpenFox. Historique des requêtes et approbations affichent ce nom.",
   confirmCreate: "Créer",
   cancel: "Annuler",
   done: "Terminé",
@@ -86,7 +86,7 @@ export const approvalCardFr: ApprovalCardMessages = {
 
 export const mcpFr: McpMessages = {
   title: "Service MCP",
-  lede: "BaoCut sert de serveur MCP aux Agents d’autres applications IA : lister et consulter les vidéos, lire les transcriptions, modifier, transcrire, exporter, synthétiser et générer des images avec les modèles disponibles. Désactivé par défaut. Toutes les vidéos partagées par défaut, ou sélection seulement.",
+  lede: "OpenFox sert de serveur MCP aux Agents d’autres applications IA : lister et consulter les vidéos, lire les transcriptions, modifier, transcrire, exporter, synthétiser et générer des images avec les modèles disponibles. Désactivé par défaut. Toutes les vidéos partagées par défaut, ou sélection seulement.",
   on: "Service MCP actif",
   off: "Service MCP non démarré",
   error: "Échec du démarrage du service MCP",
@@ -122,7 +122,7 @@ export const mcpFr: McpMessages = {
 
 export const modelApiFr: ModelApiMessages = {
   title: "API de modèles",
-  lede: "Permet aux outils OpenAI API (SDK, CLI, applications) d’utiliser les modèles BaoCut pour transcription, synthèse, images et texte. Écoute locale uniquement. Modèles locaux par défaut ; cloud, nœuds réseau et Agents à activer séparément.",
+  lede: "Permet aux outils OpenAI API (SDK, CLI, applications) d’utiliser les modèles OpenFox pour transcription, synthèse, images et texte. Écoute locale uniquement. Modèles locaux par défaut ; cloud, nœuds réseau et Agents à activer séparément.",
   on: "API de modèles active",
   off: "API de modèles non démarrée",
   error: "Échec du démarrage de l’API de modèles",
@@ -138,7 +138,7 @@ export const modelApiFr: ModelApiMessages = {
   needKeyFixed: "Clé API (jeton client) toujours requise, non désactivable. Chaque application a la sienne, révocable séparément.",
   levels: {
     read: "Liste seulement les modèles (GET /v1/models). Génération refusée.",
-    ask: "Confirmer chaque génération dans BaoCut. Refus sans réponse en 50 secondes.",
+    ask: "Confirmer chaque génération dans OpenFox. Refus sans réponse en 50 secondes.",
     auto: "Génération sans confirmation. Idéal si vous êtes seul utilisateur.",
   },
   routingTitle: "Routage",
@@ -177,11 +177,11 @@ export const modelApiFr: ModelApiMessages = {
 
 export const webFr: WebMessages = {
   title: "Service web",
-  lede: "Ouvrez BaoCut Web sur ce Mac pour modifier les mêmes vidéos. Écoute sur cet ordinateur seulement ; autres appareils du réseau sans accès.",
+  lede: "Ouvrez OpenFox Web sur ce Mac pour modifier les mêmes vidéos. Écoute sur cet ordinateur seulement ; autres appareils du réseau sans accès.",
   on: "Service web actif",
   off: "Service web non démarré",
   error: "Échec du démarrage du service web",
-  offSub: "Une fois démarré, vous pouvez ouvrir BaoCut Web dans un navigateur.",
+  offSub: "Une fois démarré, vous pouvez ouvrir OpenFox Web dans un navigateur.",
   open: "Ouvrir dans le navigateur",
   copyLink: "Copier le lien de connexion",
   linkLabel: "Lien de connexion",

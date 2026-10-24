@@ -133,7 +133,7 @@ export const ruTranslate: TranslateMessages = {
   termsUnify: 'Использовать переводы из глоссария',
   termsUnified: (n: number) => `Приведено к глоссарию мест: ${n}`,
   cut: (n: number) => `Кадры вырезаны из видео: ${sentences(n)} оригинала`,
-  webHint: 'Повторный перевод вызывает модель или агента: запустите его из агента или приложения BaoCut',
+  webHint: 'Повторный перевод вызывает модель или агента: запустите его из агента или приложения OpenFox',
   refreshing: (n: number | null) => (n === null ? 'Повторный перевод…' : `Повторный перевод: ${sentences(n)}…`),
   aiMenu: 'Повторный перевод и перевод',
   directAll: (n: number) => `Перевести заново через API модели (${sentences(n)})`,

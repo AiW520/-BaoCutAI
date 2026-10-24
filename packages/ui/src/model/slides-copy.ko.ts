@@ -8,7 +8,7 @@ export const ko: SlidesMessages = {
   frameTitle: (name) => `슬라이드 편집기: ${name}`,
   opening: '슬라이드 여는 중…',
   unavailableTitle: '슬라이드 편집기를 사용할 수 없음',
-  unavailableBody: '이 BaoCut 빌드에는 슬라이드 편집기가 포함되어 있지 않습니다. 슬라이드 파일은 폴더에 그대로 있습니다.',
+  unavailableBody: '이 OpenFox 빌드에는 슬라이드 편집기가 포함되어 있지 않습니다. 슬라이드 파일은 폴더에 그대로 있습니다.',
   openFailed: (reason) => `슬라이드를 열 수 없습니다: ${reason}`,
   open: '슬라이드 열기',
   openCard: (name) => `슬라이드 “${name}” 열기`,

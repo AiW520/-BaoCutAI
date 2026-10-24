@@ -8,9 +8,9 @@ export const it: DesignMessages = {
   frameTitle: (name) => `Editor di design: ${name}`,
   opening: 'Apertura del design…',
   unavailableTitle: 'Editor di design non disponibile',
-  unavailableBody: 'Questa versione di BaoCut non include l’editor di design. I file del design sono ancora nella loro cartella.',
+  unavailableBody: 'Questa versione di OpenFox non include l’editor di design. I file del design sono ancora nella loro cartella.',
   hostBlockedTitle: 'L’editor di design non si apre a questo indirizzo',
-  hostBlockedBody: 'Apri BaoCut Web su 127.0.0.1 o localhost per modificare i design. I file del design sono ancora nella loro cartella.',
+  hostBlockedBody: 'Apri OpenFox Web su 127.0.0.1 o localhost per modificare i design. I file del design sono ancora nella loro cartella.',
   openFailed: (reason) => `Impossibile aprire il design: ${reason}`,
   open: 'Apri design',
   openCard: (name) => `Apri design «${name}»`,
@@ -40,5 +40,5 @@ export const it: DesignMessages = {
   exportDialogButton: 'Esporta',
   exportSaved: (path) => `Salvato in ${path}`,
   exportFailed: (reason) => `Impossibile salvare il file esportato: ${reason}`,
-  exportUnsupported: (name) => `BaoCut non può salvare «${name}»: questo tipo di file non è supportato`,
+  exportUnsupported: (name) => `OpenFox non può salvare «${name}»: questo tipo di file non è supportato`,
 };

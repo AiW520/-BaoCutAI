@@ -2,7 +2,7 @@ import type { ModelsProbeMessages } from './models-probe-copy.ts';
 import { pluralForm } from '@baocut/protocol';
 const countEs = (n: number, one: string, other: string) => `${n} ${pluralForm('es', n, { one, other })}`;
 export const es: ModelsProbeMessages = {
- speechText: 'Hola, esta es una prueba de síntesis de voz de BaoCut.', noResult: 'La tarea terminó, pero no se recibió ningún resultado.',
+ speechText: 'Hola, esta es una prueba de síntesis de voz de OpenFox.', noResult: 'La tarea terminó, pero no se recibió ningún resultado.',
  failed: 'La tarea falló.', cancelled: 'La tarea se canceló.', interrupted: 'El Runtime se reinició, por lo que esta prueba no terminó.',
  unknownOutcome: 'El Runtime se reinició antes de que esta llamada recibiera una respuesta, por lo que el resultado es desconocido.',
  audioFacts: (seconds, khz, type) => `${seconds} s · ${khz} kHz · ${type}`,

@@ -11,8 +11,8 @@
   const Row = window.ShellRow;
   const S = window.BC_AGENT_SETUP;
   const FACTS = [
-    {k: 'cli', icon: 'compute', title: '用你已经装好的', body: 'Tuzi 调用这台电脑上的命令行 Agent，不另装一套。'},
-    {k: 'plan', icon: 'ok', title: '用你自己的订阅', body: '不用为 Tuzi 另外付费，也不用填 API key。'},
+    {k: 'cli', icon: 'compute', title: '用你已经装好的', body: 'OpenFox 调用这台电脑上的命令行 Agent，不另装一套。'},
+    {k: 'plan', icon: 'ok', title: '用你自己的订阅', body: '不用为 OpenFox 另外付费，也不用填 API key。'},
     {k: 'ask', icon: 'lock', title: '改动之前先问你', body: '写入视频前会停下来等你允许，随时可以撤销。'},
   ];
   /* 2026-10-05 Agent 在设置左栏自成一组：「Agent 提供方」（本页：连接 + 页底的高级与排障）；Skills 2026-10-16 搬到 rail（page-skills.jsx），
@@ -116,7 +116,7 @@
 
     return <div className="agent-settings" data-screen-label="Agent 设置">
       <h1 className="t-heading-sm">Agent 提供方</h1>
-      <p className="agset-lede">Agent 是装在你电脑上的 AI 编码助手，比如 Claude Code、Codex。Tuzi 直接调用它，让你用一句话完成转录、翻译和剪辑。</p>
+      <p className="agset-lede">Agent 是装在你电脑上的 AI 编码助手，比如 Claude Code、Codex。OpenFox 直接调用它，让你用一句话完成转录、翻译和剪辑。</p>
       <ul className="agset-facts" aria-label="Agent 怎么工作">
         {FACTS.map((f) => <li key={f.k}><Ic n={f.icon} className="ic--16" /><div><b>{f.title}</b><p>{f.body}</p></div></li>)}
       </ul>
@@ -126,14 +126,14 @@
             <div className="grow">
               <h2 className="t-title-sm">{ov.title}</h2>
               <p>{ov.state === 'ready'
-                ? `新会话默认用 ${ov.harness.name} · ${S.modelLabel(ov.harness, app.prefs.agentModels)}。用的是这台电脑上已经装好的 ${ov.harness.name} 和你自己的 ${String(ov.harness.account).split(' · ')[0]}，Tuzi 不另外收费。`
+                ? `新会话默认用 ${ov.harness.name} · ${S.modelLabel(ov.harness, app.prefs.agentModels)}。用的是这台电脑上已经装好的 ${ov.harness.name} 和你自己的 ${String(ov.harness.account).split(' · ')[0]}，OpenFox 不另外收费。`
                 : ov.body}</p>
             </div>
             {ov.cta ? <Btn variant="accent" onClick={heroAct}>{ov.state === 'attention' ? '查看问题' : ov.cta}</Btn> : null}
           </Card>
 
           <div className="agset-heading">
-            <div><h2 className="t-title-sm">这台电脑上的 Agent</h2><p>Tuzi 会自动找出已经装好的。有一个可用就够，不需要全部安装；拿不准就选 Claude Code 或 Codex CLI。内置的只能停用，你添加的可以移除。</p></div>
+            <div><h2 className="t-title-sm">这台电脑上的 Agent</h2><p>OpenFox 会自动找出已经装好的。有一个可用就够，不需要全部安装；拿不准就选 Claude Code 或 Codex CLI。内置的只能停用，你添加的可以移除。</p></div>
             <Btn size="s" variant="quiet" icon="refresh" disabled={scanning} onClick={rescan}>{scanning ? '正在检测…' : '重新检测'}</Btn>
           </div>
           {scanning ? <Progress indeterminate thin className="agset-scan" /> : null}
@@ -146,19 +146,19 @@
             </BCAction>
             {showMore ? <Card layer id="agent-more-providers" className={cx('agset-providers', scanning && 'is-scanning')}>{gr.more.map(card)}</Card> : null}
           </> : null}
-          <div className="agset-meta">{checked} · Tuzi 内置 {gr.total - gr.added} 个 Agent{gr.added ? `，你添加了 ${gr.added} 个` : ''}；这台电脑上检测到 {gr.found} 个</div>
+          <div className="agset-meta">{checked} · OpenFox 内置 {gr.total - gr.added} 个 Agent{gr.added ? `，你添加了 ${gr.added} 个` : ''}；这台电脑上检测到 {gr.found} 个</div>
           <window.AgentCatalogSection onAdded={(id) => setExpanded(id)} />
 
           <Card layer className="agset-advanced agset-faq">
-            <BCDisclosure className="agset-disclosure" title={<> 需要为 Tuzi 另外付费或订阅吗？ </>}>
-              <p>不需要。Agent 用的是你已经在用的 Claude 或 ChatGPT 订阅，费用和额度都算在那边；Tuzi 不自带模型，不代收密钥，也不做云端中转。没有这类订阅也可以不用 Agent，Tuzi 的其他功能照常可用。</p></BCDisclosure>
-            <BCDisclosure className="agset-disclosure" title={<> Tuzi 会看到我的账号和密码吗？ </>}>
-              <p>不会。登录在 Agent 自己的窗口里完成，Tuzi 只是启动你电脑上的那个程序，并把视频交给它处理。它要修改视频之前会先问你，规则在「权限与安全」里。</p></BCDisclosure>
+            <BCDisclosure className="agset-disclosure" title={<> 需要为 OpenFox 另外付费或订阅吗？ </>}>
+              <p>不需要。Agent 用的是你已经在用的 Claude 或 ChatGPT 订阅，费用和额度都算在那边；OpenFox 不自带模型，不代收密钥，也不做云端中转。没有这类订阅也可以不用 Agent，OpenFox 的其他功能照常可用。</p></BCDisclosure>
+            <BCDisclosure className="agset-disclosure" title={<> OpenFox 会看到我的账号和密码吗？ </>}>
+              <p>不会。登录在 Agent 自己的窗口里完成，OpenFox 只是启动你电脑上的那个程序，并把视频交给它处理。它要修改视频之前会先问你，规则在「权限与安全」里。</p></BCDisclosure>
             <BCDisclosure className="agset-disclosure" title={<> Agent 和「API 提供方」有什么区别？ </>}>
               <p>Agent 使用你本机的编码助手与自己的订阅，能连续完成多步任务。「API 提供方」的模型用 API key 直接运行单项工具，按用量计费，两者分开设置。</p>
               <Btn size="s" variant="quiet" onClick={() => app.replace({r: 'settings', sec: 'providers'})}>前往 API 提供方</Btn></BCDisclosure>
-            <BCDisclosure className="agset-disclosure" title={<> 想在终端里直接用这些 Agent 操作 Tuzi？ </>}>
-              <p>在 Tuzi 里开会话不需要额外准备。要在终端或其他应用里用，给它们装上 Tuzi 的 skill 即可。</p>
+            <BCDisclosure className="agset-disclosure" title={<> 想在终端里直接用这些 Agent 操作 OpenFox？ </>}>
+              <p>在 OpenFox 里开会话不需要额外准备。要在终端或其他应用里用，给它们装上 OpenFox 的 skill 即可。</p>
               <Btn size="s" variant="quiet" onClick={() => app.go({r: 'skills', tab: 'external'})}>查看安装方法</Btn></BCDisclosure>
           </Card>
 
@@ -188,7 +188,7 @@
               <Btn size="s" icon="copy" onClick={() => copy(hs.map((h) => `${h.name}: ${S.health(h)}${h.found ? ` v${h.ver} ${h.bin}` : ''}`).join('\n'), '诊断信息')}>复制诊断信息</Btn>
             </BCDisclosure>
             <BCDisclosure className="agset-disclosure" title={<> 手动指定 Agent 的位置 <span>自动检测找不到时使用</span> </>}>
-              <p>Tuzi 会查找 PATH 和常见安装位置。用版本管理器装的 Agent 有时不在其中，可以在这里直接指给 Tuzi。</p>
+              <p>OpenFox 会查找 PATH 和常见安装位置。用版本管理器装的 Agent 有时不在其中，可以在这里直接指给 OpenFox。</p>
               <Btn size="s" onClick={() => app.toast('原型演示：正式版会打开可执行文件选择器')}>选择可执行文件…</Btn>
             </BCDisclosure>
           </Card>

@@ -8,9 +8,9 @@ export const pl: DesignMessages = {
   frameTitle: (name) => `Edytor projektu: ${name}`,
   opening: 'Otwieranie projektu…',
   unavailableTitle: 'Edytor projektu niedostępny',
-  unavailableBody: 'Ta wersja BaoCut nie zawiera edytora projektu. Pliki projektu nadal są w swoim folderze.',
+  unavailableBody: 'Ta wersja OpenFox nie zawiera edytora projektu. Pliki projektu nadal są w swoim folderze.',
   hostBlockedTitle: 'Edytor projektu niedostępny pod tym adresem',
-  hostBlockedBody: 'Aby edytować projekty, otwórz BaoCut Web pod adresem 127.0.0.1 lub localhost. Pliki projektu nadal są w swoim folderze.',
+  hostBlockedBody: 'Aby edytować projekty, otwórz OpenFox Web pod adresem 127.0.0.1 lub localhost. Pliki projektu nadal są w swoim folderze.',
   openFailed: (reason) => `Nie udało się otworzyć projektu: ${reason}`,
   open: 'Otwórz projekt',
   openCard: (name) => `Otwórz projekt „${name}”`,
@@ -40,5 +40,5 @@ export const pl: DesignMessages = {
   exportDialogButton: 'Eksportuj',
   exportSaved: (path) => `Zapisano w ${path}`,
   exportFailed: (reason) => `Nie udało się zapisać wyeksportowanego pliku: ${reason}`,
-  exportUnsupported: (name) => `BaoCut nie może zapisać „${name}”: ten typ pliku nie jest obsługiwany`,
+  exportUnsupported: (name) => `OpenFox nie może zapisać „${name}”: ten typ pliku nie jest obsługiwany`,
 };

@@ -35,7 +35,7 @@ export const ru: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join(", "),
     cloneHint: "Укажите 5–15 секунд чистой речи: один человек, без фоновой музыки. Подходят WAV, MP3, M4A, FLAC и видеофайл.",
     yourFile: (name: string) => `Ваша запись · ${name}`,
-    sampleFile: (label: string) => `Образец записи · ${label} · поставляется с BaoCut, не нужно искать файл`,
+    sampleFile: (label: string) => `Образец записи · ${label} · поставляется с OpenFox, не нужно искать файл`,
     pickFile: "Выбрать запись…",
     changeFile: "Выберите другой…",
     useSample: "Использовать образец записи",

@@ -6,7 +6,7 @@ export const pl: GeneralSettingsMessages = {
   languageDesc: "Działa od razu, bez ponownego uruchamiania.",
   languageSystem: (current: string) => `Systemowy (${current})`,
   appearance: "Wygląd",
-  appearanceDesc: "Dotyczy tylko okien Tuzi na tym komputerze.",
+  appearanceDesc: "Dotyczy tylko okien OpenFox na tym komputerze.",
   schemeSystem: "Systemu",
   schemeLight: "Jasny",
   schemeDark: "Ciemny",
@@ -27,7 +27,7 @@ export const pl: GeneralSettingsMessages = {
   downloadsGroup: "Pobieranie i aktualizacje",
   autoUpdateOn: "Włączono automatyczne sprawdzanie i pobieranie aktualizacji",
   autoUpdateOff: "Wyłączono automatyczne pobieranie aktualizacji",
-  downloaderWeb: "Przeglądarka nie sprawdza narzędzi pobierania na komputerze; sprawdź w aplikacji komputerowej Tuzi.",
+  downloaderWeb: "Przeglądarka nie sprawdza narzędzi pobierania na komputerze; sprawdź w aplikacji komputerowej OpenFox.",
 
   sourcesGroup: "Źródła pobierania i offline",
   strictOffline: "Ścisły offline",
@@ -37,7 +37,7 @@ export const pl: GeneralSettingsMessages = {
 
   trashDays: "Dni przechowywania w koszu",
   trashDaysDesc: (fallback: number | null) => `Wpisy bez odwołań w koszu dłużej niż ten okres i usunięte wideo są usuwane trwale (kontrola przy starcie i co 6 godzin). Wpisy z odwołaniami zostają zachowane. Wyczyść dla wartości domyślnej${fallback ? ` z ${fallback} dni` : ""}.`,
-  webNote: "W przeglądarce nie można zmienić tego ustawienia. Zmień je w aplikacji Tuzi na komputer.",
-  webViewOnly: "W przeglądarce można to tylko przeglądać. Zmiany wprowadź w aplikacji Tuzi na komputer.",
-  webUnavailable: "To nie jest dostępne w przeglądarce. Użyj aplikacji Tuzi na komputer.",
+  webNote: "W przeglądarce nie można zmienić tego ustawienia. Zmień je w aplikacji OpenFox na komputer.",
+  webViewOnly: "W przeglądarce można to tylko przeglądać. Zmiany wprowadź w aplikacji OpenFox na komputer.",
+  webUnavailable: "To nie jest dostępne w przeglądarce. Użyj aplikacji OpenFox na komputer.",
 };

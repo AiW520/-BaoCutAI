@@ -52,7 +52,7 @@ export const ru: MainMessages = {
   runtimeExited: (code: number | null) => `Runtime не запущен (код завершения ${code})`,
   runtimeQuitting: 'Приложение закрывается',
   quitBusyTitle: (count: number) => pluralForm('ru', count, { one: `${count} задача ещё выполняется`, few: `${count} задачи ещё выполняются`, many: `${count} задач ещё выполняется`, other: `${count} задачи ещё выполняются` }),
-  quitBusyDetail: 'Если выйти сейчас, они будут прерваны. Можно оставить их выполняться в фоне — Tuzi остановится сам, когда они завершатся.',
+  quitBusyDetail: 'Если выйти сейчас, они будут прерваны. Можно оставить их выполняться в фоне — OpenFox остановится сам, когда они завершатся.',
   quitKeepRunning: 'Продолжить в фоне',
   quitStop: 'Остановить и выйти',
   cancel: 'Отмена',

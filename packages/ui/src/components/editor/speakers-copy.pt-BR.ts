@@ -29,7 +29,7 @@ export const ptBR: SpeakersMessages = {
   startHint: "Ao concluir, abre revisão; só esta ferramenta exige confirmação antes de aplicar.",
   readOnly: "Vídeo em leitura apenas; identificação indisponível.",
   web: "Não é possível identificar falantes no navegador",
-  webBody: "Identificação usa o modelo local deste computador. Use o aplicativo desktop BaoCut.",
+  webBody: "Identificação usa o modelo local deste computador. Use o aplicativo desktop OpenFox.",
 
   submitting: "Enviando…",
   queued: "Na fila…",

@@ -24,8 +24,8 @@ import { approvalCardVi, clientsVi, commonVi, mcpVi, modelApiVi, webVi } from '.
 const commonEn = {
   copied: (label: string) => `${label} copied`,
   copyFailed: "Couldn't copy. Select the text and copy it yourself.",
-  autostart: 'Start when BaoCut opens',
-  stopsWithApp: 'The service stops when you quit BaoCut.',
+  autostart: 'Start when OpenFox opens',
+  stopsWithApp: 'The service stops when you quit OpenFox.',
   portLabel: 'Port',
   portIdle: (port: number) =>
     `Default is ${port}. If it's in use, pick another one: the service shows "Failed to start" and won't switch ports on its own.`,
@@ -35,7 +35,7 @@ const commonEn = {
   errorFix: 'Try another port, or quit the app that is using it.',
   resetPort: 'Use default port',
   portReset: (port: number) => `Port reset to the default ${port}`,
-  unavailableSub: "This version of BaoCut Runtime doesn't provide this service yet, so it can't be started.",
+  unavailableSub: "This version of OpenFox Runtime doesn't provide this service yet, so it can't be started.",
   started: (name: string) => `${name} started`,
   stopped: (name: string) => `${name} stopped`,
   startFailed: (reason: string) => `Didn't start: ${reason}`,
@@ -62,13 +62,13 @@ const commonEn = {
 };
 
 const clientsEn = {
-  lede: "Give each app that connects its own token. A token is shown only once, when it's created, and BaoCut keeps only its fingerprint. Revoke it when you no longer need it, and that app is disconnected right away.",
+  lede: "Give each app that connects its own token. A token is shown only once, when it's created, and OpenFox keeps only its fingerprint. Revoke it when you no longer need it, and that app is disconnected right away.",
   empty: 'No clients yet. Create one, then enter its token in the app you want to connect.',
   create: 'Create client',
   createTitle: 'Create client',
   nameLabel: 'App name',
   namePlaceholder: 'For example, Claude Desktop',
-  nameDesc: 'Only used to tell callers apart in BaoCut. Request history and approvals show this name.',
+  nameDesc: 'Only used to tell callers apart in OpenFox. Request history and approvals show this name.',
   confirmCreate: 'Create',
   cancel: 'Cancel',
   done: 'Done',
@@ -107,7 +107,7 @@ const approvalCardEn = {
 
 const mcpEn = {
   title: 'MCP service',
-  lede: "BaoCut acts as an MCP server and gives other AI apps' agents a set of tools: list and view videos, read transcripts, edit, start transcription and export, and synthesize speech or generate images with the models available on this computer. Off by default. All videos are shared by default, or you can share only some of them.",
+  lede: "OpenFox acts as an MCP server and gives other AI apps' agents a set of tools: list and view videos, read transcripts, edit, start transcription and export, and synthesize speech or generate images with the models available on this computer. Off by default. All videos are shared by default, or you can share only some of them.",
   on: 'MCP service running',
   off: 'MCP service not started',
   error: 'MCP service failed to start',
@@ -143,7 +143,7 @@ const mcpEn = {
 
 const modelApiEn = {
   title: 'Model API',
-  lede: 'Let tools that speak the OpenAI API (SDKs, command-line tools, other apps) use the models BaoCut can use to transcribe, synthesize speech, generate images, and generate text. Listens on this computer only. By default only models on this computer are used; cloud, LAN nodes, and agents each need to be turned on.',
+  lede: 'Let tools that speak the OpenAI API (SDKs, command-line tools, other apps) use the models OpenFox can use to transcribe, synthesize speech, generate images, and generate text. Listens on this computer only. By default only models on this computer are used; cloud, LAN nodes, and agents each need to be turned on.',
   on: 'Model API running',
   off: 'Model API not started',
   error: 'Model API failed to start',
@@ -159,7 +159,7 @@ const modelApiEn = {
   needKeyFixed: "An API key (the client token) is always required in this version and can't be turned off. Each app gets its own, and you can revoke it separately.",
   levels: {
     read: 'Can only list models (GET /v1/models). Generation requests are rejected.',
-    ask: 'Confirm each generation request in BaoCut. Denied if no one responds within 50 seconds.',
+    ask: 'Confirm each generation request in OpenFox. Denied if no one responds within 50 seconds.',
     auto: "Generation requests run without confirmation. Best when you're the only user.",
   },
   routingTitle: 'Routing',
@@ -198,11 +198,11 @@ const modelApiEn = {
 
 const webEn = {
   title: 'Web service',
-  lede: "Open BaoCut Web in a browser on this Mac and edit the same videos. The service listens on this computer only; other devices on your network can't reach it.",
+  lede: "Open OpenFox Web in a browser on this Mac and edit the same videos. The service listens on this computer only; other devices on your network can't reach it.",
   on: 'Web service running',
   off: 'Web service not started',
   error: 'Web service failed to start',
-  offSub: 'Once started, you can open BaoCut Web in a browser.',
+  offSub: 'Once started, you can open OpenFox Web in a browser.',
   open: 'Open in browser',
   copyLink: 'Copy sign-in link',
   linkLabel: 'Sign-in link',

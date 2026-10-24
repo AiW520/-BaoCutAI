@@ -19,7 +19,7 @@ import {
 import type { StagedApp } from './app-update-service.ts';
 
 /*
- * 换包只用假的 exec：ditto 在临时目录里建一个只有 Info.plist 的 BaoCut.app，plutil / codesign / spctl / hdiutil 给预设的输出。
+ * 换包只用假的 exec：ditto 在临时目录里建一个只有 Info.plist 的 OpenFox.app，plutil / codesign / spctl / hdiutil 给预设的输出。
  * 生成的脚本只检查写出来没有，从不运行。
  */
 
@@ -27,7 +27,7 @@ const TEAM = 'ABCDE12345';
 
 let root: string;
 let cacheDir: string;
-const running = '/Applications/BaoCut.app';
+const running = '/Applications/OpenFox.app';
 
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-install-'));
@@ -47,7 +47,7 @@ const info = (format: AppUpdateInfo['format'] = 'zip'): AppUpdateInfo => ({
   notes: '',
   notesLocalized: {},
   format,
-  url: 'https://example.invalid/BaoCut.zip',
+  url: 'https://example.invalid/OpenFox.zip',
   size: 1,
   sha256: 'a'.repeat(64),
 });
@@ -61,16 +61,16 @@ interface FakeOptions {
   mount?: string;
 }
 
-/** 假的外部命令；记下每一条调用。ditto 解开（`-x`）或拷贝时在目标里建一个只有 Info.plist 的 BaoCut.app。 */
+/** 假的外部命令；记下每一条调用。ditto 解开（`-x`）或拷贝时在目标里建一个只有 Info.plist 的 OpenFox.app。 */
 function fakeExec(options: FakeOptions = {}): { exec: Exec; calls: string[][] } {
-  const plist = { CFBundleIdentifier: 'com.baocut.app', CFBundleShortVersionString: '2.3.0', CFBundleVersion: '57', ...options.plist };
+  const plist = { CFBundleIdentifier: 'vip.openfox.app', CFBundleShortVersionString: '2.3.0', CFBundleVersion: '57', ...options.plist };
   const calls: string[][] = [];
   const ok = (stdout = '', stderr = ''): ExecResult => ({ code: 0, stdout, stderr });
   const exec: Exec = async (file, args) => {
     calls.push([file, ...args]);
     const name = path.basename(file);
     if (name === 'ditto') {
-      const app = args[0] === '-x' ? path.join(args[3] ?? '', 'BaoCut.app') : (args[1] ?? '');
+      const app = args[0] === '-x' ? path.join(args[3] ?? '', 'OpenFox.app') : (args[1] ?? '');
       await fs.mkdir(path.join(app, 'Contents'), { recursive: true });
       await fs.writeFile(path.join(app, 'Contents', 'Info.plist'), '');
       return ok();
@@ -102,9 +102,9 @@ function macDeps(exec: Exec, overrides: Partial<MacInstallDeps> = {}): MacInstal
   };
 }
 
-const archive = () => path.join(cacheDir, 'BaoCut.zip');
+const archive = () => path.join(cacheDir, 'OpenFox.zip');
 const unpacked = () => path.join(cacheDir, 'unpack-57');
-const stagedApp = (): StagedApp => ({ app: path.join(unpacked(), 'BaoCut.app'), dir: unpacked() });
+const stagedApp = (): StagedApp => ({ app: path.join(unpacked(), 'OpenFox.app'), dir: unpacked() });
 const commandsOf = (calls: string[][]) => calls.map((c) => [path.basename(c[0] ?? ''), c[1]].join(' '));
 
 describe('macOS 校验与就位', () => {
@@ -130,7 +130,7 @@ describe('macOS 校验与就位', () => {
     expect(await fs.readdir(cacheDir)).toEqual([]);
   });
 
-  it('旧 BaoCut Bundle ID 不能替换新应用，即使版本和签名相同', async () => {
+  it('旧 OpenFox Bundle ID 不能替换新应用，即使版本和签名相同', async () => {
     const deps = macDeps(fakeExec({ plist: { CFBundleIdentifier: 'com.jimliu.baocut' } }).exec);
     expect(await prepareMac(info(), archive(), deps)).toMatchObject({ type: 'failed', failure: 'verify' });
     expect(await fs.readdir(cacheDir)).toEqual([]);
@@ -146,9 +146,9 @@ describe('macOS 校验与就位', () => {
 
   it('DMG：只读挂上；挂上了却找不到 .app 时卸下，挂不上报校验失败', async () => {
     // 挂载点按 hdiutil 的输出认 `/Volumes/…`，测试里建不出来，所以只走「里面没有 .app」这条路。
-    const mount = '/Volumes/BaoCut update test that does not exist';
+    const mount = '/Volumes/OpenFox update test that does not exist';
     const empty = fakeExec({ mount });
-    const dmg = path.join(cacheDir, 'BaoCut.dmg');
+    const dmg = path.join(cacheDir, 'OpenFox.dmg');
     expect(await prepareMac(info('dmg'), dmg, macDeps(empty.exec))).toMatchObject({ type: 'failed', failure: 'verify' });
     expect(empty.calls[1]).toEqual(['/usr/bin/hdiutil', 'attach', '-nobrowse', '-noverify', '-readonly', dmg]);
     expect(empty.calls).toContainEqual(['/usr/bin/hdiutil', 'detach', mount, '-quiet']);
@@ -159,7 +159,7 @@ describe('macOS 校验与就位', () => {
   });
 
   it('Windows 的安装包不在 macOS 上装', async () => {
-    const outcome = await prepareMac(info('exe'), path.join(cacheDir, 'BaoCut.exe'), macDeps(fakeExec().exec));
+    const outcome = await prepareMac(info('exe'), path.join(cacheDir, 'OpenFox.exe'), macDeps(fakeExec().exec));
     expect(outcome).toMatchObject({ type: 'failed', failure: 'verify' });
   });
 
@@ -198,9 +198,9 @@ describe('macOS 换包', () => {
     const script = path.join(cacheDir, 'install-4242.sh');
     expect(deps.launchScript).toHaveBeenCalledWith(script, path.join(cacheDir, 'install.log'));
     const body = await fs.readFile(script, 'utf8');
-    expect(body).toContain(`NEW_APP='${path.join(cacheDir, 'unpack-57', 'BaoCut.app')}'`);
+    expect(body).toContain(`NEW_APP='${path.join(cacheDir, 'unpack-57', 'OpenFox.app')}'`);
     expect(body).toContain(`UNPACKED='${unpacked()}'`);
-    expect(body).toContain("TARGET='/Applications/BaoCut.app'");
+    expect(body).toContain("TARGET='/Applications/OpenFox.app'");
     expect(body).toContain('/usr/bin/open "$TARGET"');
     expect((await fs.stat(script)).mode & 0o777).toBe(0o700);
     expect(commandsOf(calls).every((c) => c.startsWith('plutil'))).toBe(true);
@@ -266,7 +266,7 @@ describe('macOS 换包', () => {
 });
 
 describe('Windows 换包', () => {
-  const exe = 'C:\\Users\\me\\AppData\\Local\\Programs\\baocut\\BaoCut.exe';
+  const exe = 'C:\\Users\\me\\AppData\\Local\\Programs\\baocut\\OpenFox.exe';
 
   it('exe 旁边有 NSIS 的卸载程序才是安装版', async () => {
     const seen: string[] = [];
@@ -275,7 +275,7 @@ describe('Windows 换包', () => {
       return true;
     };
     expect(await nsisInstalledCopy(exe, present)).toBe(true);
-    expect(seen).toEqual(['C:\\Users\\me\\AppData\\Local\\Programs\\baocut\\Uninstall BaoCut.exe']);
+    expect(seen).toEqual(['C:\\Users\\me\\AppData\\Local\\Programs\\baocut\\Uninstall OpenFox.exe']);
     expect(await nsisInstalledCopy(exe, async () => false)).toBe(false);
     // Inno 的卸载程序不算。
     expect(await nsisInstalledCopy(exe, async (file) => file.endsWith('unins000.exe'))).toBe(false);
@@ -283,15 +283,15 @@ describe('Windows 换包', () => {
 
   it('安装版记下安装器，等应用退出时再起；退出即安装装完不重新打开；zip 版走手动', async () => {
     const launchOnQuit = vi.fn();
-    expect(await installWindows('C:\\cache\\BaoCut-setup.exe', { installedCopy: true, launchOnQuit })).toEqual({ type: 'launched' });
-    expect(launchOnQuit).toHaveBeenCalledWith('C:\\cache\\BaoCut-setup.exe', ['/S', '--updated', '--force-run']);
+    expect(await installWindows('C:\\cache\\OpenFox-setup.exe', { installedCopy: true, launchOnQuit })).toEqual({ type: 'launched' });
+    expect(launchOnQuit).toHaveBeenCalledWith('C:\\cache\\OpenFox-setup.exe', ['/S', '--updated', '--force-run']);
     expect(NSIS_UPDATE_ARGS).toEqual(['/S', '--updated', '--force-run']);
     launchOnQuit.mockClear();
-    expect(await installWindows('C:\\cache\\BaoCut-setup.exe', { installedCopy: true, launchOnQuit }, false)).toEqual({ type: 'launched' });
-    expect(launchOnQuit).toHaveBeenCalledWith('C:\\cache\\BaoCut-setup.exe', ['/S', '--updated']);
+    expect(await installWindows('C:\\cache\\OpenFox-setup.exe', { installedCopy: true, launchOnQuit }, false)).toEqual({ type: 'launched' });
+    expect(launchOnQuit).toHaveBeenCalledWith('C:\\cache\\OpenFox-setup.exe', ['/S', '--updated']);
     expect(NSIS_QUIT_ARGS).toEqual(['/S', '--updated']);
     launchOnQuit.mockClear();
-    expect(await installWindows('C:\\cache\\BaoCut-setup.exe', { installedCopy: false, launchOnQuit })).toEqual({ type: 'fallback' });
+    expect(await installWindows('C:\\cache\\OpenFox-setup.exe', { installedCopy: false, launchOnQuit })).toEqual({ type: 'fallback' });
     expect(launchOnQuit).not.toHaveBeenCalled();
   });
 

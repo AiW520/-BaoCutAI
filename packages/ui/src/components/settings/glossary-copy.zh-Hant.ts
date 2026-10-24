@@ -41,7 +41,7 @@ export const zhHant: GlossaryMessages = {
     cancel: '取消',
   },
   detail: {
-    exportExists: '該位置已有同名檔案。BaoCut 不會覆寫現有檔案；請換個名稱再匯出。',
+    exportExists: '該位置已有同名檔案。OpenFox 不會覆寫現有檔案；請換個名稱再匯出。',
     loadFailed: '無法讀取這張術語表',
     loadingLabel: '正在載入',
     loading: '正在載入…',

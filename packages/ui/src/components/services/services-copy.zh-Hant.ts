@@ -3,8 +3,8 @@ import type { CommonMessages, ClientsMessages, ApprovalCardMessages, McpMessages
 export const commonZhHant: CommonMessages = {
   copied: (label: string) => `已複製${label}`,
   copyFailed: '無法複製。請選取文字後自行複製。',
-  autostart: '開啟 BaoCut 時啟動',
-  stopsWithApp: '結束 BaoCut 時服務會一起停止。',
+  autostart: '開啟 OpenFox 時啟動',
+  stopsWithApp: '結束 OpenFox 時服務會一起停止。',
   portLabel: '連接埠',
   portIdle: (port: number) => `預設為 ${port}。如果已被佔用，請改用其他連接埠：服務會顯示「無法啟動」，不會自行切換連接埠。`,
   portLive: '變更連接埠後，服務會以新的連接埠重新啟動，現有的連線會中斷。',
@@ -13,7 +13,7 @@ export const commonZhHant: CommonMessages = {
   errorFix: '請改用其他連接埠，或結束正在使用它的應用程式。',
   resetPort: '使用預設連接埠',
   portReset: (port: number) => `連接埠已重設為預設的 ${port}`,
-  unavailableSub: '這個版本的 BaoCut Runtime 還沒有提供這項服務，因此無法啟動。',
+  unavailableSub: '這個版本的 OpenFox Runtime 還沒有提供這項服務，因此無法啟動。',
   started: (name: string) => `${name}已啟動`,
   stopped: (name: string) => `${name}已停止`,
   startFailed: (reason: string) => `沒有啟動：${reason}`,
@@ -37,13 +37,13 @@ export const commonZhHant: CommonMessages = {
 };
 
 export const clientsZhHant: ClientsMessages = {
-  lede: '為每個要連線的應用程式各發一個權杖。權杖只會在建立時顯示一次，BaoCut 只保留它的指紋。不再需要時就撤銷它，那個應用程式會立即中斷連線。',
+  lede: '為每個要連線的應用程式各發一個權杖。權杖只會在建立時顯示一次，OpenFox 只保留它的指紋。不再需要時就撤銷它，那個應用程式會立即中斷連線。',
   empty: '還沒有用戶端。請先建立一個，再把它的權杖輸入到要連線的應用程式中。',
   create: '建立用戶端',
   createTitle: '建立用戶端',
   nameLabel: '應用程式名稱',
   namePlaceholder: '例如 Claude Desktop',
-  nameDesc: '只用來在 BaoCut 中分辨呼叫者。請求記錄與核准中會顯示這個名稱。',
+  nameDesc: '只用來在 OpenFox 中分辨呼叫者。請求記錄與核准中會顯示這個名稱。',
   confirmCreate: '建立',
   cancel: '取消',
   done: '完成',
@@ -80,7 +80,7 @@ export const approvalCardZhHant: ApprovalCardMessages = {
 
 export const mcpZhHant: McpMessages = {
   title: 'MCP 服務',
-  lede: 'BaoCut 作為 MCP 伺服器，為其他 AI 應用程式的 Agent 提供一組工具：列出與檢視影片、讀取逐字稿、編輯、啟動轉錄與匯出，以及用這台電腦上可用的模型合成語音或生成圖片。預設關閉。預設會共享所有影片，你也可以只共享其中幾部。',
+  lede: 'OpenFox 作為 MCP 伺服器，為其他 AI 應用程式的 Agent 提供一組工具：列出與檢視影片、讀取逐字稿、編輯、啟動轉錄與匯出，以及用這台電腦上可用的模型合成語音或生成圖片。預設關閉。預設會共享所有影片，你也可以只共享其中幾部。',
   on: 'MCP 服務執行中',
   off: 'MCP 服務未啟動',
   error: 'MCP 服務無法啟動',
@@ -116,7 +116,7 @@ export const mcpZhHant: McpMessages = {
 
 export const modelApiZhHant: ModelApiMessages = {
   title: '模型 API',
-  lede: '讓支援 OpenAI API 的工具（SDK、命令列工具、其他應用程式）使用 BaoCut 可用的模型來轉錄、合成語音、生成圖片與生成文字。只在這台電腦上監聽。預設只使用這台電腦上的模型；雲端、區域網路節點與 Agent 需要分別開啟。',
+  lede: '讓支援 OpenAI API 的工具（SDK、命令列工具、其他應用程式）使用 OpenFox 可用的模型來轉錄、合成語音、生成圖片與生成文字。只在這台電腦上監聽。預設只使用這台電腦上的模型；雲端、區域網路節點與 Agent 需要分別開啟。',
   on: '模型 API 執行中',
   off: '模型 API 未啟動',
   error: '模型 API 無法啟動',
@@ -132,7 +132,7 @@ export const modelApiZhHant: ModelApiMessages = {
   needKeyFixed: '這個版本一律需要 API 金鑰（即用戶端權杖），無法關閉。每個應用程式各有自己的金鑰，可以分別撤銷。',
   levels: {
     read: '只能列出模型（GET /v1/models），生成請求會被拒絕。',
-    ask: '每個生成請求都要在 BaoCut 中確認。50 秒內沒有人回應就會拒絕。',
+    ask: '每個生成請求都要在 OpenFox 中確認。50 秒內沒有人回應就會拒絕。',
     auto: '生成請求會直接執行，不需確認。最適合只有你自己使用時。',
   },
   routingTitle: '路由',
@@ -171,11 +171,11 @@ export const modelApiZhHant: ModelApiMessages = {
 
 export const webZhHant: WebMessages = {
   title: 'Web 服務',
-  lede: '在這台 Mac 的瀏覽器中開啟 BaoCut Web，編輯同一批影片。服務只在這台電腦上監聽，網路上的其他裝置無法連線。',
+  lede: '在這台 Mac 的瀏覽器中開啟 OpenFox Web，編輯同一批影片。服務只在這台電腦上監聽，網路上的其他裝置無法連線。',
   on: 'Web 服務執行中',
   off: 'Web 服務未啟動',
   error: 'Web 服務無法啟動',
-  offSub: '啟動後即可在瀏覽器中開啟 BaoCut Web。',
+  offSub: '啟動後即可在瀏覽器中開啟 OpenFox Web。',
   open: '在瀏覽器中開啟',
   copyLink: '複製登入連結',
   linkLabel: '登入連結',

@@ -24,7 +24,7 @@ const en = {
   panelTitle: (kind: PlaceableKind): string => ({ video: 'Video', image: 'Images', audio: 'Audio' })[kind],
   undo: 'Undo',
   readOnly: 'The video is read-only',
-  revealManaged: 'Collected into the video folder and managed by BaoCut; it has no separate file location',
+  revealManaged: 'Collected into the video folder and managed by OpenFox; it has no separate file location',
   revealUnknown: 'Can’t find the location recorded for this file',
   uses: 'Where it’s used',
   usesNone: 'Not used on the timeline yet',

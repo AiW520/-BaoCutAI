@@ -58,7 +58,7 @@ const en = {
     nameList: (names: readonly string[]) => names.join(', '),
     cloneHint: 'Give it 5–15 seconds of clean speech: one person talking, no background music. WAV, MP3, M4A, FLAC or a video file all work.',
     yourFile: (name: string) => `Your recording · ${name}`,
-    sampleFile: (label: string) => `Sample recording · ${label} · comes with BaoCut, no need to find a file`,
+    sampleFile: (label: string) => `Sample recording · ${label} · comes with OpenFox, no need to find a file`,
     pickFile: 'Choose recording…',
     changeFile: 'Choose another…',
     useSample: 'Use sample recording',

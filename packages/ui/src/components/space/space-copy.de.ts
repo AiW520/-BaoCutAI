@@ -58,7 +58,7 @@ export const de: SpaceMessages = {
   newFromPackageHint: "Anderswo exportierte .baocut-Datei mit allen Materialien",
   pickPackageTitle: "Portables Paket auswählen",
   pickPackageButton: "Öffnen",
-  pickPackageFilter: "Portables BaoCut-Paket",
+  pickPackageFilter: "Portables OpenFox-Paket",
   openPackage: "Als neues Video öffnen",
   packageBlocked: (reason: string) => `Als neues Video öffnen: ${reason}`,
   packageOpening: (name: string) => `Wird geöffnet: „${name}“…`,
@@ -105,7 +105,7 @@ export const de: SpaceMessages = {
   changedBody: "Dieses Ergebnis entspricht einer früheren Videoversion. Weiterhin nutzbar, aber nicht mehr dem aktuellen Video entsprechend.",
   reexport: "Aus dem Quellvideo erneut exportieren",
   noPreviewVideo: "Videos öffnen sich im Editor.",
-  inIndexFolder: (folder: string | null) => (folder ? `Im Indexordner „${folder}“ und schreibgeschützt: BaoCut ändert, verschiebt oder löscht diese Datei nicht.` : 'In einem Indexordner und schreibgeschützt: BaoCut ändert, verschiebt oder löscht diese Datei nicht.'),
+  inIndexFolder: (folder: string | null) => (folder ? `Im Indexordner „${folder}“ und schreibgeschützt: OpenFox ändert, verschiebt oder löscht diese Datei nicht.` : 'In einem Indexordner und schreibgeschützt: OpenFox ändert, verschiebt oder löscht diese Datei nicht.'),
 
   capability: {
     synthesizeSpeech: "Vertonung",

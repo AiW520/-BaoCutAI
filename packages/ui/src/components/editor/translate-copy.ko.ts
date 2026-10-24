@@ -143,7 +143,7 @@ export const koTranslate: TranslateMessages = {
   termsUnify: '용어집 번역으로 통일',
   termsUnified: (n: number) => `${n}곳을 용어집 번역으로 통일했습니다`,
   cut: (n) => `원문 ${n}문장의 화면이 잘렸습니다`,
-  webHint: '다시 번역하려면 모델이나 대화가 필요합니다: Agent나 BaoCut 앱에서 시작하세요',
+  webHint: '다시 번역하려면 모델이나 대화가 필요합니다: Agent나 OpenFox 앱에서 시작하세요',
   refreshing: (n) => (n === null ? '다시 번역하는 중…' : `${n}문장 다시 번역하는 중…`),
   aiMenu: '다시 번역 및 번역',
   directAll: (n) => `이 ${n}문장을 모델 API로 다시 번역`,

@@ -75,14 +75,14 @@ const en = {
   nowDefault: (name: string) => `New sessions now use ${name}`,
   version: (version: string | null) => (version ? `Version · v${version}` : 'Version'),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `You can upgrade to ${latest}. ` : ''}${min ? `BaoCut needs at least ${min}. ` : ''}Upgrading only updates this command-line tool; your account and its own settings stay as they are. ${source}`,
+    `${latest ? `You can upgrade to ${latest}. ` : ''}${min ? `OpenFox needs at least ${min}. ` : ''}Upgrading only updates this command-line tool; your account and its own settings stay as they are. ${source}`,
   account: 'Account',
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? 'Not signed in, or the sign-in has expired' : (account ?? 'Signed in')}. Uses your own ${plan}; BaoCut doesn't charge extra. Signing in happens in a terminal.`,
+    `${signedOut ? 'Not signed in, or the sign-in has expired' : (account ?? 'Signed in')}. Uses your own ${plan}; OpenFox doesn't charge extra. Signing in happens in a terminal.`,
   loginInTerminal: 'Open a terminal to sign in',
   switchAccount: 'Switch account…',
   location: 'Install location',
-  locationDesc: 'BaoCut calls this program on your computer directly and never installs another copy.',
+  locationDesc: 'OpenFox calls this program on your computer directly and never installs another copy.',
   realLocation: 'Actual location',
   setLocation: 'Set location by hand',
   troubleshoot: 'Troubleshoot',
@@ -95,7 +95,7 @@ const en = {
     `This copy was installed with “${label}”, so upgrade it the same way. Other methods can't reach this copy; they only install another one.`,
   sourceUnknown: 'Upgrade it the same way you installed it.',
   scriptInstall:
-    "This command downloads and runs a script from the official website. BaoCut doesn't run scripts from the internet for you: copy it and run it in a terminal yourself.",
+    "This command downloads and runs a script from the official website. OpenFox doesn't run scripts from the internet for you: copy it and run it in a terminal yourself.",
   scriptUpgrade: 'This command downloads and runs a script from the official website. Copy it and run it in a terminal yourself.',
   copyUpgrade: 'Copy this command and run it in a terminal, then come back here and check again.',
   runnableHint: 'Click ▶ to the left of the command to run it here; its output appears below. Or copy it and run it in a terminal yourself.',
@@ -105,7 +105,7 @@ const en = {
   needs: (needs: string) => `Requires ${needs} on this computer.`,
 
   installIntro: (name: string, plan: string) =>
-    `${name} is a command-line AI assistant installed on your own computer, signed in with the ${plan} you already have. BaoCut just calls it: no extra charge, and no API key to enter in BaoCut.`,
+    `${name} is a command-line AI assistant installed on your own computer, signed in with the ${plan} you already have. OpenFox just calls it: no extra charge, and no API key to enter in OpenFox.`,
   stepInstall: 'Install it on this computer',
   stepInstallOfficial: 'Install it on this computer following the official instructions',
   /** `command` 是排成代码样式的命令名。 */
@@ -113,14 +113,14 @@ const en = {
     createElement(Fragment, null, 'Install it following its official instructions. Once installed, ', command, ' should run in a terminal.'),
   stepLogin: 'Sign in to your account',
   stepLoginBody:
-    'Once installed, run the command below in a terminal and sign in in your browser when prompted. Signing in happens in its own window; BaoCut never handles your account or password.',
+    'Once installed, run the command below in a terminal and sign in in your browser when prompted. Signing in happens in its own window; OpenFox never handles your account or password.',
   stepBack: 'Come back here',
   stepBackBody: "It's ready to use once it's detected as installed and signed in.",
   detecting: 'Checking…',
   recheck: "I've installed it, check again",
   notDetected: 'Installed but not detected?',
   notDetectedBody:
-    "BaoCut looks in PATH and common install locations (Homebrew, npm's global folder, ~/.local/bin). Ones installed with a version manager (nvm, asdf, mise) are sometimes elsewhere; you can point BaoCut to it by hand.",
+    "OpenFox looks in PATH and common install locations (Homebrew, npm's global folder, ~/.local/bin). Ones installed with a version manager (nvm, asdf, mise) are sometimes elsewhere; you can point OpenFox to it by hand.",
   diagnosisOf: (name: string) => `Check results for ${name}`,
 };
 

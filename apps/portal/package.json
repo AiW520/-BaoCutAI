@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node --experimental-strip-types src/site/build.ts",
     "dev": "npm run build && npx --yes wrangler@4.144.0 dev",
-    "deploy": "npm run build && npx --yes wrangler@4.144.0 deploy"
+    "deploy": "npm run build && npx --yes wrangler@4.144.0 deploy",
+    "build:openfox": "node src/openfox/build.mjs"
   }
 }

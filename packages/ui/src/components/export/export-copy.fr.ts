@@ -195,7 +195,7 @@ export const fr: ExportMessages = {
   editors: "Exporter vers un éditeur",
   xmemlName: "Premiere Pro / DaVinci Resolve",
   xmemlMeta: "FCP7 XML (.xml)",
-  portableName: "Paquet portable BaoCut",
+  portableName: "Paquet portable OpenFox",
   portableMeta: ".baocut · vidéo, documents et médias dans un fichier",
   plannedTarget: "Ce type de fichier projet n’est pas disponible",
   jianyingName: "Brouillon Jianying",

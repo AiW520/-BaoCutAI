@@ -41,7 +41,7 @@ export const pl: GlossaryMessages = {
     cancel: "Anuluj",
   },
   detail: {
-    exportExists: "Plik o tej nazwie już istnieje. BaoCut nie nadpisuje plików; wybierz inną nazwę i eksportuj ponownie.",
+    exportExists: "Plik o tej nazwie już istnieje. OpenFox nie nadpisuje plików; wybierz inną nazwę i eksportuj ponownie.",
     loadFailed: "Nie udało się odczytać słownika",
     loadingLabel: "Wczytywanie",
     loading: "Wczytywanie…",

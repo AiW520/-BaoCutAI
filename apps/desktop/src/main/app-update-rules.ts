@@ -11,15 +11,15 @@ import type { AppUpdateFailure, AppUpdateFormat, AppUpdateInfo, AppUpdateState }
 /** 覆盖更新源的环境变量：`https://…`、`file:///…` 或绝对路径（演练与测试用；开发构建设了它也启用更新）。 */
 export const APPCAST_ENV = 'BAOCUT_UPDATE_APPCAST';
 /** 正式包的 bundle 标识。新包的 `CFBundleIdentifier` 必须恰为它；Windows 安装包的 appId 也是它（打包脚本从这里取）。 */
-export const BUNDLE_ID = 'com.baocut.app';
+export const BUNDLE_ID = 'vip.openfox.app';
 /** 产品名：Windows 上可执行文件与 NSIS 卸载程序的文件名都由它得出（打包脚本从这里取）。 */
-export const PRODUCT_NAME = 'BaoCut';
+export const PRODUCT_NAME = 'OpenFox';
 /** electron-builder 的 NSIS 安装器放在 exe 旁边的卸载程序（模板 common.nsh 的 `UNINSTALL_FILENAME`）。有它才是安装版。 */
 export const NSIS_UNINSTALLER = `Uninstall ${PRODUCT_NAME}.exe`;
 /** 标准版的变体名（打包脚本的 `--variant cpu`）；它的更新源文件名不带后缀。 */
 export const STANDARD_VARIANT = 'cpu';
 /** 下载页：自动安装走不通时打开它。 */
-export const DOWNLOAD_PAGE = 'https://github.com/jimliu/baocut/releases';
+export const DOWNLOAD_PAGE = 'https://github.com/AiW520/-BaoCutAI/releases';
 /** 启动后多久做第一次自动检查（秒）。 */
 export const FIRST_CHECK_DELAY_S = 15;
 /** 两次自动检查的间隔（秒）。 */
@@ -50,7 +50,7 @@ export function feedFileName(target: FeedTarget, variant: string | null): string
 }
 
 export function feedUrl(target: FeedTarget, variant: string | null = null): string {
-  return `https://raw.githubusercontent.com/jimliu/baocut/main/apps/desktop/releases/${feedFileName(target, variant)}`;
+  return `https://raw.githubusercontent.com/AiW520/-BaoCutAI/openfox-updates/apps/desktop/releases/${feedFileName(target, variant)}`;
 }
 
 const WINDOWS_DRIVE_PATH = /^[A-Za-z]:[\\/]/;
@@ -251,12 +251,12 @@ export function releaseManifest(facts: ReleaseFacts): Record<string, unknown> {
 
 /**
  * 下载到缓存目录时的文件名：取地址的最后一段；含路径分隔符、以点开头、带控制字符或为空的一律改用
- * `BaoCut-<build>.<ext>`，不让清单决定写到哪个目录。
+ * `OpenFox-<build>.<ext>`，不让清单决定写到哪个目录。
  */
 export function fileName(info: Pick<AppUpdateInfo, 'url' | 'build' | 'format'>): string {
   const last = percentDecode((info.url.split(/[?#]/)[0] ?? '').split('/').pop() ?? '');
   const safe = last !== '' && !last.startsWith('.') && !/[/\\:]/.test(last) && !/[\u0000-\u001f\u007f-\u009f]/.test(last);
-  return safe ? last : `BaoCut-${info.build}.${info.format}`;
+  return safe ? last : `OpenFox-${info.build}.${info.format}`;
 }
 
 /** 点分版本号比较（`14.0` < `14.2.1`，缺的段当 0，读不懂的段当 0）：小于、等于、大于分别返回 -1、0、1。 */
@@ -346,9 +346,9 @@ export function appBundleFromExecutable(executable: string): string | null {
 /** 更新缓存目录：macOS `~/Library/Caches/BaoCut/Updates`，Windows `%LOCALAPPDATA%\BaoCut\Updates`，其余 `~/.cache/BaoCut/Updates`。 */
 export function cacheDirectory(platform: string, home: string, env: Readonly<Record<string, string | undefined>>): string | null {
   if (!home) return null;
-  if (platform === 'darwin') return path.join(home, 'Library', 'Caches', 'BaoCut', 'Updates');
-  if (platform === 'win32') return path.join(env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'BaoCut', 'Updates');
-  return path.join(env.XDG_CACHE_HOME || path.join(home, '.cache'), 'BaoCut', 'Updates');
+  if (platform === 'darwin') return path.join(home, 'Library', 'Caches', 'OpenFox', 'Updates');
+  if (platform === 'win32') return path.join(env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'OpenFox', 'Updates');
+  return path.join(env.XDG_CACHE_HOME || path.join(home, '.cache'), 'OpenFox', 'Updates');
 }
 
 // ---- 节奏 ----

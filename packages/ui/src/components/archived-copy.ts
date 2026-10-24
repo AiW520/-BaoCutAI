@@ -34,7 +34,7 @@ const en = {
   deleteAll: 'Delete all',
   deleteAllTitle: (n: number) => (n === 1 ? 'Delete 1 archived session?' : `Delete all ${n} archived sessions?`),
   deleteAllBody:
-    'Their history will be removed from BaoCut, and any running task will be stopped first. This can’t be undone. Files in project folders are not affected.',
+    'Their history will be removed from OpenFox, and any running task will be stopped first. This can’t be undone. Files in project folders are not affected.',
   restored: (title: string) => `Restored “${title}”`,
   open: 'Open',
   restoreFailed: (message: string) => `Couldn’t restore: ${message}`,

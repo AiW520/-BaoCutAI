@@ -8,7 +8,7 @@ export const pl: DocsMessages = {
   frameTitle: (name) => `Edytor wspólnych dokumentów: ${name}`,
   opening: 'Otwieranie wspólnego dokumentu…',
   unavailableTitle: 'Edytor wspólnych dokumentów niedostępny',
-  unavailableBody: 'Ta wersja BaoCut nie zawiera edytora wspólnych dokumentów. Pliki dokumentu nadal są w swoim folderze.',
+  unavailableBody: 'Ta wersja OpenFox nie zawiera edytora wspólnych dokumentów. Pliki dokumentu nadal są w swoim folderze.',
   openFailed: (reason) => `Nie udało się otworzyć wspólnego dokumentu: ${reason}`,
   open: 'Otwórz wspólny dokument',
   openCard: (name) => `Otwórz wspólny dokument „${name}”`,

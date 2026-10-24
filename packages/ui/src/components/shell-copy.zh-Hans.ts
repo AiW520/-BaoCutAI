@@ -6,6 +6,7 @@ export const zhHans: ShellMessages = {
   list: (items) => items.join('、'),
   separator: '、',
   common: {
+    productName: '开胡-OpenFox',
     cancel: '取消',
     save: '保存',
     rename: '重命名',
@@ -36,7 +37,7 @@ export const zhHans: ShellMessages = {
     deleteSessionEllipsis: '删除会话…',
     deleteTitle: '删除这个会话？',
     deleteConfirm: '删除',
-    deleteBody: '会话记录会从 Tuzi 里删除，正在运行的任务会先停下。项目目录里的文件不受影响。',
+    deleteBody: '会话记录会从 开胡-OpenFox 里删除，正在运行的任务会先停下。项目目录里的文件不受影响。',
     deleteFailed: (message) => `没能删除：${message}`,
     renameTitle: '重命名会话',
     videosIn: (place) => `${where(place)}的视频`,
@@ -64,7 +65,7 @@ export const zhHans: ShellMessages = {
     noSessions: '还没有会话。',
     noProjects: '还没有项目。新建一个，或打开已有目录；智能体就在那里工作。',
     renameProjectTitle: '重命名项目',
-    renameProjectHint: '只改在 Tuzi 里显示的名字，目录名不变。',
+    renameProjectHint: '只改在 开胡-OpenFox 里显示的名字，目录名不变。',
     toggleSection: (collapsed, label) => `${collapsed ? '展开' : '折叠'}${label}`,
     organizeLabel: '整理项目与会话',
     sidebarSettings: '侧栏设置',
@@ -98,7 +99,7 @@ export const zhHans: ShellMessages = {
     shortcutForward: '前进',
     app: '应用',
     privacyTitle: '数据都在这台电脑上',
-    privacyHint: '会话、项目登记与 Space 的标记都存在数据目录里；项目文件在各自的目录里，Tuzi 不上传。智能体引擎联网与否由引擎自己决定。',
+    privacyHint: '会话、项目登记与 Space 的标记都存在数据目录里；项目文件在各自的目录里，开胡-OpenFox 不上传。智能体引擎联网与否由引擎自己决定。',
     dataDir: '数据目录',
     projectsDir: '新建项目放在',
     logsDir: '日志目录',
@@ -175,7 +176,7 @@ export const zhHans: ShellMessages = {
     closed: '连接已关闭',
     lost: (reason, retrying) => `${reason}。${retrying ? '正在重新连接…' : ''}`,
     reconnectingEllipsis: '正在重新连接…',
-    title: '没有连上 Tuzi Runtime',
+    title: '没有连上 开胡-OpenFox Runtime',
     reconnecting: '正在重新连接',
   },
   videoInfo: {
@@ -194,7 +195,7 @@ export const zhHans: ShellMessages = {
   filePreview: {
     tooLarge: '文件太大，这里不显示全文',
     loading: '正在加载预览',
-    unsupported: '这种文件在 Tuzi 里还不能预览。可以在文件夹中显示后用别的应用打开。',
+    unsupported: '这种文件在 开胡-OpenFox 里还不能预览。可以在文件夹中显示后用别的应用打开。',
     failed: (message) => `没能加载预览：${message}`,
   },
   accessPicker: {

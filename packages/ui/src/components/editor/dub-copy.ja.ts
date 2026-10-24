@@ -6,7 +6,7 @@ export const jaDub: DubMessages = {
   title: '翻訳吹き替え',
   back: '戻る',
   web: '翻訳吹き替えにはデスクトップアプリが必要です',
-  webBody: 'ブラウザで開いた BaoCut には固定ワークフロー（pipelines.*）がないため、ここでは翻訳吹き替えを開始できません。デスクトップアプリでこの動画を開いてください。',
+  webBody: 'ブラウザで開いた OpenFox には固定ワークフロー（pipelines.*）がないため、ここでは翻訳吹き替えを開始できません。デスクトップアプリでこの動画を開いてください。',
   summary: (language: string, sentences: number | null, translate: boolean) =>
     `${translate ? `先に ${language} に翻訳してから` : `既存の ${language} の翻訳を使って`}、${sentences === null ? '1 文ずつ' : `${sentences} 文を 1 文ずつ`}音声合成し、それぞれを元の文のタイミングに合わせて、1 つの吹き替えグループとしてタイムラインに書き込みます`,
   language: '吹き替えの言語',
@@ -114,7 +114,7 @@ export const jaDub: DubMessages = {
   grantAction: '許可して開始',
   grantRetryAction: '許可して再試行',
   grantDialogTitle: 'データ送信の許可を発行',
-  grantDialogIntro: '確定すると、BaoCut はこの許可を記録して吹き替えを続行します：',
+  grantDialogIntro: '確定すると、OpenFox はこの許可を記録して吹き替えを続行します：',
   grantConfirm: '許可して続行',
   grantCancel: '今はしない',
   granting: '許可を発行中…',

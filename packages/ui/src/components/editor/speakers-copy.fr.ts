@@ -29,7 +29,7 @@ export const fr: SpeakersMessages = {
   startHint: "À la fin, une page de vérification s’ouvre ; seul cet outil demande confirmation avant application.",
   readOnly: "La vidéo est en lecture seule ; identification des locuteurs impossible.",
   web: "Identification des locuteurs indisponible dans le navigateur",
-  webBody: "L’identification utilise le modèle local d’empreinte vocale sur cet ordinateur. Utilisez l’application de bureau BaoCut.",
+  webBody: "L’identification utilise le modèle local d’empreinte vocale sur cet ordinateur. Utilisez l’application de bureau OpenFox.",
 
   submitting: "Soumission…",
   queued: "En file d’attente…",

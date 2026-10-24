@@ -1,7 +1,7 @@
 import type { ModelsProbeMessages } from './models-probe-copy.ts';
 
 export const zhHans: ModelsProbeMessages = {
-  speechText: '你好，这是一段 BaoCut 的语音合成测试。',
+  speechText: '你好，这是一段 开胡-OpenFox 的语音合成测试。',
   noResult: '任务完成了，但没有拿到结果。',
   failed: '任务失败了。',
   cancelled: '任务已取消。',

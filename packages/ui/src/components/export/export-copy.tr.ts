@@ -201,7 +201,7 @@ export const tr: ExportMessages = {
   editors: "Düzenleyiciye dışa aktar",
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: "FCP7 XML(.xml)",
-  portableName: "BaoCut taşınabilir paketi",
+  portableName: "OpenFox taşınabilir paketi",
   portableMeta: ".baocut · video, tüm belge ve medya tek dosyada",
   plannedTarget: "Bu proje dosyası türü henüz yok",
   jianyingName: "Jianying taslağı",

@@ -10,7 +10,7 @@ export const ru: MediaMessages = {
   panelTitle: (kind: PlaceableKind) => ({ video: "Видео", image: "Изображения", audio: "Аудио" })[kind],
   undo: "Отменить",
   readOnly: "Видео доступно только для чтения",
-  revealManaged: "Собран в папку видео и управляется BaoCut; отдельного расположения файла нет",
+  revealManaged: "Собран в папку видео и управляется OpenFox; отдельного расположения файла нет",
   revealUnknown: "Не удалось найти записанное расположение файла",
   uses: "Где используется",
   usesNone: "Ещё не используется на таймлайне",

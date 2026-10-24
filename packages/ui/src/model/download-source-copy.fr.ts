@@ -19,7 +19,7 @@ export const fr: DownloadSourceMessages = {
   toolsMirrorDesc: (base: string) => `Télécharger depuis le miroir ${base}.`,
   msNote: "Les quelques fichiers absents de ModelScope (whisper.cpp) viennent toujours de Hugging Face. Chaque fichier est vérifié avec sa somme de contrôle intégrée.",
   envNote: (name: string) => `Si la variable d’environnement ${name} est définie, c’est elle qui est utilisée.`,
-  webNote: "Un navigateur ne peut pas changer les sources de téléchargement. Réglez-les dans l’app de bureau BaoCut.",
+  webNote: "Un navigateur ne peut pas changer les sources de téléchargement. Réglez-les dans l’app de bureau OpenFox.",
   lead:
     "Vous pouvez garder plusieurs sources et en choisir une de chaque type. La fenêtre de téléchargement permet aussi d’en changer, ce qui modifie le choix ici. Chaque fichier est vérifié avec sa somme de contrôle intégrée, quelle que soit sa provenance.",
   editAria: (name: string) => `Modifier « ${name} »`,

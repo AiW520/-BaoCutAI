@@ -53,7 +53,7 @@ export const fr: MainMessages = {
   runtimeExited: (code: number | null) => `Le démarrage du Runtime a échoué (code de sortie ${code})`,
   runtimeQuitting: 'L’application se ferme',
   quitBusyTitle: (count: number) => pluralForm('fr', count, { one: `${count} tâche est encore en cours`, other: `${count} tâches sont encore en cours` }),
-  quitBusyDetail: 'Si vous quittez maintenant, elles seront interrompues. Vous pouvez aussi les laisser continuer en arrière-plan ; Tuzi s’arrêtera de lui-même une fois qu’elles seront terminées.',
+  quitBusyDetail: 'Si vous quittez maintenant, elles seront interrompues. Vous pouvez aussi les laisser continuer en arrière-plan ; OpenFox s’arrêtera de lui-même une fois qu’elles seront terminées.',
   quitKeepRunning: 'Continuer en arrière-plan',
   quitStop: 'Arrêter et quitter',
   cancel: 'Annuler',

@@ -61,7 +61,7 @@ const en = {
     aborted: 'Loading was interrupted',
     network: 'Something went wrong while reading the file',
     decode: 'Decoding failed; the file may be damaged',
-    unsupported: 'BaoCut can’t play this file’s format or codec yet',
+    unsupported: 'OpenFox can’t play this file’s format or codec yet',
     other: 'Couldn’t play this file',
   },
 };

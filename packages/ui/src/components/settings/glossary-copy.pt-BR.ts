@@ -43,7 +43,7 @@ export const ptBR: GlossaryMessages = {
     cancel: "Cancelar",
   },
   detail: {
-    exportExists: "Já existe arquivo com esse nome. BaoCut não sobrescreve; escolha outro e exporte.",
+    exportExists: "Já existe arquivo com esse nome. OpenFox não sobrescreve; escolha outro e exporte.",
     loadFailed: "Não foi possível ler este glossário",
     loadingLabel: "Carregando",
     loading: "Lendo…",

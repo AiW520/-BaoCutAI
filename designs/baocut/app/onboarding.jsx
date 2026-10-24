@@ -24,7 +24,7 @@
 
   /* 每一步的标题与开头一句 */
   const HEAD = {
-    agent: '欢迎使用 Tuzi',
+    agent: '欢迎使用 OpenFox',
     asr: '下载语音识别模型',
     tts: '下载语音合成模型',
     semantic: '安装语义搜索',
@@ -85,11 +85,11 @@
   function AgentStep({app, ov, rows, picks, onPick, jobStatus}) {
     const ok = ov.state === 'ready';
     const status = ov.state === 'missing'
-      ? {title: ov.title, body: '勾上想用的，Tuzi 在后台安装；装好后用你已有的账号登录一次就能用。'}
+      ? {title: ov.title, body: '勾上想用的，OpenFox 在后台安装；装好后用你已有的账号登录一次就能用。'}
       : {title: ok ? `已连接 ${ov.harness.name}` : ov.title, body: ok ? `新会话默认用 ${ov.harness.name} · ${AS.modelLabel(ov.harness, app.prefs.agentModels)}。` : ov.body};
     return (
       <div className="onb-agent">
-        <p className="onb-lead">说出想做的视频，Agent 帮你转录、加字幕、翻译、配音和剪辑。Tuzi 调用这台电脑上的 Agent（比如 Claude Code、Codex），用你自己的账号，不另外收费。</p>
+        <p className="onb-lead">说出想做的视频，Agent 帮你转录、加字幕、翻译、配音和剪辑。OpenFox 调用这台电脑上的 Agent（比如 Claude Code、Codex），用你自己的账号，不另外收费。</p>
         <div className={cx('onb-status', ok && 'is-ok')} role="status">
           <Ic n={ok ? 'ok' : ov.state === 'missing' ? 'info' : 'alert'} className="ic--16" />
           <div><b>{status.title}</b><p>{status.body}</p></div>
@@ -306,7 +306,7 @@
 
     return (
       <S.DialogContainer onDismiss={() => close('esc')}>
-        <S.Dialog size="L" aria-label="欢迎使用 Tuzi">
+        <S.Dialog size="L" aria-label="欢迎使用 OpenFox">
           <S.Heading slot="title">{HEAD[k]}</S.Heading>
           <S.Content>
             <Steps items={OB.STEPS} cur={step} label="引导步骤" className="onb-steps" />

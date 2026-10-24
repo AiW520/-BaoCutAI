@@ -57,14 +57,14 @@ export const ko: AgentCardMessages = {
   nowDefault: (name: string) => `이제 새 세션은 ${name}을(를) 사용합니다`,
   version: (version: string | null) => (version ? `버전 · v${version}` : '버전'),
   versionDesc: (latest: string | null, min: string | null, source: string) =>
-    `${latest ? `${latest} 버전으로 업그레이드할 수 있습니다. ` : ''}${min ? `BaoCut에는 ${min} 이상이 필요합니다. ` : ''}업그레이드하면 이 명령줄 도구만 업데이트되며, 계정과 도구 자체 설정은 그대로 유지됩니다. ${source}`,
+    `${latest ? `${latest} 버전으로 업그레이드할 수 있습니다. ` : ''}${min ? `OpenFox에는 ${min} 이상이 필요합니다. ` : ''}업그레이드하면 이 명령줄 도구만 업데이트되며, 계정과 도구 자체 설정은 그대로 유지됩니다. ${source}`,
   account: '계정',
   accountDesc: (signedOut: boolean, account: string | null, plan: string) =>
-    `${signedOut ? '로그인하지 않았거나 로그인이 만료되었습니다' : (account ?? '로그인됨')}. 내 ${plan}을(를) 사용하며 BaoCut은 추가 요금을 받지 않습니다. 로그인은 터미널에서 합니다.`,
+    `${signedOut ? '로그인하지 않았거나 로그인이 만료되었습니다' : (account ?? '로그인됨')}. 내 ${plan}을(를) 사용하며 OpenFox은 추가 요금을 받지 않습니다. 로그인은 터미널에서 합니다.`,
   loginInTerminal: '터미널을 열어 로그인',
   switchAccount: '계정 전환…',
   location: '설치 위치',
-  locationDesc: 'BaoCut은 이 컴퓨터에 있는 이 프로그램을 직접 호출하며, 따로 설치하지 않습니다.',
+  locationDesc: 'OpenFox은 이 컴퓨터에 있는 이 프로그램을 직접 호출하며, 따로 설치하지 않습니다.',
   realLocation: '실제 위치',
   setLocation: '위치 직접 지정',
   troubleshoot: '문제 해결',
@@ -76,7 +76,7 @@ export const ko: AgentCardMessages = {
     `이 사본은 “${label}” 방식으로 설치되었으므로 같은 방식으로 업그레이드하세요. 다른 방법으로는 이 사본을 업그레이드할 수 없고 사본이 하나 더 설치될 뿐입니다.`,
   sourceUnknown: '설치할 때와 같은 방법으로 업그레이드하세요.',
   scriptInstall:
-    '이 명령은 공식 웹사이트에서 스크립트를 다운로드해 실행합니다. BaoCut은 인터넷의 스크립트를 대신 실행하지 않으니 복사해서 터미널에서 직접 실행하세요.',
+    '이 명령은 공식 웹사이트에서 스크립트를 다운로드해 실행합니다. OpenFox은 인터넷의 스크립트를 대신 실행하지 않으니 복사해서 터미널에서 직접 실행하세요.',
   scriptUpgrade: '이 명령은 공식 웹사이트에서 스크립트를 다운로드해 실행합니다. 복사해서 터미널에서 직접 실행하세요.',
   copyUpgrade: '이 명령을 복사해 터미널에서 실행한 뒤 여기로 돌아와 다시 확인하세요.',
   runnableHint: '명령 왼쪽의 ▶를 클릭하면 여기서 실행되고 출력이 아래에 표시됩니다. 또는 복사해서 터미널에서 직접 실행하세요.',
@@ -86,20 +86,20 @@ export const ko: AgentCardMessages = {
   needs: (needs: string) => `이 컴퓨터에 ${needs}이(가) 있어야 합니다.`,
 
   installIntro: (name: string, plan: string) =>
-    `${name}은(는) 내 컴퓨터에 설치하는 명령줄 AI 어시스턴트이며, 이미 있는 ${plan}(으)로 로그인합니다. BaoCut은 이를 호출할 뿐이므로 추가 요금이 없고 BaoCut에 API 키를 입력할 필요도 없습니다.`,
+    `${name}은(는) 내 컴퓨터에 설치하는 명령줄 AI 어시스턴트이며, 이미 있는 ${plan}(으)로 로그인합니다. OpenFox은 이를 호출할 뿐이므로 추가 요금이 없고 OpenFox에 API 키를 입력할 필요도 없습니다.`,
   stepInstall: '이 컴퓨터에 설치',
   stepInstallOfficial: '공식 안내에 따라 이 컴퓨터에 설치',
   installOfficialBody: (command: ReactNode): ReactNode =>
     createElement(Fragment, null, '공식 안내에 따라 설치하세요. 설치가 끝나면 터미널에서 ', command, ' 명령을 실행할 수 있어야 합니다.'),
   stepLogin: '계정에 로그인',
   stepLoginBody:
-    '설치한 뒤 터미널에서 아래 명령을 실행하고 안내에 따라 브라우저에서 로그인하세요. 로그인은 해당 프로그램의 창에서 이루어지며 BaoCut은 계정이나 비밀번호를 다루지 않습니다.',
+    '설치한 뒤 터미널에서 아래 명령을 실행하고 안내에 따라 브라우저에서 로그인하세요. 로그인은 해당 프로그램의 창에서 이루어지며 OpenFox은 계정이나 비밀번호를 다루지 않습니다.',
   stepBack: '여기로 돌아오기',
   stepBackBody: '설치와 로그인이 확인되면 바로 사용할 수 있습니다.',
   detecting: '확인 중…',
   recheck: '설치 완료, 다시 확인',
   notDetected: '설치했는데 감지되지 않나요?',
   notDetectedBody:
-    'BaoCut은 PATH와 일반적인 설치 위치(Homebrew, npm 전역 폴더, ~/.local/bin)에서 찾습니다. 버전 관리자(nvm, asdf, mise)로 설치한 경우 다른 위치에 있을 수 있으니 BaoCut에 위치를 직접 지정하세요.',
+    'OpenFox은 PATH와 일반적인 설치 위치(Homebrew, npm 전역 폴더, ~/.local/bin)에서 찾습니다. 버전 관리자(nvm, asdf, mise)로 설치한 경우 다른 위치에 있을 수 있으니 OpenFox에 위치를 직접 지정하세요.',
   diagnosisOf: (name: string) => `${name} 점검 결과`,
 };

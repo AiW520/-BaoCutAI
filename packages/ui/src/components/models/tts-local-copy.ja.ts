@@ -38,7 +38,7 @@ export const ja: TtsLocalMessages = {
     nameList: (names: readonly string[]) => names.join('、'),
     cloneHint: '5–15 秒のクリアな話し声を用意してください。1 人だけが話し、BGM がないものです。WAV、MP3、M4A、FLAC、動画ファイルのいずれにも対応しています。',
     yourFile: (name: string) => `自分の録音 · ${name}`,
-    sampleFile: (label: string) => `サンプル録音 · ${label} · BaoCut に付属しているので、ファイルを探す必要はありません`,
+    sampleFile: (label: string) => `サンプル録音 · ${label} · OpenFox に付属しているので、ファイルを探す必要はありません`,
     pickFile: '録音を選択…',
     changeFile: '別の録音を選択…',
     useSample: 'サンプル録音を使用',

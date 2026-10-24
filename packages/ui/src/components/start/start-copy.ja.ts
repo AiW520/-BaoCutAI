@@ -7,7 +7,7 @@ export const ja: StartMessages = {
     pickTitle: 'yt-dlp を選択',
     pickButton: 'これを使用',
     pickFailed: (message) => `このファイルは使用できません：${message}`,
-    manualUpdate: 'この yt-dlp は現在 BaoCut から更新できません。カードに表示されたコマンドをターミナルで実行してください',
+    manualUpdate: 'この yt-dlp は現在 OpenFox から更新できません。カードに表示されたコマンドをターミナルで実行してください',
     commandChanged: '更新コマンドが変わりました。新しいコマンドを確認してから実行してください',
     updateFailed: (message) => `更新を開始できませんでした：${message}`,
     stopFailed: (message) => `更新を停止できませんでした：${message}`,

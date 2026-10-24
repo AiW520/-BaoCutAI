@@ -140,7 +140,7 @@ export const ptBRTranslate: TranslateMessages = {
   termsUnify: 'Usar as traduções do glossário',
   termsUnified: (n: number) => `${n} ${n === 1 ? 'trecho alterado' : 'trechos alterados'} para a tradução do glossário`,
   cut: (n: number) => `${sentences(n)} do original ${pluralForm('pt-BR', n, { one: 'foi cortada', other: 'foram cortadas' })} do vídeo`,
-  webHint: 'Traduzir de novo usa um modelo ou o agente: comece pelo agente ou pelo app BaoCut',
+  webHint: 'Traduzir de novo usa um modelo ou o agente: comece pelo agente ou pelo app OpenFox',
   refreshing: (n: number | null) => (n === null ? 'Traduzindo de novo…' : `Traduzindo de novo ${sentences(n)}…`),
   aiMenu: 'Traduzir de novo e traduzir',
   directAll: (n: number) => `Traduzir de novo ${sentences(n)} com a API do modelo`,

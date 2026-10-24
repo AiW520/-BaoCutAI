@@ -140,7 +140,7 @@ export const frTranslate: TranslateMessages = {
   termsUnify: 'Utiliser les traductions du glossaire',
   termsUnified: (n: number) => `${n} ${n === 1 ? 'endroit remplacé' : 'endroits remplacés'} par la traduction du glossaire`,
   cut: (n: number) => `${sentences(n)} de l’original ${pluralForm('fr', n, { one: 'a été coupée', other: 'ont été coupées' })} de la vidéo`,
-  webHint: 'Retraduire fait appel à un modèle ou à l’agent : lancez-le depuis l’agent ou l’app BaoCut',
+  webHint: 'Retraduire fait appel à un modèle ou à l’agent : lancez-le depuis l’agent ou l’app OpenFox',
   refreshing: (n: number | null) => (n === null ? 'Retraduction…' : `Retraduction de ${sentences(n)}…`),
   aiMenu: 'Retraduire et traduire',
   directAll: (n: number) => `Retraduire ${sentences(n)} avec l’API du modèle`,

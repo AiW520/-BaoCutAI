@@ -57,7 +57,7 @@ export const pl: SpaceMessages = {
   newFromPackageHint: "Eksportowany .baocut ze wszystkimi materiałami",
   pickPackageTitle: "Wybierz pakiet przenośny",
   pickPackageButton: "Otwórz",
-  pickPackageFilter: "Pakiet przenośny BaoCut",
+  pickPackageFilter: "Pakiet przenośny OpenFox",
   openPackage: "Otwórz jako nowe wideo",
   packageBlocked: (reason: string) => `Otwórz jako nowe wideo: ${reason}`,
   packageOpening: (name: string) => `Otwieranie „${name}"…`,
@@ -101,7 +101,7 @@ export const pl: SpaceMessages = {
   changedTitle: "Wideo źródłowe zmieniło się od",
   changedBody: "Wynik odpowiada starszej wersji wideo. Działa, ale nie odzwierciedla obecnego.",
   reexport: "Eksportuj ponownie z wideo źródłowego",
-  noPreviewVideo: "Wideo otwierają się w edytorze.", inIndexFolder: (folder: string | null) => (folder ? `W folderze indeksu „${folder}”, tylko do odczytu: BaoCut nie zmienia, nie przenosi ani nie usuwa tego pliku.` : 'W folderze indeksu, tylko do odczytu: BaoCut nie zmienia, nie przenosi ani nie usuwa tego pliku.'),
+  noPreviewVideo: "Wideo otwierają się w edytorze.", inIndexFolder: (folder: string | null) => (folder ? `W folderze indeksu „${folder}”, tylko do odczytu: OpenFox nie zmienia, nie przenosi ani nie usuwa tego pliku.` : 'W folderze indeksu, tylko do odczytu: OpenFox nie zmienia, nie przenosi ani nie usuwa tego pliku.'),
 
   capability: {
     synthesizeSpeech: "Dubbing",

@@ -41,7 +41,7 @@ export const ko: GlossaryMessages = {
     cancel: '취소',
   },
   detail: {
-    exportExists: '그 위치에 같은 이름의 파일이 이미 있습니다. BaoCut은 기존 파일을 덮어쓰지 않으니 다른 이름으로 다시 내보내세요.',
+    exportExists: '그 위치에 같은 이름의 파일이 이미 있습니다. OpenFox은 기존 파일을 덮어쓰지 않으니 다른 이름으로 다시 내보내세요.',
     loadFailed: '이 용어집을 읽지 못했습니다',
     loadingLabel: '불러오는 중',
     loading: '불러오는 중…',

@@ -8,9 +8,9 @@ export const ru: DesignMessages = {
   frameTitle: (name) => `Редактор дизайна: ${name}`,
   opening: 'Открытие дизайна…',
   unavailableTitle: 'Редактор дизайна недоступен',
-  unavailableBody: 'Эта сборка BaoCut не содержит редактор дизайна. Файлы дизайна остаются в своей папке.',
+  unavailableBody: 'Эта сборка OpenFox не содержит редактор дизайна. Файлы дизайна остаются в своей папке.',
   hostBlockedTitle: 'Редактор дизайна недоступен по этому адресу',
-  hostBlockedBody: 'Чтобы редактировать дизайн, откройте BaoCut Web по адресу 127.0.0.1 или localhost. Файлы дизайна остаются в своей папке.',
+  hostBlockedBody: 'Чтобы редактировать дизайн, откройте OpenFox Web по адресу 127.0.0.1 или localhost. Файлы дизайна остаются в своей папке.',
   openFailed: (reason) => `Не удалось открыть дизайн: ${reason}`,
   open: 'Открыть дизайн',
   openCard: (name) => `Открыть дизайн «${name}»`,
@@ -40,5 +40,5 @@ export const ru: DesignMessages = {
   exportDialogButton: 'Экспортировать',
   exportSaved: (path) => `Сохранено: ${path}`,
   exportFailed: (reason) => `Не удалось сохранить экспортированный файл: ${reason}`,
-  exportUnsupported: (name) => `BaoCut не может сохранить «${name}»: этот тип файлов не поддерживается`,
+  exportUnsupported: (name) => `OpenFox не может сохранить «${name}»: этот тип файлов не поддерживается`,
 };

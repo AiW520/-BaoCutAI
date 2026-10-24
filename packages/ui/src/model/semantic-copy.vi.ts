@@ -206,8 +206,8 @@ export const vi: SemanticMessages = {
   },
   scope: {
     group: 'Phạm vi chỉ mục',
-    lead: 'Video trong mọi dự án BaoCut được lập chỉ mục theo lời nói và hình ảnh; âm thanh sẽ có trong phiên bản sau. Bạn có thể loại trừ những dự án không muốn lập chỉ mục. Video đã xuất không được lập chỉ mục riêng: tìm kiếm sẽ tìm thấy video gốc mà nó được xuất từ đó.',
-    all: 'Tất cả dự án BaoCut',
+    lead: 'Video trong mọi dự án OpenFox được lập chỉ mục theo lời nói và hình ảnh; âm thanh sẽ có trong phiên bản sau. Bạn có thể loại trừ những dự án không muốn lập chỉ mục. Video đã xuất không được lập chỉ mục riêng: tìm kiếm sẽ tìm thấy video gốc mà nó được xuất từ đó.',
+    all: 'Tất cả dự án OpenFox',
     allLine: (projects, excluded) => `${projects} dự án${excluded ? `, đã loại trừ ${excluded}` : ''} · dự án mới tự động được thêm`,
     outside: 'Video ngoài dự án cũng được lập chỉ mục.',
     excludedGroup: 'Dự án bị loại trừ',
@@ -268,13 +268,13 @@ export const vi: SemanticMessages = {
     reindexDesc: 'Quét lại và dựng lại chỉ mục của thư mục',
     remove: 'Gỡ bỏ',
     removeDesc: 'Xóa chỉ mục của thư mục; tệp vẫn giữ nguyên',
-    videos: (n) => `${n} video BaoCut`,
+    videos: (n) => `${n} video OpenFox`,
     videoFiles: (n) => `${n} tệp video`,
     images: (n) => `${n} hình ảnh`,
     nothing: 'Chưa tìm thấy video hay hình ảnh nào',
     exportsSkipped: (n) => `${n} bản xuất bị bỏ qua`,
     duplicates: (n) => `${n} đã có trong dự án`,
-    legacy: (n) => `${n} video BaoCut cũ không được đọc`,
+    legacy: (n) => `${n} video OpenFox cũ không được đọc`,
     listSeparator: ', ',
     separator: ' · ',
     missing: 'Không tìm thấy thư mục này',
@@ -283,21 +283,21 @@ export const vi: SemanticMessages = {
     truncatedNoteNoLimit: 'Quá nhiều tệp: chỉ những tệp đầu tiên được quét. Hãy thêm một thư mục con thay vào đó.',
     unreadableNote: 'Không đọc được thư mục này. Hãy kiểm tra quyền truy cập.',
     legacyNote:
-      'Video BaoCut cũ phải được nâng cấp trước khi đọc, mà nâng cấp sẽ thay đổi chúng, nên ở đây chúng không được đọc. Hãy chuyển một video vào dự án rồi mở nó một lần trong BaoCut để nâng cấp.',
+      'Video OpenFox cũ phải được nâng cấp trước khi đọc, mà nâng cấp sẽ thay đổi chúng, nên ở đây chúng không được đọc. Hãy chuyển một video vào dự án rồi mở nó một lần trong OpenFox để nâng cấp.',
     visualReady: 'Hình ảnh đã sẵn sàng',
     visualProgress: (done, total) => `Hình ảnh: xong ${done}/${total}`,
-    textOnly: 'Các video BaoCut trong đó được lập chỉ mục theo lời nói',
+    textOnly: 'Các video OpenFox trong đó được lập chỉ mục theo lời nói',
     visualOff: 'Chỉ mục hình ảnh đang tắt nên tệp video và hình ảnh chưa được lập chỉ mục',
     addTitle: 'Thêm thư mục chỉ mục',
     addBody:
-      'Video ngoài dự án của bạn cũng có thể được tìm theo ý nghĩa. BaoCut chỉ đọc thư mục này: không thay đổi, di chuyển hay xóa bất cứ thứ gì trong đó. Video và hình ảnh trong thư mục sẽ hiện trong Space với nguồn là thư mục này.',
+      'Video ngoài dự án của bạn cũng có thể được tìm theo ý nghĩa. OpenFox chỉ đọc thư mục này: không thay đổi, di chuyển hay xóa bất cứ thứ gì trong đó. Video và hình ảnh trong thư mục sẽ hiện trong Space với nguồn là thư mục này.',
     addWhat: (visual) =>
       visual
-        ? 'Video BaoCut được lập chỉ mục theo lời nói và hình ảnh; các tệp video khác và hình ảnh được lập chỉ mục theo hình ảnh. Bản xuất do BaoCut ghi nhận sẽ bị bỏ qua, còn video cũng nằm trong dự án thì dùng bản của dự án.'
-        : 'Video BaoCut được lập chỉ mục theo lời nói; các tệp video khác và hình ảnh cần chỉ mục hình ảnh. Bản xuất do BaoCut ghi nhận sẽ bị bỏ qua, còn video cũng nằm trong dự án thì dùng bản của dự án.',
+        ? 'Video OpenFox được lập chỉ mục theo lời nói và hình ảnh; các tệp video khác và hình ảnh được lập chỉ mục theo hình ảnh. Bản xuất do OpenFox ghi nhận sẽ bị bỏ qua, còn video cũng nằm trong dự án thì dùng bản của dự án.'
+        : 'Video OpenFox được lập chỉ mục theo lời nói; các tệp video khác và hình ảnh cần chỉ mục hình ảnh. Bản xuất do OpenFox ghi nhận sẽ bị bỏ qua, còn video cũng nằm trong dự án thì dùng bản của dự án.',
     visualOffTitle: 'Tệp video và hình ảnh được lập chỉ mục theo hình ảnh',
     visualOffBody:
-      'Chúng không có bản chép lời nên chỉ tìm được theo những gì hiện trên màn hình. Chúng sẽ được lập chỉ mục khi chỉ mục hình ảnh được bật; cho đến lúc đó, chỉ video BaoCut trong thư mục này được lập chỉ mục.',
+      'Chúng không có bản chép lời nên chỉ tìm được theo những gì hiện trên màn hình. Chúng sẽ được lập chỉ mục khi chỉ mục hình ảnh được bật; cho đến lúc đó, chỉ video OpenFox trong thư mục này được lập chỉ mục.',
     confirmAdd: 'Thêm',
     addedToast: (name) => `Đã thêm “${name}”. Đang quét và lập chỉ mục ở nền.`,
     reindexedToast: (name) => `Đang quét lại “${name}” và dựng lại chỉ mục của thư mục`,

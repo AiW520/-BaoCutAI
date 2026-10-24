@@ -23,3 +23,5 @@ packages/design-runtime/src/generated/
 .claude/worktrees/
 /target-*/
 .baocut-out
+
+/apps/portal/dist-openfox/

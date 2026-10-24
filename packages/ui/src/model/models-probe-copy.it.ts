@@ -2,7 +2,7 @@ import type { ModelsProbeMessages } from './models-probe-copy.ts';
 import { pluralForm } from '@baocut/protocol';
 
 export const it: ModelsProbeMessages = {
-  speechText: 'Ciao, questo è un test di sintesi vocale di BaoCut.',
+  speechText: 'Ciao, questo è un test di sintesi vocale di OpenFox.',
   noResult: 'L’attività è terminata, ma non è stato restituito alcun risultato.',
   failed: 'L’attività non è riuscita.', cancelled: 'L’attività è stata annullata.',
   interrupted: 'Il Runtime si è riavviato, quindi questo test non è stato completato.',

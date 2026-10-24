@@ -202,7 +202,7 @@ export const zhHant: ExportMessages = {
   editors: '匯出到剪輯軟體',
   xmemlName: 'Premiere Pro / DaVinci Resolve',
   xmemlMeta: 'FCP7 XML（.xml）',
-  portableName: 'BaoCut 可攜式套件',
+  portableName: 'OpenFox 可攜式套件',
   portableMeta: '.baocut · 影片、所有文件與素材都在一個檔案中',
   plannedTarget: '這個版本還無法使用這種專案檔類型',
   jianyingName: '剪映草稿',

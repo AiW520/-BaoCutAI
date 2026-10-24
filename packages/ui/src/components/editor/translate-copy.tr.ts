@@ -133,7 +133,7 @@ export const trTranslate: TranslateMessages = {
   termsUnify: 'Sözlükteki çevirileri kullan',
   termsUnified: (n: number) => `${n} yer sözlükteki çeviriye eşitlendi`,
   cut: (n) => `Kaynaktaki ${n} cümlenin görüntüsü videodan kesildi`,
-  webHint: 'Yeniden çeviri bir model veya Agent kullanır: Agent’tan ya da BaoCut uygulamasından başlatın',
+  webHint: 'Yeniden çeviri bir model veya Agent kullanır: Agent’tan ya da OpenFox uygulamasından başlatın',
   refreshing: (n) => (n === null ? 'Yeniden çevriliyor…' : `${n} cümle yeniden çevriliyor…`),
   aiMenu: 'Yeniden çevir ve çevir',
   directAll: (n) => `Bu ${n} cümleyi model API’siyle yeniden çevir`,
