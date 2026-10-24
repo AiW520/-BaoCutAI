@@ -28,6 +28,7 @@ import { fmtSize } from './task-facts.ts';
 
 export const ONBOARDING_STEPS = ['agent', 'asr', 'tts', 'semantic', 'image', 'music'] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+export type OnboardingMode = 'api' | 'local';
 /** 列一类本机模型的那几步（语义搜索是一个包，Agent 一步列 Agent）。 */
 export type ModelStep = Exclude<OnboardingStep, 'agent' | 'semantic'>;
 
@@ -49,10 +50,16 @@ export interface OnboardingRecord {
   state: 'done' | 'skipped';
   step: OnboardingStep;
   downloaded: string[];
+  mode?: OnboardingMode;
 }
 
-export function onboardingRecord(how: 'done' | 'skipped', step: OnboardingStep, downloaded: readonly string[]): OnboardingRecord {
-  return { state: how, step, downloaded: [...new Set(downloaded)] };
+export function onboardingRecord(
+  how: 'done' | 'skipped',
+  step: OnboardingStep,
+  downloaded: readonly string[],
+  mode?: OnboardingMode,
+): OnboardingRecord {
+  return { state: how, step, downloaded: [...new Set(downloaded)], ...(mode ? { mode } : {}) };
 }
 
 /** 有记录（走完或退出）就不再弹。 */
@@ -67,7 +74,8 @@ export function parseOnboardingRecord(raw: unknown): OnboardingRecord | null {
   if (r.state !== 'done' && r.state !== 'skipped') return null;
   const step = ONBOARDING_STEPS.includes(r.step as OnboardingStep) ? (r.step as OnboardingStep) : ONBOARDING_STEPS[0];
   const downloaded = Array.isArray(r.downloaded) ? r.downloaded.filter((id): id is string => typeof id === 'string') : [];
-  return { state: r.state, step, downloaded };
+  const mode = r.mode === 'api' || r.mode === 'local' ? r.mode : undefined;
+  return { state: r.state, step, downloaded, ...(mode ? { mode } : {}) };
 }
 
 // ---- 每一步的候选 ----

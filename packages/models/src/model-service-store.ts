@@ -715,7 +715,7 @@ function refreshStatus(discovered: DiscoveredList): ProviderRefreshStatus {
   return {
     at: discovered.at,
     ok: discovered.ok,
-    ...(discovered.models ? { models: discovered.models.length } : {}),
+    ...(discovered.ok && discovered.models ? { models: discovered.models.length, modelIds: [...discovered.models] } : {}),
     ...(discovered.voices ? { voices: discovered.voices.length } : {}),
     ...(discovered.error ? { error: discovered.error } : {}),
   };

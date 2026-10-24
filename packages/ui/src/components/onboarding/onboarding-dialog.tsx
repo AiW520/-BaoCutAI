@@ -69,6 +69,7 @@ import { MusicIcon } from '../music-icon.tsx';
 import { BatchInstallDialog } from '../models/batch-install-dialog.tsx';
 import { CARD_COPY } from '../settings/agent-card-copy.ts';
 import { agentBadge, agentOverview } from '../settings/agent-setup.ts';
+import { ModeChoice, TuziApiSetup } from './onboarding-mode-dialog.tsx';
 
 // 原型 onboarding.css：步骤条（.steps）、状态一句话（.onb-status）、多选卡（.onb-model）、在哪儿用（.onb-where）、底部那一行（.onb-bg）。
 const stepsBar = style({ display: 'flex', gap: 4, marginTop: 0, marginBottom: 16, marginX: 0, padding: 0, listStyleType: 'none' });
@@ -190,6 +191,7 @@ export function OnboardingDialog({
   const drivers = useConnection((s) => s.drivers);
   // 下载确认之后到 Runtime 推来安装任务之间：看这个时刻之后有没有这只的任务（bundleProgress）。
   const [since] = useState(() => new Date().toISOString());
+  const [mode, setMode] = useState<'choose' | 'local' | 'api'>('choose');
   const [index, setIndex] = useState(0);
   const [picks, setPicks] = useState<Partial<Record<ModelStep, string[]>>>({});
   const [semPick, setSemPick] = useState(true);
@@ -230,7 +232,7 @@ export function OnboardingDialog({
   // ---- 关掉、往下走 ----
   const close = (how: 'done' | 'skipped', extra: readonly string[] = []) => {
     const all = [...started, ...extra];
-    finish(onboardingRecord(how, step, all));
+    finish(onboardingRecord(how, step, all, mode === 'api' ? 'api' : 'local'));
     const live = backgroundItems(all).filter((x) => x.status === 'running');
     const models = live.filter((x) => !x.agent).length;
     const agents = live.length - models;
@@ -288,6 +290,17 @@ export function OnboardingDialog({
     next();
   };
   const onPrimary = () => (primary.kind === 'download' ? download() : primary.kind === 'install' ? installAgents() : next());
+
+  if (mode === 'choose') {
+    return <ModeChoice onSelect={setMode} onLater={() => close('skipped')} />;
+  }
+  if (mode === 'api') {
+    return <TuziApiSetup onBack={() => setMode('choose')} onLater={() => close('skipped')} onDone={(agent) => {
+      finish(onboardingRecord('done', 'agent', started, 'api'));
+      if (agent) go({ tab: 'settings', section: 'agent' });
+      else go({ tab: 'tools' });
+    }} />;
+  }
 
   if (confirm) {
     return (
@@ -382,6 +395,7 @@ export function OnboardingDialog({
             <ActionButton isQuiet onPress={() => close('skipped')}>
               {M.exit}
             </ActionButton>
+            <ActionButton isQuiet onPress={() => setMode('choose')}>{M.mode.back}</ActionButton>
             {bg ? (
               <span className={bgStyle} role="status">
                 <Download />
