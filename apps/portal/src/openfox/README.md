@@ -15,7 +15,13 @@ The page intentionally says packages are pending and links to this fork's
 Releases and Windows workflow. A workflow artifact is a test candidate, not a
 published release. Update download status and URLs only after validating and
 publishing an OpenFox package. Never advertise an upstream BaoCut binary as an
-OpenFox download. No deploy has been performed and no domain ownership is assumed.
+OpenFox download.
+
+The static page is deployed to https://aiw520.github.io/-BaoCutAI/ by
+`.github/workflows/openfox-pages.yml`. Changes to this directory on `main`
+rebuild and deploy the page; the workflow also supports manual deployment.
+GitHub Pages must use GitHub Actions as its build source. No custom domain is
+configured.
 
 The supplied poster determines the palette and fox imagery. To regenerate icons,
 install Pillow and run `python tools/openfox-brand/render.py` from the repository
