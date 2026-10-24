@@ -1,6 +1,35 @@
 import type { OnboardingMessages } from './onboarding-copy.ts';
 
 export const zhHans: OnboardingMessages = {
+  mode: {
+    intro: '选择适合你的创作方式',
+    lead: '通过 Tuzi API 使用在线模型，或下载模型到这台电脑。以后可以在设置中同时使用两种方式。',
+    api: 'Tuzi API',
+    local: '本机模型',
+    recommended: '推荐',
+    apiDesc: '一把密钥，连接在线模型',
+    localDesc: '下载到电脑，使用本机算力',
+    apiPoints: '无需下载模型权重 · 快速开始 · 按 API 实际用量计费',
+    localPoints: '在本机运行 · 需要磁盘空间 · 支持离线使用',
+    apiAction: '配置 Tuzi API',
+    localAction: '设置本机模型',
+    later: '稍后设置',
+    back: '上一步',
+    connectTitle: '连接 Tuzi API',
+    keyLabel: 'API Key',
+    keyPlaceholder: '粘贴 Tuzi API Key',
+    endpointLabel: '接口地址',
+    connect: '连接并检测模型',
+    connecting: '正在检测…',
+    notice: '密钥会先验证，通过后只保存到这台电脑的安全存储。',
+    demoNotice: '将使用 Tuzi API 接口，并读取账号实际返回的模型。',
+    doneTitle: 'Tuzi API 已准备好',
+    doneBody: (count) => '{count} 项能力已准备好，无需下载本机模型。'.replace('{count}', String(count)),
+    tools: '完成并进入工具',
+    agent: '继续连接 Agent',
+    error: (message) => '无法连接 Tuzi API：{message}'.replace('{message}', message),
+  },
+
   dialogLabel: '欢迎使用 Tuzi',
   stepsLabel: '引导步骤',
   step: {

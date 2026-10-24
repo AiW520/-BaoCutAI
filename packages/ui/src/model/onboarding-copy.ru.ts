@@ -4,6 +4,10 @@ import type { OnboardingMessages } from './onboarding-copy.ts';
 const agentsN = (n: number) => `${n} ${pluralForm('ru', n, { one: 'агент', few: 'агента', many: 'агентов', other: 'агента' })}`;
 
 export const ru: OnboardingMessages = {
+  mode: {
+    intro: 'Choose how you want to create', lead: 'Use online models through Tuzi API, or download models to this computer. You can use both later in Settings.', api: 'Tuzi API', local: 'Local models', recommended: 'Recommended', apiDesc: 'One key connects to online models', localDesc: 'Download to this computer and use its hardware', apiPoints: 'No model downloads · quick start · billed by API usage', localPoints: 'Runs on this computer · needs disk space · works offline', apiAction: 'Configure Tuzi API', localAction: 'Set up local models', later: 'Set up later', back: 'Back', connectTitle: 'Connect Tuzi API', keyLabel: 'API key', keyPlaceholder: 'Paste your Tuzi API key', endpointLabel: 'Endpoint', connect: 'Connect and check models', connecting: 'Checking…', notice: 'The key is verified before it is saved and is kept only on this computer.', demoNotice: 'The connection uses the Tuzi API endpoint and the models returned by your account.', doneTitle: 'Tuzi API is ready', doneBody: (count) => `${count} capabilities are ready. No local model download is required.`, tools: 'Finish and open Tools', agent: 'Continue to Agent setup', error: (message) => `Couldn’t connect to Tuzi API: ${message}`,
+  },
+
   dialogLabel: 'Добро пожаловать в Tuzi',
   stepsLabel: 'Шаги настройки',
   step: {

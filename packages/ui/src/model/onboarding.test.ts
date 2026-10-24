@@ -68,6 +68,7 @@ describe('步骤与记录', () => {
     const rec = onboardingRecord('skipped', 'tts', ['a', 'a', 'b']);
     expect(rec).toEqual({ state: 'skipped', step: 'tts', downloaded: ['a', 'b'] });
     expect(shouldShowOnboarding(rec)).toBe(false);
+    expect(onboardingRecord('done', 'agent', [], 'api')).toEqual({ state: 'done', step: 'agent', downloaded: [], mode: 'api' });
     expect(isLastStep('music')).toBe(true);
     expect(isLastStep('agent')).toBe(false);
   });
@@ -76,6 +77,7 @@ describe('步骤与记录', () => {
     expect(parseOnboardingRecord(null)).toBeNull();
     expect(parseOnboardingRecord({ state: 'later' })).toBeNull();
     expect(parseOnboardingRecord({ state: 'done', step: 'nope', downloaded: ['x', 3] })).toEqual({ state: 'done', step: 'agent', downloaded: ['x'] });
+    expect(parseOnboardingRecord({ state: 'done', step: 'agent', downloaded: [], mode: 'api' })).toEqual({ state: 'done', step: 'agent', downloaded: [], mode: 'api' });
   });
 });
 

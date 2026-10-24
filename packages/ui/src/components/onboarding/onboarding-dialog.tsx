@@ -13,14 +13,20 @@ import {
   Heading,
   ProgressBar,
   ProgressCircle,
+  Radio,
+  RadioGroup,
   ToastQueue,
+  TextField,
 } from '@react-spectrum/s2';
 import AlertTriangle from '@react-spectrum/s2/icons/AlertTriangle';
 import AudioWave from '@react-spectrum/s2/icons/AudioWave';
 import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
+import ChevronRightIcon from '@react-spectrum/s2/icons/ChevronRight';
 import Download from '@react-spectrum/s2/icons/Download';
 import Image from '@react-spectrum/s2/icons/Image';
 import InfoCircle from '@react-spectrum/s2/icons/InfoCircle';
+import DeviceLaptop from '@react-spectrum/s2/icons/DeviceLaptop';
+import GlobeGrid from '@react-spectrum/s2/icons/GlobeGrid';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { bundleName } from '../../model/models-local.ts';
 import { nonCommercial } from '../../model/models-tts-local.ts';
@@ -160,10 +166,135 @@ const bgStyle = style({
   color: 'gray-700',
   '--iconPrimary': { type: 'fill', value: 'currentColor' },
 });
+const modeIntro = style({ margin: 0, font: 'title-lg', fontWeight: 'bold', color: 'gray-900' });
+const modeLead = style({ marginTop: 8, marginBottom: 0, font: 'body', color: 'gray-700' });
+const modeChoices = style({ display: 'grid', gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]', gap: 12, marginTop: 20 });
+const modeCard = style({
+  display: 'flex', flexDirection: 'column', alignItems: 'start', gap: 8, minWidth: 0, padding: 16,
+  borderWidth: 1, borderStyle: 'solid', borderColor: { default: 'gray-200', isOn: 'blue-800' },
+  borderRadius: 'lg', backgroundColor: { default: 'gray-50', isOn: 'blue-100' }, textAlign: 'start', cursor: 'pointer',
+  boxShadow: { default: 'none', isOn: 'none' },
+});
+const modeIcon = style({ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 'lg', backgroundColor: 'gray-100', color: 'gray-800' });
+const modeTitle = style({ display: 'flex', alignItems: 'center', gap: 8, font: 'title-sm', fontWeight: 'bold', color: 'gray-900' });
+const modeDesc = style({ margin: 0, font: 'ui', color: 'gray-800' });
+const modePoints = style({ margin: 0, font: 'ui-sm', color: 'gray-600', lineHeight: '[1.6]' });
+const modeTrail = style({ display: 'flex', alignItems: 'center', gap: 4, width: 'full', marginTop: 'auto', paddingTop: 8, font: 'ui-sm', fontWeight: 'bold', color: 'gray-800' });
+const apiStack = style({ display: 'flex', flexDirection: 'column', gap: 12 });
+const apiEndpoint = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: 12, borderRadius: 'lg', backgroundColor: 'gray-100', color: 'gray-800' });
+const apiEndpointText = style({ display: 'flex', flexDirection: 'column', gap: 2, flexGrow: 1, minWidth: 0 });
+const apiCode = style({ font: 'code-xs', color: 'gray-600', overflowWrap: 'anywhere' });
+const apiNotice = style({ margin: 0, font: 'ui-sm', color: 'gray-600', overflowWrap: 'anywhere' });
+const apiSummary = style({ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 'lg', backgroundColor: 'green-100', color: 'green-900' });
 
 const TONE_BADGE = { positive: 'positive', notice: 'notice', negative: 'negative', neutral: 'neutral' } as const;
 const WHERE_ICON: Record<'tts' | 'image' | 'music', ComponentType> = { tts: AudioWave, image: Image, music: MusicIcon };
 const NO_PLAN: DownloadPlan = { bundles: [], parts: [], bytes: 0 };
+
+const TUZI_PROVIDER_ID = 'custom:tuzi';
+const TUZI_ENDPOINT = 'https://api.tu-zi.com/v1';
+const TUZI_MODELS = [
+  { modelId: 'gpt-4o-mini', capability: 'generateText' as const },
+  { modelId: 'gpt-image-2', capability: 'generateImage' as const },
+  { modelId: 'tts-1', capability: 'synthesizeSpeech' as const, voices: ['alloy'] },
+  { modelId: 'whisper-1', capability: 'transcribe' as const, wordTimestamps: 'none' as const },
+];
+
+function ModeChoice({ onSelect, onLater }: { onSelect: (mode: 'api' | 'local') => void; onLater: () => void }) {
+  const [value, setValue] = useState<'api' | 'local'>('api');
+  return (
+    <DialogContainer onDismiss={onLater}>
+      <Dialog size="L" aria-label={M.dialogLabel}>
+        <Heading slot="title">{M.dialogLabel}</Heading>
+        <Content>
+          <p className={modeIntro}>{M.mode.intro}</p>
+          <p className={modeLead}>{M.mode.lead}</p>
+          <RadioGroup aria-label={M.mode.intro} orientation="horizontal" value={value} onChange={(v) => setValue(v as 'api' | 'local')}>
+            <div className={modeChoices}>
+              <button type="button" className={modeCard({ isOn: value === 'api' })} onClick={() => setValue('api')}>
+                <span className={modeIcon}><GlobeGrid /></span>
+                <span className={modeTitle}><Radio value="api">{M.mode.api}</Radio><Badge variant="informative" size="S" fillStyle="subtle">{M.mode.recommended}</Badge></span>
+                <p className={modeDesc}>{M.mode.apiDesc}</p>
+                <p className={modePoints}>{M.mode.apiPoints}</p>
+                <span className={modeTrail}>{M.mode.apiAction} <ChevronRightIcon /></span>
+              </button>
+              <button type="button" className={modeCard({ isOn: value === 'local' })} onClick={() => setValue('local')}>
+                <span className={modeIcon}><DeviceLaptop /></span>
+                <span className={modeTitle}><Radio value="local">{M.mode.local}</Radio></span>
+                <p className={modeDesc}>{M.mode.localDesc}</p>
+                <p className={modePoints}>{M.mode.localPoints}</p>
+                <span className={modeTrail}>{M.mode.localAction} <ChevronRightIcon /></span>
+              </button>
+            </div>
+          </RadioGroup>
+          <p className={apiNotice}>{M.lead.agent}</p>
+        </Content>
+        <Footer>
+          <ActionButton isQuiet onPress={onLater}>{M.mode.later}</ActionButton>
+        </Footer>
+        <ButtonGroup>
+          <Button variant="accent" autoFocus onPress={() => onSelect(value)}>{value === 'api' ? M.mode.apiAction : M.mode.localAction}</Button>
+        </ButtonGroup>
+      </Dialog>
+    </DialogContainer>
+  );
+}
+
+function TuziApiSetup({ onBack, onDone }: { onBack: () => void; onDone: (agent: boolean) => void }) {
+  const runtime = useRuntime();
+  const [key, setKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  const connect = async () => {
+    if (!key.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await runtime.configureModelProvider({
+        providerId: TUZI_PROVIDER_ID,
+        label: 'Tuzi API',
+        endpoint: TUZI_ENDPOINT,
+        enabled: true,
+        models: TUZI_MODELS,
+      });
+      await runtime.addModelAccount({ providerId: TUZI_PROVIDER_ID, credential: key.trim(), verify: true });
+      await runtime.refreshModelProvider(TUZI_PROVIDER_ID);
+      await Promise.all(TUZI_MODELS.map((model) => runtime.setModelDefault(model.capability, TUZI_PROVIDER_ID, model.modelId)));
+      setKey('');
+      setReady(true);
+    } catch (err) {
+      setError(M.mode.error(err instanceof Error ? err.message : String(err)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <DialogContainer onDismiss={onBack}>
+      <Dialog size="L" aria-label={M.mode.connectTitle}>
+        <Heading slot="title">{ready ? M.mode.doneTitle : M.mode.connectTitle}</Heading>
+        <Content>
+          {!ready ? (
+            <div className={apiStack}>
+              <div className={apiEndpoint}><GlobeGrid /><span className={apiEndpointText}><strong>Tuzi API</strong><code className={apiCode}>{TUZI_ENDPOINT}</code></span><Badge variant="neutral" size="S" fillStyle="subtle">OpenAI-compatible</Badge></div>
+              <TextField label={M.mode.keyLabel} type="password" value={key} onChange={(v) => { setKey(v); setError(null); }} placeholder={M.mode.keyPlaceholder} autoComplete="off" isInvalid={!!error} errorMessage={error ?? undefined} />
+              <p className={apiNotice}>{M.mode.notice}</p>
+              <p className={apiNotice}>{M.mode.demoNotice}</p>
+            </div>
+          ) : (
+            <div className={apiSummary}><strong>{M.mode.doneTitle}</strong><span>{M.mode.doneBody(TUZI_MODELS.length)}</span><span>{M.mode.demoNotice}</span></div>
+          )}
+        </Content>
+        <Footer><ActionButton isQuiet onPress={onBack}>{M.mode.back}</ActionButton></Footer>
+        <ButtonGroup>
+          {!ready ? <Button variant="accent" isDisabled={!key.trim()} isPending={busy} onPress={() => void connect()}>{busy ? M.mode.connecting : M.mode.connect}</Button> : <><Button variant="secondary" onPress={() => onDone(true)}>{M.mode.agent}</Button><Button variant="accent" onPress={() => onDone(false)}>{M.mode.tools}</Button></>}
+        </ButtonGroup>
+      </Dialog>
+    </DialogContainer>
+  );
+}
 
 /**
  * 首次启动引导的对话框（设计稿 onboarding.jsx；纯层在 model/onboarding.ts）。顶上是步骤条，六步：连接 Agent → 语音识别 →
@@ -190,6 +321,7 @@ export function OnboardingDialog({
   const drivers = useConnection((s) => s.drivers);
   // 下载确认之后到 Runtime 推来安装任务之间：看这个时刻之后有没有这只的任务（bundleProgress）。
   const [since] = useState(() => new Date().toISOString());
+  const [mode, setMode] = useState<'choose' | 'local' | 'api'>('choose');
   const [index, setIndex] = useState(0);
   const [picks, setPicks] = useState<Partial<Record<ModelStep, string[]>>>({});
   const [semPick, setSemPick] = useState(true);
@@ -288,6 +420,17 @@ export function OnboardingDialog({
     next();
   };
   const onPrimary = () => (primary.kind === 'download' ? download() : primary.kind === 'install' ? installAgents() : next());
+
+  if (mode === 'choose') {
+    return <ModeChoice onSelect={setMode} onLater={() => finish(onboardingRecord('skipped', 'agent', []))} />;
+  }
+  if (mode === 'api') {
+    return <TuziApiSetup onBack={() => setMode('choose')} onDone={(agent) => {
+      finish({ ...onboardingRecord('done', 'agent', [], 'api'), mode: 'api' });
+      if (agent) go({ tab: 'settings', section: 'agent' });
+      else go({ tab: 'tools' });
+    }} />;
+  }
 
   if (confirm) {
     return (
